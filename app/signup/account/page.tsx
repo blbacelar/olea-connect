@@ -2,7 +2,7 @@
 
 import { Eye, EyeOff } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 import { AuthCard } from "@/components/auth/AuthCard";
 import { StepIndicator } from "@/components/auth/StepIndicator";
@@ -10,12 +10,36 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useRegistration } from "@/hooks/use-registration";
+import { membershipPlans } from "@/lib/plans";
+import type { MembershipTier } from "@/lib/types";
 
 export default function SignupAccountPage() {
   const router = useRouter();
-  const { registration, updateRegistration } = useRegistration();
+  const { hydrated, registration, updateRegistration } = useRegistration();
   const [showPassword, setShowPassword] = useState(false);
   const [terms, setTerms] = useState(false);
+
+  useEffect(() => {
+    if (!hydrated) return;
+
+    const searchParams = new URLSearchParams(window.location.search);
+    const tier = searchParams.get("tier") as MembershipTier | null;
+    const billingCycle = searchParams.get("billing");
+    const updates: {
+      tier?: MembershipTier;
+      billingCycle?: "monthly" | "annual";
+    } = {};
+
+    if (tier && membershipPlans.some((plan) => plan.id === tier)) {
+      updates.tier = tier;
+    }
+    if (billingCycle === "monthly" || billingCycle === "annual") {
+      updates.billingCycle = billingCycle;
+    }
+    if (updates.tier || updates.billingCycle) {
+      updateRegistration(updates);
+    }
+  }, [hydrated, updateRegistration]);
 
   const valid =
     registration.organizationName.trim().length >= 2 &&
@@ -120,7 +144,11 @@ export default function SignupAccountPage() {
           Continue to payment →
         </Button>
         <button
-          onClick={() => router.push("/signup")}
+          onClick={() =>
+            router.push(
+              `/signup?tier=${registration.tier}&billing=${registration.billingCycle}`,
+            )
+          }
           className="w-full text-sm font-medium text-slate-500"
         >
           ← Back to plan

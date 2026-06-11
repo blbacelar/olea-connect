@@ -107,7 +107,11 @@ export function LandingPricing() {
                   className="mt-7 w-full"
                   variant={plan.popular ? "default" : "outline"}
                 >
-                  <Link href={`/signup?tier=${plan.id}`}>
+                  <Link
+                    href={`/signup/account?tier=${plan.id}&billing=${
+                      annual ? "annual" : "monthly"
+                    }`}
+                  >
                     Choose {plan.name}
                   </Link>
                 </Button>

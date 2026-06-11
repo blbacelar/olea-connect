@@ -63,10 +63,10 @@ export default function SignupPaymentPage() {
       <main className="mx-auto max-w-5xl px-4 py-12">
         <StepIndicator current={3} />
         <h1 className="mt-5 text-center text-3xl font-bold">
-          Start your free trial
+          Activate your membership
         </h1>
         <p className="mt-2 text-center text-slate-500">
-          Step 3 of 3 · You will not be charged for 14 days.
+          Step 3 of 3 · Review your plan and complete payment.
         </p>
 
         <div className="mt-8 grid items-start gap-6 md:grid-cols-[1fr_360px]">
@@ -131,7 +131,7 @@ export default function SignupPaymentPage() {
                 {isPending ? (
                   <LoaderCircle className="size-4 animate-spin" />
                 ) : null}
-                {isPending ? "Creating membership..." : "Start my free trial →"}
+                {isPending ? "Creating membership..." : "Activate membership →"}
               </Button>
               <p className="flex items-center justify-center gap-1.5 text-xs text-slate-400">
                 <Lock className="size-3.5" /> Secured by Stripe · Demo checkout
@@ -161,10 +161,12 @@ export default function SignupPaymentPage() {
               </p>
             ) : null}
             <div className="my-5 border-t" />
-            <p className="font-semibold text-olea-dark">14-day free trial</p>
+            <p className="font-semibold text-olea-dark">
+              Membership starts immediately
+            </p>
             <p className="mt-1 text-sm leading-6 text-slate-500">
-              First charge: June 25, 2026. GST/HST is calculated from your
-              billing province.
+              Your selected billing amount is charged when you activate your
+              membership. GST/HST is calculated from your billing province.
             </p>
             <ul className="mt-5 space-y-2 text-sm text-slate-600">
               <li>✓ Cancel any time</li>

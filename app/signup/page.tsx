@@ -21,8 +21,21 @@ export default function SignupPlanPage() {
     const tier = new URLSearchParams(window.location.search).get(
       "tier",
     ) as MembershipTier | null;
+    const billingCycle = new URLSearchParams(window.location.search).get(
+      "billing",
+    );
+    const updates: {
+      tier?: MembershipTier;
+      billingCycle?: "monthly" | "annual";
+    } = {};
     if (tier && membershipPlans.some((plan) => plan.id === tier)) {
-      updateRegistration({ tier });
+      updates.tier = tier;
+    }
+    if (billingCycle === "monthly" || billingCycle === "annual") {
+      updates.billingCycle = billingCycle;
+    }
+    if (updates.tier || updates.billingCycle) {
+      updateRegistration(updates);
     }
   }, [hydrated, updateRegistration]);
 
@@ -35,7 +48,7 @@ export default function SignupPlanPage() {
           Choose your plan
         </h1>
         <p className="mt-2 text-center text-slate-500">
-          Step 1 of 3 · All plans include a 14-day free trial.
+          Step 1 of 3 · Choose the support that fits your organization.
         </p>
 
         <div className="mx-auto mt-7 flex w-fit rounded-lg border bg-white p-1">
