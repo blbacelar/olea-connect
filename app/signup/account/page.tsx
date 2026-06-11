@@ -144,11 +144,7 @@ export default function SignupAccountPage() {
           Continue to payment →
         </Button>
         <button
-          onClick={() =>
-            router.push(
-              `/signup?tier=${registration.tier}&billing=${registration.billingCycle}`,
-            )
-          }
+          onClick={() => router.push("/#plans")}
           className="w-full text-sm font-medium text-slate-500"
         >
           ← Back to plan
