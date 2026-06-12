@@ -8,7 +8,7 @@ const signals = [
   },
   {
     icon: HandHeart,
-    value: "Up to 33%",
+    value: "Portion of funds",
     label: "of sponsorship fees flow to Olea Gives",
   },
   {
