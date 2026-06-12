@@ -72,9 +72,9 @@ export const membershipPlans: MembershipPlan[] = [
     id: "harvest",
     name: "Harvest",
     icon: "🫒",
-    monthlyPrice: 1150,
-    annualPrice: 11500,
-    seats: "VIP service · limited to 8",
+    monthlyPrice: 1350,
+    annualPrice: 13500,
+    seats: "3 seats",
     audience: "Organizations needing hands-on help",
     summary: "Full platform access plus CEO-delivered fractional administration.",
     features: [
@@ -84,6 +84,7 @@ export const membershipPlans: MembershipPlan[] = [
       "Board packages prepared",
       "Committee minutes drafted",
       "Monthly CEO strategy call",
+      "Limited to 6 seats"
     ],
   },
 ];
