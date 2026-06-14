@@ -1,8 +1,8 @@
-import { getOrg } from "@/lib/db";
+import { requireMemberContext } from "@/lib/data/member-context";
 
 import { BrandSettingsForm } from "./brand-settings-form";
 
 export default async function BrandSettingsPage() {
-  const organization = await getOrg();
+  const { organization } = await requireMemberContext();
   return <BrandSettingsForm initialBrand={organization.brand} />;
 }

@@ -1,8 +1,8 @@
-import { getMember, getOrg } from "@/lib/db";
+import { getTeamData } from "@/lib/data/team";
 
 import { TeamWorkspace } from "./team-workspace";
 
 export default async function TeamPage() {
-  const [member, organization] = await Promise.all([getMember(), getOrg()]);
-  return <TeamWorkspace member={member} organization={organization} />;
+  const team = await getTeamData();
+  return <TeamWorkspace team={team} />;
 }

@@ -1,7 +1,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useMemo, useState } from "react";
+import { useMemo, useState, useTransition } from "react";
 
 import { BrandPreview } from "@/components/BrandPreview";
 import { LogoUpload } from "@/components/LogoUpload";
@@ -10,19 +10,30 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useRegistration } from "@/hooks/use-registration";
+import { useSession } from "@/hooks/use-session";
 import type { BrandProfile } from "@/lib/types";
+import { saveBrandProfile } from "@/app/settings/brand/actions";
 
 export default function BrandSetupPage() {
   const router = useRouter();
+  const session = useSession();
   const { registration, updateRegistration } = useRegistration();
   const [organizationName, setOrganizationName] = useState(
-    registration.organizationName || "JP Centre for Youth",
+    session?.organization.brand.organizationName ||
+      registration.organizationName ||
+      "",
   );
-  const [primaryColor, setPrimaryColor] = useState("#4A7C59");
-  const [secondaryColor, setSecondaryColor] = useState("#2D5C3E");
+  const [primaryColor, setPrimaryColor] = useState(
+    session?.organization.brand.primaryColor ?? "#4A7C59",
+  );
+  const [secondaryColor, setSecondaryColor] = useState(
+    session?.organization.brand.secondaryColor ?? "#2D5C3E",
+  );
   const [logoDataUrl, setLogoDataUrl] = useState<string | undefined>(
-    registration.logoDataUrl,
+    session?.organization.brand.logoUrl ?? registration.logoDataUrl,
   );
+  const [error, setError] = useState("");
+  const [isPending, startTransition] = useTransition();
 
   const brand = useMemo<BrandProfile>(
     () => ({
@@ -43,16 +54,27 @@ export default function BrandSetupPage() {
   );
 
   const continueFlow = (complete: boolean) => {
-    updateRegistration({
-      organizationName,
-      brandComplete: complete,
-      logoDataUrl,
+    startTransition(async () => {
+      try {
+        if (complete) await saveBrandProfile(brand);
+        updateRegistration({
+          organizationName,
+          brandComplete: complete,
+          logoDataUrl,
+        });
+        router.push(
+          (session?.organization.tier ?? registration.tier) === "seedling"
+            ? "/onboarding/template-selection"
+            : "/dashboard",
+        );
+      } catch (saveError) {
+        setError(
+          saveError instanceof Error
+            ? saveError.message
+            : "Unable to save your brand profile.",
+        );
+      }
     });
-    router.push(
-      registration.tier === "seedling"
-        ? "/onboarding/template-selection"
-        : "/dashboard",
-    );
   };
 
   return (
@@ -127,10 +149,10 @@ export default function BrandSetupPage() {
 
             <Button
               className="mt-7 w-full"
-              disabled={!organizationName.trim()}
+              disabled={!organizationName.trim() || isPending}
               onClick={() => continueFlow(true)}
             >
-              Save brand and continue →
+              {isPending ? "Saving..." : "Save brand and continue →"}
             </Button>
             <button
               onClick={() => continueFlow(false)}
@@ -138,6 +160,11 @@ export default function BrandSetupPage() {
             >
               Skip for now — set up later
             </button>
+            {error ? (
+              <p role="alert" className="mt-4 text-sm font-medium text-red-600">
+                {error}
+              </p>
+            ) : null}
           </section>
 
           <div className="lg:sticky lg:top-6">

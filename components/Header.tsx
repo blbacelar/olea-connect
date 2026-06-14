@@ -40,12 +40,13 @@ const notifications = [
 
 export function Header() {
   const router = useRouter();
-  const { member } = useSession();
+  const session = useSession();
+  const member = session?.member;
   const { resetRegistration } = useRegistration();
   const [notificationsOpen, setNotificationsOpen] = useState(false);
   const [userOpen, setUserOpen] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
-  const initials = member.name
+  const initials = (member?.name ?? "Member")
     .split(/\s+/)
     .map((part) => part[0])
     .join("")
@@ -137,15 +138,15 @@ export function Header() {
             {initials}
           </span>
           <span className="hidden text-[13.5px] font-semibold text-slate-800 sm:inline">
-            {member.firstName}
+            {member?.firstName ?? "Member"}
           </span>
           <ChevronDown className="size-4 text-slate-400" />
         </button>
         {userOpen ? (
           <div className="absolute right-0 top-12 w-[230px] rounded-xl border bg-white p-1.5 shadow-elevated">
             <div className="mb-1.5 border-b px-3 py-2">
-              <p className="font-semibold">{member.name}</p>
-              <p className="text-xs text-slate-500">{member.email}</p>
+              <p className="font-semibold">{member?.name ?? "Member"}</p>
+              <p className="text-xs text-slate-500">{member?.email ?? ""}</p>
             </div>
             {[
               ["Brand settings", "/settings/brand"],

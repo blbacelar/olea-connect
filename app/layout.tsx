@@ -4,6 +4,7 @@ import { Inter } from "next/font/google";
 import { AppShell } from "@/components/AppShell";
 import { SessionProvider } from "@/hooks/use-session";
 import { RegistrationProvider } from "@/hooks/use-registration";
+import { getOptionalMemberContext } from "@/lib/data/member-context";
 
 import "./globals.css";
 
@@ -14,15 +15,17 @@ export const metadata: Metadata = {
   description: "Branded governance tools for Canadian nonprofits.",
 };
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  const session = await getOptionalMemberContext();
+
   return (
     <html lang="en">
       <body className={inter.className}>
-        <SessionProvider>
+        <SessionProvider initialSession={session}>
           <RegistrationProvider>
             <AppShell>{children}</AppShell>
           </RegistrationProvider>
