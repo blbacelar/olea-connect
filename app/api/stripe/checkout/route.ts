@@ -1,6 +1,9 @@
 import { NextResponse } from "next/server";
 
-import { prepareCheckoutRegistration } from "@/lib/stripe/registration";
+import {
+  attachCheckoutSession,
+  prepareCheckoutRegistration,
+} from "@/lib/stripe/registration";
 import { getStripe, getStripePriceId } from "@/lib/stripe/server";
 import type { MembershipTier, RegistrationState } from "@/lib/types";
 import {
@@ -73,7 +76,7 @@ async function resolveSignupUser(body: Required<CheckoutBody>, origin: string) {
     email,
     password: body.password,
     options: {
-      emailRedirectTo: `${origin}/auth/callback?next=/onboarding/brand-setup`,
+      emailRedirectTo: `${origin}/auth/callback`,
       data: {
         full_name: body.fullName.trim(),
         organization_name: body.organizationName.trim(),
@@ -136,8 +139,7 @@ export async function POST(request: Request) {
     const stripe = getStripe();
     const priceId = getStripePriceId(body.tier, body.billingCycle);
     const metadata = {
-      local_subscription_id: prepared.subscriptionId,
-      organization_id: prepared.organizationId,
+      provisioning_request_id: prepared.requestId,
       user_id: userId,
       plan_id: body.tier,
       billing_cycle: body.billingCycle,
@@ -160,17 +162,7 @@ export async function POST(request: Request) {
       throw new Error("Stripe did not return a checkout URL.");
     }
 
-    const { error: updateError } = await supabase
-      .from("subscriptions")
-      .update({
-        metadata: {
-          ...metadata,
-          checkout_session_id: session.id,
-        },
-      })
-      .eq("id", prepared.subscriptionId);
-
-    if (updateError) throw updateError;
+    await attachCheckoutSession(supabase, prepared.requestId, session.id);
 
     return NextResponse.json({ url: session.url });
   } catch (error) {

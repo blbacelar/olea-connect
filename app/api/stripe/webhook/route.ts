@@ -2,6 +2,10 @@ import { NextResponse } from "next/server";
 import type Stripe from "stripe";
 
 import { getStripe, getWebhookSecret } from "@/lib/stripe/server";
+import {
+  attemptWorkspaceProvisioning,
+  recordStripeSubscription,
+} from "@/lib/stripe/registration";
 import { syncStripeSubscription } from "@/lib/stripe/subscriptions";
 import { createAdminClient } from "@/utils/supabase/admin";
 
@@ -183,7 +187,20 @@ export async function POST(request: Request) {
 
     const subscription = await getEventSubscription(event);
     if (subscription) {
-      await syncStripeSubscription(supabase, subscription);
+      const provisioningRequestId = await recordStripeSubscription(
+        supabase,
+        subscription,
+      );
+
+      if (provisioningRequestId) {
+        await attemptWorkspaceProvisioning(
+          supabase,
+          provisioningRequestId,
+          subscription,
+        );
+      } else {
+        await syncStripeSubscription(supabase, subscription);
+      }
     }
     await handleLifecycleNotification(event, subscription);
 
