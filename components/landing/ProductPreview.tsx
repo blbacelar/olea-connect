@@ -77,14 +77,14 @@ export function ProductPreview() {
                 <div className="rounded-lg border bg-white p-3">
                   <FileText className="size-4 text-olea-green" />
                   <p className="mt-3 text-xl font-bold">8</p>
-                  <p className="text-[10px] text-slate-400">
+                  <p className="text-[10px] text-slate-600">
                     Governance templates
                   </p>
                 </div>
                 <div className="rounded-lg border bg-white p-3">
                   <BookOpen className="size-4 text-olea-orange" />
                   <p className="mt-3 text-xl font-bold">4</p>
-                  <p className="text-[10px] text-slate-400">
+                  <p className="text-[10px] text-slate-600">
                     Learning resources
                   </p>
                 </div>
@@ -108,7 +108,7 @@ export function ProductPreview() {
               <div className="mt-3 flex items-center justify-between rounded-lg border bg-white p-3">
                 <div>
                   <p className="text-[10px] font-semibold">Brand profile</p>
-                  <p className="text-[9px] text-slate-400">
+                  <p className="text-[9px] text-slate-600">
                     Applied to every download
                   </p>
                 </div>
@@ -128,7 +128,7 @@ export function ProductPreview() {
           </span>
           <div>
             <p className="text-xs font-bold">Board Self-Evaluation</p>
-            <p className="text-[10px] text-slate-400">Branded and ready</p>
+            <p className="text-[10px] text-slate-600">Branded and ready</p>
           </div>
         </div>
       </div>

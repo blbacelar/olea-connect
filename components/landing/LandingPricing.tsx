@@ -43,7 +43,7 @@ export function LandingPricing() {
               )}
             >
               Annual
-              <span className="ml-2 rounded-full bg-olea-orange px-2 py-0.5 text-[10px] text-white">
+              <span className="ml-2 rounded-full bg-[#B54708] px-2 py-0.5 text-[10px] text-white">
                 2 months free
               </span>
             </button>
@@ -62,7 +62,7 @@ export function LandingPricing() {
                 )}
               >
                 {plan.popular ? (
-                  <span className="absolute -top-3 left-1/2 -translate-x-1/2 whitespace-nowrap rounded-full bg-olea-orange px-3 py-1 text-[10px] font-bold uppercase tracking-wider text-white">
+                  <span className="absolute -top-3 left-1/2 -translate-x-1/2 whitespace-nowrap rounded-full bg-[#B54708] px-3 py-1 text-[10px] font-bold uppercase tracking-wider text-white">
                     Most popular
                   </span>
                 ) : null}
@@ -76,7 +76,7 @@ export function LandingPricing() {
                   <span className="text-4xl font-extrabold tracking-tight">
                     ${price.toLocaleString()}
                   </span>
-                  <span className="pb-1 text-sm text-slate-400">
+                  <span className="pb-1 text-sm text-slate-600">
                     /{annual ? "year" : "month"}
                   </span>
                 </div>

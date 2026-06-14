@@ -123,7 +123,7 @@ export default function SignupAccountPage() {
               />
             ))}
           </div>
-          <p className="text-xs text-slate-400">
+          <p className="text-xs text-slate-600">
             Use at least 8 characters.
           </p>
         </div>

@@ -30,7 +30,7 @@ export function FinalCta() {
               <ArrowRight className="size-4" />
             </Link>
           </Button>
-          <p className="mt-4 text-xs text-white/50">
+          <p className="mt-4 text-xs text-white/70">
             Memberships start at $44 CAD per month.
           </p>
         </div>

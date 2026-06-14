@@ -88,6 +88,9 @@ npm run build      # Create an optimized production build
 npm run start      # Run the production server
 npm run lint       # Run Next.js ESLint checks
 npm run typecheck  # Run TypeScript without emitting files
+npm run test:e2e:smoke # Run the Chromium PR smoke suite
+npm run test:e2e      # Run the cross-browser regression suite
+npm run test:e2e:a11y # Run public accessibility checks
 ```
 
 Before considering a change complete, run:
@@ -95,8 +98,25 @@ Before considering a change complete, run:
 ```bash
 npm run typecheck
 npm run lint
+npm run test:e2e:smoke
 npm run build
 ```
+
+## Automated Testing
+
+Playwright coverage starts with the highest-risk public journeys:
+
+- landing-page and pricing entry points
+- membership plan handoff and account validation
+- password handling in browser storage
+- protected-route enforcement
+- Stripe webhook signature boundary
+- automated WCAG 2.1 A/AA checks on public pages
+
+Chromium smoke tests run on pull requests and pushes to `main`. A scheduled
+workflow runs the full Chromium, Firefox, WebKit, and mobile regression suite.
+GitHub Actions requires `NEXT_PUBLIC_SUPABASE_URL` and
+`NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` repository secrets.
 
 ## Main Routes
 

@@ -7,3 +7,5 @@ node_modules
 .vercel
 .supabase-home
 supabase/.temp
+playwright-report
+test-results

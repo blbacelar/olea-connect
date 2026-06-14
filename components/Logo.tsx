@@ -22,7 +22,7 @@ export function Logo({
         <span className="block text-[15px] font-bold leading-tight text-olea-ink">
           Olea Connects
         </span>
-        <span className="block text-[11px] font-medium text-slate-400">
+        <span className="block text-[11px] font-medium text-slate-600">
           Governance, branded.
         </span>
       </span>
