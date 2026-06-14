@@ -18,6 +18,7 @@ import { navigationGroups } from "@/components/navigation";
 import { Button } from "@/components/ui/button";
 import { useSession } from "@/hooks/use-session";
 import { useRegistration } from "@/hooks/use-registration";
+import { signOut } from "@/lib/auth";
 import { useRouter } from "next/navigation";
 
 const notifications = [
@@ -44,6 +45,12 @@ export function Header() {
   const [notificationsOpen, setNotificationsOpen] = useState(false);
   const [userOpen, setUserOpen] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
+  const initials = member.name
+    .split(/\s+/)
+    .map((part) => part[0])
+    .join("")
+    .slice(0, 2)
+    .toUpperCase();
 
   return (
     <header className="relative z-30 flex h-16 shrink-0 items-center gap-4 border-b bg-white px-4 md:px-6">
@@ -127,10 +134,10 @@ export function Header() {
           className="flex h-10 items-center gap-2 rounded-full border bg-white py-1 pl-1 pr-2 transition hover:bg-slate-50"
         >
           <span className="grid size-[30px] place-items-center rounded-full bg-gradient-to-br from-olea-green to-olea-dark text-xs font-bold text-white">
-            SM
+            {initials}
           </span>
           <span className="hidden text-[13.5px] font-semibold text-slate-800 sm:inline">
-            Sarah M.
+            {member.firstName}
           </span>
           <ChevronDown className="size-4 text-slate-400" />
         </button>
@@ -155,10 +162,12 @@ export function Header() {
             ))}
             <div className="mt-1.5 border-t pt-1.5">
               <button
-                onClick={() => {
+                onClick={async () => {
+                  await signOut();
                   resetRegistration();
                   setUserOpen(false);
-                  router.push("/login");
+                  router.replace("/login");
+                  router.refresh();
                 }}
                 className="flex w-full items-center gap-2.5 rounded-lg px-3 py-2 text-left text-[13.5px] font-medium text-red-600 hover:bg-red-50"
               >

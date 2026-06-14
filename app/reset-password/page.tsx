@@ -12,12 +12,22 @@ import { requestPasswordReset } from "@/lib/auth";
 export default function ResetPasswordPage() {
   const [email, setEmail] = useState("");
   const [sent, setSent] = useState(false);
+  const [error, setError] = useState("");
   const [isPending, startTransition] = useTransition();
 
   const submit = () => {
     startTransition(async () => {
-      await requestPasswordReset(email);
-      setSent(true);
+      try {
+        setError("");
+        await requestPasswordReset(email);
+        setSent(true);
+      } catch (resetError) {
+        setError(
+          resetError instanceof Error
+            ? resetError.message
+            : "Unable to send the reset link.",
+        );
+      }
     });
   };
 
@@ -59,6 +69,11 @@ export default function ResetPasswordPage() {
           >
             {isPending ? "Sending..." : "Send reset link"}
           </Button>
+          {error ? (
+            <p className="rounded-lg bg-red-50 p-3 text-sm text-red-700">
+              {error}
+            </p>
+          ) : null}
           <Link
             href="/login"
             className="block text-center text-sm font-medium text-slate-500"

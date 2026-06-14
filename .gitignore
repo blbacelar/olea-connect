@@ -5,3 +5,7 @@ node_modules
 .env*
 !.env.example
 .vercel
+.supabase-home
+supabase/.temp
+playwright-report
+test-results
