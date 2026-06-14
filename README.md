@@ -93,6 +93,7 @@ npm run test:e2e      # Run the cross-browser regression suite
 npm run test:e2e:a11y # Run public accessibility checks
 npm run test:e2e:data # Verify isolated Supabase create/purge lifecycle
 npm run test:e2e:data:local # Start/use local Supabase and run isolation test
+npm run test:e2e:authenticated:local # Run protected routes with API auth
 ```
 
 Before considering a change complete, run:
@@ -130,6 +131,7 @@ dedicated environment is explicitly enabled:
 PLAYWRIGHT_TEST_DATA_ENABLED=true
 PLAYWRIGHT_TEST_ENV=local
 TEST_SUPABASE_URL=http://127.0.0.1:54321
+TEST_SUPABASE_PUBLISHABLE_KEY=...
 TEST_SUPABASE_SERVICE_ROLE_KEY=...
 npm run test:e2e:data
 ```
@@ -137,6 +139,12 @@ npm run test:e2e:data
 For the standard local path, run `npm run test:e2e:data:local`; it discovers the
 local Supabase credentials without printing them and starts Supabase when
 needed. CI runs the same command in a dedicated job.
+
+Authenticated tests create a confirmed user and active subscription through
+Supabase, sign in through the Auth API, and inject the resulting SSR cookies
+into the browser context. Do not repeat login through the UI as setup for
+protected-page tests. UI authentication is reserved for tests whose subject is
+the login, logout, verification, or password recovery experience itself.
 
 Never point `TEST_SUPABASE_*` variables at production. Cleanup runs in reverse
 dependency order, verifies deletion, and attempts every cleanup task even when

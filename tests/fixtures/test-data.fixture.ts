@@ -2,53 +2,22 @@ import { createClient, type SupabaseClient } from "@supabase/supabase-js";
 import { test as base } from "@playwright/test";
 
 import { createTestIdentity } from "../factories/identity";
+import { getTestSupabaseEnvironment } from "../support/test-environment";
 
 type CleanupTask = {
   label: string;
   run: () => Promise<void>;
 };
 
-type CreatedOrganizationOwner = {
+export type CreatedOrganizationOwner = {
   marker: string;
   userId: string;
   organizationId: string;
+  organizationName: string;
+  subscriptionId: string | null;
   email: string;
   password: string;
 };
-
-function requireTestEnvironment() {
-  if (process.env.PLAYWRIGHT_TEST_DATA_ENABLED !== "true") {
-    throw new Error(
-      "Test-data mutation is disabled. Set PLAYWRIGHT_TEST_DATA_ENABLED=true.",
-    );
-  }
-
-  const environment = process.env.PLAYWRIGHT_TEST_ENV;
-  if (!environment || !["local", "preview", "staging"].includes(environment)) {
-    throw new Error(
-      "PLAYWRIGHT_TEST_ENV must explicitly be local, preview, or staging.",
-    );
-  }
-
-  const url = process.env.TEST_SUPABASE_URL;
-  const serviceRoleKey = process.env.TEST_SUPABASE_SERVICE_ROLE_KEY;
-  if (!url || !serviceRoleKey) {
-    throw new Error(
-      "TEST_SUPABASE_URL and TEST_SUPABASE_SERVICE_ROLE_KEY are required.",
-    );
-  }
-
-  const hostname = new URL(url).hostname;
-  if (
-    environment === "local" &&
-    hostname !== "127.0.0.1" &&
-    hostname !== "localhost"
-  ) {
-    throw new Error("Local test data may only target localhost Supabase.");
-  }
-
-  return { url, serviceRoleKey };
-}
 
 export class TestDataManager {
   private readonly cleanupTasks: CleanupTask[] = [];
@@ -63,7 +32,9 @@ export class TestDataManager {
     this.cleanupTasks.push(task);
   }
 
-  async createOrganizationOwner(): Promise<CreatedOrganizationOwner> {
+  async createOrganizationOwner(
+    options: { activeSubscription?: boolean } = {},
+  ): Promise<CreatedOrganizationOwner> {
     const identity = createTestIdentity(this.testInfo);
     const { data: authData, error: authError } =
       await this.supabase.auth.admin.createUser({
@@ -135,6 +106,18 @@ export class TestDataManager {
       });
     if (memberError) throw memberError;
 
+    this.registerCleanup({
+      label: `organization member ${organizationId}/${userId}`,
+      run: async () => {
+        const { error } = await this.supabase
+          .from("organization_members")
+          .delete()
+          .eq("organization_id", organizationId)
+          .eq("user_id", userId);
+        if (error) throw error;
+      },
+    });
+
     const { error: brandError } = await this.supabase
       .from("organization_brand_profiles")
       .insert({
@@ -143,10 +126,57 @@ export class TestDataManager {
       });
     if (brandError) throw brandError;
 
+    this.registerCleanup({
+      label: `brand profile ${organizationId}`,
+      run: async () => {
+        const { error } = await this.supabase
+          .from("organization_brand_profiles")
+          .delete()
+          .eq("organization_id", organizationId);
+        if (error) throw error;
+      },
+    });
+
+    let subscriptionId: string | null = null;
+    if (options.activeSubscription) {
+      const { data: subscription, error: subscriptionError } =
+        await this.supabase
+          .from("subscriptions")
+          .insert({
+            organization_id: organizationId,
+            plan_id: "roots",
+            provider: "manual",
+            billing_interval: "month",
+            status: "active",
+            current_period_start: new Date().toISOString(),
+            current_period_end: new Date(
+              Date.now() + 30 * 24 * 60 * 60 * 1000,
+            ).toISOString(),
+            metadata: { e2e_marker: identity.marker },
+          })
+          .select("id")
+          .single();
+      if (subscriptionError) throw subscriptionError;
+      subscriptionId = subscription.id as string;
+
+      this.registerCleanup({
+        label: `subscription ${subscriptionId}`,
+        run: async () => {
+          const { error } = await this.supabase
+            .from("subscriptions")
+            .delete()
+            .eq("id", subscriptionId);
+          if (error) throw error;
+        },
+      });
+    }
+
     return {
       marker: identity.marker,
       userId,
       organizationId,
+      organizationName: identity.organizationName,
+      subscriptionId,
       email: identity.email,
       password: identity.password,
     };
@@ -199,7 +229,7 @@ export class TestDataManager {
 
 export const test = base.extend<{ testData: TestDataManager }>({
   testData: async ({}, use, testInfo) => {
-    const { url, serviceRoleKey } = requireTestEnvironment();
+    const { url, serviceRoleKey } = getTestSupabaseEnvironment();
     const supabase = createClient(url, serviceRoleKey, {
       auth: {
         autoRefreshToken: false,

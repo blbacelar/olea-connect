@@ -1,6 +1,11 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
+if [[ "$#" -eq 0 ]]; then
+  echo "Usage: $0 <command> [args...]" >&2
+  exit 2
+fi
+
 root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 cd "$root"
 
@@ -18,9 +23,12 @@ set -a
 eval "$(cat "$status_file")"
 set +a
 
-PLAYWRIGHT_TEST_DATA_ENABLED=true \
-PLAYWRIGHT_TEST_ENV=local \
-PLAYWRIGHT_SKIP_WEBSERVER=true \
-TEST_SUPABASE_URL="$API_URL" \
-TEST_SUPABASE_SERVICE_ROLE_KEY="$SERVICE_ROLE_KEY" \
-npm run test:e2e:data
+export PLAYWRIGHT_TEST_DATA_ENABLED=true
+export PLAYWRIGHT_TEST_ENV=local
+export TEST_SUPABASE_URL="$API_URL"
+export TEST_SUPABASE_PUBLISHABLE_KEY="$ANON_KEY"
+export TEST_SUPABASE_SERVICE_ROLE_KEY="$SERVICE_ROLE_KEY"
+export NEXT_PUBLIC_SUPABASE_URL="$API_URL"
+export NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY="$ANON_KEY"
+
+exec "$@"
