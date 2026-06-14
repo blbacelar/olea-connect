@@ -1,19 +1,21 @@
 "use client";
 
 import { Lock, LoaderCircle } from "lucide-react";
-import { useRouter } from "next/navigation";
-import { useState, useTransition } from "react";
+import { useEffect, useState, useTransition } from "react";
 
 import { PublicHeader } from "@/components/auth/PublicHeader";
 import { StepIndicator } from "@/components/auth/StepIndicator";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { useRegistration } from "@/hooks/use-registration";
 import {
-  createCheckoutSession,
-  triggerNewSubscriptionAutomations,
-} from "@/lib/auth";
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { useRegistration } from "@/hooks/use-registration";
+import { startStripeCheckout } from "@/lib/auth";
 import { getPlan } from "@/lib/plans";
 
 const provinces = [
@@ -33,12 +35,8 @@ const provinces = [
 ];
 
 export default function SignupPaymentPage() {
-  const router = useRouter();
   const { registration, updateRegistration } = useRegistration();
-  const [cardNumber, setCardNumber] = useState("4242 4242 4242 4242");
-  const [expiry, setExpiry] = useState("12/30");
-  const [cvc, setCvc] = useState("123");
-  const [name, setName] = useState(registration.fullName);
+  const [error, setError] = useState("");
   const [isPending, startTransition] = useTransition();
   const plan = getPlan(registration.tier);
   const price =
@@ -47,13 +45,30 @@ export default function SignupPaymentPage() {
       : plan.monthlyPrice;
   const billingPeriod =
     registration.billingCycle === "annual" ? "year" : "month";
-  const valid = cardNumber.replace(/\s/g, "").length === 16 && expiry && cvc && name;
+
+  useEffect(() => {
+    if (
+      new URLSearchParams(window.location.search).get("payment") === "canceled"
+    ) {
+      setError(
+        "Checkout was canceled. Your account was created, so verify your email and sign in when you are ready to continue.",
+      );
+    }
+  }, []);
 
   const handlePayment = () => {
     startTransition(async () => {
-      await createCheckoutSession(registration);
-      await triggerNewSubscriptionAutomations({ tier: registration.tier });
-      router.push("/verify-email");
+      try {
+        setError("");
+        const checkoutUrl = await startStripeCheckout(registration);
+        window.location.assign(checkoutUrl);
+      } catch (activationError) {
+        setError(
+          activationError instanceof Error
+            ? activationError.message
+            : "Unable to create your account.",
+        );
+      }
     });
   };
 
@@ -71,70 +86,62 @@ export default function SignupPaymentPage() {
 
         <div className="mt-8 grid items-start gap-6 md:grid-cols-[1fr_360px]">
           <section className="rounded-[14px] border bg-white p-6 shadow-soft">
-            <h2 className="text-lg font-semibold">Payment details</h2>
+            <h2 className="text-lg font-semibold">Secure checkout</h2>
             <div className="mt-6 space-y-5">
-              <div className="space-y-2">
-                <Label htmlFor="cardNumber">Card number</Label>
-                <Input
-                  id="cardNumber"
-                  inputMode="numeric"
-                  value={cardNumber}
-                  onChange={(event) => setCardNumber(event.target.value)}
-                />
-              </div>
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="expiry">Expiry</Label>
-                  <Input
-                    id="expiry"
-                    value={expiry}
-                    onChange={(event) => setExpiry(event.target.value)}
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="cvc">CVC</Label>
-                  <Input
-                    id="cvc"
-                    value={cvc}
-                    onChange={(event) => setCvc(event.target.value)}
-                  />
-                </div>
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="nameOnCard">Name on card</Label>
-                <Input
-                  id="nameOnCard"
-                  value={name}
-                  onChange={(event) => setName(event.target.value)}
-                />
+              <div className="rounded-xl border border-olea-green/20 bg-olea-light/50 p-5">
+                <Lock className="size-6 text-olea-green" />
+                <p className="mt-3 font-semibold text-olea-dark">
+                  Payment is completed on Stripe
+                </p>
+                <p className="mt-1 text-sm leading-6 text-slate-500">
+                  Olea Connects never receives or stores your card number or
+                  security code.
+                </p>
               </div>
               <div className="space-y-2">
                 <Label htmlFor="province">Billing province</Label>
-                <select
-                  id="province"
+                <Select
                   value={registration.province}
-                  onChange={(event) =>
-                    updateRegistration({ province: event.target.value })
+                  onValueChange={(province) =>
+                    updateRegistration({ province })
                   }
-                  className="h-11 w-full rounded-md border border-input bg-white px-3.5 text-sm outline-none focus:border-olea-green focus:ring-2 focus:ring-olea-green/20"
                 >
-                  {provinces.map((province) => (
-                    <option key={province}>{province}</option>
-                  ))}
-                </select>
+                  <SelectTrigger
+                    id="province"
+                    className="h-11 w-full bg-white px-3.5 focus:ring-olea-green/20"
+                  >
+                    <SelectValue placeholder="Select a province" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {provinces.map((province) => (
+                      <SelectItem key={province} value={province}>
+                        {province}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
               <Button
                 className="w-full"
-                disabled={!valid || isPending}
+                disabled={
+                  !registration.email ||
+                  registration.password.length < 8 ||
+                  isPending
+                }
                 onClick={handlePayment}
               >
                 {isPending ? (
                   <LoaderCircle className="size-4 animate-spin" />
                 ) : null}
-                {isPending ? "Creating membership..." : "Activate membership →"}
+                {isPending ? "Opening Stripe..." : "Continue to Stripe →"}
               </Button>
+              {error ? (
+                <p className="rounded-lg bg-red-50 p-3 text-sm text-red-700">
+                  {error}
+                </p>
+              ) : null}
               <p className="flex items-center justify-center gap-1.5 text-xs text-slate-400">
-                <Lock className="size-3.5" /> Secured by Stripe · Demo checkout
+                <Lock className="size-3.5" /> Secure checkout powered by Stripe
               </p>
             </div>
           </section>
@@ -166,7 +173,7 @@ export default function SignupPaymentPage() {
             </p>
             <p className="mt-1 text-sm leading-6 text-slate-500">
               Your selected billing amount is charged when you activate your
-              membership. GST/HST is calculated from your billing province.
+              membership. Any applicable tax is shown before you confirm.
             </p>
             <ul className="mt-5 space-y-2 text-sm text-slate-600">
               <li>✓ Cancel any time</li>

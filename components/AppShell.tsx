@@ -11,9 +11,10 @@ const publicRoutes = [
   "/",
   "/login",
   "/reset-password",
+  "/update-password",
   "/signup",
   "/verify-email",
-  "/onboarding",
+  "/auth",
 ];
 
 function isPublicRoute(pathname: string) {

@@ -11,18 +11,24 @@ for Canadian nonprofits, societies, charities, and community organizations.
 
 ## MVP Status
 
-This project is currently a frontend-focused product demo.
+This project is transitioning from a frontend-focused product demo to a
+production application backed by Supabase.
 
-- Authentication, checkout, email verification, and automation calls use mock
-  adapters.
+- Email/password authentication, email verification, password recovery, and
+  session cookies use hosted Supabase Auth.
+- Signup uses Stripe-hosted Checkout with test-mode recurring CAD prices.
+- Signed Stripe webhooks synchronize subscription status and line items into
+  Supabase with duplicate-event protection.
 - Organization, member, template, and session data come from local mock data.
 - Registration progress and uploaded onboarding logos are persisted in browser
   `localStorage`.
 - PDF generation runs in the browser with `@react-pdf/renderer`.
-- No environment variables or external accounts are required to run the demo.
+- Supabase environment variables are required for production-backed features.
 
-Production integrations such as Stripe, Resend, Circle, Attio, Klaviyo, and a
-database are represented in the user experience but are not connected yet.
+Supabase Auth, client helpers, protected routes, session refresh, and Stripe
+test-mode checkout are connected. Circle, Attio, and Klaviyo are represented in
+the user experience but are not connected yet. Authentication emails currently
+use Supabase's email delivery until custom SMTP or Resend is configured.
 
 ## Tech Stack
 
@@ -33,6 +39,8 @@ database are represented in the user experience but are not connected yet.
 - shadcn-style UI components built with Radix primitives
 - Lucide icons
 - `@react-pdf/renderer`
+- Supabase JavaScript and SSR clients
+- Stripe Node SDK and hosted Checkout
 
 ## Getting Started
 
@@ -45,6 +53,13 @@ database are represented in the user experience but are not connected yet.
 
 ```bash
 npm install
+```
+
+Create `.env.local` from `.env.example` and add the Supabase and Stripe
+credentials:
+
+```bash
+cp .env.example .env.local
 ```
 
 ### Development
@@ -92,7 +107,7 @@ npm run build
 | `/` | Marketing landing page and pricing |
 | `/signup` | Membership and billing-cycle selection |
 | `/signup/account` | Organization and account details |
-| `/signup/payment` | Demo checkout |
+| `/signup/payment` | Stripe-hosted membership checkout |
 | `/verify-email` | Email verification flow |
 | `/login` | Member login |
 | `/reset-password` | Password reset flow |
@@ -131,13 +146,74 @@ components/
   ui/                   Shared shadcn-style primitives
 hooks/                  Registration, session, and survey state
 lib/
-  auth.ts               Mock authentication and automation adapters
+  auth.ts               Browser authentication and checkout requests
+  stripe/               Stripe configuration, registration, and synchronization
   db.ts                 Mock data-access layer
   mock-data.ts          Demo organization and product data
   pdf-generator.tsx     Branded PDF document generation
   plans.ts              Shared membership plan definitions
   types.ts              Domain types
+utils/
+  supabase/
+    admin.ts            Server-only service-role and public clients
+    client.ts           Browser Supabase client
+    server.ts           Cookie-backed server Supabase client
+    middleware.ts       Session refresh helper
+middleware.ts           Applies session refresh to application requests
+supabase/
+  config.toml           Local Supabase configuration
+  migrations/           Ordered production database migrations
 public/                 Static brand assets
+```
+
+## Database Migrations
+
+The initial production schema contains 48 RLS-enabled tables grouped into seven
+ordered migrations:
+
+1. Identity, organizations, memberships, billing, seats, and invitations
+2. Resource access, branded templates, generated documents, and surveys
+3. Webinars, events, registrations, recordings, and Circle provisioning
+4. Sponsors, contracts, Olea Gives contributions, grants, reviews, and awards
+5. Notifications, integrations, audit logs, and Harvest consulting operations
+6. Storage policies and reference data for plans, categories, and packages
+7. Dynamic template field types, schema validation, snapshots, and export audit
+   history
+
+### Dynamic Templates
+
+Template ownership and access remain relational, while each template's form
+definition and each organization's answers use JSONB:
+
+- `template_definitions.field_schema` describes sections, fields, repeatable
+  groups, validation settings, and the PDF renderer.
+- `template_instances.form_data` stores answers keyed by field ID.
+- Every instance snapshots the exact schema version and organization branding
+  used when it was created, so later template or brand edits do not rewrite
+  historical documents.
+- Supported inputs are managed in `template_field_types`. The initial registry
+  includes text, textarea, rich text, number, currency, rating, date, time,
+  datetime, checkbox, select, multi-select, repeatable groups, signature,
+  email, URL, file, heading, and paragraph fields.
+- `template_exports` records each generated PDF or DOCX, and
+  `template_export_downloads` records every download separately.
+
+SQL smoke coverage for structurally different template definitions lives in
+`supabase/tests/template_engine.sql`.
+
+Run the schema locally with Docker:
+
+```bash
+npx supabase start
+npx supabase db reset --local --no-seed
+npx supabase db lint --local --schema public,private
+npx supabase db advisors --local --type all --level warn
+```
+
+Create future migrations with the CLI so filenames remain correctly ordered:
+
+```bash
+npx supabase migration new descriptive_change_name
 ```
 
 ## Architecture Notes
@@ -153,6 +229,34 @@ public/                 Static brand assets
   `components/LogoUpload.tsx` and `hooks/use-logo-upload.ts`.
 - Data access is isolated behind `lib/db.ts` so mock functions can later be
   replaced by server-side database calls.
+- Supabase clients are separated by runtime under `utils/supabase`; never import
+  the browser client into Server Components.
+
+## Stripe Checkout
+
+Stripe Checkout uses eight recurring CAD prices: monthly and annual prices for
+Seedling, Roots, Canopy, and Harvest. Price IDs are configured through the
+`STRIPE_PRICE_*` environment variables rather than accepted from the browser.
+
+The signup checkout request:
+
+1. Creates the email/password user through Supabase Auth.
+2. Prepares the organization, owner membership, brand profile, and incomplete
+   subscription with the server-only service-role client.
+3. Redirects the browser to Stripe-hosted Checkout.
+4. Returns to `/verify-email?payment=success` after payment.
+
+Configure a Stripe test webhook endpoint at:
+
+```text
+https://YOUR_DOMAIN/api/stripe/webhook
+```
+
+Subscribe it to Checkout Session, Customer Subscription, and Invoice events,
+then store its signing secret as `STRIPE_WEBHOOK_SECRET`. The webhook verifies
+the raw request signature, records each Stripe event once in `webhook_events`,
+and synchronizes subscription status, period dates, customer identifiers, and
+subscription items.
 
 ## Membership Plans
 
@@ -163,22 +267,21 @@ All prices are in CAD. Annual billing charges for 10 months and provides 12.
 | Seedling | $44 | $440 | 1 |
 | Roots | $99 | $990 | 2 |
 | Canopy | $225 | $2,250 | 3 |
-| Harvest | $1,150 | $11,500 | VIP service, limited to 8 clients |
+| Harvest | $1,350 | $13,500 | 3 |
 
 Every membership tier includes access to the Olea Connects community. Resource
 depth, learning access, and hands-on support vary by plan.
 
 ## Moving to Production
 
-The mock boundaries are intentionally separated so they can be replaced without
-rewriting the UI:
+The remaining mock boundaries are intentionally separated so they can be
+replaced without rewriting the UI:
 
-1. Replace `lib/auth.ts` with real authentication, Stripe checkout, and email
-   verification services.
-2. Replace `lib/db.ts` and `lib/mock-data.ts` with a persistent database and
-   authenticated server-side queries.
-3. Store uploaded logos in object storage instead of `localStorage`.
-4. Connect new subscriptions to Attio, Klaviyo, Circle, and other automations.
+1. Replace `lib/db.ts` and `lib/mock-data.ts` with authenticated server-side
+   queries against the existing Supabase schema.
+2. Store uploaded logos in object storage instead of `localStorage`.
+3. Connect new subscriptions to Attio, Klaviyo, Circle, and other automations.
+4. Configure production SMTP or Resend for branded authentication emails.
 5. Add authorization and tier checks on the server.
 6. Add automated unit, integration, accessibility, and end-to-end tests.
 
