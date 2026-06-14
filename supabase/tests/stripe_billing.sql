@@ -1,74 +1,63 @@
 begin;
 
-do $$
-declare
-  claimed boolean;
-  attempt_count integer;
-begin
-  select public.claim_stripe_webhook(
+select plan(5);
+
+select ok(
+  public.claim_stripe_webhook(
     'evt_billing_test',
     'customer.subscription.updated',
     '{"id":"evt_billing_test"}'::jsonb
-  )
-  into claimed;
+  ),
+  'the first webhook claim succeeds'
+);
 
-  if claimed is not true then
-    raise exception 'The first webhook claim must succeed';
-  end if;
-
-  select public.claim_stripe_webhook(
+select ok(
+  not public.claim_stripe_webhook(
     'evt_billing_test',
     'customer.subscription.updated',
     '{"id":"evt_billing_test"}'::jsonb
-  )
-  into claimed;
+  ),
+  'a concurrent duplicate webhook claim is rejected'
+);
 
-  if claimed is not false then
-    raise exception 'A concurrent duplicate webhook claim must be rejected';
-  end if;
+update public.webhook_events
+set processing_started_at = now() - interval '6 minutes'
+where provider = 'stripe'
+  and provider_event_id = 'evt_billing_test';
 
-  update public.webhook_events
-  set processing_started_at = now() - interval '6 minutes'
-  where provider = 'stripe'
-    and provider_event_id = 'evt_billing_test';
-
-  select public.claim_stripe_webhook(
+select ok(
+  public.claim_stripe_webhook(
     'evt_billing_test',
     'customer.subscription.updated',
     '{"id":"evt_billing_test","retry":true}'::jsonb
-  )
-  into claimed;
+  ),
+  'a stale unprocessed webhook can be reclaimed'
+);
 
-  if claimed is not true then
-    raise exception 'A stale unprocessed webhook must be reclaimable';
-  end if;
+select is(
+  (
+    select attempts
+    from public.webhook_events
+    where provider = 'stripe'
+      and provider_event_id = 'evt_billing_test'
+  ),
+  2,
+  'reclaiming records a second processing attempt'
+);
 
-  select attempts
-  into attempt_count
-  from public.webhook_events
-  where provider = 'stripe'
-    and provider_event_id = 'evt_billing_test';
+update public.webhook_events
+set processed_at = now(), processing_started_at = null
+where provider = 'stripe'
+  and provider_event_id = 'evt_billing_test';
 
-  if attempt_count <> 2 then
-    raise exception 'Expected two webhook attempts, got %', attempt_count;
-  end if;
-
-  update public.webhook_events
-  set processed_at = now(), processing_started_at = null
-  where provider = 'stripe'
-    and provider_event_id = 'evt_billing_test';
-
-  select public.claim_stripe_webhook(
+select ok(
+  not public.claim_stripe_webhook(
     'evt_billing_test',
     'customer.subscription.updated',
     '{"id":"evt_billing_test"}'::jsonb
-  )
-  into claimed;
+  ),
+  'a processed webhook is never reclaimed'
+);
 
-  if claimed is not false then
-    raise exception 'A processed webhook must never be reclaimed';
-  end if;
-end;
-$$;
-
+select * from finish();
 rollback;

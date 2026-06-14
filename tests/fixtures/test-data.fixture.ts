@@ -33,7 +33,17 @@ export class TestDataManager {
   }
 
   async createOrganizationOwner(
-    options: { activeSubscription?: boolean } = {},
+    options: {
+      activeSubscription?: boolean;
+      subscriptionStatus?:
+        | "incomplete"
+        | "trialing"
+        | "active"
+        | "past_due"
+        | "paused"
+        | "canceled"
+        | "unpaid";
+    } = {},
   ): Promise<CreatedOrganizationOwner> {
     const identity = createTestIdentity(this.testInfo);
     const { data: authData, error: authError } =
@@ -138,7 +148,7 @@ export class TestDataManager {
     });
 
     let subscriptionId: string | null = null;
-    if (options.activeSubscription) {
+    if (options.activeSubscription || options.subscriptionStatus) {
       const { data: subscription, error: subscriptionError } =
         await this.supabase
           .from("subscriptions")
@@ -147,7 +157,7 @@ export class TestDataManager {
             plan_id: "roots",
             provider: "manual",
             billing_interval: "month",
-            status: "active",
+            status: options.subscriptionStatus ?? "active",
             current_period_start: new Date().toISOString(),
             current_period_end: new Date(
               Date.now() + 30 * 24 * 60 * 60 * 1000,

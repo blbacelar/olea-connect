@@ -20,7 +20,7 @@ function toPlaywrightSameSite(value: CookieOptions["sameSite"]) {
   return "Lax" as const;
 }
 
-async function createAuthenticatedStorageState(
+export async function createAuthenticatedStorageState(
   email: string,
   password: string,
   baseURL: string,

@@ -33,6 +33,7 @@ jobs:
       - run: npm ci
       - run: npm run lint
       - run: npm run typecheck
+      - run: npm run test:unit
       - run: npm run build
 
   database:
@@ -51,6 +52,7 @@ jobs:
           bash scripts/with-local-supabase.sh bash -c '
             HOME="$PWD/.supabase-home" npx supabase db reset &&
             HOME="$PWD/.supabase-home" npx supabase db lint &&
+            npm run test:db &&
             npm run test:e2e:data
           '
       - uses: actions/upload-artifact@v7
