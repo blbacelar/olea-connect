@@ -25,10 +25,10 @@ jobs:
       NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: ci-placeholder
       SUPABASE_SERVICE_ROLE_KEY: ci-placeholder
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@v6
+      - uses: actions/setup-node@v6
         with:
-          node-version: 20
+          node-version: 22
           cache: npm
       - run: npm ci
       - run: npm run lint
@@ -40,10 +40,10 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 20
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@v6
+      - uses: actions/setup-node@v6
         with:
-          node-version: 20
+          node-version: 22
           cache: npm
       - run: npm ci
       - name: Validate migrations from a clean database
@@ -53,7 +53,7 @@ jobs:
             HOME="$PWD/.supabase-home" npx supabase db lint &&
             npm run test:e2e:data
           '
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         if: failure()
         with:
           name: database-test-report
@@ -67,16 +67,16 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 20
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@v6
+      - uses: actions/setup-node@v6
         with:
-          node-version: 20
+          node-version: 22
           cache: npm
       - run: npm ci
       - run: npx playwright install --with-deps chromium
       - name: Run public and authenticated smoke tests
         run: bash scripts/with-local-supabase.sh npm run test:e2e:pr
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         if: failure()
         with:
           name: browser-smoke-report
