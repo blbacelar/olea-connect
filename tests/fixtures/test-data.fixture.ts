@@ -21,6 +21,7 @@ export type CreatedOrganizationOwner = {
 
 export class TestDataManager {
   private readonly cleanupTasks: CleanupTask[] = [];
+  private identitySequence = 0;
   private purged = false;
 
   constructor(
@@ -46,7 +47,10 @@ export class TestDataManager {
         | "unpaid";
     } = {},
   ): Promise<CreatedOrganizationOwner> {
-    const identity = createTestIdentity(this.testInfo);
+    const identity = createTestIdentity(
+      this.testInfo,
+      ++this.identitySequence,
+    );
     const { data: authData, error: authError } =
       await this.supabase.auth.admin.createUser({
         email: identity.email,

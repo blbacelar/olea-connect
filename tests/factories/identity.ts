@@ -8,12 +8,12 @@ function compact(value: string) {
     .slice(0, 32);
 }
 
-export function createTestIdentity(testInfo: TestInfo) {
+export function createTestIdentity(testInfo: TestInfo, sequence = 0) {
   const runId =
     process.env.GITHUB_RUN_ID ??
     `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`;
   const testId = compact(testInfo.title) || "test";
-  const marker = `e2e-${runId}-w${testInfo.parallelIndex}-${testId}`;
+  const marker = `e2e-${runId}-w${testInfo.parallelIndex}-r${testInfo.retry}-n${sequence}-${testId}`;
 
   return {
     marker,
