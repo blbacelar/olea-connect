@@ -91,6 +91,8 @@ npm run typecheck  # Run TypeScript without emitting files
 npm run test:e2e:smoke # Run the Chromium PR smoke suite
 npm run test:e2e      # Run the cross-browser regression suite
 npm run test:e2e:a11y # Run public accessibility checks
+npm run test:e2e:data # Verify isolated Supabase create/purge lifecycle
+npm run test:e2e:data:local # Start/use local Supabase and run isolation test
 ```
 
 Before considering a change complete, run:
@@ -117,6 +119,28 @@ Chromium smoke tests run on pull requests and pushes to `main`. A scheduled
 workflow runs the full Chromium, Firefox, WebKit, and mobile regression suite.
 GitHub Actions requires `NEXT_PUBLIC_SUPABASE_URL` and
 `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` repository secrets.
+
+### Test Data Isolation
+
+Mutating tests must create their own users and organizations and purge them by
+exact ID in fixture teardown. The test-data manager refuses to run unless a
+dedicated environment is explicitly enabled:
+
+```bash
+PLAYWRIGHT_TEST_DATA_ENABLED=true
+PLAYWRIGHT_TEST_ENV=local
+TEST_SUPABASE_URL=http://127.0.0.1:54321
+TEST_SUPABASE_SERVICE_ROLE_KEY=...
+npm run test:e2e:data
+```
+
+For the standard local path, run `npm run test:e2e:data:local`; it discovers the
+local Supabase credentials without printing them and starts Supabase when
+needed. CI runs the same command in a dedicated job.
+
+Never point `TEST_SUPABASE_*` variables at production. Cleanup runs in reverse
+dependency order, verifies deletion, and attempts every cleanup task even when
+one fails.
 
 ## Main Routes
 

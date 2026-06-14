@@ -1,21 +1,23 @@
 import { expect, test } from "@playwright/test";
 
+import { createTestIdentity } from "../factories/identity";
 import { SignupPage } from "../pages/signup.page";
 
 test.describe("@smoke @critical membership signup", () => {
   test("keeps payment disabled until valid account details are complete", async ({
     page,
-  }) => {
+  }, testInfo) => {
     const signup = new SignupPage(page);
+    const identity = createTestIdentity(testInfo);
     await signup.openAccount("seedling", "annual");
 
     await expect(signup.continueToPayment).toBeDisabled();
 
     await signup.completeAccountDetails({
-      organization: "Olea QA Foundation",
-      fullName: "QA Owner",
-      email: "qa.owner@example.com",
-      password: "StrongPass123!",
+      organization: identity.organizationName,
+      fullName: identity.fullName,
+      email: identity.email,
+      password: identity.password,
     });
 
     await expect(signup.continueToPayment).toBeEnabled();

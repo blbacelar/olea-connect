@@ -26,7 +26,8 @@ export default defineConfig({
     video: "retain-on-failure",
   },
   webServer:
-    baseURL === localBaseUrl
+    baseURL === localBaseUrl &&
+    process.env.PLAYWRIGHT_SKIP_WEBSERVER !== "true"
       ? {
           command: "npm run dev -- -p 3011",
           url: localBaseUrl,
