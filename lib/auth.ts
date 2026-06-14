@@ -19,7 +19,7 @@ export async function signUpWithEmail(registration: RegistrationState) {
     password: registration.password,
     options: {
       emailRedirectTo: getRedirectUrl(
-        "/auth/callback?next=/onboarding/brand-setup",
+        "/auth/callback",
       ),
       data: {
         full_name: registration.fullName.trim(),
@@ -77,7 +77,7 @@ export async function resendVerificationEmail(email: string) {
     email: email.trim().toLowerCase(),
     options: {
       emailRedirectTo: getRedirectUrl(
-        "/auth/callback?next=/onboarding/brand-setup",
+        "/auth/callback",
       ),
     },
   });

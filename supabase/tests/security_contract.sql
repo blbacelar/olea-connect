@@ -58,7 +58,8 @@ values
   ('template_field_types', 'catalog'),
   ('template_instances', 'tenant'),
   ('user_integrations', 'self'),
-  ('webhook_events', 'service');
+  ('webhook_events', 'service'),
+  ('workspace_provisioning_requests', 'service');
 
 select is_empty(
   $test$
