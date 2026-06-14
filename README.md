@@ -89,6 +89,7 @@ npm run start      # Run the production server
 npm run lint       # Run Next.js ESLint checks
 npm run typecheck  # Run TypeScript without emitting files
 npm run test:e2e:smoke # Run the Chromium PR smoke suite
+npm run test:e2e:pr # Run all PR-gating Chromium journeys
 npm run test:e2e      # Run the cross-browser regression suite
 npm run test:e2e:a11y # Run public accessibility checks
 npm run test:e2e:data # Verify isolated Supabase create/purge lifecycle
@@ -118,8 +119,23 @@ Playwright coverage starts with the highest-risk public journeys:
 
 Chromium smoke tests run on pull requests and pushes to `main`. A scheduled
 workflow runs the full Chromium, Firefox, WebKit, and mobile regression suite.
-GitHub Actions requires `NEXT_PUBLIC_SUPABASE_URL` and
-`NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` repository secrets.
+### CI/CD
+
+Every pull request targeting `main` runs the `CI` workflow:
+
+- `Quality and Build`: lint, TypeScript, and production build
+- `Database and Isolation`: clean migration reset, database lint, and data cleanup
+- `Browser Smoke`: public journeys and API-authenticated protected routes
+- `PR Gate`: one stable final check that passes only when all jobs succeed
+
+The workflow uses an isolated local Supabase instance and does not mutate
+hosted development or production data. Superseded runs are cancelled when new
+commits are pushed to the same pull request. A separate nightly workflow runs
+the full Playwright cross-browser suite.
+
+Configure the `main` branch to require the `PR Gate` status check and at least
+one approving review before merging. GitHub only exposes branch protection for
+private repositories on supported paid plans.
 
 ### Test Data Isolation
 

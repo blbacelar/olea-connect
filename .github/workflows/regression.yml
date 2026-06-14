@@ -1,0 +1,37 @@
+name: Nightly Regression
+
+on:
+  schedule:
+    - cron: "30 9 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: nightly-regression
+  cancel-in-progress: true
+
+jobs:
+  regression:
+    name: Cross-browser Regression
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+      - run: npm ci
+      - run: npx playwright install --with-deps
+      - name: Run regression against local Supabase
+        run: bash scripts/with-local-supabase.sh npm run test:e2e
+      - uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: nightly-regression-report
+          path: |
+            playwright-report
+            test-results
+          retention-days: 14
