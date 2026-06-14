@@ -88,12 +88,14 @@ npm run build      # Create an optimized production build
 npm run start      # Run the production server
 npm run lint       # Run Next.js ESLint checks
 npm run typecheck  # Run TypeScript without emitting files
+npm run test:unit  # Run domain and shared utility tests
 npm run test:e2e:smoke # Run the Chromium PR smoke suite
 npm run test:e2e:pr # Run all PR-gating Chromium journeys
 npm run test:e2e      # Run the cross-browser regression suite
 npm run test:e2e:a11y # Run public accessibility checks
 npm run test:e2e:data # Verify isolated Supabase create/purge lifecycle
 npm run test:e2e:data:local # Start/use local Supabase and run isolation test
+npm run test:db:local # Run pgTAP security and database contract tests
 npm run test:e2e:authenticated:local # Run protected routes with API auth
 ```
 

@@ -8,12 +8,15 @@
     "start": "next start",
     "lint": "next lint",
     "typecheck": "tsc --noEmit",
+    "test:unit": "vitest run",
     "test:e2e": "playwright test",
     "test:e2e:smoke": "playwright test --project=chromium --grep @smoke",
     "test:e2e:pr": "playwright test tests/e2e --project=chromium",
     "test:e2e:a11y": "playwright test tests/accessibility --project=chromium",
     "test:e2e:data": "PLAYWRIGHT_SKIP_WEBSERVER=true playwright test tests/integration/test-data-isolation.spec.ts --project=chromium",
     "test:e2e:data:local": "bash scripts/with-local-supabase.sh npm run test:e2e:data",
+    "test:db": "HOME=\"$PWD/.supabase-home\" supabase test db supabase/tests --local",
+    "test:db:local": "bash scripts/with-local-supabase.sh npm run test:db",
     "test:e2e:authenticated": "playwright test tests/e2e/authenticated-member.spec.ts --project=chromium",
     "test:e2e:authenticated:local": "bash scripts/with-local-supabase.sh npm run test:e2e:authenticated",
     "test:e2e:ui": "playwright test --ui",
@@ -48,6 +51,7 @@
     "postcss": "^8.4.49",
     "supabase": "^2.106.0",
     "tailwindcss": "^3.4.17",
-    "typescript": "^5.7.2"
+    "typescript": "^5.7.2",
+    "vitest": "^4.1.8"
   }
 }

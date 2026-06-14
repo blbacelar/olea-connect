@@ -24,9 +24,14 @@ jobs:
           node-version: 22
           cache: npm
       - run: npm ci
+      - run: npm run test:unit
       - run: npx playwright install --with-deps
       - name: Run regression against local Supabase
-        run: bash scripts/with-local-supabase.sh npm run test:e2e
+        run: |
+          bash scripts/with-local-supabase.sh bash -c '
+            npm run test:db &&
+            npm run test:e2e
+          '
       - uses: actions/upload-artifact@v7
         if: failure()
         with:
