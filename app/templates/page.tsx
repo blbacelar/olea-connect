@@ -1,4 +1,4 @@
-import { getTemplates } from "@/lib/db";
+import { getTemplates } from "@/lib/data/templates";
 
 import { TemplateLibrary } from "./template-library";
 

@@ -4,12 +4,12 @@ import { AlertTriangle } from "lucide-react";
 import Link from "next/link";
 
 import { Button } from "@/components/ui/button";
-import { useRegistration } from "@/hooks/use-registration";
+import { useSession } from "@/hooks/use-session";
 
 export function BrandIncompleteBanner() {
-  const { registration } = useRegistration();
+  const session = useSession();
 
-  if (!registration.email || registration.brandComplete) return null;
+  if (!session || session.organization.brandComplete) return null;
 
   return (
     <div className="mb-6 flex flex-wrap items-center justify-between gap-3 rounded-xl border border-amber-200 bg-amber-50 px-5 py-4">

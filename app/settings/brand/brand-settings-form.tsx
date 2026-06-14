@@ -1,6 +1,7 @@
 "use client";
 
 import { Check } from "lucide-react";
+import { useRouter } from "next/navigation";
 import { useState, useTransition } from "react";
 
 import { BrandPreview } from "@/components/BrandPreview";
@@ -9,14 +10,15 @@ import { PageHeader } from "@/components/PageHeader";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { saveBrandProfile } from "@/lib/db";
 import type { BrandProfile } from "@/lib/types";
 
+import { saveBrandProfile } from "./actions";
 export function BrandSettingsForm({
   initialBrand,
 }: {
   initialBrand: BrandProfile;
 }) {
+  const router = useRouter();
   const [brand, setBrand] = useState(initialBrand);
   const [saved, setSaved] = useState(false);
   const [isPending, startTransition] = useTransition();
@@ -30,6 +32,7 @@ export function BrandSettingsForm({
     startTransition(async () => {
       setBrand(await saveBrandProfile(brand));
       setSaved(true);
+      router.refresh();
     });
   };
 

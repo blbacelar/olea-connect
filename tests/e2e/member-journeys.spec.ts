@@ -1,11 +1,29 @@
-import { expect, test } from "../fixtures/authenticated.fixture";
+import {
+  createAuthenticatedStorageState,
+  expect,
+  test,
+} from "../fixtures/authenticated.fixture";
 
 const registrationStorageKey = "olea-registration-demo";
 
 test.describe("@critical @member core member journeys", () => {
   test("completes brand onboarding and Seedling template selection", async ({
+    baseURL,
     page,
+    testData,
   }) => {
+    if (!baseURL) throw new Error("Playwright baseURL is required.");
+    const seedlingMember = await testData.createOrganizationOwner({
+      activeSubscription: true,
+      planId: "seedling",
+    });
+    const seedlingStorage = await createAuthenticatedStorageState(
+      seedlingMember.email,
+      seedlingMember.password,
+      baseURL,
+    );
+    await page.context().addCookies(seedlingStorage.cookies);
+
     await page.addInitScript(
       ({ key }) => {
         window.localStorage.setItem(

@@ -35,6 +35,7 @@ export class TestDataManager {
   async createOrganizationOwner(
     options: {
       activeSubscription?: boolean;
+      planId?: "seedling" | "roots" | "canopy" | "harvest";
       subscriptionStatus?:
         | "incomplete"
         | "trialing"
@@ -154,7 +155,7 @@ export class TestDataManager {
           .from("subscriptions")
           .insert({
             organization_id: organizationId,
-            plan_id: "roots",
+            plan_id: options.planId ?? "roots",
             provider: "manual",
             billing_interval: "month",
             status: options.subscriptionStatus ?? "active",
@@ -230,7 +231,11 @@ export class TestDataManager {
     }
 
     if (errors.length) {
-      throw new AggregateError(errors, "Test data cleanup failed.");
+      throw new Error(
+        `Test data cleanup failed:\n${errors
+          .map((error) => `- ${error.message}`)
+          .join("\n")}`,
+      );
     }
 
     this.purged = true;

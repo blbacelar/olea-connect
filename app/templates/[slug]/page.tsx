@@ -4,7 +4,7 @@ import Link from "next/link";
 import { TierBadge } from "@/components/TierBadge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { getTemplateBySlug } from "@/lib/db";
+import { getTemplateBySlug } from "@/lib/data/templates";
 
 function formatSlug(slug: string) {
   return slug

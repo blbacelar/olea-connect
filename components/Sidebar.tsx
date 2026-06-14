@@ -11,7 +11,8 @@ import { cn } from "@/lib/utils";
 
 export function Sidebar() {
   const pathname = usePathname();
-  const { organization } = useSession();
+  const session = useSession();
+  const organization = session?.organization;
 
   return (
     <aside className="fixed inset-y-0 left-0 z-40 hidden w-60 flex-col border-r bg-white lg:flex">
@@ -21,10 +22,10 @@ export function Sidebar() {
 
       <div className="px-4 pb-2 pt-4">
         <p className="truncate text-[14.5px] font-semibold text-slate-800">
-          {organization.name}
+          {organization?.name ?? "Olea Connects"}
         </p>
         <span className="mt-1.5 inline-flex items-center gap-1 rounded-full bg-green-100 px-2.5 py-1 text-xs font-semibold capitalize text-green-800">
-          <span aria-hidden="true">🌿</span> {organization.tier}
+          <span aria-hidden="true">🌿</span> {organization?.tier ?? "member"}
         </span>
       </div>
 

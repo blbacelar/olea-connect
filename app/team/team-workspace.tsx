@@ -1,37 +1,48 @@
 "use client";
 
 import { Check, Plus, Send, UserPlus } from "lucide-react";
-import { useState } from "react";
+import { useRouter } from "next/navigation";
+import { useState, useTransition } from "react";
 
 import { DemoActionButton } from "@/components/DemoActionButton";
 import { PageHeader } from "@/components/PageHeader";
 import { SectionHeading } from "@/components/SectionHeading";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import type { Member, Organization } from "@/lib/types";
+import type { TeamData } from "@/lib/types";
+
+import { cancelTeamInvitation, inviteTeamMember } from "./actions";
 
 export function TeamWorkspace({
-  member,
-  organization,
+  team,
 }: {
-  member: Member;
-  organization: Organization;
+  team: TeamData;
 }) {
+  const router = useRouter();
+  const { currentMember: member, organization } = team;
   const [email, setEmail] = useState("");
-  const [pendingInvites, setPendingInvites] = useState([
-    { email: "finance@jpcentre.ca", when: "Invited June 10" },
-  ]);
   const [sent, setSent] = useState(false);
+  const [error, setError] = useState("");
+  const [isPending, startTransition] = useTransition();
 
   const sendInvite = () => {
     const normalized = email.trim();
     if (!normalized) return;
-    setPendingInvites((current) => [
-      ...current,
-      { email: normalized, when: "Invited just now" },
-    ]);
-    setEmail("");
-    setSent(true);
+    startTransition(async () => {
+      try {
+        await inviteTeamMember(normalized);
+        setEmail("");
+        setSent(true);
+        setError("");
+        router.refresh();
+      } catch (inviteError) {
+        setError(
+          inviteError instanceof Error
+            ? inviteError.message
+            : "Unable to send the invitation.",
+        );
+      }
+    });
   };
 
   return (
@@ -98,16 +109,24 @@ export function TeamWorkspace({
           placeholder="name@organization.ca"
           aria-label="Team member email"
         />
-        <Button onClick={sendInvite} disabled={!email.trim()}>
+        <Button
+          onClick={sendInvite}
+          disabled={!email.trim() || isPending || !team.canManage}
+        >
           {sent ? <Check className="size-4" /> : <Send className="size-4" />}
-          {sent ? "Invite sent" : "Send invite"}
+          {isPending ? "Sending..." : sent ? "Invite sent" : "Send invite"}
         </Button>
       </div>
+      {error ? (
+        <p role="alert" className="-mt-4 mb-7 text-sm font-medium text-red-600">
+          {error}
+        </p>
+      ) : null}
 
       <SectionHeading>Pending invites</SectionHeading>
       <div className="overflow-hidden rounded-xl border bg-white shadow-soft">
-        {pendingInvites.length > 0 ? (
-          pendingInvites.map((invite) => (
+        {team.invitations.length > 0 ? (
+          team.invitations.map((invite) => (
             <div
               key={invite.email}
               className="flex flex-wrap items-center justify-between gap-4 border-b border-slate-100 px-[22px] py-4 last:border-0"
@@ -115,7 +134,14 @@ export function TeamWorkspace({
               <div>
                 <p className="text-[14.5px] font-medium">{invite.email}</p>
                 <p className="mt-0.5 text-[12.5px] text-slate-400">
-                  {invite.when} · expires in 7 days
+                  Invited{" "}
+                  {new Intl.DateTimeFormat("en-CA", {
+                    dateStyle: "medium",
+                  }).format(new Date(invite.createdAt))}{" "}
+                  · expires{" "}
+                  {new Intl.DateTimeFormat("en-CA", {
+                    dateStyle: "medium",
+                  }).format(new Date(invite.expiresAt))}
                 </p>
               </div>
               <div className="flex gap-2">
@@ -130,10 +156,21 @@ export function TeamWorkspace({
                   variant="outline"
                   size="sm"
                   className="border-red-200 text-red-600 hover:bg-red-50"
+                  disabled={isPending}
                   onClick={() =>
-                    setPendingInvites((current) =>
-                      current.filter((item) => item.email !== invite.email),
-                    )
+                    startTransition(async () => {
+                      try {
+                        await cancelTeamInvitation(invite.id);
+                        setError("");
+                        router.refresh();
+                      } catch (cancelError) {
+                        setError(
+                          cancelError instanceof Error
+                            ? cancelError.message
+                            : "Unable to cancel the invitation.",
+                        );
+                      }
+                    })
                   }
                 >
                   Cancel

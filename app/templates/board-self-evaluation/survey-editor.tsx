@@ -12,10 +12,10 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { useSurveySession } from "@/hooks/use-survey-session";
-import { saveSession } from "@/lib/db";
 import { openEndedQuestions, surveySections } from "@/lib/survey-content";
 import type { Organization, TemplateSession } from "@/lib/types";
 
+import { saveTemplateSession } from "./actions";
 const PdfPanel = dynamic(() => import("@/components/PdfPanel"), {
   ssr: false,
   loading: () => (
@@ -42,12 +42,22 @@ export function BoardEvaluationEditor({
   } = useSurveySession(initialSession);
   const [activeSection, setActiveSection] = useState(0);
   const [showPdf, setShowPdf] = useState(false);
+  const [saveError, setSaveError] = useState("");
   const [isPending, startTransition] = useTransition();
 
   const generatePdf = () => {
     startTransition(async () => {
-      await saveSession(session);
-      setShowPdf(true);
+      try {
+        await saveTemplateSession(session);
+        setSaveError("");
+        setShowPdf(true);
+      } catch (error) {
+        setSaveError(
+          error instanceof Error
+            ? error.message
+            : "Unable to save this template.",
+        );
+      }
     });
   };
 
@@ -229,6 +239,14 @@ export function BoardEvaluationEditor({
           </div>
         </div>
       </div>
+      {saveError ? (
+        <p
+          role="alert"
+          className="mt-5 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm font-medium text-red-700"
+        >
+          {saveError}
+        </p>
+      ) : null}
     </div>
   );
 }

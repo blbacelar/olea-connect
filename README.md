@@ -217,9 +217,8 @@ components/
 hooks/                  Registration, session, and survey state
 lib/
   auth.ts               Browser authentication and checkout requests
+  data/                 Typed, RLS-scoped Supabase repositories
   stripe/               Stripe configuration, registration, and synchronization
-  db.ts                 Mock data-access layer
-  mock-data.ts          Demo organization and product data
   pdf-generator.tsx     Branded PDF document generation
   plans.ts              Shared membership plan definitions
   types.ts              Domain types
@@ -297,8 +296,8 @@ npx supabase migration new descriptive_change_name
   `app/page.tsx` focused on composition.
 - Logo upload behavior is shared between onboarding and Brand Settings through
   `components/LogoUpload.tsx` and `hooks/use-logo-upload.ts`.
-- Data access is isolated behind `lib/db.ts` so mock functions can later be
-  replaced by server-side database calls.
+- Typed Supabase repositories are grouped by domain under `lib/data` and use
+  the authenticated server client so RLS remains the authorization boundary.
 - Supabase clients are separated by runtime under `utils/supabase`; never import
   the browser client into Server Components.
 
@@ -342,18 +341,12 @@ All prices are in CAD. Annual billing charges for 10 months and provides 12.
 Every membership tier includes access to the Olea Connects community. Resource
 depth, learning access, and hands-on support vary by plan.
 
-## Moving to Production
+## Remaining Production Work
 
-The remaining mock boundaries are intentionally separated so they can be
-replaced without rewriting the UI:
-
-1. Replace `lib/db.ts` and `lib/mock-data.ts` with authenticated server-side
-   queries against the existing Supabase schema.
-2. Store uploaded logos in object storage instead of `localStorage`.
-3. Connect new subscriptions to Attio, Klaviyo, Circle, and other automations.
-4. Configure production SMTP or Resend for branded authentication emails.
-5. Add authorization and tier checks on the server.
-6. Add automated unit, integration, accessibility, and end-to-end tests.
+1. Store uploaded logos in Supabase Storage instead of persisting browser data
+   URLs in the brand profile.
+2. Connect new subscriptions to Attio, Klaviyo, Circle, and other automations.
+3. Configure production SMTP or Resend for branded authentication emails.
 
 ## Brand and Accessibility
 
