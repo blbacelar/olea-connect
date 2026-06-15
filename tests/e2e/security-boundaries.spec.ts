@@ -20,4 +20,22 @@ test.describe("@smoke @critical security boundaries", () => {
       error: "Missing Stripe signature.",
     });
   });
+
+  test("rejects unsigned Resend webhook requests", async ({ request }) => {
+    const response = await request.post("/api/email/webhook");
+
+    expect(response.status()).toBe(400);
+    await expect(response.json()).resolves.toEqual({
+      error: "Missing Resend webhook signature.",
+    });
+  });
+
+  test("protects the email outbox processor", async ({ request }) => {
+    const response = await request.get("/api/email/process");
+
+    expect(response.status()).toBe(401);
+    await expect(response.json()).resolves.toEqual({
+      error: "Unauthorized.",
+    });
+  });
 });

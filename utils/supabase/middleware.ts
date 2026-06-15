@@ -40,7 +40,8 @@ export async function updateSession(request: NextRequest) {
     pathname.startsWith("/reset-password") ||
     pathname.startsWith("/update-password") ||
     pathname.startsWith("/auth/") ||
-    pathname.startsWith("/api/stripe/");
+    pathname.startsWith("/api/stripe/") ||
+    pathname.startsWith("/api/email/");
   const billingRecoveryPath = pathname.startsWith("/subscription");
 
   if (!user && !publicPath) {

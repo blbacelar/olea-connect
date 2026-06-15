@@ -27,8 +27,8 @@ production application backed by Supabase.
 
 Supabase Auth, client helpers, protected routes, session refresh, and Stripe
 test-mode checkout are connected. Circle, Attio, and Klaviyo are represented in
-the user experience but are not connected yet. Authentication emails currently
-use Supabase's email delivery until custom SMTP or Resend is configured.
+the user experience but are not connected yet. Authentication and team
+invitation emails use the Resend transactional-email integration.
 
 ## Tech Stack
 
@@ -41,6 +41,7 @@ use Supabase's email delivery until custom SMTP or Resend is configured.
 - `@react-pdf/renderer`
 - Supabase JavaScript and SSR clients
 - Stripe Node SDK and hosted Checkout
+- Resend transactional email and signed delivery webhooks
 
 ## Getting Started
 
@@ -61,6 +62,49 @@ credentials:
 ```bash
 cp .env.example .env.local
 ```
+
+### Transactional Email
+
+Production email is sent from
+`Olea Connects <notifications@olivesocialimpact.com>`. On June 15, 2026,
+Resend reported `olivesocialimpact.com` as verified with passing SPF and DKIM
+records. DNS also publishes a DMARC `p=reject` policy with aggregate reporting.
+
+Required application and Supabase Edge Function secrets:
+
+```bash
+RESEND_API_KEY=...
+RESEND_WEBHOOK_SECRET=...
+EMAIL_FROM="Olea Connects <notifications@olivesocialimpact.com>"
+EMAIL_REPLY_TO=hello@olivesocialimpact.com
+EMAIL_ENVIRONMENT=production
+NEXT_PUBLIC_APP_URL=https://olea-connect.vercel.app
+CRON_SECRET=...
+SEND_EMAIL_HOOK_SECRET=...
+```
+
+For local, preview, and staging environments, use a non-production
+`EMAIL_ENVIRONMENT` and configure `EMAIL_TEST_RECIPIENT`. Every recipient is
+redirected to that safe inbox. Automated tests never call Resend.
+
+Authentication email setup:
+
+1. Deploy `supabase/functions/send-email` with `--no-verify-jwt`.
+2. Set its email variables and a generated `SEND_EMAIL_HOOK_SECRET`.
+3. Enable the Supabase Auth Send Email hook with the same hook secret.
+4. Enable password-change notifications in Supabase Auth.
+5. Set the Supabase Site URL to the production app and allow
+   `http://localhost:3001/**` plus the approved Vercel preview URL pattern.
+
+Application lifecycle emails are queued in `integration_events`. Configure
+Supabase Cron to send an HTTP `GET` request to `/api/email/process` every minute
+with `Authorization: Bearer <CRON_SECRET>`; store the secret in Supabase Vault.
+The worker claims one row transactionally and records the Resend message ID.
+Using Supabase Cron avoids Vercel plan-specific scheduling limits. Configure a
+signed Resend webhook for `/api/email/webhook`, subscribing to delivered,
+delayed, bounced, and complained events. Webhook payloads are recorded in
+`webhook_events`; delivery failures update the matching outbox row for
+operational visibility.
 
 ### Development
 

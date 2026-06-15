@@ -216,6 +216,8 @@ select is(
     from public.integration_events
     where event_type = 'organization.invitation.created'
       and aggregate_type = 'organization_invitation'
+      and payload ->> 'organization_id' =
+        '52000000-0000-0000-0000-000000000001'
   ),
   1,
   'invitation email delivery is queued in the outbox'
