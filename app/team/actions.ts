@@ -1,54 +1,85 @@
 "use server";
 
-import { createHash, randomBytes } from "node:crypto";
+import { randomBytes } from "node:crypto";
 
 import { revalidatePath } from "next/cache";
 
 import { requireMemberContext } from "@/lib/data/member-context";
+import type { OrganizationRole } from "@/lib/types";
 import { createClient } from "@/utils/supabase/server";
 
-export async function inviteTeamMember(email: string) {
-  const { member, organization } = await requireMemberContext();
-  if (!["owner", "admin"].includes(member.membershipRole)) {
-    throw new Error("Only organization owners and admins can invite members.");
+function assertManager(role: OrganizationRole) {
+  if (!["owner", "admin"].includes(role)) {
+    throw new Error("Only organization owners and admins can manage the team.");
   }
+}
 
-  const normalizedEmail = email.trim().toLowerCase();
-  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(normalizedEmail)) {
-    throw new Error("Enter a valid email address.");
-  }
+export async function inviteTeamMember(
+  email: string,
+  role: Exclude<OrganizationRole, "owner"> = "member",
+) {
+  const { member, organization } = await requireMemberContext();
+  assertManager(member.membershipRole);
 
   const supabase = await createClient();
-  const tokenHash = createHash("sha256")
-    .update(randomBytes(32))
-    .digest("hex");
-  const { error } = await supabase.from("organization_invitations").insert({
-    organization_id: organization.id,
-    email: normalizedEmail,
-    role: "member",
-    token_hash: tokenHash,
-    invited_by: member.id,
-    expires_at: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(),
+  const { error } = await supabase.rpc("create_team_invitation", {
+    target_organization_id: organization.id,
+    target_email: email.trim().toLowerCase(),
+    target_role: role,
+    raw_token: randomBytes(32).toString("base64url"),
+    target_expires_at: new Date(
+      Date.now() + 7 * 24 * 60 * 60 * 1000,
+    ).toISOString(),
   });
 
-  if (error) throw error;
+  if (error) throw new Error(error.message);
   revalidatePath("/team");
 }
 
 export async function cancelTeamInvitation(invitationId: string) {
-  const { member, organization } = await requireMemberContext();
-  if (!["owner", "admin"].includes(member.membershipRole)) {
-    throw new Error("Only organization owners and admins can cancel invites.");
-  }
+  const { member } = await requireMemberContext();
+  assertManager(member.membershipRole);
 
   const supabase = await createClient();
-  const { error } = await supabase
-    .from("organization_invitations")
-    .update({ status: "revoked" })
-    .eq("id", invitationId)
-    .eq("organization_id", organization.id)
-    .eq("status", "pending");
+  const { data, error } = await supabase.rpc("revoke_team_invitation", {
+    target_invitation_id: invitationId,
+  });
 
-  if (error) throw error;
+  if (error) throw new Error(error.message);
+  if (!data) throw new Error("This invitation is no longer pending.");
+  revalidatePath("/team");
+}
+
+export async function updateTeamMember(
+  userId: string,
+  values: {
+    role?: OrganizationRole;
+    status?: "active" | "suspended";
+    remove?: boolean;
+  },
+) {
+  const { member, organization } = await requireMemberContext();
+  assertManager(member.membershipRole);
+
+  const supabase = await createClient();
+  const { error } = await supabase.rpc("manage_team_member", {
+    target_organization_id: organization.id,
+    target_user_id: userId,
+    target_role: values.role ?? null,
+    target_status: values.status ?? null,
+    remove_member: values.remove ?? false,
+  });
+
+  if (error) throw new Error(error.message);
+  revalidatePath("/team");
+}
+
+export async function acceptTeamInvitation(token: string) {
+  const supabase = await createClient();
+  const { error } = await supabase.rpc("accept_team_invitation", {
+    raw_token: token,
+  });
+
+  if (error) throw new Error(error.message);
   revalidatePath("/team");
 }

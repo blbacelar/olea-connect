@@ -77,7 +77,7 @@ export async function getOptionalMemberContext(): Promise<Session | null> {
     supabase
       .from("subscriptions")
       .select(
-        "id, plan_id, status, current_period_end, membership_plans(included_seats)",
+        "id, plan_id, status, current_period_end, membership_plans(included_seats), subscription_items(item_type, quantity, active)",
       )
       .eq("organization_id", membership.organization_id)
       .order("created_at", { ascending: false })
@@ -98,6 +98,11 @@ export async function getOptionalMemberContext(): Promise<Session | null> {
   const plan = Array.isArray(subscription?.membership_plans)
     ? subscription.membership_plans[0]
     : subscription?.membership_plans;
+  const purchasedSeats = (subscription?.subscription_items ?? []).reduce(
+    (total, item) =>
+      item.item_type === "seat" && item.active ? total + item.quantity : total,
+    0,
+  );
   const fullName =
     profile?.full_name?.trim() ||
     user.user_metadata.full_name?.trim() ||
@@ -116,7 +121,7 @@ export async function getOptionalMemberContext(): Promise<Session | null> {
     name: organizationRow.name,
     tier: (subscription?.plan_id ?? "seedling") as MembershipTier,
     seatsUsed: memberCount ?? 1,
-    seatLimit: plan?.included_seats ?? 1,
+    seatLimit: (plan?.included_seats ?? 1) + purchasedSeats,
     renewalDate: subscription?.current_period_end ?? "",
     brandComplete: Boolean(brand?.brand_completed_at),
     brand: brandProfile,

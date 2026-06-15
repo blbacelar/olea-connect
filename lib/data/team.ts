@@ -14,6 +14,7 @@ export async function getTeamData(): Promise<TeamData> {
   const [
     { count: activeMemberCount, error: memberError },
     { data: invitations, error: invitationError },
+    { data: directory, error: directoryError },
   ] = await Promise.all([
     supabase
       .from("organization_members")
@@ -28,10 +29,35 @@ export async function getTeamData(): Promise<TeamData> {
           .eq("status", "pending")
           .order("created_at", { ascending: false })
       : Promise.resolve({ data: [], error: null }),
+    canManage
+      ? supabase.rpc("get_team_directory", {
+          target_organization_id: session.organization.id,
+        })
+      : Promise.resolve({ data: [], error: null }),
   ]);
 
   if (memberError) throw memberError;
   if (invitationError) throw invitationError;
+  if (directoryError) throw directoryError;
+
+  const members = (
+    (directory ?? []) as Array<{
+      user_id: string;
+      email: string;
+      full_name: string;
+      role: "owner" | "admin" | "member";
+      status: "invited" | "active" | "suspended";
+      joined_at: string | null;
+    }>
+  ).map((member) => ({
+    id: member.user_id,
+    email: member.email,
+    name: member.full_name,
+    role: member.role,
+    status: member.status,
+    joinedAt: member.joined_at,
+  }));
+  const pendingInvitations = invitations ?? [];
 
   return {
     currentMember: session.member,
@@ -40,7 +66,10 @@ export async function getTeamData(): Promise<TeamData> {
       seatsUsed: activeMemberCount ?? session.organization.seatsUsed,
     },
     activeMemberCount: activeMemberCount ?? 0,
-    invitations: (invitations ?? []).map((invitation) => ({
+    reservedSeatCount:
+      (activeMemberCount ?? 0) + pendingInvitations.length,
+    members,
+    invitations: pendingInvitations.map((invitation) => ({
       id: invitation.id,
       email: invitation.email,
       role: invitation.role,
