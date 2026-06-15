@@ -9,3 +9,9 @@ export function resolveEmailRecipient(
   }
   return testRecipient;
 }
+
+export function hasClaimedEmailEvent<T extends { id: string | null }>(
+  event: T | null,
+): event is T & { id: string } {
+  return Boolean(event?.id);
+}

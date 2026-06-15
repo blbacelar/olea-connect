@@ -1,6 +1,16 @@
 begin;
 
-select plan(5);
+select plan(7);
+
+select ok(
+  has_schema_privilege('service_role', 'private', 'USAGE'),
+  'service role can resolve the private email claim function'
+);
+
+select ok(
+  not has_schema_privilege('anon', 'private', 'USAGE'),
+  'anonymous clients cannot resolve private functions'
+);
 
 update public.integration_events
 set status = 'completed', completed_at = now()
