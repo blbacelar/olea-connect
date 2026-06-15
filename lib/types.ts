@@ -99,10 +99,21 @@ export interface TeamInvitation {
   expiresAt: string;
 }
 
+export interface TeamMember {
+  id: string;
+  email: string;
+  name: string;
+  role: OrganizationRole;
+  status: "invited" | "active" | "suspended";
+  joinedAt: string | null;
+}
+
 export interface TeamData {
   currentMember: Member;
   organization: Organization;
   activeMemberCount: number;
+  reservedSeatCount: number;
+  members: TeamMember[];
   invitations: TeamInvitation[];
   canManage: boolean;
 }

@@ -89,10 +89,9 @@ test.describe("@critical @member core member journeys", () => {
     await page.getByRole("button", { name: "Send invite" }).click();
 
     await expect(page.getByText("new.member@example.com")).toBeVisible();
-    const inviteRow = page
-      .getByText("new.member@example.com")
-      .locator("..")
-      .locator("..");
+    const inviteRow = page.getByRole("group", {
+      name: "Invitation for new.member@example.com",
+    });
     await inviteRow.getByRole("button", { name: "Cancel" }).click();
     await expect(page.getByText("new.member@example.com")).toHaveCount(0);
   });
