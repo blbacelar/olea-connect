@@ -7,15 +7,15 @@ import type {
 } from "@/lib/types";
 
 export const mockOrganization: Organization = {
-  id: "org-jp-centre",
-  name: "JP Centre for Youth",
+  id: "org-willow-creek",
+  name: "Willow Creek Youth Collective",
   tier: "roots",
   seatsUsed: 1,
   seatLimit: 2,
   renewalDate: "2027-06-10",
   brand: {
-    organizationName: "JP Centre for Youth",
-    logoInitials: "JP",
+    organizationName: "Willow Creek Youth Collective",
+    logoInitials: "WC",
     primaryColor: "#4A7C59",
     secondaryColor: "#2D5C3E",
   },
@@ -27,7 +27,7 @@ export const mockMember: Member = {
   name: "Sarah Mitchell",
   firstName: "Sarah",
   role: "Executive Director",
-  email: "sarah@jpcentre.ca",
+  email: "sarah@willowcreekyouth.test",
 };
 
 export const mockSession: Session = {
@@ -92,7 +92,7 @@ export const mockTemplateSession: TemplateSession = {
   answers: {},
   openEndedAnswers: {},
   administrator: "Sarah Mitchell",
-  contact: "sarah@jpcentre.ca",
+  contact: "sarah@willowcreekyouth.test",
   deadline: "2026-06-30",
   updatedAt: "2026-06-10T12:00:00.000Z",
 };

@@ -57,7 +57,7 @@ export function ProductPreview() {
           <div className="min-w-0 bg-slate-50">
             <div className="flex h-12 items-center justify-between border-b bg-white px-4">
               <p className="text-xs font-semibold text-slate-600">
-                JP Centre for Youth
+                Willow Creek Youth Collective
               </p>
               <div className="flex items-center gap-2">
                 <Bell className="size-3.5 text-slate-400" />

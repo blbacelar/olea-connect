@@ -19,7 +19,7 @@ export function TeamWorkspace({
 }) {
   const [email, setEmail] = useState("");
   const [pendingInvites, setPendingInvites] = useState([
-    { email: "finance@jpcentre.ca", when: "Invited June 10" },
+    { email: "finance@willowcreekyouth.test", when: "Invited June 10" },
   ]);
   const [sent, setSent] = useState(false);
 

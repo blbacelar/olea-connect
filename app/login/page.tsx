@@ -14,7 +14,9 @@ import { signIn } from "@/lib/auth";
 export default function LoginPage() {
   const router = useRouter();
   const { registration } = useRegistration();
-  const [email, setEmail] = useState(registration.email || "sarah@jpcentre.ca");
+  const [email, setEmail] = useState(
+    registration.email || "sarah@willowcreekyouth.test",
+  );
   const [password, setPassword] = useState(registration.password || "password123");
   const [error, setError] = useState("");
   const [isPending, startTransition] = useTransition();

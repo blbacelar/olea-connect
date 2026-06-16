@@ -16,7 +16,7 @@ export default function BrandSetupPage() {
   const router = useRouter();
   const { registration, updateRegistration } = useRegistration();
   const [organizationName, setOrganizationName] = useState(
-    registration.organizationName || "JP Centre for Youth",
+    registration.organizationName || "Willow Creek Youth Collective",
   );
   const [primaryColor, setPrimaryColor] = useState("#4A7C59");
   const [secondaryColor, setSecondaryColor] = useState("#2D5C3E");
