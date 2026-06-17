@@ -7,6 +7,7 @@ import {
   getReplyTo,
   getResend,
 } from "@/lib/email/server";
+import { hasClaimedEmailEvent } from "@/lib/email/config";
 import { teamInvitationEmail } from "@/lib/email/templates";
 import { createAdminClient } from "@/utils/supabase/admin";
 
@@ -30,7 +31,9 @@ export async function GET(request: Request) {
     "claim_email_integration_event",
   );
   if (claimError) throw claimError;
-  if (!event) return NextResponse.json({ processed: false });
+  if (!hasClaimedEmailEvent(event)) {
+    return NextResponse.json({ processed: false });
+  }
 
   try {
     if (event.event_type !== "organization.invitation.created") {

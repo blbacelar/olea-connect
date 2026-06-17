@@ -1,6 +1,9 @@
 import { describe, expect, it } from "vitest";
 
-import { resolveEmailRecipient } from "@/lib/email/config";
+import {
+  hasClaimedEmailEvent,
+  resolveEmailRecipient,
+} from "@/lib/email/config";
 import { teamInvitationEmail } from "@/lib/email/templates";
 
 describe("transactional email templates", () => {
@@ -38,5 +41,11 @@ describe("transactional email templates", () => {
     expect(
       resolveEmailRecipient("member@example.com", "preview", "qa@example.com"),
     ).toBe("qa@example.com");
+  });
+
+  it("treats an empty composite queue result as no claimed event", () => {
+    expect(hasClaimedEmailEvent(null)).toBe(false);
+    expect(hasClaimedEmailEvent({ id: null })).toBe(false);
+    expect(hasClaimedEmailEvent({ id: "event-id" })).toBe(true);
   });
 });
