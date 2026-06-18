@@ -1,6 +1,9 @@
 import { Webhook } from "https://esm.sh/standardwebhooks@1.0.0";
 import { Resend } from "npm:resend@6.12.4";
 
+import { appConfirmUrl } from "./confirm-url.ts";
+import { normalizeHookSecret } from "./secret.ts";
+
 type EmailAction =
   | "signup"
   | "invite"
@@ -83,7 +86,10 @@ function layout(input: {
 
 function buildEmail(payload: HookPayload) {
   const { email_data: data } = payload;
-  const url = confirmationUrl(data);
+  const url =
+    data.email_action_type === "recovery"
+      ? appConfirmUrl(data, data.token_hash)
+      : confirmationUrl(data);
   const templates: Record<EmailAction, { subject: string; html: string; text: string }> = {
     signup: {
       subject: "Confirm your Olea Connects email",
@@ -189,9 +195,8 @@ Deno.serve(async (request) => {
   }
 
   try {
-    const hookSecret = (Deno.env.get("SEND_EMAIL_HOOK_SECRET") ?? "").replace(
-      "v1,whsec_",
-      "",
+    const hookSecret = normalizeHookSecret(
+      Deno.env.get("SEND_EMAIL_HOOK_SECRET") ?? "",
     );
     if (!hookSecret) throw new Error("SEND_EMAIL_HOOK_SECRET is not configured.");
 

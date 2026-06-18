@@ -34,13 +34,15 @@ export default function SignupSuccessPage({
         <p className="mt-5 text-sm leading-6 text-slate-500">
           {activationFailed
             ? "Sign in if prompted, then retry. The activation record is preserved so no organization or subscription will be duplicated."
-            : "Sign in to continue. If email confirmation is enabled, confirm your address first using the message from Olea Connects."}
+            : "We sent a confirmation email from Olea Connects. Open that email and confirm your address before signing in."}
         </p>
         {activationFailed ? (
           <ActivationRetryButton />
         ) : (
           <Button asChild className="mt-6 w-full">
-            <Link href="/login?payment=success">Continue to sign in</Link>
+            <Link href="/login?payment=success&verify=email">
+              Continue to sign in
+            </Link>
           </Button>
         )}
       </div>

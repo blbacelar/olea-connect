@@ -24,10 +24,14 @@ export default function LoginPage() {
   useEffect(() => {
     const searchParams = new URLSearchParams(window.location.search);
     setError(searchParams.get("error") || "");
+    const paymentSucceeded = searchParams.get("payment") === "success";
+    const needsEmailVerification = searchParams.get("verify") === "email";
     setMessage(
-      searchParams.get("payment") === "success"
-        ? "Payment received. Sign in to finish setting up your membership."
-        : "",
+      needsEmailVerification
+        ? "Payment received. Check your inbox for a confirmation email from Olea Connects, confirm your address, then sign in."
+        : paymentSucceeded
+          ? "Payment received. Sign in to finish setting up your membership."
+          : "",
     );
     setNextPath(searchParams.get("next") || "");
   }, []);
