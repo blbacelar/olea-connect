@@ -16,7 +16,10 @@ import { getEmbeddedLogo } from "./logo-data";
 
 const styles = StyleSheet.create({
   page: {
-    padding: 42,
+    paddingTop: 110,
+    paddingRight: 42,
+    paddingBottom: 78,
+    paddingLeft: 42,
     fontFamily: "Helvetica",
     color: "#1F2937",
     fontSize: 10,
@@ -29,11 +32,36 @@ const styles = StyleSheet.create({
     right: 0,
     height: 12,
   },
+  header: {
+    position: "absolute",
+    top: 28,
+    left: 42,
+    right: 42,
+    height: 48,
+    flexDirection: "row",
+    alignItems: "center",
+    borderBottomWidth: 1,
+    borderBottomColor: "#E5E7EB",
+    paddingBottom: 10,
+  },
+  headerText: {
+    marginLeft: 10,
+    flexGrow: 1,
+  },
+  headerOrg: {
+    fontSize: 10,
+    fontFamily: "Helvetica-Bold",
+    color: "#1F2937",
+  },
+  headerMeta: {
+    fontSize: 8,
+    color: "#6B7280",
+    marginTop: 2,
+  },
   title: {
-    fontSize: 26,
+    fontSize: 24,
     fontFamily: "Helvetica-Bold",
     lineHeight: 1.2,
-    marginTop: 14,
     marginBottom: 6,
   },
   org: {
@@ -44,13 +72,13 @@ const styles = StyleSheet.create({
     marginBottom: 22,
   },
   logo: {
-    width: 52,
-    height: 52,
-    borderRadius: 26,
+    width: 34,
+    height: 34,
+    borderRadius: 17,
     color: "#FFFFFF",
     alignItems: "center",
     justifyContent: "center",
-    fontSize: 16,
+    fontSize: 11,
     fontFamily: "Helvetica-Bold",
   },
   section: {
@@ -86,13 +114,28 @@ const styles = StyleSheet.create({
   },
   footer: {
     position: "absolute",
-    bottom: 22,
+    bottom: 18,
     left: 42,
     right: 42,
+    borderTopWidth: 1,
+    borderTopColor: "#E5E7EB",
+    paddingTop: 8,
     flexDirection: "row",
     justifyContent: "space-between",
+    alignItems: "flex-start",
     color: "#6B7280",
     fontSize: 8,
+  },
+  footerContact: {
+    flexGrow: 1,
+    paddingRight: 14,
+  },
+  footerLine: {
+    marginBottom: 2,
+  },
+  footerPage: {
+    minWidth: 70,
+    textAlign: "right",
   },
 });
 
@@ -108,6 +151,12 @@ export async function renderTemplatePdfBuffer({
   model: TemplateExportModel;
 }) {
   const logo = getEmbeddedLogo(brand.logoUrl);
+  const generatedOn = new Intl.DateTimeFormat("en-CA", {
+    year: "numeric",
+    month: "short",
+    day: "numeric",
+  }).format(new Date());
+  const footerLines = buildFooterLines(brand, model, generatedOn);
 
   return renderToBuffer(
     React.createElement(
@@ -122,20 +171,14 @@ export async function renderTemplatePdfBuffer({
         }),
         React.createElement(
           View,
-          {
-            style: [styles.logo, { backgroundColor: brand.primaryColor }],
-            fixed: true,
-          },
-          logo
-            ? React.createElement(Image, {
-                src: logo.dataUrl,
-                style: {
-                  width: 44,
-                  height: 44,
-                  objectFit: "contain",
-                },
-              })
-            : React.createElement(Text, null, brand.logoInitials),
+          { style: styles.header, fixed: true },
+          React.createElement(BrandLogo, { brand, logo }),
+          React.createElement(
+            View,
+            { style: styles.headerText },
+            React.createElement(Text, { style: styles.headerOrg }, organizationName),
+            React.createElement(Text, { style: styles.headerMeta }, "Olea Connects document"),
+          ),
         ),
         React.createElement(Text, { style: styles.title }, title),
         React.createElement(Text, { style: styles.org }, organizationName),
@@ -162,13 +205,43 @@ export async function renderTemplatePdfBuffer({
         React.createElement(
           View,
           { style: styles.footer, fixed: true },
-          React.createElement(Text, null, organizationName),
+          React.createElement(
+            View,
+            { style: styles.footerContact },
+            footerLines.map((line) =>
+              React.createElement(Text, { key: line, style: styles.footerLine }, line),
+            ),
+          ),
           React.createElement(Text, {
+            style: styles.footerPage,
             render: ({ pageNumber, totalPages }) => `Page ${pageNumber} of ${totalPages}`,
           }),
         ),
       ),
     ),
+  );
+}
+
+function BrandLogo({
+  brand,
+  logo,
+}: {
+  brand: BrandProfile;
+  logo: ReturnType<typeof getEmbeddedLogo>;
+}) {
+  return React.createElement(
+    View,
+    { style: [styles.logo, { backgroundColor: brand.primaryColor }] },
+    logo
+      ? React.createElement(Image, {
+          src: logo.dataUrl,
+          style: {
+            width: 30,
+            height: 30,
+            objectFit: "contain",
+          },
+        })
+      : React.createElement(Text, null, brand.logoInitials),
   );
 }
 
@@ -234,4 +307,54 @@ function FieldList({ fields }: { fields: TemplateExportModel["headerFields"] }) 
 
 function shouldKeepFieldTogether(value: string) {
   return value.length <= 240 && !value.includes("\n");
+}
+
+function buildFooterLines(
+  brand: BrandProfile,
+  model: TemplateExportModel,
+  generatedOn: string,
+) {
+  const contactEmail =
+    brand.contactEmail ??
+    findFieldValue(model, [
+      "contact_email",
+      "contact email",
+      "facilitator_email",
+      "facilitator email",
+      "administrator email",
+    ]);
+  const contactDetails = [
+    brand.address,
+    brand.phone ? `Phone: ${brand.phone}` : null,
+    contactEmail ? `Email: ${contactEmail}` : null,
+    brand.website,
+  ].filter(isPresent);
+
+  return [
+    brand.organizationName,
+    ...(contactDetails.length > 0 ? [contactDetails.join("  |  ")] : []),
+    `Generated by Olea Connects on ${generatedOn}`,
+  ];
+}
+
+function findFieldValue(model: TemplateExportModel, candidates: string[]) {
+  const normalizedCandidates = new Set(candidates.map(normalizeFieldKey));
+  const fields = [
+    ...model.headerFields,
+    ...model.sections.flatMap((section) => section.fields),
+  ];
+  const match = fields.find(
+    (field) =>
+      normalizedCandidates.has(normalizeFieldKey(field.id)) ||
+      normalizedCandidates.has(normalizeFieldKey(field.label)),
+  );
+  return match?.value?.trim() || undefined;
+}
+
+function normalizeFieldKey(value: string) {
+  return value.toLowerCase().replace(/[^a-z0-9]+/g, " ").trim();
+}
+
+function isPresent(value: string | null | undefined): value is string {
+  return Boolean(value?.trim());
 }

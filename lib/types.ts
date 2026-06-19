@@ -22,6 +22,10 @@ export interface BrandProfile {
   logoUrl?: string;
   primaryColor: string;
   secondaryColor: string;
+  address?: string;
+  phone?: string;
+  contactEmail?: string;
+  website?: string;
 }
 
 export interface Organization {
