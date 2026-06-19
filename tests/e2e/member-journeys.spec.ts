@@ -65,21 +65,30 @@ test.describe("@critical @member core member journeys", () => {
     await expect(page).toHaveURL("/dashboard");
   });
 
-  test("completes a template and opens the branded PDF export", async ({
+  test("completes a dynamic board self-evaluation template", async ({
     page,
   }) => {
     await page.goto("/templates/board-self-evaluation");
 
     await page.getByLabel("Board year").fill("2026");
     await page.getByLabel("Survey period").fill("June 2026");
-    await page.getByRole("button", { name: "Generate PDF" }).click();
+    await page.getByLabel("The board keeps decisions aligned to the mission.").click();
+    await page.getByRole("option", { name: "5 - Strong" }).click();
+    await page
+      .getByLabel("Directors understand their governance responsibilities.")
+      .click();
+    await page.getByRole("option", { name: "4" }).click();
+    await page
+      .getByLabel("Board meetings use time well and focus on the right topics.")
+      .click();
+    await page.getByRole("option", { name: "4" }).click();
+    await page
+      .getByLabel("What should the board improve over the next year?")
+      .fill("We should improve meeting preparation and follow-up.");
+    await page.getByRole("button", { name: "Mark complete" }).click();
 
-    await expect(page.getByText("Your branded PDF is ready")).toBeVisible({
-      timeout: 15_000,
-    });
-    await expect(
-      page.getByRole("link", { name: /Download PDF|Preparing/ }),
-    ).toBeVisible();
+    await expect(page.getByText(/^Saved$/)).toBeVisible({ timeout: 10_000 });
+    await expect(page.getByText("100% complete")).toBeVisible();
   });
 
   test("invites and cancels a team member", async ({ page }) => {

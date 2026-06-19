@@ -66,7 +66,7 @@ export function Header() {
           placeholder="Search templates, posts, resources"
           className="h-10 w-full rounded-lg border bg-slate-50 pl-9 pr-16 text-sm outline-none transition focus:border-olea-green focus:ring-2 focus:ring-olea-green/20"
         />
-        <kbd className="absolute right-2.5 top-1/2 -translate-y-1/2 rounded border bg-white px-1.5 py-0.5 font-mono text-[11px] text-slate-400">
+        <kbd className="absolute right-2.5 top-1/2 -translate-y-1/2 rounded border bg-white px-1.5 py-0.5 font-mono text-[11px] text-slate-600">
           ⌘K
         </kbd>
       </div>

@@ -116,17 +116,17 @@ insert into public.template_definitions (
 values
   (
     '10000000-0000-4000-8000-000000000001',
-    'board_self_evaluation',
+    'dynamic_form',
     1,
-    '{"type":"object","fields":[{"key":"boardYear","type":"text","label":"Board year"},{"key":"surveyPeriod","type":"text","label":"Survey period"},{"key":"answers","type":"survey","label":"Evaluation answers"},{"key":"openEndedAnswers","type":"long_text","label":"Reflections"}]}'::jsonb,
+    '{"version":1,"header_fields":[{"id":"board_year","type":"text","label":"Board year","required":true},{"id":"survey_period","type":"text","label":"Survey period","required":true}],"sections":[{"id":"evaluation","title":"Evaluation","questions":[{"id":"overall_rating","type":"rating","label":"Overall board effectiveness","required":true,"options":[{"label":"1","value":"1"},{"label":"2","value":"2"},{"label":"3","value":"3"},{"label":"4","value":"4"},{"label":"5","value":"5"}]},{"id":"reflection","type":"textarea","label":"Reflection"}]}]}'::jsonb,
     '{}'::jsonb,
     true
   ),
   (
     '10000000-0000-4000-8000-000000000002',
-    'board_meeting_agenda',
+    'dynamic_form',
     1,
-    '{"type":"object","fields":[{"key":"meetingDate","type":"date","label":"Meeting date"},{"key":"agendaItems","type":"repeater","label":"Agenda items"}]}'::jsonb,
+    '{"version":1,"header_fields":[{"id":"meeting_title","type":"text","label":"Meeting title","required":true},{"id":"meeting_date","type":"date","label":"Meeting date","required":true}],"sections":[{"id":"agenda","title":"Agenda","questions":[{"id":"agenda_items","type":"repeatable","label":"Agenda item","required":true,"subfields":[{"id":"topic","type":"text","label":"Topic","required":true},{"id":"purpose","type":"select","label":"Purpose","required":true,"options":["Information","Discussion","Decision"]}]}]}]}'::jsonb,
     '{}'::jsonb,
     true
   ),
@@ -134,7 +134,7 @@ values
     '10000000-0000-4000-8000-000000000003',
     'director_onboarding_checklist',
     1,
-    '{"type":"object","fields":[{"key":"directorName","type":"text","label":"Director name"},{"key":"tasks","type":"checklist","label":"Onboarding tasks"}]}'::jsonb,
+    '{"version":1,"header_fields":[{"id":"director_name","type":"text","label":"Director name","required":true}],"sections":[{"id":"tasks","title":"Onboarding tasks","questions":[{"id":"notes","type":"textarea","label":"Notes"}]}]}'::jsonb,
     '{}'::jsonb,
     true
   ),
@@ -142,7 +142,7 @@ values
     '10000000-0000-4000-8000-000000000004',
     'conflict_of_interest_policy',
     1,
-    '{"type":"object","fields":[{"key":"effectiveDate","type":"date","label":"Effective date"},{"key":"policyText","type":"rich_text","label":"Policy"}]}'::jsonb,
+    '{"version":1,"header_fields":[{"id":"effective_date","type":"date","label":"Effective date","required":true}],"sections":[{"id":"policy","title":"Policy","questions":[{"id":"policy_text","type":"rich_text","label":"Policy","required":true}]}]}'::jsonb,
     '{}'::jsonb,
     true
   ),
@@ -150,7 +150,7 @@ values
     '10000000-0000-4000-8000-000000000005',
     'director_role_description',
     1,
-    '{"type":"object","fields":[{"key":"roleTitle","type":"text","label":"Role title"},{"key":"responsibilities","type":"rich_text","label":"Responsibilities"}]}'::jsonb,
+    '{"version":1,"header_fields":[{"id":"role_title","type":"text","label":"Role title","required":true}],"sections":[{"id":"responsibilities","title":"Responsibilities","questions":[{"id":"responsibilities","type":"rich_text","label":"Responsibilities","required":true}]}]}'::jsonb,
     '{}'::jsonb,
     true
   ),
@@ -158,7 +158,7 @@ values
     '10000000-0000-4000-8000-000000000006',
     'governance_policy_manual',
     1,
-    '{"type":"object","fields":[{"key":"policies","type":"repeater","label":"Policies"}]}'::jsonb,
+    '{"version":1,"sections":[{"id":"policies","title":"Policies","questions":[{"id":"policies","type":"repeatable","label":"Policy","subfields":[{"id":"title","type":"text","label":"Title","required":true},{"id":"details","type":"textarea","label":"Details"}]}]}]}'::jsonb,
     '{}'::jsonb,
     true
   )
