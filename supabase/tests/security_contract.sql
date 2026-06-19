@@ -1,6 +1,6 @@
 begin;
 
-select plan(8);
+select plan(10);
 
 create temporary table expected_public_access (
   table_name text primary key,
@@ -212,6 +212,145 @@ values
     now()
   );
 
+insert into public.resources (
+  id,
+  type,
+  status,
+  slug,
+  title,
+  summary
+)
+values (
+  '40000000-0000-0000-0000-000000000001',
+  'template',
+  'draft',
+  'security-export-template',
+  'Security Export Template',
+  'Template used to verify generated document isolation.'
+);
+
+insert into public.template_definitions (
+  resource_id,
+  renderer_key,
+  field_schema,
+  supports_pdf,
+  supports_docx
+)
+values (
+  '40000000-0000-0000-0000-000000000001',
+  'dynamic_form',
+  '{
+    "version": 1,
+    "sections": [
+      {
+        "id": "overview",
+        "title": "Overview",
+        "questions": [
+          { "id": "summary", "type": "textarea", "label": "Summary" }
+        ]
+      }
+    ]
+  }'::jsonb,
+  true,
+  true
+);
+
+insert into public.template_instances (
+  id,
+  organization_id,
+  resource_id,
+  created_by,
+  title,
+  form_data,
+  branding_snapshot
+)
+values
+  (
+    '50000000-0000-0000-0000-000000000001',
+    '30000000-0000-0000-0000-000000000001',
+    '40000000-0000-0000-0000-000000000001',
+    '20000000-0000-0000-0000-000000000001',
+    'Tenant A Export',
+    '{"summary":"Tenant A"}'::jsonb,
+    '{"primaryColor":"#2f6b4f","secondaryColor":"#dbe8dd","logoInitials":"TA"}'::jsonb
+  ),
+  (
+    '50000000-0000-0000-0000-000000000002',
+    '30000000-0000-0000-0000-000000000002',
+    '40000000-0000-0000-0000-000000000001',
+    '20000000-0000-0000-0000-000000000002',
+    'Tenant B Export',
+    '{"summary":"Tenant B"}'::jsonb,
+    '{"primaryColor":"#2f6b4f","secondaryColor":"#dbe8dd","logoInitials":"TB"}'::jsonb
+  );
+
+insert into public.template_exports (
+  id,
+  template_instance_id,
+  organization_id,
+  resource_id,
+  created_by,
+  format,
+  file_name,
+  storage_path,
+  definition_version,
+  schema_snapshot,
+  form_data_snapshot,
+  branding_snapshot,
+  checksum_sha256
+)
+values
+  (
+    '60000000-0000-0000-0000-000000000001',
+    '50000000-0000-0000-0000-000000000001',
+    '30000000-0000-0000-0000-000000000001',
+    '40000000-0000-0000-0000-000000000001',
+    '20000000-0000-0000-0000-000000000001',
+    'pdf',
+    'Tenant-A_Export_2026-06-19.pdf',
+    '30000000-0000-0000-0000-000000000001/50000000-0000-0000-0000-000000000001/60000000-0000-0000-0000-000000000001/Tenant-A_Export_2026-06-19.pdf',
+    1,
+    '{}'::jsonb,
+    '{}'::jsonb,
+    '{}'::jsonb,
+    repeat('a', 64)
+  ),
+  (
+    '60000000-0000-0000-0000-000000000002',
+    '50000000-0000-0000-0000-000000000002',
+    '30000000-0000-0000-0000-000000000002',
+    '40000000-0000-0000-0000-000000000001',
+    '20000000-0000-0000-0000-000000000002',
+    'pdf',
+    'Tenant-B_Export_2026-06-19.pdf',
+    '30000000-0000-0000-0000-000000000002/50000000-0000-0000-0000-000000000002/60000000-0000-0000-0000-000000000002/Tenant-B_Export_2026-06-19.pdf',
+    1,
+    '{}'::jsonb,
+    '{}'::jsonb,
+    '{}'::jsonb,
+    repeat('b', 64)
+  );
+
+insert into storage.objects (
+  bucket_id,
+  name,
+  owner,
+  metadata
+)
+values
+  (
+    'generated-documents',
+    '30000000-0000-0000-0000-000000000001/50000000-0000-0000-0000-000000000001/60000000-0000-0000-0000-000000000001/Tenant-A_Export_2026-06-19.pdf',
+    '20000000-0000-0000-0000-000000000001',
+    '{"mimetype":"application/pdf"}'::jsonb
+  ),
+  (
+    'generated-documents',
+    '30000000-0000-0000-0000-000000000002/50000000-0000-0000-0000-000000000002/60000000-0000-0000-0000-000000000002/Tenant-B_Export_2026-06-19.pdf',
+    '20000000-0000-0000-0000-000000000002',
+    '{"mimetype":"application/pdf"}'::jsonb
+  );
+
 set local role authenticated;
 select set_config(
   'request.jwt.claims',
@@ -239,6 +378,31 @@ select is(
   ),
   0,
   'a member cannot read another tenant'
+);
+
+select results_eq(
+  $test$
+    select id
+    from public.template_exports
+    order by id
+  $test$,
+  $expected$
+    values ('60000000-0000-0000-0000-000000000001'::uuid)
+  $expected$,
+  'a member can only read generated exports for their own tenant'
+);
+
+select results_eq(
+  $test$
+    select name
+    from storage.objects
+    where bucket_id = 'generated-documents'
+    order by name
+  $test$,
+  $expected$
+    values ('30000000-0000-0000-0000-000000000001/50000000-0000-0000-0000-000000000001/60000000-0000-0000-0000-000000000001/Tenant-A_Export_2026-06-19.pdf'::text)
+  $expected$,
+  'a member can only read generated files for their own tenant'
 );
 
 select * from finish();

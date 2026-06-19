@@ -1,6 +1,6 @@
 begin;
 
-select plan(5);
+select plan(7);
 
 select is(
   (select count(*)::integer from public.template_field_types where is_active),
@@ -146,6 +146,28 @@ select throws_ok(
   '23514',
   null,
   'field value shapes remain constrained'
+);
+
+select is(
+  (
+    select bool_and(supports_docx)
+    from public.template_definitions
+    where renderer_key = 'dynamic_form'
+  ),
+  true,
+  'dynamic templates support DOCX exports'
+);
+
+select is(
+  (
+    select count(*)::integer
+    from pg_policies
+    where schemaname = 'storage'
+      and tablename = 'objects'
+      and policyname in ('generated_documents_update', 'generated_documents_delete')
+  ),
+  0,
+  'generated document storage objects are immutable to authenticated users'
 );
 
 select * from finish();

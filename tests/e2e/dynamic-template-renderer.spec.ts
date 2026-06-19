@@ -24,8 +24,10 @@ test.describe("@critical dynamic template renderer", () => {
     ).toBeVisible();
   });
 
-  test("@smoke edits repeatable agenda rows and preserves autosaved data after refresh", async ({
+  test("@smoke edits repeatable agenda rows, exports files, and audits downloads", async ({
+    authenticatedMember,
     page,
+    testData,
   }) => {
     await page.goto("/templates/board-meeting-agenda");
 
@@ -54,6 +56,27 @@ test.describe("@critical dynamic template renderer", () => {
 
     await expect(page.getByText("Unsaved changes")).toBeVisible();
     await expect(page.getByText(/^Saved$/)).toBeVisible({ timeout: 10_000 });
+    await page.getByRole("button", { name: "Generate PDF" }).click();
+    await expect(page.getByText(/\.pdf$/)).toBeVisible({ timeout: 15_000 });
+    await page.getByRole("button", { name: "Generate DOCX" }).click();
+    await expect(page.getByText(/\.docx$/)).toBeVisible({ timeout: 15_000 });
+
+    const countsAfterExport = await testData.getTemplateExportCounts(
+      authenticatedMember.organizationId,
+    );
+    expect(countsAfterExport.exports).toBe(2);
+
+    const downloadPromise = page.waitForEvent("download");
+    await page.getByRole("button", { name: "Download" }).first().click();
+    await downloadPromise;
+    await expect
+      .poll(async () => {
+        const counts = await testData.getTemplateExportCounts(
+          authenticatedMember.organizationId,
+        );
+        return counts.downloads;
+      })
+      .toBe(1);
 
     await page.reload();
 

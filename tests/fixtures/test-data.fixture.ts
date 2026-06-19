@@ -216,6 +216,25 @@ export class TestDataManager {
     return Boolean(data.user);
   }
 
+  async getTemplateExportCounts(organizationId: string) {
+    const { count: exportsCount, error: exportsError } = await this.supabase
+      .from("template_exports")
+      .select("id", { count: "exact", head: true })
+      .eq("organization_id", organizationId);
+    if (exportsError) throw exportsError;
+
+    const { count: downloadsCount, error: downloadsError } = await this.supabase
+      .from("template_export_downloads")
+      .select("id", { count: "exact", head: true })
+      .eq("organization_id", organizationId);
+    if (downloadsError) throw downloadsError;
+
+    return {
+      exports: exportsCount ?? 0,
+      downloads: downloadsCount ?? 0,
+    };
+  }
+
   async purge() {
     if (this.purged) return;
 

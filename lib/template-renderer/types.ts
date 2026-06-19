@@ -96,6 +96,16 @@ export interface DynamicTemplateSession {
   lastSavedAt: string;
 }
 
+export type TemplateExportFormat = "pdf" | "docx";
+
+export interface TemplateExportRecord {
+  id: string;
+  format: TemplateExportFormat;
+  fileName: string;
+  generatedAt: string;
+  generatedBy: string | null;
+}
+
 export interface DynamicTemplateEditorData {
   organization: Organization;
   template: {
@@ -107,8 +117,10 @@ export interface DynamicTemplateEditorData {
     estimatedMinutes: number | null;
     rendererKey: string;
     supportsPdf: boolean;
+    supportsDocx: boolean;
   };
   session: DynamicTemplateSession;
+  exports: TemplateExportRecord[];
 }
 
 export type FieldPath = Array<string | number>;

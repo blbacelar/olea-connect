@@ -10,7 +10,11 @@ import {
   getTemplateBySlug,
 } from "@/lib/data/templates";
 
-import { saveDynamicTemplateSession } from "./actions";
+import {
+  createTemplateExportDownloadUrl,
+  generateTemplateExport,
+  saveDynamicTemplateSession,
+} from "./actions";
 
 function formatSlug(slug: string) {
   return slug
@@ -27,6 +31,8 @@ export async function TemplateSlugPage({ slug }: { slug: string }) {
       <DynamicTemplateEditor
         data={editorData}
         saveSession={saveDynamicTemplateSession}
+        generateExport={generateTemplateExport}
+        createDownloadUrl={createTemplateExportDownloadUrl}
       />
     );
   }

@@ -4,6 +4,7 @@ import { normalizeTemplateSchema } from "@/lib/template-renderer/schema";
 import type {
   DynamicTemplateEditorData,
   DynamicTemplateSession,
+  TemplateExportRecord,
   TemplateFieldSchema,
   TemplateFormData,
 } from "@/lib/template-renderer/types";
@@ -210,7 +211,7 @@ export async function getDynamicTemplateEditorData(
   const { data: resource, error: resourceError } = await supabase
     .from("resources")
     .select(
-      "id, slug, title, summary, description, estimated_minutes, template_definitions(renderer_key, schema_version, field_schema, default_values, supports_pdf)",
+      "id, slug, title, summary, description, estimated_minutes, template_definitions(renderer_key, schema_version, field_schema, default_values, supports_pdf, supports_docx)",
     )
     .eq("slug", slug)
     .eq("type", "template")
@@ -267,6 +268,17 @@ export async function getDynamicTemplateEditorData(
     lastSavedAt:
       existing?.last_saved_at ?? existing?.updated_at ?? new Date().toISOString(),
   };
+  const { data: exports, error: exportsError } = session.id
+    ? await supabase
+        .from("template_exports")
+        .select("id, format, file_name, generated_at, created_by")
+        .eq("template_instance_id", session.id)
+        .eq("organization_id", organization.id)
+        .order("generated_at", { ascending: false })
+        .limit(10)
+    : { data: [], error: null };
+
+  if (exportsError) throw exportsError;
 
   return {
     organization,
@@ -279,7 +291,21 @@ export async function getDynamicTemplateEditorData(
       estimatedMinutes: resource.estimated_minutes,
       rendererKey: definition.renderer_key,
       supportsPdf: definition.supports_pdf,
+      supportsDocx: definition.supports_docx,
     },
     session,
+    exports: ((exports ?? []) as Array<{
+      id: string;
+      format: TemplateExportRecord["format"];
+      file_name: string;
+      generated_at: string;
+      created_by: string | null;
+    }>).map((item) => ({
+      id: item.id,
+      format: item.format,
+      fileName: item.file_name,
+      generatedAt: item.generated_at,
+      generatedBy: item.created_by,
+    })),
   };
 }
