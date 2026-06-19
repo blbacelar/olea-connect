@@ -18,7 +18,7 @@ const styles = StyleSheet.create({
   page: {
     paddingTop: 110,
     paddingRight: 42,
-    paddingBottom: 78,
+    paddingBottom: 96,
     paddingLeft: 42,
     fontFamily: "Helvetica",
     color: "#1F2937",
@@ -42,21 +42,17 @@ const styles = StyleSheet.create({
     alignItems: "center",
     borderBottomWidth: 1,
     borderBottomColor: "#E5E7EB",
-    paddingBottom: 10,
   },
   headerText: {
     marginLeft: 10,
     flexGrow: 1,
+    height: 34,
+    justifyContent: "center",
   },
   headerOrg: {
     fontSize: 10,
     fontFamily: "Helvetica-Bold",
     color: "#1F2937",
-  },
-  headerMeta: {
-    fontSize: 8,
-    color: "#6B7280",
-    marginTop: 2,
   },
   title: {
     fontSize: 24,
@@ -114,9 +110,10 @@ const styles = StyleSheet.create({
   },
   footer: {
     position: "absolute",
-    bottom: 18,
+    bottom: 24,
     left: 42,
     right: 42,
+    height: 46,
     borderTopWidth: 1,
     borderTopColor: "#E5E7EB",
     paddingTop: 8,
@@ -127,6 +124,7 @@ const styles = StyleSheet.create({
     fontSize: 8,
   },
   footerContact: {
+    flex: 1,
     flexGrow: 1,
     paddingRight: 14,
   },
@@ -134,7 +132,7 @@ const styles = StyleSheet.create({
     marginBottom: 2,
   },
   footerPage: {
-    minWidth: 70,
+    width: 82,
     textAlign: "right",
   },
 });
@@ -177,7 +175,6 @@ export async function renderTemplatePdfBuffer({
             View,
             { style: styles.headerText },
             React.createElement(Text, { style: styles.headerOrg }, organizationName),
-            React.createElement(Text, { style: styles.headerMeta }, "Olea Connects document"),
           ),
         ),
         React.createElement(Text, { style: styles.title }, title),
