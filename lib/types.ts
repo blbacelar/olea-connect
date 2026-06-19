@@ -56,6 +56,9 @@ export interface Template {
   estimatedTime: string;
   status: string;
   isNew?: boolean;
+  availableAt?: string | null;
+  selectedAt?: string | null;
+  lockedUntil?: string | null;
 }
 
 export type SurveyScore = 1 | 2 | 3 | 4 | 5 | "na";

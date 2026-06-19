@@ -63,6 +63,34 @@ test.describe("@critical @member core member journeys", () => {
 
     await page.getByRole("button", { name: "Confirm my 3 templates" }).click();
     await expect(page).toHaveURL("/dashboard");
+
+    await page.goto("/onboarding/template-selection");
+    await expect(page.getByText("Selected: 3 of 3")).toBeVisible();
+    await expect(page.getByText("Available").first()).toBeVisible();
+    await expect(page.getByText("Selected").first()).toBeVisible();
+    await expect(page.getByText("Locked until").first()).toBeVisible();
+  });
+
+  test("bypasses template selection for Roots members", async ({
+    baseURL,
+    page,
+    testData,
+  }) => {
+    if (!baseURL) throw new Error("Playwright baseURL is required.");
+    const rootsMember = await testData.createOrganizationOwner({
+      activeSubscription: true,
+      planId: "roots",
+    });
+    const rootsStorage = await createAuthenticatedStorageState(
+      rootsMember.email,
+      rootsMember.password,
+      baseURL,
+    );
+    await page.context().addCookies(rootsStorage.cookies);
+
+    await page.goto("/onboarding/template-selection");
+
+    await expect(page).toHaveURL("/dashboard");
   });
 
   test("completes a dynamic board self-evaluation template", async ({

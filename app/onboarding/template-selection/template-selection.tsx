@@ -11,6 +11,17 @@ import { cn } from "@/lib/utils";
 
 import { saveTemplateSelections } from "./actions";
 
+const dateFormatter = new Intl.DateTimeFormat("en-CA", {
+  month: "short",
+  day: "numeric",
+  year: "numeric",
+});
+
+function formatTemplateDate(value?: string | null) {
+  if (!value) return null;
+  return dateFormatter.format(new Date(value));
+}
+
 export function TemplateSelection({ templates }: { templates: Template[] }) {
   const router = useRouter();
   const initialSelection = useMemo(
@@ -78,6 +89,9 @@ export function TemplateSelection({ templates }: { templates: Template[] }) {
             {templates.map((template) => {
               const isSelected = selected.includes(template.id);
               const limitReached = selected.length === 3 && !isSelected;
+              const availableAt = formatTemplateDate(template.availableAt);
+              const selectedAt = formatTemplateDate(template.selectedAt);
+              const lockedUntil = formatTemplateDate(template.lockedUntil);
               return (
                 <button
                   key={template.id}
@@ -101,6 +115,32 @@ export function TemplateSelection({ templates }: { templates: Template[] }) {
                   <p className="mt-1 text-sm text-slate-400">
                     {template.category}
                   </p>
+                  <dl className="mt-4 space-y-1 text-xs text-slate-500">
+                    {availableAt ? (
+                      <div className="flex justify-between gap-3">
+                        <dt>Available</dt>
+                        <dd className="font-medium text-slate-600">
+                          {availableAt}
+                        </dd>
+                      </div>
+                    ) : null}
+                    {selectedAt ? (
+                      <div className="flex justify-between gap-3">
+                        <dt>Selected</dt>
+                        <dd className="font-medium text-slate-600">
+                          {selectedAt}
+                        </dd>
+                      </div>
+                    ) : null}
+                    {lockedUntil ? (
+                      <div className="flex justify-between gap-3">
+                        <dt>Locked until</dt>
+                        <dd className="font-medium text-slate-600">
+                          {lockedUntil}
+                        </dd>
+                      </div>
+                    ) : null}
+                  </dl>
                   <p className="mt-5 text-sm font-semibold text-olea-green">
                     {isSelected
                       ? "Selected"

@@ -40,7 +40,9 @@ export function ActivationRetryButton() {
           result.error ??
             (result.status === "pending_verification"
               ? "Confirm your email address, then retry activation."
-              : "Payment confirmation is still processing. Try again shortly."),
+              : result.status === "pending_payment"
+                ? "Payment is not confirmed for this account yet. If you already paid, sign out and use the email address from checkout, or contact support."
+                : "Payment confirmation is still processing. Try again shortly."),
         );
       } catch {
         setError("Activation could not be checked. Please try again shortly.");
