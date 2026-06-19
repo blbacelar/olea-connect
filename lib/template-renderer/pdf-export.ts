@@ -82,6 +82,7 @@ const styles = StyleSheet.create({
     fontSize: 12,
     fontFamily: "Helvetica-Bold",
     marginTop: 6,
+    marginBottom: 6,
   },
   footer: {
     position: "absolute",
@@ -142,14 +143,18 @@ export async function renderTemplatePdfBuffer({
         model.sections.map((section) =>
           React.createElement(
             View,
-            { key: section.id, style: styles.section },
+            { key: section.id, style: styles.section, minPresenceAhead: 72 },
             React.createElement(
               Text,
-              { style: styles.sectionTitle, wrap: false },
+              { style: styles.sectionTitle, wrap: false, minPresenceAhead: 48 },
               section.title,
             ),
             section.description
-              ? React.createElement(Text, { style: styles.description }, section.description)
+              ? React.createElement(
+                  Text,
+                  { style: styles.description, minPresenceAhead: 36 },
+                  section.description,
+                )
               : null,
             React.createElement(FieldList, { fields: section.fields }),
           ),
@@ -168,16 +173,29 @@ export async function renderTemplatePdfBuffer({
 }
 
 function FieldList({ fields }: { fields: TemplateExportModel["headerFields"] }) {
+  const firstNestedFieldByHeading = new Set<string>();
+  for (const [index, field] of fields.entries()) {
+    if (field.type !== "heading" && field.type !== "repeatable") continue;
+    const nextField = fields[index + 1];
+    if (nextField && nextField.depth > field.depth) {
+      firstNestedFieldByHeading.add(nextField.id);
+    }
+  }
+
   return React.createElement(
     React.Fragment,
     null,
-    fields.map((field) => {
+    fields.map((field, index) => {
       if (field.type === "heading" || field.type === "repeatable") {
+        const nextField = fields[index + 1];
+        const hasNestedContent = nextField && nextField.depth > field.depth;
         return React.createElement(
           Text,
           {
             key: field.id,
             style: [styles.heading, { marginLeft: field.depth * 12 }],
+            minPresenceAhead: hasNestedContent ? 54 : 24,
+            wrap: false,
           },
           field.label,
         );
@@ -188,6 +206,8 @@ function FieldList({ fields }: { fields: TemplateExportModel["headerFields"] }) 
           {
             key: field.id,
             style: [styles.value, { marginLeft: field.depth * 12 }],
+            orphans: 2,
+            widows: 2,
           },
           field.value,
         );
@@ -198,10 +218,20 @@ function FieldList({ fields }: { fields: TemplateExportModel["headerFields"] }) 
         {
           key: field.id,
           style: [styles.field, { marginLeft: field.depth * 12 }],
+          minPresenceAhead: firstNestedFieldByHeading.has(field.id) ? 28 : 0,
+          ...(shouldKeepFieldTogether(field.value) ? { wrap: false } : {}),
         },
         React.createElement(Text, { style: styles.label }, field.label),
-        React.createElement(Text, { style: styles.value }, field.value),
+        React.createElement(
+          Text,
+          { style: styles.value, orphans: 2, widows: 2 },
+          field.value,
+        ),
       );
     }),
   );
+}
+
+function shouldKeepFieldTogether(value: string) {
+  return value.length <= 240 && !value.includes("\n");
 }
