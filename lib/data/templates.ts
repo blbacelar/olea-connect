@@ -121,27 +121,34 @@ export async function getTemplateSelectionOptions(): Promise<Template[]> {
     supabase
       .from("resources")
       .select(
-        "id, slug, title, summary, estimated_minutes, resource_categories(name)",
+        "id, slug, title, summary, estimated_minutes, published_at, resource_categories(name)",
       )
       .eq("type", "template")
       .eq("status", "published")
       .order("title"),
     supabase
       .from("organization_resource_access")
-      .select("resource_id")
+      .select("resource_id, starts_at, locked_until")
       .eq("organization_id", organization.id)
       .eq("access_kind", "selection"),
   ]);
   if (resourcesError) throw resourcesError;
   if (selectedError) throw selectedError;
 
-  const selectedIds = new Set(
-    (selectedResources ?? []).map((item) => item.resource_id),
+  const selectedByResource = new Map(
+    (selectedResources ?? []).map((item) => [
+      item.resource_id,
+      {
+        selectedAt: item.starts_at,
+        lockedUntil: item.locked_until,
+      },
+    ]),
   );
   return (resources ?? []).map((resource) => {
     const category = Array.isArray(resource.resource_categories)
       ? resource.resource_categories[0]
       : resource.resource_categories;
+    const selected = selectedByResource.get(resource.id);
     return {
       id: resource.id,
       slug: resource.slug,
@@ -149,11 +156,14 @@ export async function getTemplateSelectionOptions(): Promise<Template[]> {
       description: resource.summary,
       category: category?.name ?? "General",
       requiredTier: "seedling",
-      available: selectedIds.has(resource.id),
+      available: Boolean(selected),
       estimatedTime: resource.estimated_minutes
         ? `~${resource.estimated_minutes} min`
         : "Self-paced",
-      status: selectedIds.has(resource.id) ? "Selected" : "Available to choose",
+      status: selected ? "Selected" : "Available to choose",
+      availableAt: resource.published_at,
+      selectedAt: selected?.selectedAt ?? null,
+      lockedUntil: selected?.lockedUntil ?? null,
     };
   });
 }

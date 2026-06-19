@@ -7,7 +7,10 @@ import {
 import { buildTemplateExportModel } from "@/lib/template-renderer/export-model";
 import { getEmbeddedLogo } from "@/lib/template-renderer/logo-data";
 import { renderTemplateDocxBuffer } from "@/lib/template-renderer/docx-export";
-import { renderTemplatePdfBuffer } from "@/lib/template-renderer/pdf-export";
+import {
+  buildFooterText,
+  renderTemplatePdfBuffer,
+} from "@/lib/template-renderer/pdf-export";
 import type { TemplateFieldSchema } from "@/lib/template-renderer/types";
 import type { BrandProfile } from "@/lib/types";
 
@@ -96,6 +99,40 @@ describe("template exports", () => {
     expect(model.sections[0].title).toBe("Agenda / Ordre du jour");
     expect(model.sections[0].fields.map((field) => field.value)).toContain(
       "Approve budget / Approuver le budget",
+    );
+  });
+
+  it("builds a one-line PDF footer with organization contact details", () => {
+    const model = buildTemplateExportModel({
+      schema: {
+        version: 1,
+        header_fields: [
+          {
+            id: "facilitator_email",
+            type: "email",
+            label: "Facilitator email",
+          },
+        ],
+        sections: [],
+      },
+      formData: { facilitator_email: "fallback@example.org" },
+    });
+    const footer = buildFooterText(
+      {
+        organizationName: "Olea QA Foundation",
+        primaryColor: "#2f6b4f",
+        secondaryColor: "#dbe8dd",
+        logoInitials: "OQ",
+        address: "123 Main Street\nCalgary, AB",
+        phone: "+1 555 123 4567",
+        contactEmail: "hello@example.org",
+        website: "https://example.org",
+      },
+      model,
+    );
+
+    expect(footer).toBe(
+      "Olea QA Foundation  |  Address: 123 Main Street Calgary, AB  |  Phone: +1 555 123 4567  |  Email: hello@example.org  |  Web: example.org",
     );
   });
 

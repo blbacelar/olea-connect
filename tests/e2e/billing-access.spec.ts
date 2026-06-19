@@ -35,4 +35,40 @@ testWithData.describe("@critical billing access states", () => {
       await context.close();
     }
   });
+
+  testWithData("shows activation recovery instead of checkout when billing is syncing", async ({
+    browser,
+    testData,
+    baseURL,
+  }) => {
+    if (!baseURL) throw new Error("Playwright baseURL is required.");
+
+    const member = await testData.createOrganizationOwner();
+    await testData.createWorkspaceProvisioningRequest(member);
+    const context = await browser.newContext({
+      storageState: await createAuthenticatedStorageState(
+        member.email,
+        member.password,
+        baseURL,
+      ),
+    });
+    const page = await context.newPage();
+
+    try {
+      await page.goto(`${baseURL}/dashboard`);
+      await expect(page).toHaveURL("/subscription?billing=required");
+      await expect(
+        page.getByText("Membership activation is still syncing"),
+      ).toBeVisible();
+      await expect(page.getByText("Do not start a new checkout.")).toBeVisible();
+      await expect(
+        page.getByRole("button", { name: "Retry activation" }),
+      ).toBeVisible();
+      await expect(
+        page.getByRole("link", { name: "Choose a plan" }),
+      ).toHaveCount(0);
+    } finally {
+      await context.close();
+    }
+  });
 });

@@ -3,6 +3,7 @@ import "server-only";
 import type Stripe from "stripe";
 
 import { getStripe } from "@/lib/stripe/server";
+import { createAdminClient } from "@/utils/supabase/admin";
 import { createClient } from "@/utils/supabase/server";
 
 export type BillingStatus =
@@ -38,6 +39,22 @@ export interface BillingSummary {
     hostedUrl: string | null;
     pdfUrl: string | null;
   }>;
+}
+
+export interface BillingActivationRecovery {
+  email: string;
+  status:
+    | "pending_verification"
+    | "pending_payment"
+    | "ready"
+    | "processing"
+    | "completed"
+    | "failed";
+  planId: string;
+  providerStatus: BillingStatus | null;
+  hasStripeSubscription: boolean;
+  lastError: string | null;
+  updatedAt: string;
 }
 
 function getPaymentMethodLabel(paymentMethod: Stripe.PaymentMethod | null) {
@@ -137,5 +154,38 @@ export async function getBillingSummary(): Promise<BillingSummary | null> {
     currency: plan?.currency ?? "CAD",
     paymentMethod: getPaymentMethodLabel(paymentMethod),
     invoices,
+  };
+}
+
+export async function getBillingActivationRecovery(): Promise<BillingActivationRecovery | null> {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) return null;
+
+  const admin = createAdminClient();
+  const { data, error } = await admin
+    .from("workspace_provisioning_requests")
+    .select(
+      "status, plan_id, provider_status, provider_subscription_id, last_error, updated_at",
+    )
+    .eq("user_id", user.id)
+    .order("updated_at", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+
+  if (error) throw error;
+  if (!data) return null;
+
+  return {
+    email: user.email ?? "",
+    status: data.status,
+    planId: data.plan_id,
+    providerStatus: data.provider_status,
+    hasStripeSubscription: Boolean(data.provider_subscription_id),
+    lastError: data.last_error,
+    updatedAt: data.updated_at,
   };
 }

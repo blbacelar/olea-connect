@@ -70,7 +70,7 @@ export async function getOptionalMemberContext(): Promise<Session | null> {
     supabase
       .from("organization_brand_profiles")
       .select(
-        "display_name, logo_path, primary_color, secondary_color, brand_completed_at",
+        "display_name, logo_path, primary_color, secondary_color, address, phone, contact_email, website, brand_completed_at",
       )
       .eq("organization_id", membership.organization_id)
       .maybeSingle(),
@@ -115,6 +115,10 @@ export async function getOptionalMemberContext(): Promise<Session | null> {
     logoUrl: brand?.logo_path ?? undefined,
     primaryColor: brand?.primary_color ?? DEFAULT_PRIMARY_COLOR,
     secondaryColor: brand?.secondary_color ?? DEFAULT_SECONDARY_COLOR,
+    address: brand?.address ?? undefined,
+    phone: brand?.phone ?? undefined,
+    contactEmail: brand?.contact_email ?? undefined,
+    website: brand?.website ?? undefined,
   };
   const organization: Organization = {
     id: membership.organization_id,

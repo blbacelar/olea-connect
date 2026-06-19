@@ -14,12 +14,13 @@ export async function saveTemplateSelections(resourceIds: string[]) {
   if (new Set(resourceIds).size !== 3) {
     throw new Error("Choose exactly three templates.");
   }
+  const requestedIds = [...new Set(resourceIds)];
 
   const supabase = await createClient();
   const { data: resources, error: resourcesError } = await supabase
     .from("resources")
     .select("id")
-    .in("id", resourceIds)
+    .in("id", requestedIds)
     .eq("type", "template")
     .eq("status", "published");
   if (resourcesError) throw resourcesError;
@@ -27,27 +28,9 @@ export async function saveTemplateSelections(resourceIds: string[]) {
     throw new Error("One or more selected templates are unavailable.");
   }
 
-  const { data: existing, error: existingError } = await supabase
-    .from("organization_resource_access")
-    .select("resource_id")
-    .eq("organization_id", organization.id)
-    .eq("access_kind", "selection");
-  if (existingError) throw existingError;
-
-  const existingIds = new Set((existing ?? []).map((item) => item.resource_id));
-  const missingIds = resourceIds.filter((id) => !existingIds.has(id));
-  if (existingIds.size + missingIds.length > 3) {
-    throw new Error("Your Seedling template selections are already complete.");
-  }
-  if (!missingIds.length) return;
-
-  const { error } = await supabase.from("organization_resource_access").insert(
-    missingIds.map((resourceId) => ({
-      organization_id: organization.id,
-      resource_id: resourceId,
-      access_kind: "selection",
-      granted_by: member.id,
-    })),
-  );
+  const { error } = await supabase.rpc("replace_seedling_template_selections", {
+    selected_resource_ids: requestedIds,
+    target_organization_id: organization.id,
+  });
   if (error) throw error;
 }

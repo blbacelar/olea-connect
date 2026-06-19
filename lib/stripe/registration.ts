@@ -37,6 +37,17 @@ export interface ProvisioningResult {
   error?: string;
 }
 
+export interface ProvisioningReconciliationSummary {
+  checked: number;
+  completed: number;
+  pending: number;
+  failed: number;
+  errors: Array<{
+    requestId: string;
+    message: string;
+  }>;
+}
+
 export async function prepareCheckoutRegistration(
   supabase: SupabaseClient,
   registration: CheckoutRegistration,
@@ -163,6 +174,85 @@ export async function recordStripeSubscription(
   return data.id as string;
 }
 
+async function retrieveCheckoutSubscription(checkoutSessionId: string) {
+  const stripe = getStripe();
+  const session = await stripe.checkout.sessions.retrieve(checkoutSessionId, {
+    expand: ["subscription"],
+  });
+
+  const subscriptionRef = session.subscription;
+  if (!subscriptionRef) {
+    throw new Error("Checkout session does not have a subscription.");
+  }
+
+  if (typeof subscriptionRef !== "string") {
+    return { session, subscription: subscriptionRef };
+  }
+
+  const subscription = await stripe.subscriptions.retrieve(subscriptionRef);
+  return { session, subscription };
+}
+
+export async function recoverCheckoutSessionProvisioning(
+  supabase: SupabaseClient,
+  checkoutSessionId: string,
+) {
+  const stripe = getStripe();
+  const { session, subscription } =
+    await retrieveCheckoutSubscription(checkoutSessionId);
+  const requestId =
+    session.metadata?.provisioning_request_id ??
+    subscription.metadata.provisioning_request_id;
+
+  if (!requestId) {
+    throw new Error("Checkout session is missing provisioning metadata.");
+  }
+
+  const { data: request, error: requestError } = await supabase
+    .from("workspace_provisioning_requests")
+    .select("id, checkout_session_id")
+    .eq("id", requestId)
+    .single();
+
+  if (requestError) throw requestError;
+  if (
+    request.checkout_session_id &&
+    request.checkout_session_id !== checkoutSessionId
+  ) {
+    throw new Error("Checkout session does not match this activation record.");
+  }
+
+  if (!request.checkout_session_id) {
+    await attachCheckoutSession(supabase, requestId, checkoutSessionId);
+  }
+
+  const subscriptionWithMetadata =
+    subscription.metadata.provisioning_request_id === requestId
+      ? subscription
+      : await stripe.subscriptions.update(subscription.id, {
+          metadata: {
+            ...subscription.metadata,
+            provisioning_request_id: requestId,
+            ...(session.metadata?.user_id
+              ? { user_id: session.metadata.user_id }
+              : {}),
+            ...(session.metadata?.plan_id
+              ? { plan_id: session.metadata.plan_id }
+              : {}),
+            ...(session.metadata?.billing_cycle
+              ? { billing_cycle: session.metadata.billing_cycle }
+              : {}),
+          },
+        });
+
+  await recordStripeSubscription(supabase, subscriptionWithMetadata);
+  return attemptWorkspaceProvisioning(
+    supabase,
+    requestId,
+    subscriptionWithMetadata,
+  );
+}
+
 export async function attemptWorkspaceProvisioning(
   supabase: SupabaseClient,
   requestId: string,
@@ -221,11 +311,87 @@ export async function attemptUserWorkspaceProvisioning(
 ) {
   const { data, error } = await supabase
     .from("workspace_provisioning_requests")
-    .select("id")
+    .select("id, checkout_session_id")
     .eq("user_id", userId)
     .maybeSingle();
 
   if (error) throw error;
   if (!data) return null;
-  return attemptWorkspaceProvisioning(supabase, data.id);
+
+  const result = await attemptWorkspaceProvisioning(supabase, data.id);
+  if (result.status === "pending_payment" && data.checkout_session_id) {
+    return recoverCheckoutSessionProvisioning(
+      supabase,
+      data.checkout_session_id,
+    );
+  }
+
+  return result;
+}
+
+export async function reconcilePendingCheckoutProvisioning(
+  supabase: SupabaseClient,
+  {
+    limit = 10,
+    staleAfterMinutes = 2,
+  }: { limit?: number; staleAfterMinutes?: number } = {},
+): Promise<ProvisioningReconciliationSummary> {
+  const staleBefore = new Date(
+    Date.now() - staleAfterMinutes * 60 * 1000,
+  ).toISOString();
+  const { data: requests, error } = await supabase
+    .from("workspace_provisioning_requests")
+    .select("id, checkout_session_id")
+    .eq("status", "pending_payment")
+    .not("checkout_session_id", "is", null)
+    .lte("updated_at", staleBefore)
+    .order("updated_at", { ascending: true })
+    .limit(limit);
+
+  if (error) throw error;
+
+  const summary: ProvisioningReconciliationSummary = {
+    checked: requests?.length ?? 0,
+    completed: 0,
+    pending: 0,
+    failed: 0,
+    errors: [],
+  };
+
+  for (const request of requests ?? []) {
+    if (!request.checkout_session_id) continue;
+
+    try {
+      const result = await recoverCheckoutSessionProvisioning(
+        supabase,
+        request.checkout_session_id,
+      );
+
+      if (result.status === "completed") {
+        summary.completed += 1;
+      } else if (
+        result.status === "pending_payment" ||
+        result.status === "pending_verification"
+      ) {
+        summary.pending += 1;
+      } else {
+        summary.failed += 1;
+        summary.errors.push({
+          requestId: request.id,
+          message: result.error ?? `Provisioning ended as ${result.status}.`,
+        });
+      }
+    } catch (error) {
+      const message =
+        error instanceof Error ? error.message : "Unknown reconciliation error";
+      summary.failed += 1;
+      summary.errors.push({ requestId: request.id, message });
+      await supabase
+        .from("workspace_provisioning_requests")
+        .update({ last_error: message })
+        .eq("id", request.id);
+    }
+  }
+
+  return summary;
 }
