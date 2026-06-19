@@ -57,9 +57,10 @@ function makeSubscription(
 
 function makeSupabaseMock(
   rpcResults: Array<Record<string, unknown>>,
-  checkoutSessionId = "cs_123",
+  checkoutSessionId: string | null = "cs_123",
 ) {
   const updateCalls: Array<Record<string, unknown>> = [];
+  const filters: Array<[string, ...unknown[]]> = [];
   let lastSelect = "";
 
   const builder = {
@@ -67,7 +68,17 @@ function makeSupabaseMock(
       lastSelect = selection;
       return builder;
     }),
-    eq: vi.fn(() => builder),
+    eq: vi.fn((...args: [string, ...unknown[]]) => {
+      filters.push(args);
+      return builder;
+    }),
+    not: vi.fn(() => builder),
+    lte: vi.fn(() => builder),
+    order: vi.fn(() => builder),
+    limit: vi.fn(async () => ({
+      data: [{ id: "req_123", checkout_session_id: checkoutSessionId }],
+      error: null,
+    })),
     update: vi.fn((values: Record<string, unknown>) => {
       updateCalls.push(values);
       return builder;
@@ -77,9 +88,12 @@ function makeSupabaseMock(
       error: null,
     })),
     single: vi.fn(async () => {
+      const idFilter = filters.find(([column]) => column === "id");
+      const id = typeof idFilter?.[1] === "string" ? idFilter[1] : "req_123";
+
       if (lastSelect.includes("checkout_session_id")) {
         return {
-          data: { id: "req_123", checkout_session_id: checkoutSessionId },
+          data: { id, checkout_session_id: checkoutSessionId },
           error: null,
         };
       }
@@ -103,6 +117,7 @@ function makeSupabaseMock(
         error: null,
       })),
     },
+    builder,
     updateCalls,
   };
 }
@@ -229,5 +244,65 @@ describe("Stripe registration recovery", () => {
         billing_cycle: "monthly",
       },
     });
+  });
+
+  it("reconciles stale pending checkout activations without user action", async () => {
+    const { reconcilePendingCheckoutProvisioning } = await import(
+      "@/lib/stripe/registration"
+    );
+    const { client } = makeSupabaseMock([
+      {
+        status: "completed",
+        request_id: "req_123",
+        organization_id: "org_123",
+        subscription_id: "local_sub_123",
+      },
+    ]);
+
+    const summary = await reconcilePendingCheckoutProvisioning(
+      client as unknown as SupabaseClient,
+      { limit: 1, staleAfterMinutes: 1 },
+    );
+
+    expect(summary).toMatchObject({
+      checked: 1,
+      completed: 1,
+      pending: 0,
+      failed: 0,
+      errors: [],
+    });
+    expect(stripeMocks.retrieveCheckoutSession).toHaveBeenCalledWith("cs_123", {
+      expand: ["subscription"],
+    });
+  });
+
+  it("records reconciliation errors on the affected activation request", async () => {
+    const { reconcilePendingCheckoutProvisioning } = await import(
+      "@/lib/stripe/registration"
+    );
+    stripeMocks.retrieveCheckoutSession.mockResolvedValue({
+      id: "cs_123",
+      metadata: { provisioning_request_id: "req_123" },
+      subscription: null,
+    });
+    const { client, updateCalls } = makeSupabaseMock([]);
+
+    const summary = await reconcilePendingCheckoutProvisioning(
+      client as unknown as SupabaseClient,
+      { limit: 1, staleAfterMinutes: 1 },
+    );
+
+    expect(summary.failed).toBe(1);
+    expect(summary.errors[0]).toMatchObject({
+      requestId: "req_123",
+      message: "Checkout session does not have a subscription.",
+    });
+    expect(updateCalls).toEqual(
+      expect.arrayContaining([
+        {
+          last_error: "Checkout session does not have a subscription.",
+        },
+      ]),
+    );
   });
 });

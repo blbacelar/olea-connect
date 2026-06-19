@@ -37,6 +37,17 @@ export interface ProvisioningResult {
   error?: string;
 }
 
+export interface ProvisioningReconciliationSummary {
+  checked: number;
+  completed: number;
+  pending: number;
+  failed: number;
+  errors: Array<{
+    requestId: string;
+    message: string;
+  }>;
+}
+
 export async function prepareCheckoutRegistration(
   supabase: SupabaseClient,
   registration: CheckoutRegistration,
@@ -316,4 +327,71 @@ export async function attemptUserWorkspaceProvisioning(
   }
 
   return result;
+}
+
+export async function reconcilePendingCheckoutProvisioning(
+  supabase: SupabaseClient,
+  {
+    limit = 10,
+    staleAfterMinutes = 2,
+  }: { limit?: number; staleAfterMinutes?: number } = {},
+): Promise<ProvisioningReconciliationSummary> {
+  const staleBefore = new Date(
+    Date.now() - staleAfterMinutes * 60 * 1000,
+  ).toISOString();
+  const { data: requests, error } = await supabase
+    .from("workspace_provisioning_requests")
+    .select("id, checkout_session_id")
+    .eq("status", "pending_payment")
+    .not("checkout_session_id", "is", null)
+    .lte("updated_at", staleBefore)
+    .order("updated_at", { ascending: true })
+    .limit(limit);
+
+  if (error) throw error;
+
+  const summary: ProvisioningReconciliationSummary = {
+    checked: requests?.length ?? 0,
+    completed: 0,
+    pending: 0,
+    failed: 0,
+    errors: [],
+  };
+
+  for (const request of requests ?? []) {
+    if (!request.checkout_session_id) continue;
+
+    try {
+      const result = await recoverCheckoutSessionProvisioning(
+        supabase,
+        request.checkout_session_id,
+      );
+
+      if (result.status === "completed") {
+        summary.completed += 1;
+      } else if (
+        result.status === "pending_payment" ||
+        result.status === "pending_verification"
+      ) {
+        summary.pending += 1;
+      } else {
+        summary.failed += 1;
+        summary.errors.push({
+          requestId: request.id,
+          message: result.error ?? `Provisioning ended as ${result.status}.`,
+        });
+      }
+    } catch (error) {
+      const message =
+        error instanceof Error ? error.message : "Unknown reconciliation error";
+      summary.failed += 1;
+      summary.errors.push({ requestId: request.id, message });
+      await supabase
+        .from("workspace_provisioning_requests")
+        .update({ last_error: message })
+        .eq("id", request.id);
+    }
+  }
+
+  return summary;
 }
