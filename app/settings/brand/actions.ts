@@ -53,9 +53,15 @@ export async function saveBrandProfile(
       logo_path: nextLogoPath,
       primary_color: brand.primaryColor,
       secondary_color: brand.secondaryColor,
+      address: nullableText(brand.address),
+      phone: nullableText(brand.phone),
+      contact_email: nullableText(brand.contactEmail),
+      website: nullableText(brand.website),
       brand_completed_at: new Date().toISOString(),
     })
-    .select("display_name, logo_path, primary_color, secondary_color")
+    .select(
+      "display_name, logo_path, primary_color, secondary_color, address, phone, contact_email, website",
+    )
     .single();
 
   if (error) throw error;
@@ -74,6 +80,10 @@ export async function saveBrandProfile(
     logoUrl: await createLogoSignedUrl(supabase, data.logo_path),
     primaryColor: data.primary_color,
     secondaryColor: data.secondary_color,
+    address: data.address ?? undefined,
+    phone: data.phone ?? undefined,
+    contactEmail: data.contact_email ?? undefined,
+    website: data.website ?? undefined,
   };
 }
 
@@ -143,4 +153,9 @@ function getInitials(value: string) {
       .slice(0, 2)
       .toUpperCase() || "OC"
   );
+}
+
+function nullableText(value: string | undefined) {
+  const normalized = value?.trim();
+  return normalized ? normalized : null;
 }

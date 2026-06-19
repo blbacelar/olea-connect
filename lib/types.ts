@@ -22,6 +22,10 @@ export interface BrandProfile {
   logoUrl?: string;
   primaryColor: string;
   secondaryColor: string;
+  address?: string;
+  phone?: string;
+  contactEmail?: string;
+  website?: string;
 }
 
 export interface Organization {
@@ -56,6 +60,9 @@ export interface Template {
   estimatedTime: string;
   status: string;
   isNew?: boolean;
+  availableAt?: string | null;
+  selectedAt?: string | null;
+  lockedUntil?: string | null;
 }
 
 export type SurveyScore = 1 | 2 | 3 | 4 | 5 | "na";

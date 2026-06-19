@@ -9,6 +9,7 @@ import { PublicHeader } from "@/components/auth/PublicHeader";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
 import { useRegistration } from "@/hooks/use-registration";
 import { useSession } from "@/hooks/use-session";
 import type { BrandProfile } from "@/lib/types";
@@ -35,6 +36,12 @@ export default function BrandSetupPage() {
   const [logoPath, setLogoPath] = useState<string | undefined>(
     session?.organization.brand.logoPath,
   );
+  const [address, setAddress] = useState(session?.organization.brand.address ?? "");
+  const [phone, setPhone] = useState(session?.organization.brand.phone ?? "");
+  const [contactEmail, setContactEmail] = useState(
+    session?.organization.brand.contactEmail ?? session?.member.email ?? "",
+  );
+  const [website, setWebsite] = useState(session?.organization.brand.website ?? "");
   const [error, setError] = useState("");
   const [isUploadingLogo, setIsUploadingLogo] = useState(false);
   const [isPending, startTransition] = useTransition();
@@ -54,8 +61,22 @@ export default function BrandSetupPage() {
       logoPath,
       primaryColor,
       secondaryColor,
+      address,
+      phone,
+      contactEmail,
+      website,
     }),
-    [logoPath, logoUrl, organizationName, primaryColor, secondaryColor],
+    [
+      address,
+      contactEmail,
+      logoPath,
+      logoUrl,
+      organizationName,
+      phone,
+      primaryColor,
+      secondaryColor,
+      website,
+    ],
   );
 
   const updateLogo = (logo?: { path: string; signedUrl?: string }) => {
@@ -155,6 +176,50 @@ export default function BrandSetupPage() {
                   </div>
                 </div>
               ))}
+            </div>
+
+            <div className="mt-6 space-y-2 border-t border-slate-100 pt-5">
+              <Label htmlFor="brandAddress">Footer address</Label>
+              <Textarea
+                id="brandAddress"
+                value={address}
+                onChange={(event) => setAddress(event.target.value)}
+                placeholder="123 Main Street, Calgary, AB"
+              />
+              <p className="text-xs leading-5 text-slate-400">
+                Used in the footer of future PDF exports.
+              </p>
+            </div>
+
+            <div className="mt-5 grid gap-4 sm:grid-cols-2">
+              <div className="space-y-2">
+                <Label htmlFor="brandPhone">Footer phone</Label>
+                <Input
+                  id="brandPhone"
+                  value={phone}
+                  onChange={(event) => setPhone(event.target.value)}
+                  placeholder="+1 555 123 4567"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="brandContactEmail">Footer email</Label>
+                <Input
+                  id="brandContactEmail"
+                  type="email"
+                  value={contactEmail}
+                  onChange={(event) => setContactEmail(event.target.value)}
+                  placeholder="hello@example.org"
+                />
+              </div>
+              <div className="space-y-2 sm:col-span-2">
+                <Label htmlFor="brandWebsite">Footer website</Label>
+                <Input
+                  id="brandWebsite"
+                  value={website}
+                  onChange={(event) => setWebsite(event.target.value)}
+                  placeholder="https://example.org"
+                />
+              </div>
             </div>
 
             <Button

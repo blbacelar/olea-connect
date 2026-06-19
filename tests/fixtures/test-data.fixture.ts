@@ -334,6 +334,44 @@ export class TestDataManager {
     };
   }
 
+  async createWorkspaceProvisioningRequest(owner: CreatedOrganizationOwner) {
+    const { data, error } = await this.supabase
+      .from("workspace_provisioning_requests")
+      .insert({
+        user_id: owner.userId,
+        email: owner.email,
+        full_name: "QA Owner",
+        organization_name: owner.organizationName,
+        province_or_region: "AB",
+        plan_id: "roots",
+        billing_interval: "month",
+        status: "processing",
+        checkout_session_id: `cs_test_${owner.marker}`,
+        provider_customer_id: `cus_${owner.marker}`,
+        provider_subscription_id: `sub_${owner.marker}`,
+        provider_status: "active",
+        payment_confirmed_at: new Date().toISOString(),
+      })
+      .select("id")
+      .single();
+
+    if (error) throw error;
+    const requestId = data.id as string;
+
+    this.registerCleanup({
+      label: `workspace provisioning request ${requestId}`,
+      run: async () => {
+        const { error: deleteError } = await this.supabase
+          .from("workspace_provisioning_requests")
+          .delete()
+          .eq("id", requestId);
+        if (deleteError) throw deleteError;
+      },
+    });
+
+    return requestId;
+  }
+
   async purge() {
     if (this.purged) return;
 
