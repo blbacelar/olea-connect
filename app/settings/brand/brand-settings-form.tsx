@@ -1,7 +1,6 @@
 "use client";
 
 import { Check } from "lucide-react";
-import { useRouter } from "next/navigation";
 import { useState, useTransition } from "react";
 
 import { BrandPreview } from "@/components/BrandPreview";
@@ -19,21 +18,42 @@ export function BrandSettingsForm({
 }: {
   initialBrand: BrandProfile;
 }) {
-  const router = useRouter();
   const [brand, setBrand] = useState(initialBrand);
   const [saved, setSaved] = useState(false);
+  const [error, setError] = useState("");
+  const [isUploadingLogo, setIsUploadingLogo] = useState(false);
   const [isPending, startTransition] = useTransition();
 
   const updateBrand = (field: keyof BrandProfile, value: string) => {
     setSaved(false);
+    setError("");
     setBrand((current) => ({ ...current, [field]: value }));
+  };
+
+  const updateLogo = (logo?: { path: string; signedUrl?: string }) => {
+    setSaved(false);
+    setError("");
+    setBrand((current) => ({
+      ...current,
+      logoPath: logo?.path,
+      logoUrl: logo?.signedUrl,
+    }));
   };
 
   const handleSave = () => {
     startTransition(async () => {
-      setBrand(await saveBrandProfile(brand));
-      setSaved(true);
-      router.refresh();
+      try {
+        setBrand(await saveBrandProfile(brand));
+        setSaved(true);
+        setError("");
+      } catch (saveError) {
+        setSaved(false);
+        setError(
+          saveError instanceof Error
+            ? saveError.message
+            : "We couldn't save your brand profile. Please try again.",
+        );
+      }
     });
   };
 
@@ -61,7 +81,8 @@ export function BrandSettingsForm({
             <Label>Logo</Label>
             <LogoUpload
               value={brand.logoUrl}
-              onChange={(value) => updateBrand("logoUrl", value ?? "")}
+              onChange={updateLogo}
+              onUploadingChange={setIsUploadingLogo}
               initials={brand.logoInitials}
               color={brand.primaryColor}
             />
@@ -142,9 +163,15 @@ export function BrandSettingsForm({
           </div>
 
           <div className="mt-6 flex gap-3 border-t border-slate-100 pt-5">
-            <Button onClick={handleSave} disabled={isPending}>
+            <Button onClick={handleSave} disabled={isPending || isUploadingLogo}>
               {saved ? <Check className="size-4" /> : null}
-              {isPending ? "Saving..." : saved ? "Changes saved" : "Save changes"}
+              {isUploadingLogo
+                ? "Uploading logo..."
+                : isPending
+                  ? "Saving..."
+                  : saved
+                    ? "Changes saved"
+                    : "Save changes"}
             </Button>
             <Button
               variant="outline"
@@ -156,6 +183,11 @@ export function BrandSettingsForm({
               Discard
             </Button>
           </div>
+          {error ? (
+            <p role="alert" className="mt-4 text-sm font-medium text-red-600">
+              {error}
+            </p>
+          ) : null}
           <p className="mt-4 text-xs leading-5 text-slate-400">
             Changing your brand affects future downloads only. Past PDFs are
             not updated.

@@ -11,6 +11,7 @@ import type {
   Session,
 } from "@/lib/types";
 import { createClient } from "@/utils/supabase/server";
+import { createLogoSignedUrl } from "./brand-assets";
 
 const DEFAULT_PRIMARY_COLOR = "#4A7C59";
 const DEFAULT_SECONDARY_COLOR = "#2D5C3E";
@@ -109,10 +110,12 @@ export async function getOptionalMemberContext(): Promise<Session | null> {
     user.email?.split("@")[0] ||
     "Member";
   const displayName = brand?.display_name || organizationRow.name;
+  const logoPath = brand?.logo_path ?? undefined;
   const brandProfile: BrandProfile = {
     organizationName: displayName,
     logoInitials: initials(displayName),
-    logoUrl: brand?.logo_path ?? undefined,
+    logoPath,
+    logoUrl: await createLogoSignedUrl(supabase, logoPath),
     primaryColor: brand?.primary_color ?? DEFAULT_PRIMARY_COLOR,
     secondaryColor: brand?.secondary_color ?? DEFAULT_SECONDARY_COLOR,
     address: brand?.address ?? undefined,

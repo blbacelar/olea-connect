@@ -10,15 +10,17 @@ import { cn } from "@/lib/utils";
 export function LogoUpload({
   value,
   onChange,
+  onUploadingChange,
   initials,
   color,
 }: {
   value?: string;
-  onChange: (value?: string) => void;
+  onChange: (value?: { path: string; signedUrl?: string }) => void;
+  onUploadingChange?: (isUploading: boolean) => void;
   initials: string;
   color: string;
 }) {
-  const upload = useLogoUpload({ value, onChange });
+  const upload = useLogoUpload({ onChange, onUploadingChange });
 
   return (
     <div>
@@ -42,11 +44,19 @@ export function LogoUpload({
           <div className="min-w-0 flex-1">
             <p className="text-[13.5px] font-semibold">Logo uploaded</p>
             <p className="mt-0.5 text-xs text-slate-400">
-              Ready to use on your documents
+              {upload.isUploading
+                ? "Uploading..."
+                : "Ready to use on your documents"}
             </p>
           </div>
           <div className="flex gap-2">
-            <Button type="button" variant="outline" size="sm" onClick={upload.openPicker}>
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={upload.openPicker}
+              disabled={upload.isUploading}
+            >
               Change
             </Button>
             <Button
@@ -54,6 +64,7 @@ export function LogoUpload({
               variant="outline"
               size="icon"
               onClick={upload.remove}
+              disabled={upload.isUploading}
               aria-label="Remove logo"
               className="text-red-600 hover:bg-red-50 hover:text-red-700"
             >
@@ -84,13 +95,14 @@ export function LogoUpload({
           <button
             type="button"
             onClick={upload.openPicker}
+            disabled={upload.isUploading}
             className="mx-auto flex w-full flex-col items-center justify-center"
           >
             <span className="grid size-11 place-items-center rounded-xl bg-olea-light text-olea-green">
               <ImageUp className="size-5" />
             </span>
             <span className="mt-3 text-sm font-semibold">
-              Drop your logo here or browse
+              {upload.isUploading ? "Uploading logo..." : "Drop your logo here or browse"}
             </span>
             <span className="mt-1 text-xs text-slate-400">
               PNG, JPG, or SVG · max 2 MB

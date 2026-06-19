@@ -1,5 +1,6 @@
 "use server";
 
+import { createBrandingSnapshot } from "@/lib/data/brand-assets";
 import { requireMemberContext } from "@/lib/data/member-context";
 import type { TemplateSession } from "@/lib/types";
 import { createClient } from "@/utils/supabase/server";
@@ -13,6 +14,9 @@ export async function saveTemplateSession(
   }
 
   const supabase = await createClient();
+  const brandingSnapshot = session.id
+    ? null
+    : await createBrandingSnapshot(supabase, organization.brand);
   const formData = {
     boardYear: session.boardYear,
     surveyPeriod: session.surveyPeriod,
@@ -35,7 +39,7 @@ export async function saveTemplateSession(
         created_by: member.id,
         title: `Board Self-Evaluation ${session.boardYear}`.trim(),
         form_data: formData,
-        branding_snapshot: organization.brand,
+        branding_snapshot: brandingSnapshot,
       });
   const { data, error } = await query.select("id, updated_at").single();
 

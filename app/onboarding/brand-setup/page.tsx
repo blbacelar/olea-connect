@@ -30,8 +30,11 @@ export default function BrandSetupPage() {
   const [secondaryColor, setSecondaryColor] = useState(
     session?.organization.brand.secondaryColor ?? "#2D5C3E",
   );
-  const [logoDataUrl, setLogoDataUrl] = useState<string | undefined>(
-    session?.organization.brand.logoUrl ?? registration.logoDataUrl,
+  const [logoUrl, setLogoUrl] = useState<string | undefined>(
+    session?.organization.brand.logoUrl,
+  );
+  const [logoPath, setLogoPath] = useState<string | undefined>(
+    session?.organization.brand.logoPath,
   );
   const [address, setAddress] = useState(session?.organization.brand.address ?? "");
   const [phone, setPhone] = useState(session?.organization.brand.phone ?? "");
@@ -40,6 +43,7 @@ export default function BrandSetupPage() {
   );
   const [website, setWebsite] = useState(session?.organization.brand.website ?? "");
   const [error, setError] = useState("");
+  const [isUploadingLogo, setIsUploadingLogo] = useState(false);
   const [isPending, startTransition] = useTransition();
 
   const brand = useMemo<BrandProfile>(
@@ -53,7 +57,8 @@ export default function BrandSetupPage() {
           .map((word) => word.charAt(0))
           .join("")
           .toUpperCase() || "OC",
-      logoUrl: logoDataUrl,
+      logoUrl,
+      logoPath,
       primaryColor,
       secondaryColor,
       address,
@@ -64,7 +69,8 @@ export default function BrandSetupPage() {
     [
       address,
       contactEmail,
-      logoDataUrl,
+      logoPath,
+      logoUrl,
       organizationName,
       phone,
       primaryColor,
@@ -73,6 +79,11 @@ export default function BrandSetupPage() {
     ],
   );
 
+  const updateLogo = (logo?: { path: string; signedUrl?: string }) => {
+    setLogoPath(logo?.path);
+    setLogoUrl(logo?.signedUrl);
+  };
+
   const continueFlow = (complete: boolean) => {
     startTransition(async () => {
       try {
@@ -80,7 +91,6 @@ export default function BrandSetupPage() {
         updateRegistration({
           organizationName,
           brandComplete: complete,
-          logoDataUrl,
         });
         router.push(
           (session?.organization.tier ?? registration.tier) === "seedling"
@@ -125,8 +135,9 @@ export default function BrandSetupPage() {
             <div className="mt-6 space-y-2">
               <Label>Logo</Label>
               <LogoUpload
-                value={logoDataUrl}
-                onChange={setLogoDataUrl}
+                value={logoUrl}
+                onChange={updateLogo}
+                onUploadingChange={setIsUploadingLogo}
                 initials={brand.logoInitials}
                 color={primaryColor}
               />
@@ -213,13 +224,18 @@ export default function BrandSetupPage() {
 
             <Button
               className="mt-7 w-full"
-              disabled={!organizationName.trim() || isPending}
+              disabled={!organizationName.trim() || isPending || isUploadingLogo}
               onClick={() => continueFlow(true)}
             >
-              {isPending ? "Saving..." : "Save brand and continue →"}
+              {isUploadingLogo
+                ? "Uploading logo..."
+                : isPending
+                  ? "Saving..."
+                  : "Save brand and continue →"}
             </Button>
             <button
               onClick={() => continueFlow(false)}
+              disabled={isPending || isUploadingLogo}
               className="mt-4 w-full text-sm font-medium text-slate-500"
             >
               Skip for now — set up later
