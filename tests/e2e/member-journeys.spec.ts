@@ -69,6 +69,9 @@ test.describe("@critical @member core member journeys", () => {
     await expect(page.getByText("Available").first()).toBeVisible();
     await expect(page.getByText("Selected").first()).toBeVisible();
     await expect(page.getByText("Locked until").first()).toBeVisible();
+    await expect(
+      page.getByRole("button", { name: /Board Self-Evaluation/ }),
+    ).toBeDisabled();
   });
 
   test("bypasses template selection for Roots members", async ({
