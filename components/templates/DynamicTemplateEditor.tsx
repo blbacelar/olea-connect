@@ -8,17 +8,27 @@ import { useDynamicTemplateSession } from "@/hooks/use-dynamic-template-session"
 import type {
   DynamicTemplateEditorData,
   DynamicTemplateSession,
+  TemplateExportFormat,
+  TemplateExportRecord,
   TemplateSavePayload,
 } from "@/lib/template-renderer/types";
 
+import { TemplateExportPanel } from "./TemplateExportPanel";
 import { TemplateFields } from "./TemplateFields";
 
 export function DynamicTemplateEditor({
   data,
   saveSession,
+  generateExport,
+  createDownloadUrl,
 }: {
   data: DynamicTemplateEditorData;
   saveSession: (payload: TemplateSavePayload) => Promise<DynamicTemplateSession>;
+  generateExport: (input: {
+    templateInstanceId: string;
+    format: TemplateExportFormat;
+  }) => Promise<TemplateExportRecord>;
+  createDownloadUrl: (exportId: string) => Promise<string>;
 }) {
   const {
     session,
@@ -160,6 +170,15 @@ export function DynamicTemplateEditor({
           </section>
         ))}
       </div>
+
+      <TemplateExportPanel
+        templateInstanceId={session.id}
+        supportsPdf={data.template.supportsPdf}
+        supportsDocx={data.template.supportsDocx}
+        initialExports={data.exports}
+        generateExport={generateExport}
+        createDownloadUrl={createDownloadUrl}
+      />
     </div>
   );
 }

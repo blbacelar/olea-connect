@@ -40,14 +40,18 @@ export function useDynamicTemplateSession({
   );
 
   const updateValue = (path: FieldPath, value: TemplateValue) => {
-    setSession((current) => ({
-      ...current,
-      completionPercent: calculateCompletionPercent(
-        current.schemaSnapshot,
-        setValue(current.formData, path, value),
-      ),
-      formData: setValue(current.formData, path, value),
-    }));
+    setSession((current) => {
+      const formData = setValue(current.formData, path, value);
+
+      return {
+        ...current,
+        completionPercent: calculateCompletionPercent(
+          current.schemaSnapshot,
+          formData,
+        ),
+        formData,
+      };
+    });
     setSaveState("unsaved");
   };
 
