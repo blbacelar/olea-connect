@@ -19,6 +19,14 @@ export type CreatedOrganizationOwner = {
   password: string;
 };
 
+export type CreatedOrganizationMember = {
+  marker: string;
+  userId: string;
+  organizationId: string;
+  email: string;
+  password: string;
+};
+
 export class TestDataManager {
   private readonly cleanupTasks: CleanupTask[] = [];
   private identitySequence = 0;
@@ -107,6 +115,23 @@ export class TestDataManager {
           .maybeSingle();
         if (lookupError) throw lookupError;
         if (data) throw new Error(`Organization ${organizationId} still exists.`);
+      },
+    });
+
+    this.registerCleanup({
+      label: `organization logo storage ${organizationId}`,
+      run: async () => {
+        const { data, error } = await this.supabase.storage
+          .from("organization-logos")
+          .list(organizationId);
+        if (error) throw error;
+        const paths = (data ?? []).map((file) => `${organizationId}/${file.name}`);
+        if (!paths.length) return;
+
+        const { error: removeError } = await this.supabase.storage
+          .from("organization-logos")
+          .remove(paths);
+        if (removeError) throw removeError;
       },
     });
 
@@ -205,6 +230,80 @@ export class TestDataManager {
       .maybeSingle();
     if (error) throw error;
     return Boolean(data);
+  }
+
+  async getBrandProfile(organizationId: string) {
+    const { data, error } = await this.supabase
+      .from("organization_brand_profiles")
+      .select("display_name, logo_path, primary_color, secondary_color, brand_completed_at")
+      .eq("organization_id", organizationId)
+      .single();
+    if (error) throw error;
+    return data;
+  }
+
+  async createOrganizationMember(
+    owner: CreatedOrganizationOwner,
+    options: {
+      role?: "admin" | "member";
+    } = {},
+  ): Promise<CreatedOrganizationMember> {
+    const identity = createTestIdentity(
+      this.testInfo,
+      ++this.identitySequence,
+    );
+    const { data: authData, error: authError } =
+      await this.supabase.auth.admin.createUser({
+        email: identity.email,
+        password: identity.password,
+        email_confirm: true,
+        user_metadata: {
+          full_name: identity.fullName,
+          e2e_marker: identity.marker,
+        },
+      });
+
+    if (authError) throw authError;
+    const userId = authData.user.id;
+
+    this.registerCleanup({
+      label: `auth user ${userId}`,
+      run: async () => {
+        const { error } = await this.supabase.auth.admin.deleteUser(userId);
+        if (error && error.status !== 404) throw error;
+      },
+    });
+
+    const { error: memberError } = await this.supabase
+      .from("organization_members")
+      .insert({
+        organization_id: owner.organizationId,
+        user_id: userId,
+        role: options.role ?? "member",
+        status: "active",
+        joined_at: new Date().toISOString(),
+      });
+    if (memberError) throw memberError;
+
+    this.registerCleanup({
+      label: `organization member ${owner.organizationId}/${userId}`,
+      run: async () => {
+        const { error } = await this.supabase
+          .from("organization_members")
+          .delete()
+          .eq("organization_id", owner.organizationId)
+          .eq("user_id", userId);
+        if (error) throw error;
+      },
+    });
+
+    return {
+      marker: identity.marker,
+      userId,
+      organizationId: owner.organizationId,
+      email: identity.email,
+      password: identity.password,
+    };
   }
 
   async authUserExists(userId: string) {

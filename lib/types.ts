@@ -12,13 +12,13 @@ export interface RegistrationState {
   province: string;
   emailVerified: boolean;
   brandComplete: boolean;
-  logoDataUrl?: string;
   selectedTemplateIds: string[];
 }
 
 export interface BrandProfile {
   organizationName: string;
   logoInitials: string;
+  logoPath?: string;
   logoUrl?: string;
   primaryColor: string;
   secondaryColor: string;

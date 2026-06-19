@@ -4,6 +4,7 @@ import { createHash, randomUUID } from "node:crypto";
 
 import { revalidatePath } from "next/cache";
 
+import { createBrandingSnapshot } from "@/lib/data/brand-assets";
 import { requireMemberContext } from "@/lib/data/member-context";
 import { buildExportFileName, buildExportStoragePath } from "@/lib/template-renderer/export-files";
 import { buildTemplateExportModel } from "@/lib/template-renderer/export-model";
@@ -45,12 +46,15 @@ export async function saveDynamicTemplateSession(
   }
 
   const supabase = await createClient();
+  const brandingSnapshot = payload.id
+    ? payload.brandingSnapshot
+    : await createBrandingSnapshot(supabase, organization.brand);
   const changes = {
     organization_id: organization.id,
     resource_id: payload.resourceId,
     title: payload.title,
     form_data: payload.formData,
-    branding_snapshot: payload.brandingSnapshot,
+    branding_snapshot: brandingSnapshot,
     definition_version: payload.schemaVersion,
     schema_snapshot: payload.schemaSnapshot,
     completion_percent: payload.completionPercent,
