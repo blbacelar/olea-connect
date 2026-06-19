@@ -1,5 +1,12 @@
 import "server-only";
 
+import { normalizeTemplateSchema } from "@/lib/template-renderer/schema";
+import type {
+  DynamicTemplateEditorData,
+  DynamicTemplateSession,
+  TemplateFieldSchema,
+  TemplateFormData,
+} from "@/lib/template-renderer/types";
 import type { MembershipTier, Template, TemplateSession } from "@/lib/types";
 import { createClient } from "@/utils/supabase/server";
 
@@ -188,5 +195,91 @@ export async function getTemplateSession(): Promise<TemplateSession> {
     contact: formData.contact ?? member.email,
     deadline: formData.deadline ?? "",
     updatedAt: existing?.updated_at ?? new Date().toISOString(),
+  };
+}
+
+export async function getDynamicTemplateEditorData(
+  slug: string,
+): Promise<DynamicTemplateEditorData | null> {
+  const { member, organization } = await requireMemberContext();
+  const templateSummary = await getTemplateBySlug(slug);
+
+  if (!templateSummary?.available) return null;
+
+  const supabase = await createClient();
+  const { data: resource, error: resourceError } = await supabase
+    .from("resources")
+    .select(
+      "id, slug, title, summary, description, estimated_minutes, template_definitions(renderer_key, schema_version, field_schema, default_values, supports_pdf)",
+    )
+    .eq("slug", slug)
+    .eq("type", "template")
+    .eq("status", "published")
+    .maybeSingle();
+
+  if (resourceError) throw resourceError;
+  if (!resource) return null;
+
+  const definition = Array.isArray(resource.template_definitions)
+    ? resource.template_definitions[0]
+    : resource.template_definitions;
+  const schema = normalizeTemplateSchema(definition?.field_schema);
+
+  if (!definition || !schema) return null;
+
+  const { data: existing, error: existingError } = await supabase
+    .from("template_instances")
+    .select(
+      "id, title, status, form_data, branding_snapshot, definition_version, schema_snapshot, completion_percent, last_saved_at, updated_at",
+    )
+    .eq("organization_id", organization.id)
+    .eq("resource_id", resource.id)
+    .order("updated_at", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+
+  if (existingError) throw existingError;
+
+  const defaultValues = (definition.default_values ?? {}) as TemplateFormData;
+  const formData = {
+    ...defaultValues,
+    administrator: defaultValues.administrator || member.name,
+    contact_email: defaultValues.contact_email || member.email,
+    ...((existing?.form_data ?? {}) as TemplateFormData),
+  };
+  const schemaSnapshot =
+    normalizeTemplateSchema(existing?.schema_snapshot) ?? schema;
+  const session: DynamicTemplateSession = {
+    id: existing?.id ?? "",
+    resourceId: resource.id,
+    organizationId: organization.id,
+    title: existing?.title ?? `${resource.title} ${new Date().getFullYear()}`,
+    slug: resource.slug,
+    schemaVersion:
+      existing?.definition_version ?? definition.schema_version ?? schema.version,
+    schemaSnapshot: schemaSnapshot as TemplateFieldSchema,
+    brandingSnapshot:
+      (existing?.branding_snapshot as DynamicTemplateSession["brandingSnapshot"]) ??
+      organization.brand,
+    formData,
+    completionPercent: existing?.completion_percent ?? 0,
+    status: (existing?.status as DynamicTemplateSession["status"]) ?? "draft",
+    lastSavedAt:
+      existing?.last_saved_at ?? existing?.updated_at ?? new Date().toISOString(),
+  };
+
+  return {
+    organization,
+    template: {
+      id: resource.id,
+      slug: resource.slug,
+      title: resource.title,
+      summary: resource.summary,
+      description: resource.description,
+      estimatedMinutes: resource.estimated_minutes,
+      rendererKey: definition.renderer_key,
+      supportsPdf: definition.supports_pdf,
+    },
+    session,
   };
 }

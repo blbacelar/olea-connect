@@ -5,7 +5,8 @@ function compact(value: string) {
     .toLowerCase()
     .replace(/[^a-z0-9]+/g, "-")
     .replace(/^-|-$/g, "")
-    .slice(0, 32);
+    .slice(0, 32)
+    .replace(/^-|-$/g, "");
 }
 
 export function createTestIdentity(testInfo: TestInfo, sequence = 0) {

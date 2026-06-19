@@ -1,0 +1,198 @@
+"use client";
+
+import { AlertCircle, Check, Clock, LoaderCircle, Save } from "lucide-react";
+
+import { Button } from "@/components/ui/button";
+import { Card, CardContent } from "@/components/ui/card";
+import { useDynamicTemplateSession } from "@/hooks/use-dynamic-template-session";
+import type {
+  DynamicTemplateEditorData,
+  DynamicTemplateSession,
+  TemplateSavePayload,
+} from "@/lib/template-renderer/types";
+
+import { TemplateFields } from "./TemplateFields";
+
+export function DynamicTemplateEditor({
+  data,
+  saveSession,
+}: {
+  data: DynamicTemplateEditorData;
+  saveSession: (payload: TemplateSavePayload) => Promise<DynamicTemplateSession>;
+}) {
+  const {
+    session,
+    updateValue,
+    saveState,
+    saveError,
+    validationErrors,
+    completionPercent,
+    isCompleting,
+    saveNow,
+    complete,
+  } = useDynamicTemplateSession({
+    initialSession: data.session,
+    saveSession,
+  });
+
+  const errorsByPath = new Map(
+    validationErrors.map((error) => [error.path, error.message]),
+  );
+
+  return (
+    <div className="space-y-6">
+      <div className="flex flex-wrap items-start justify-between gap-4">
+        <div>
+          <p className="text-xs font-semibold uppercase tracking-[0.08em] text-olea-dark">
+            Dynamic template
+          </p>
+          <h1 className="mt-1 text-[26px] font-bold tracking-[-0.02em]">
+            {data.template.title}
+          </h1>
+          <p className="mt-1.5 max-w-2xl text-sm leading-6 text-slate-600">
+            {data.template.summary}
+          </p>
+        </div>
+
+        <div className="flex flex-wrap items-center gap-3">
+          <SaveStateLabel state={saveState} />
+          <Button variant="outline" onClick={() => void saveNow()}>
+            <Save className="size-4" />
+            Save now
+          </Button>
+          <Button onClick={complete} disabled={isCompleting}>
+            {isCompleting ? (
+              <LoaderCircle className="size-4 animate-spin" />
+            ) : (
+              <Check className="size-4" />
+            )}
+            Mark complete
+          </Button>
+        </div>
+      </div>
+
+      <Card className="border-olea-green/15 bg-gradient-to-br from-white to-olea-light/50 shadow-soft">
+        <CardContent className="grid gap-4 p-5 md:grid-cols-[1fr_auto] md:items-center">
+          <div>
+            <p className="text-sm font-semibold text-slate-900">
+              {completionPercent}% complete
+            </p>
+            <div
+              aria-label={`${completionPercent}% complete`}
+              className="mt-2 h-2 overflow-hidden rounded-full bg-white"
+              role="progressbar"
+              aria-valuenow={completionPercent}
+              aria-valuemin={0}
+              aria-valuemax={100}
+            >
+              <div
+                className="h-full rounded-full bg-olea-green transition-all"
+                style={{ width: `${completionPercent}%` }}
+              />
+            </div>
+          </div>
+          <div className="text-sm text-slate-600">
+            Schema v{session.schemaVersion} · Brand snapshot:{" "}
+            {session.brandingSnapshot.organizationName}
+          </div>
+        </CardContent>
+      </Card>
+
+      {saveError ? (
+        <p
+          role="alert"
+          className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm font-medium text-red-700"
+        >
+          {saveError}
+        </p>
+      ) : null}
+
+      {validationErrors.length > 0 ? (
+        <div className="rounded-xl border border-amber-200 bg-amber-50 px-5 py-4 text-sm text-amber-900">
+          <div className="flex items-center gap-2 font-semibold">
+            <AlertCircle className="size-4" />
+            Complete {validationErrors.length} required item
+            {validationErrors.length === 1 ? "" : "s"} before marking complete.
+          </div>
+        </div>
+      ) : null}
+
+      <div className="space-y-5">
+        {session.schemaSnapshot.header_fields?.length ? (
+          <section className="rounded-xl border bg-white p-6 shadow-soft">
+            <h2 className="text-xl font-semibold">Header information</h2>
+            <p className="mt-1.5 text-sm leading-6 text-slate-500">
+              These details are saved with this template session.
+            </p>
+            <div className="mt-5 grid gap-5 md:grid-cols-2">
+              <TemplateFields
+                fields={session.schemaSnapshot.header_fields}
+                data={session.formData}
+                errorsByPath={errorsByPath}
+                onChange={updateValue}
+              />
+            </div>
+          </section>
+        ) : null}
+
+        {session.schemaSnapshot.sections.map((section) => (
+          <section
+            key={section.id}
+            className="rounded-xl border bg-white p-6 shadow-soft"
+            aria-labelledby={`${section.id}-heading`}
+          >
+            <h2 id={`${section.id}-heading`} className="text-xl font-semibold">
+              {section.title}
+            </h2>
+            {section.description ? (
+              <p className="mt-1.5 text-sm leading-6 text-slate-500">
+                {section.description}
+              </p>
+            ) : null}
+            <div className="mt-5 space-y-5">
+              <TemplateFields
+                fields={section.questions}
+                data={session.formData}
+                errorsByPath={errorsByPath}
+                onChange={updateValue}
+              />
+            </div>
+          </section>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function SaveStateLabel({ state }: { state: string }) {
+  if (state === "saving") {
+    return (
+      <span className="inline-flex items-center gap-1.5 text-sm font-medium text-slate-600">
+        <LoaderCircle className="size-4 animate-spin" />
+        Saving
+      </span>
+    );
+  }
+  if (state === "error") {
+    return (
+      <span className="inline-flex items-center gap-1.5 text-sm font-medium text-red-600">
+        <AlertCircle className="size-4" />
+        Save failed
+      </span>
+    );
+  }
+  if (state === "unsaved") {
+    return (
+      <span className="inline-flex items-center gap-1.5 text-sm font-medium text-amber-600">
+        <Clock className="size-4" />
+        Unsaved changes
+      </span>
+    );
+  }
+  return (
+    <span className="inline-flex items-center gap-1.5 text-sm font-medium text-slate-600">
+      <Check className="size-4 text-olea-green" />
+      Saved
+    </span>
+  );
+}
