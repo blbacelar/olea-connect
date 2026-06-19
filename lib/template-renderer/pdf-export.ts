@@ -32,12 +32,15 @@ const styles = StyleSheet.create({
   title: {
     fontSize: 26,
     fontFamily: "Helvetica-Bold",
-    marginTop: 12,
+    lineHeight: 1.2,
+    marginTop: 14,
+    marginBottom: 6,
   },
   org: {
     fontSize: 11,
     color: "#4B5563",
-    marginTop: 6,
+    lineHeight: 1.25,
+    marginTop: 0,
     marginBottom: 22,
   },
   logo: {
