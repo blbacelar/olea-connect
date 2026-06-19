@@ -10,6 +10,10 @@ function getSafeNextPath(value: string | null) {
     : "/dashboard";
 }
 
+function shouldSkipProvisioning(next: string) {
+  return next.startsWith("/update-password");
+}
+
 export async function GET(request: Request) {
   const url = new URL(request.url);
   const code = url.searchParams.get("code");
@@ -25,6 +29,10 @@ export async function GET(request: Request) {
       } = await supabase.auth.getUser();
 
       if (user) {
+        if (shouldSkipProvisioning(next)) {
+          return NextResponse.redirect(new URL(next, url.origin));
+        }
+
         try {
           const result = await attemptUserWorkspaceProvisioning(
             createAdminClient(),
