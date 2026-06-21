@@ -69,31 +69,35 @@ export function BillingManagementControls({
   const runBillingAction = (action: BillingAction) => {
     startTransition(async () => {
       setError("");
-      const response = await fetch("/api/stripe/portal", {
-        body: JSON.stringify({
-          action,
-          ...(action === "pause" ? { pauseDays: Number(pauseDays) } : {}),
-        }),
-        headers: { "Content-Type": "application/json" },
-        method: "POST",
-      });
-      const result = (await response.json()) as {
-        ok?: boolean;
-        url?: string;
-        error?: string;
-      };
+      try {
+        const response = await fetch("/api/stripe/portal", {
+          body: JSON.stringify({
+            action,
+            ...(action === "pause" ? { pauseDays: Number(pauseDays) } : {}),
+          }),
+          headers: { "Content-Type": "application/json" },
+          method: "POST",
+        });
+        const result = (await response.json().catch(() => ({}))) as {
+          ok?: boolean;
+          url?: string;
+          error?: string;
+        };
 
-      if (!response.ok) {
-        setError(result.error ?? "Unable to update billing.");
-        return;
+        if (!response.ok) {
+          setError(result.error ?? "Unable to update billing.");
+          return;
+        }
+
+        if (result.url) {
+          window.location.assign(result.url);
+          return;
+        }
+
+        window.location.reload();
+      } catch {
+        setError("Unable to reach billing management. Please try again.");
       }
-
-      if (result.url) {
-        window.location.assign(result.url);
-        return;
-      }
-
-      window.location.reload();
     });
   };
 

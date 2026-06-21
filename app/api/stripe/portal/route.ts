@@ -24,6 +24,18 @@ type BillingActionBody = {
   pauseDays?: number;
 };
 
+class BillingActionError extends Error {
+  constructor(
+    message: string,
+    readonly status: number,
+  ) {
+    super(message);
+  }
+}
+
+const pauseableStatuses = new Set(["active", "trialing"]);
+const resumableStatuses = new Set(["paused"]);
+
 function parseActionBody(value: unknown): BillingActionBody {
   if (!value || typeof value !== "object") return {};
   const body = value as BillingActionBody;
@@ -71,14 +83,55 @@ function getPortalFlowData(
 
 function getPauseResumeTimestamp(days: number) {
   if (!Number.isInteger(days) || days < 1 || days > 60) {
-    throw new Error("Membership pauses must be between 1 and 60 days.");
+    throw new BillingActionError(
+      "Membership pauses must be between 1 and 60 days.",
+      400,
+    );
   }
 
   return Math.floor((Date.now() + days * 24 * 60 * 60 * 1000) / 1000);
 }
 
+function assertSameOrigin(request: Request) {
+  const expectedOrigin = new URL(request.url).origin;
+  const origin = request.headers.get("origin");
+  const referer = request.headers.get("referer");
+
+  if (!origin && !referer) {
+    throw new BillingActionError("Billing requests must come from this app.", 403);
+  }
+
+  if (origin && origin !== expectedOrigin) {
+    throw new BillingActionError("Billing requests must come from this app.", 403);
+  }
+
+  if (!origin && referer) {
+    try {
+      if (new URL(referer).origin !== expectedOrigin) {
+        throw new BillingActionError("Billing requests must come from this app.", 403);
+      }
+    } catch {
+      throw new BillingActionError("Billing requests must come from this app.", 403);
+    }
+  }
+}
+
+function assertPauseTransition(action: "pause" | "resume", status: string) {
+  if (action === "pause" && !pauseableStatuses.has(status)) {
+    throw new BillingActionError(
+      "Only active or trialing memberships can be paused.",
+      409,
+    );
+  }
+
+  if (action === "resume" && !resumableStatuses.has(status)) {
+    throw new BillingActionError("Only paused memberships can be resumed.", 409);
+  }
+}
+
 export async function POST(request: Request) {
   try {
+    assertSameOrigin(request);
     const body = parseActionBody(await request.json().catch(() => ({})));
     const action = body.action ?? "manage";
     const billing = await getBillingSummary();
@@ -112,6 +165,7 @@ export async function POST(request: Request) {
     const returnUrl = `${origin}/subscription`;
 
     if (action === "pause" || action === "resume") {
+      assertPauseTransition(action, billing.status);
       const stripe = getStripe();
       const subscription =
         action === "pause"
@@ -125,7 +179,15 @@ export async function POST(request: Request) {
               pause_collection: "",
             });
 
-      await syncStripeSubscription(createAdminClient(), subscription);
+      try {
+        await syncStripeSubscription(createAdminClient(), subscription);
+      } catch (syncError) {
+        console.error("Stripe billing action succeeded but local sync failed", {
+          action,
+          subscriptionId: subscription.id,
+          syncError,
+        });
+      }
       return NextResponse.json({ ok: true });
     }
 
@@ -151,6 +213,7 @@ export async function POST(request: Request) {
     return NextResponse.json({ url: session.url });
   } catch (error) {
     console.error("Unable to create Stripe billing portal session", error);
+    const status = error instanceof BillingActionError ? error.status : 500;
     return NextResponse.json(
       {
         error:
@@ -158,7 +221,7 @@ export async function POST(request: Request) {
             ? error.message
             : "Unable to open billing management.",
       },
-      { status: 500 },
+      { status },
     );
   }
 }

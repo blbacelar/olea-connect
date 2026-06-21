@@ -7,7 +7,6 @@ import type { MembershipTier, RegistrationState } from "@/lib/types";
 type BillingCycle = RegistrationState["billingCycle"];
 
 let stripeClient: Stripe | undefined;
-let portalConfigurationId: string | undefined;
 
 const membershipTiers: MembershipTier[] = [
   "seedling",
@@ -52,6 +51,10 @@ export function getStripeSeatPriceId() {
   return priceId;
 }
 
+function getOptionalStripeSeatPriceId() {
+  return process.env.STRIPE_PRICE_SEAT_MONTHLY || null;
+}
+
 export function getWebhookSecret() {
   const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET;
 
@@ -64,12 +67,12 @@ export function getWebhookSecret() {
 
 async function getPortalUpdateProducts() {
   const stripe = getStripe();
-  const seatPriceId = getStripeSeatPriceId();
+  const seatPriceId = getOptionalStripeSeatPriceId();
   const priceIds = [
     ...membershipTiers.flatMap((tier) =>
       billingCycles.map((cycle) => getStripePriceId(tier, cycle)),
     ),
-    seatPriceId,
+    ...(seatPriceId ? [seatPriceId] : []),
   ];
   const prices = await Promise.all(
     priceIds.map((priceId) => stripe.prices.retrieve(priceId)),
@@ -85,11 +88,11 @@ async function getPortalUpdateProducts() {
   return [...products.entries()].map(([product, pricesForProduct]) => ({
     product,
     prices: pricesForProduct,
-    ...(pricesForProduct.includes(seatPriceId)
+    ...(seatPriceId && pricesForProduct.includes(seatPriceId)
       ? {
           adjustable_quantity: {
             enabled: true,
-            minimum: 0,
+            minimum: 1,
             maximum: 100,
           },
         }
@@ -144,8 +147,6 @@ async function getBillingPortalConfigurationParams() {
 }
 
 export async function getBillingPortalConfigurationId() {
-  if (portalConfigurationId) return portalConfigurationId;
-
   const configuredId = process.env.STRIPE_BILLING_PORTAL_CONFIGURATION_ID;
 
   const stripe = getStripe();
@@ -155,8 +156,7 @@ export async function getBillingPortalConfigurationId() {
       configuredId,
       configurationParams,
     );
-    portalConfigurationId = configuration.id;
-    return portalConfigurationId;
+    return configuration.id;
   }
 
   const configurations = await stripe.billingPortal.configurations.list({
@@ -176,6 +176,5 @@ export async function getBillingPortalConfigurationId() {
       )
     : await stripe.billingPortal.configurations.create(configurationParams);
 
-  portalConfigurationId = configuration.id;
-  return portalConfigurationId;
+  return configuration.id;
 }

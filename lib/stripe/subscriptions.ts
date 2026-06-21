@@ -9,6 +9,22 @@ import {
   toIsoDate,
 } from "@/lib/stripe/subscription-domain";
 
+function getSubscriptionItemType(item: Stripe.SubscriptionItem) {
+  return item.price.metadata.item_type || (getPlanId(item) ? "membership" : "seat");
+}
+
+function getMembershipItem(subscription: Stripe.Subscription) {
+  return (
+    subscription.items.data.find((item) => getSubscriptionItemType(item) === "membership") ??
+    subscription.items.data.find((item) => getPlanId(item)) ??
+    subscription.items.data[0]
+  );
+}
+
+function getPersistableQuantity(item: Stripe.SubscriptionItem) {
+  return Math.max(item.quantity ?? 1, 1);
+}
+
 export async function syncStripeSubscription(
   supabase: SupabaseClient,
   subscription: Stripe.Subscription,
@@ -18,9 +34,9 @@ export async function syncStripeSubscription(
     typeof subscription.customer === "string"
       ? subscription.customer
       : subscription.customer.id;
-  const firstItem = subscription.items.data[0];
-  const planId = getPlanId(firstItem);
-  const billingInterval = firstItem?.price.recurring?.interval;
+  const membershipItem = getMembershipItem(subscription);
+  const planId = getPlanId(membershipItem);
+  const billingInterval = membershipItem?.price.recurring?.interval;
 
   let lookup = supabase
     .from("subscriptions")
@@ -47,9 +63,9 @@ export async function syncStripeSubscription(
         ? { billing_interval: billingInterval }
         : {}),
       status: mapSubscriptionStatus(subscription),
-      quantity: firstItem?.quantity ?? 1,
-      current_period_start: toIsoDate(firstItem?.current_period_start),
-      current_period_end: toIsoDate(firstItem?.current_period_end),
+      quantity: membershipItem ? getPersistableQuantity(membershipItem) : 1,
+      current_period_start: toIsoDate(membershipItem?.current_period_start),
+      current_period_end: toIsoDate(membershipItem?.current_period_end),
       pause_starts_at: subscription.pause_collection
         ? existingSubscription.pause_starts_at ?? new Date().toISOString()
         : null,
@@ -62,7 +78,7 @@ export async function syncStripeSubscription(
           typeof subscription.latest_invoice === "string"
             ? subscription.latest_invoice
             : subscription.latest_invoice?.id,
-        stripe_price_id: firstItem?.price.id,
+        stripe_price_id: membershipItem?.price.id,
       },
     })
     .eq("id", existingSubscription.id)
@@ -93,12 +109,12 @@ export async function syncStripeSubscription(
 
     const values = {
       subscription_id: localSubscription.id,
-      item_type: item.price.metadata.item_type || "membership",
+      item_type: getSubscriptionItemType(item),
       provider_item_id: item.id,
-      quantity: item.quantity ?? 1,
+      quantity: getPersistableQuantity(item),
       unit_amount_cents: item.price.unit_amount ?? 0,
       currency: item.price.currency.toUpperCase(),
-      active: !item.deleted,
+      active: !item.deleted && (item.quantity ?? 1) > 0,
     };
 
     const itemMutation = existingItem
