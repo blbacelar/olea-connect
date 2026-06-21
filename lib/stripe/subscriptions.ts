@@ -24,7 +24,7 @@ export async function syncStripeSubscription(
 
   let lookup = supabase
     .from("subscriptions")
-    .select("id, metadata");
+    .select("id, metadata, pause_starts_at");
   lookup = localSubscriptionId
     ? lookup.eq("id", localSubscriptionId)
     : lookup.eq("provider_subscription_id", subscription.id);
@@ -51,7 +51,7 @@ export async function syncStripeSubscription(
       current_period_start: toIsoDate(firstItem?.current_period_start),
       current_period_end: toIsoDate(firstItem?.current_period_end),
       pause_starts_at: subscription.pause_collection
-        ? new Date().toISOString()
+        ? existingSubscription.pause_starts_at ?? new Date().toISOString()
         : null,
       pause_ends_at: toIsoDate(subscription.pause_collection?.resumes_at),
       cancel_at_period_end: subscription.cancel_at_period_end,

@@ -1,4 +1,12 @@
-import { AlertTriangle, CheckCircle2, Clock3, Download, Sprout } from "lucide-react";
+import {
+  AlertTriangle,
+  CalendarDays,
+  CheckCircle2,
+  Clock3,
+  Download,
+  Sprout,
+  Users,
+} from "lucide-react";
 
 import { PageHeader } from "@/components/PageHeader";
 import { ActivationRetryButton } from "@/components/auth/ActivationRetryButton";
@@ -9,7 +17,7 @@ import {
   type BillingStatus,
 } from "@/lib/billing/server";
 
-import { BillingPortalButton } from "./billing-actions";
+import { BillingManagementControls } from "./billing-actions";
 
 const statusLabels: Record<BillingStatus, string> = {
   incomplete: "Checkout incomplete",
@@ -138,17 +146,15 @@ export default async function SubscriptionPage() {
 
   const canManage = billing.role === "owner" || billing.role === "admin";
   const accessRestricted = !["active", "trialing"].includes(billing.status);
+  const totalSeats = billing.includedSeats + billing.seatQuantity;
+  const isPaused = billing.status === "paused";
+  const primaryDate = isPaused ? billing.pauseEndsAt : billing.currentPeriodEnd;
 
   return (
     <div>
       <PageHeader
         title="Subscription"
         description={`Manage billing for ${billing.organizationName}.`}
-        action={
-          canManage ? (
-            <BillingPortalButton disabled={!billing.customerId} />
-          ) : null
-        }
       />
 
       {accessRestricted ? (
@@ -209,11 +215,15 @@ export default async function SubscriptionPage() {
           </div>
           <div>
             <p className="text-xs font-semibold uppercase tracking-[0.05em] text-slate-400">
-              {billing.cancelAtPeriodEnd ? "Access ends" : "Next billing date"}
+              {billing.cancelAtPeriodEnd
+                ? "Access ends"
+                : isPaused
+                  ? "Pause resumes"
+                  : "Next billing date"}
             </p>
             <p className="mt-2 text-base font-semibold">
-              {billing.currentPeriodEnd
-                ? formatDate(billing.currentPeriodEnd)
+              {primaryDate
+                ? formatDate(primaryDate)
                 : "Pending Stripe confirmation"}
             </p>
             <p className="mt-1 text-[13px] text-slate-500">
@@ -222,6 +232,101 @@ export default async function SubscriptionPage() {
           </div>
         </div>
       </section>
+
+      <div className="mb-7 grid gap-5 xl:grid-cols-[1fr_1fr]">
+        <section className="rounded-[14px] border bg-white p-[22px] shadow-soft">
+          <h2 className="flex items-center gap-2 text-base font-bold text-slate-800">
+            <Users className="size-5 text-olea-green" />
+            Seat usage
+          </h2>
+          <dl className="mt-5 grid gap-4 sm:grid-cols-3">
+            <div className="rounded-xl bg-slate-50 p-4">
+              <dt className="text-xs font-semibold uppercase tracking-wide text-slate-400">
+                Used
+              </dt>
+              <dd className="mt-2 text-2xl font-bold text-slate-800">
+                {billing.seatsUsed}
+              </dd>
+            </div>
+            <div className="rounded-xl bg-slate-50 p-4">
+              <dt className="text-xs font-semibold uppercase tracking-wide text-slate-400">
+                Reserved
+              </dt>
+              <dd className="mt-2 text-2xl font-bold text-slate-800">
+                {billing.seatsReserved}
+              </dd>
+            </div>
+            <div className="rounded-xl bg-slate-50 p-4">
+              <dt className="text-xs font-semibold uppercase tracking-wide text-slate-400">
+                Available
+              </dt>
+              <dd className="mt-2 text-2xl font-bold text-slate-800">
+                {Math.max(totalSeats - billing.seatsReserved, 0)}
+              </dd>
+            </div>
+          </dl>
+          <p className="mt-4 text-sm leading-6 text-slate-500">
+            {billing.includedSeats} included seat
+            {billing.includedSeats === 1 ? "" : "s"} plus{" "}
+            {billing.seatQuantity} paid seat add-on
+            {billing.seatQuantity === 1 ? "" : "s"} at{" "}
+            {formatMoney(billing.seatUnitAmountCents, billing.seatCurrency)} /
+            month.
+          </p>
+        </section>
+
+        <section className="rounded-[14px] border bg-white p-[22px] shadow-soft">
+          <h2 className="flex items-center gap-2 text-base font-bold text-slate-800">
+            <CalendarDays className="size-5 text-olea-green" />
+            Billing cycle
+          </h2>
+          <dl className="mt-5 grid gap-4 sm:grid-cols-2">
+            <div className="rounded-xl bg-slate-50 p-4">
+              <dt className="text-xs font-semibold uppercase tracking-wide text-slate-400">
+                Cycle
+              </dt>
+              <dd className="mt-2 font-semibold capitalize text-slate-800">
+                {billing.billingInterval === "year" ? "Annual" : "Monthly"}
+              </dd>
+            </div>
+            <div className="rounded-xl bg-slate-50 p-4">
+              <dt className="text-xs font-semibold uppercase tracking-wide text-slate-400">
+                Current period
+              </dt>
+              <dd className="mt-2 text-sm font-semibold text-slate-800">
+                {billing.currentPeriodStart && billing.currentPeriodEnd
+                  ? `${formatDate(billing.currentPeriodStart)} - ${formatDate(
+                      billing.currentPeriodEnd,
+                    )}`
+                  : "Pending Stripe confirmation"}
+              </dd>
+            </div>
+          </dl>
+          {billing.pauseStartsAt || billing.cancelAtPeriodEnd || billing.canceledAt ? (
+            <p className="mt-4 rounded-lg bg-amber-50 p-3 text-sm leading-6 text-amber-800">
+              {billing.pauseStartsAt && billing.pauseEndsAt
+                ? `Paused from ${formatDate(billing.pauseStartsAt)} until ${formatDate(
+                    billing.pauseEndsAt,
+                  )}.`
+                : billing.cancelAtPeriodEnd && billing.currentPeriodEnd
+                  ? `Cancellation is scheduled for ${formatDate(
+                      billing.currentPeriodEnd,
+                    )}.`
+                  : billing.canceledAt
+                    ? `Canceled on ${formatDate(billing.canceledAt)}.`
+                    : null}
+            </p>
+          ) : null}
+        </section>
+      </div>
+
+      <div className="mb-7">
+        <BillingManagementControls
+          canManage={canManage}
+          disabled={!billing.customerId || !billing.subscriptionId}
+          isPaused={isPaused}
+        />
+      </div>
 
       <h2 className="mb-3 text-base font-bold text-slate-800">
         Billing history
