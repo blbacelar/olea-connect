@@ -17,7 +17,10 @@ import {
   type BillingStatus,
 } from "@/lib/billing/server";
 
-import { BillingManagementControls } from "./billing-actions";
+import {
+  BillingManagementControls,
+  SeatManagementControls,
+} from "./billing-actions";
 
 const statusLabels: Record<BillingStatus, string> = {
   incomplete: "Checkout incomplete",
@@ -273,6 +276,18 @@ export default async function SubscriptionPage() {
             {formatMoney(billing.seatUnitAmountCents, billing.seatCurrency)} /
             month.
           </p>
+          <SeatManagementControls
+            canManage={canManage}
+            disabled={
+              !billing.customerId ||
+              !billing.subscriptionId ||
+              accessRestricted
+            }
+            seatPriceLabel={`${formatMoney(
+              billing.seatUnitAmountCents,
+              billing.seatCurrency,
+            )} / month`}
+          />
         </section>
 
         <section className="rounded-[14px] border bg-white p-[22px] shadow-soft">

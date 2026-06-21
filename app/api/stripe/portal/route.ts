@@ -5,6 +5,7 @@ import { getBillingSummary } from "@/lib/billing/server";
 import {
   getBillingPortalConfigurationId,
   getStripe,
+  getStripeSeatPriceId,
 } from "@/lib/stripe/server";
 import { syncStripeSubscription } from "@/lib/stripe/subscriptions";
 import { createAdminClient } from "@/utils/supabase/admin";
@@ -17,7 +18,8 @@ type BillingAction =
   | "subscription_update"
   | "cancel"
   | "pause"
-  | "resume";
+  | "resume"
+  | "add_seat";
 
 type BillingActionBody = {
   action?: BillingAction;
@@ -35,6 +37,7 @@ class BillingActionError extends Error {
 
 const pauseableStatuses = new Set(["active", "trialing"]);
 const resumableStatuses = new Set(["paused"]);
+const seatAdjustableStatuses = new Set(["active", "trialing"]);
 
 function parseActionBody(value: unknown): BillingActionBody {
   if (!value || typeof value !== "object") return {};
@@ -129,6 +132,45 @@ function assertPauseTransition(action: "pause" | "resume", status: string) {
   }
 }
 
+function assertSeatAdjustmentAllowed(status: string) {
+  if (!seatAdjustableStatuses.has(status)) {
+    throw new BillingActionError(
+      "Only active or trialing memberships can add seats.",
+      409,
+    );
+  }
+}
+
+async function addSeatToSubscription(subscriptionId: string) {
+  const stripe = getStripe();
+  const seatPriceId = getStripeSeatPriceId();
+  const subscription = await stripe.subscriptions.retrieve(subscriptionId, {
+    expand: ["items.data.price"],
+  });
+  const seatItem = subscription.items.data.find((item) => {
+    const priceId =
+      typeof item.price === "string" ? item.price : item.price.id;
+    return priceId === seatPriceId;
+  });
+
+  return stripe.subscriptions.update(subscriptionId, {
+    items: seatItem
+      ? [
+          {
+            id: seatItem.id,
+            quantity: (seatItem.quantity ?? 0) + 1,
+          },
+        ]
+      : [
+          {
+            price: seatPriceId,
+            quantity: 1,
+          },
+        ],
+    proration_behavior: "always_invoice",
+  });
+}
+
 export async function POST(request: Request) {
   try {
     assertSameOrigin(request);
@@ -164,20 +206,25 @@ export async function POST(request: Request) {
     const origin = new URL(request.url).origin;
     const returnUrl = `${origin}/subscription`;
 
-    if (action === "pause" || action === "resume") {
-      assertPauseTransition(action, billing.status);
-      const stripe = getStripe();
+    if (action === "pause" || action === "resume" || action === "add_seat") {
+      if (action === "add_seat") {
+        assertSeatAdjustmentAllowed(billing.status);
+      } else {
+        assertPauseTransition(action, billing.status);
+      }
       const subscription =
         action === "pause"
-          ? await stripe.subscriptions.update(billing.subscriptionId, {
+          ? await getStripe().subscriptions.update(billing.subscriptionId, {
               pause_collection: {
                 behavior: "void",
                 resumes_at: getPauseResumeTimestamp(body.pauseDays ?? 30),
               },
             })
-          : await stripe.subscriptions.update(billing.subscriptionId, {
-              pause_collection: "",
-            });
+          : action === "resume"
+            ? await getStripe().subscriptions.update(billing.subscriptionId, {
+                pause_collection: "",
+              })
+            : await addSeatToSubscription(billing.subscriptionId);
 
       try {
         await syncStripeSubscription(createAdminClient(), subscription);
