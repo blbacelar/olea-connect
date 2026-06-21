@@ -44,9 +44,7 @@ export default function LoginPage() {
         router.push(
           nextPath.startsWith("/") && !nextPath.startsWith("//")
             ? nextPath
-            : registration.brandComplete
-              ? "/dashboard"
-              : "/onboarding/brand-setup",
+            : "/dashboard",
         );
         router.refresh();
       } catch (loginError) {
