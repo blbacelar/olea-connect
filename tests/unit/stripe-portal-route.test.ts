@@ -6,6 +6,8 @@ const routeMocks = vi.hoisted(() => ({
   createAdminClient: vi.fn(() => ({ from: vi.fn() })),
   createPortalSession: vi.fn(),
   getBillingPortalConfigurationId: vi.fn(),
+  getStripeSeatPriceId: vi.fn(() => "price_seat"),
+  stripeSubscriptionRetrieve: vi.fn(),
   stripeSubscriptionUpdate: vi.fn(),
   syncStripeSubscription: vi.fn(),
 }));
@@ -18,6 +20,7 @@ vi.mock("@/lib/billing/server", () => ({
 
 vi.mock("@/lib/stripe/server", () => ({
   getBillingPortalConfigurationId: routeMocks.getBillingPortalConfigurationId,
+  getStripeSeatPriceId: routeMocks.getStripeSeatPriceId,
   getStripe: () => ({
     billingPortal: {
       sessions: {
@@ -25,6 +28,7 @@ vi.mock("@/lib/stripe/server", () => ({
       },
     },
     subscriptions: {
+      retrieve: routeMocks.stripeSubscriptionRetrieve,
       update: routeMocks.stripeSubscriptionUpdate,
     },
   }),
@@ -96,6 +100,19 @@ describe("Stripe billing portal route", () => {
       url: "https://billing.stripe.test/session",
     });
     routeMocks.getBillingPortalConfigurationId.mockResolvedValue("bpc_123");
+    routeMocks.stripeSubscriptionRetrieve.mockResolvedValue(
+      makeSubscription({
+        items: {
+          data: [
+            {
+              id: "si_seat",
+              price: { id: "price_seat" },
+              quantity: 1,
+            },
+          ],
+        } as unknown as Stripe.ApiList<Stripe.SubscriptionItem>,
+      }),
+    );
     routeMocks.stripeSubscriptionUpdate.mockResolvedValue(makeSubscription());
     routeMocks.syncStripeSubscription.mockResolvedValue("local_sub_123");
   });
@@ -196,5 +213,41 @@ describe("Stripe billing portal route", () => {
       }),
     });
     expect(routeMocks.syncStripeSubscription).toHaveBeenCalled();
+  });
+
+  it("adds one paid seat through the Stripe seat add-on price", async () => {
+    const { POST } = await import("@/app/api/stripe/portal/route");
+
+    const response = await POST(makeRequest({ action: "add_seat" }));
+
+    expect(response.status).toBe(200);
+    expect(routeMocks.stripeSubscriptionRetrieve).toHaveBeenCalledWith(
+      "sub_123",
+      { expand: ["items.data.price"] },
+    );
+    expect(routeMocks.stripeSubscriptionUpdate).toHaveBeenCalledWith("sub_123", {
+      items: [{ id: "si_seat", quantity: 2 }],
+      proration_behavior: "always_invoice",
+    });
+    expect(routeMocks.syncStripeSubscription).toHaveBeenCalled();
+  });
+
+  it("creates the seat add-on item when none exists yet", async () => {
+    const { POST } = await import("@/app/api/stripe/portal/route");
+    routeMocks.stripeSubscriptionRetrieve.mockResolvedValue(
+      makeSubscription({
+        items: {
+          data: [],
+        } as unknown as Stripe.ApiList<Stripe.SubscriptionItem>,
+      }),
+    );
+
+    const response = await POST(makeRequest({ action: "add_seat" }));
+
+    expect(response.status).toBe(200);
+    expect(routeMocks.stripeSubscriptionUpdate).toHaveBeenCalledWith("sub_123", {
+      items: [{ price: "price_seat", quantity: 1 }],
+      proration_behavior: "always_invoice",
+    });
   });
 });

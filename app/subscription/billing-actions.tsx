@@ -5,6 +5,7 @@ import {
   ExternalLink,
   LoaderCircle,
   Pause,
+  Plus,
   Settings2,
   XCircle,
 } from "lucide-react";
@@ -19,7 +20,8 @@ type BillingAction =
   | "subscription_update"
   | "cancel"
   | "pause"
-  | "resume";
+  | "resume"
+  | "add_seat";
 
 type BillingManagementControlsProps = {
   canManage: boolean;
@@ -203,5 +205,88 @@ export function BillingManagementControls({
         </p>
       ) : null}
     </section>
+  );
+}
+
+type SeatManagementControlsProps = {
+  canManage: boolean;
+  disabled?: boolean;
+  seatPriceLabel: string;
+};
+
+export function SeatManagementControls({
+  canManage,
+  disabled = false,
+  seatPriceLabel,
+}: SeatManagementControlsProps) {
+  const [error, setError] = useState("");
+  const [isPending, startTransition] = useTransition();
+  const unavailable = disabled || isPending || !canManage;
+
+  const addSeat = () => {
+    if (
+      !window.confirm(
+        `Add one paid seat for ${seatPriceLabel}? Stripe will bill the prorated amount now.`,
+      )
+    ) {
+      return;
+    }
+
+    startTransition(async () => {
+      setError("");
+      try {
+        const response = await fetch("/api/stripe/portal", {
+          body: JSON.stringify({ action: "add_seat" }),
+          headers: { "Content-Type": "application/json" },
+          method: "POST",
+        });
+        const result = (await response.json().catch(() => ({}))) as {
+          error?: string;
+        };
+
+        if (!response.ok) {
+          setError(result.error ?? "Unable to add a seat.");
+          return;
+        }
+
+        window.location.reload();
+      } catch {
+        setError("Unable to reach billing management. Please try again.");
+      }
+    });
+  };
+
+  return (
+    <div className="mt-5 rounded-xl border border-emerald-200 bg-emerald-50 p-4">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <div>
+          <h3 className="text-sm font-bold text-emerald-950">
+            Need another teammate?
+          </h3>
+          <p className="mt-1 text-xs leading-5 text-emerald-900">
+            Add one paid seat for {seatPriceLabel}. After Stripe confirms it,
+            invite the teammate from Team.
+          </p>
+          {!canManage ? (
+            <p className="mt-2 text-xs font-semibold text-emerald-900">
+              Only organization owners and admins can add seats.
+            </p>
+          ) : null}
+        </div>
+        <Button disabled={unavailable} onClick={addSeat} type="button">
+          {isPending ? (
+            <LoaderCircle className="size-4 animate-spin" />
+          ) : (
+            <Plus className="size-4" />
+          )}
+          Add paid seat
+        </Button>
+      </div>
+      {error ? (
+        <p role="alert" className="mt-3 text-sm font-medium text-red-700">
+          {error}
+        </p>
+      ) : null}
+    </div>
   );
 }
