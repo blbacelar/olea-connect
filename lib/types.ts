@@ -129,21 +129,59 @@ export interface GrantRound {
   id: string;
   name: string;
   programName: string;
+  programType: "quarterly" | "summit" | "named_sponsor";
   description: string;
-  status: "upcoming" | "open" | "reviewing" | "decided" | "closed";
+  status: "draft" | "upcoming" | "open" | "reviewing" | "awarded" | "closed";
   opensAt: string;
   closesAt: string;
+  decisionAt: string | null;
   awardAmountCents: number;
   availableAwards: number;
+  budgetCents: number;
+  publicNotes: string | null;
+  existingApplicationId: string | null;
 }
 
 export interface GrantApplicationSummary {
   id: string;
+  roundId: string;
   roundName: string;
-  status: string;
+  organizationName: string;
+  status:
+    | "draft"
+    | "submitted"
+    | "in_review"
+    | "shortlisted"
+    | "approved"
+    | "declined"
+    | "withdrawn";
+  focusArea: string;
+  fundingRequest: string;
+  expectedOutcome: string;
   requestedAmountCents: number;
+  annualRevenueCents: number | null;
+  craGoodStanding: boolean;
+  registeredInCanada: boolean;
   submittedAt: string | null;
+  withdrawnAt: string | null;
   updatedAt: string;
+  award: {
+    id: string;
+    status: "approved" | "scheduled" | "paid" | "canceled";
+    amountCents: number;
+    paidOn: string | null;
+    paymentReference: string | null;
+    impactStory: string | null;
+    impactStoryConsent: boolean;
+    outcomeReceivedAt: string | null;
+  } | null;
+  reviews?: Array<{
+    id: string;
+    score: number | null;
+    recommendation: string | null;
+    internalNotes: string | null;
+    reviewedAt: string;
+  }>;
 }
 
 export interface Webinar {
