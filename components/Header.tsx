@@ -221,6 +221,7 @@ export function Header() {
                       <Link
                         key={item.href}
                         href={item.href}
+                        prefetch={item.href.startsWith("/api/") ? false : undefined}
                         onClick={() => setMobileOpen(false)}
                         className="flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium text-slate-600 hover:bg-olea-light hover:text-olea-dark"
                       >

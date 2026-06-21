@@ -1,6 +1,10 @@
 import { NextResponse } from "next/server";
 import type Stripe from "stripe";
 
+import {
+  buildCircleProvisioningPayload,
+  enqueueCircleMemberSync,
+} from "@/lib/circle/provisioning";
 import { getStripe, getWebhookSecret } from "@/lib/stripe/server";
 import {
   attemptWorkspaceProvisioning,
@@ -152,6 +156,102 @@ async function handleLifecycleNotification(
   }
 }
 
+async function enqueueCircleSubscriptionAccessSync(
+  subscription: Stripe.Subscription | null,
+) {
+  if (!subscription?.metadata.organization_id) return;
+
+  const organizationId = subscription.metadata.organization_id;
+  const supabase = createAdminClient();
+  const [
+    { data: organization, error: organizationError },
+    { data: localSubscription, error: localSubscriptionError },
+    { data: members, error: membersError },
+  ] = await Promise.all([
+    supabase.from("organizations").select("id, name").eq("id", organizationId).single(),
+    supabase
+      .from("subscriptions")
+      .select("plan_id, status")
+      .eq("organization_id", organizationId)
+      .eq("provider", "stripe")
+      .eq("provider_subscription_id", subscription.id)
+      .maybeSingle(),
+    supabase
+      .from("organization_members")
+      .select("user_id, role, status")
+      .eq("organization_id", organizationId),
+  ]);
+
+  if (organizationError) throw organizationError;
+  if (localSubscriptionError) throw localSubscriptionError;
+  if (membersError) throw membersError;
+
+  const activeSubscription = ["active", "trialing"].includes(
+    localSubscription?.status ?? subscription.status,
+  );
+  const tier = (localSubscription?.plan_id ?? "seedling") as
+    | "seedling"
+    | "roots"
+    | "canopy"
+    | "harvest";
+
+  await Promise.all(
+    (members ?? []).map(async (memberRow) => {
+      const [
+        { data: profile, error: profileError },
+        {
+          data: { user },
+          error: userError,
+        },
+      ] = await Promise.all([
+        supabase
+          .from("profiles")
+          .select("full_name")
+          .eq("id", memberRow.user_id)
+          .maybeSingle(),
+        supabase.auth.admin.getUserById(memberRow.user_id),
+      ]);
+      if (profileError) throw profileError;
+      if (userError) throw userError;
+      if (!user?.email) return null;
+
+      const activeMember = memberRow.status === "active";
+
+      return enqueueCircleMemberSync(
+        supabase,
+        buildCircleProvisioningPayload({
+          action: activeSubscription && activeMember ? "provision" : "deprovision",
+          member: {
+            id: memberRow.user_id,
+            organizationId,
+            name: profile?.full_name ?? "Member",
+            firstName: profile?.full_name?.split(/\s+/)[0] ?? "Member",
+            role: memberRow.role,
+            membershipRole: memberRow.role,
+            email: user.email,
+          },
+          organization: {
+            id: organization.id,
+            name: organization.name,
+            tier,
+            seatsUsed: 0,
+            seatLimit: 0,
+            renewalDate: "",
+            brandComplete: false,
+            brand: {
+              organizationName: organization.name,
+              logoInitials: "OC",
+              primaryColor: "#4A7C59",
+              secondaryColor: "#2D5C3E",
+            },
+          },
+          reason: `stripe_subscription_${subscription.status}`,
+        }),
+      );
+    }),
+  );
+}
+
 export async function POST(request: Request) {
   const signature = request.headers.get("stripe-signature");
 
@@ -203,6 +303,7 @@ export async function POST(request: Request) {
       }
     }
     await handleLifecycleNotification(event, subscription);
+    await enqueueCircleSubscriptionAccessSync(subscription);
 
     const { error: processedError } = await supabase
       .from("webhook_events")

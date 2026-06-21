@@ -4,8 +4,13 @@ import { randomBytes } from "node:crypto";
 
 import { revalidatePath } from "next/cache";
 
+import {
+  buildCircleProvisioningPayload,
+  enqueueCircleMemberSync,
+} from "@/lib/circle/provisioning";
 import { requireMemberContext } from "@/lib/data/member-context";
 import type { OrganizationRole } from "@/lib/types";
+import { createAdminClient } from "@/utils/supabase/admin";
 import { createClient } from "@/utils/supabase/server";
 
 function assertManager(role: OrganizationRole) {
@@ -71,6 +76,65 @@ export async function updateTeamMember(
   });
 
   if (error) throw new Error(error.message);
+
+  const adminSupabase = createAdminClient();
+  const [
+    { data: profile, error: profileError },
+    {
+      data: { user: targetUser },
+      error: userError,
+    },
+  ] = await Promise.all([
+    adminSupabase
+      .from("profiles")
+      .select("full_name")
+      .eq("id", userId)
+      .maybeSingle(),
+    adminSupabase.auth.admin.getUserById(userId),
+  ]);
+  if (profileError) throw new Error(profileError.message);
+  if (userError) throw new Error(userError.message);
+  if (!targetUser?.email) throw new Error("Team member email was not found.");
+
+  const { data: targetMembership, error: membershipError } = values.remove
+    ? { data: null, error: null }
+    : await adminSupabase
+        .from("organization_members")
+        .select("role, status")
+        .eq("organization_id", organization.id)
+        .eq("user_id", userId)
+        .maybeSingle();
+  if (membershipError) throw new Error(membershipError.message);
+
+  const action =
+    values.remove || targetMembership?.status === "suspended"
+      ? "deprovision"
+      : "provision";
+  const membershipRole =
+    targetMembership?.role ?? values.role ?? "member";
+
+  await enqueueCircleMemberSync(
+    adminSupabase,
+    buildCircleProvisioningPayload({
+      action,
+      member: {
+        id: userId,
+        organizationId: organization.id,
+        name: profile?.full_name ?? "Member",
+        firstName: profile?.full_name?.split(/\s+/)[0] ?? "Member",
+        role: membershipRole,
+        membershipRole: membershipRole as OrganizationRole,
+        email: targetUser.email,
+      },
+      organization,
+      reason: values.remove
+        ? "team_member_removed"
+        : values.status === "suspended"
+          ? "team_member_suspended"
+          : "team_member_updated",
+    }),
+  );
+
   revalidatePath("/team");
 }
 
