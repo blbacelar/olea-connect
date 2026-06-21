@@ -23,12 +23,23 @@ export interface BillingSummary {
   planName: string;
   billingInterval: "month" | "year";
   status: BillingStatus;
+  currentPeriodStart: string | null;
   currentPeriodEnd: string | null;
+  pauseStartsAt: string | null;
+  pauseEndsAt: string | null;
   cancelAtPeriodEnd: boolean;
+  canceledAt: string | null;
   customerId: string | null;
   subscriptionId: string | null;
+  localSubscriptionId: string;
   amountCents: number;
   currency: string;
+  includedSeats: number;
+  seatQuantity: number;
+  seatUnitAmountCents: number;
+  seatCurrency: string;
+  seatsUsed: number;
+  seatsReserved: number;
   paymentMethod: string | null;
   invoices: Array<{
     id: string;
@@ -65,6 +76,20 @@ function getPaymentMethodLabel(paymentMethod: Stripe.PaymentMethod | null) {
   return paymentMethod.type.replaceAll("_", " ");
 }
 
+type InvoiceWithLegacySubscription = Stripe.Invoice & {
+  subscription?: string | Stripe.Subscription | null;
+};
+
+function getInvoiceSubscriptionId(invoice: Stripe.Invoice) {
+  const legacyInvoice = invoice as InvoiceWithLegacySubscription;
+  const reference =
+    invoice.parent?.subscription_details?.subscription ??
+    legacyInvoice.subscription;
+
+  if (!reference) return null;
+  return typeof reference === "string" ? reference : reference.id;
+}
+
 export async function getBillingSummary(): Promise<BillingSummary | null> {
   const supabase = await createClient();
   const {
@@ -88,7 +113,7 @@ export async function getBillingSummary(): Promise<BillingSummary | null> {
   const { data: subscription, error: subscriptionError } = await supabase
     .from("subscriptions")
     .select(
-      "id, plan_id, provider_customer_id, provider_subscription_id, billing_interval, status, current_period_end, cancel_at_period_end, membership_plans(name, monthly_price_cents, annual_price_cents, currency)",
+      "id, plan_id, provider_customer_id, provider_subscription_id, billing_interval, status, current_period_start, current_period_end, pause_starts_at, pause_ends_at, cancel_at_period_end, canceled_at, membership_plans(name, monthly_price_cents, annual_price_cents, currency, included_seats), subscription_items(item_type, quantity, unit_amount_cents, currency, active)",
     )
     .eq("organization_id", membership.organization_id)
     .order("created_at", { ascending: false })
@@ -104,10 +129,44 @@ export async function getBillingSummary(): Promise<BillingSummary | null> {
   const plan = Array.isArray(subscription.membership_plans)
     ? subscription.membership_plans[0]
     : subscription.membership_plans;
+  const activeItems = subscription.subscription_items ?? [];
+  const seatItems = activeItems.filter(
+    (item) => item.item_type === "seat" && item.active,
+  );
+  const seatQuantity = seatItems.reduce(
+    (total, item) => total + item.quantity,
+    0,
+  );
+  const seatUnitAmountCents = seatItems[0]?.unit_amount_cents ?? 1000;
+  const seatCurrency =
+    seatItems[0]?.currency ?? plan?.currency ?? "CAD";
   const amountCents =
     subscription.billing_interval === "year"
       ? (plan?.annual_price_cents ?? 0)
       : (plan?.monthly_price_cents ?? 0);
+  const [
+    {
+      count: activeMemberCount,
+      error: activeMemberCountError,
+    },
+    {
+      count: pendingInvitationCount,
+      error: pendingInvitationCountError,
+    },
+  ] = await Promise.all([
+      supabase
+        .from("organization_members")
+        .select("*", { count: "exact", head: true })
+        .eq("organization_id", membership.organization_id)
+        .eq("status", "active"),
+      supabase
+        .from("organization_invitations")
+        .select("*", { count: "exact", head: true })
+        .eq("organization_id", membership.organization_id)
+        .eq("status", "pending"),
+    ]);
+  if (activeMemberCountError) throw activeMemberCountError;
+  if (pendingInvitationCountError) throw pendingInvitationCountError;
 
   let paymentMethod: Stripe.PaymentMethod | null = null;
   let invoices: BillingSummary["invoices"] = [];
@@ -127,15 +186,23 @@ export async function getBillingSummary(): Promise<BillingSummary | null> {
     ]);
 
     paymentMethod = methods.data[0] ?? null;
-    invoices = invoiceList.data.map((invoice) => ({
-      id: invoice.id,
-      createdAt: new Date(invoice.created * 1000).toISOString(),
-      amountCents: invoice.amount_paid || invoice.amount_due,
-      currency: invoice.currency.toUpperCase(),
-      status: invoice.status,
-      hostedUrl: invoice.hosted_invoice_url ?? null,
-      pdfUrl: invoice.invoice_pdf ?? null,
-    }));
+    invoices = invoiceList.data
+      .filter((invoice) => {
+        const invoiceSubscriptionId = getInvoiceSubscriptionId(invoice);
+        return (
+          !subscription.provider_subscription_id ||
+          invoiceSubscriptionId === subscription.provider_subscription_id
+        );
+      })
+      .map((invoice) => ({
+        id: invoice.id,
+        createdAt: new Date(invoice.created * 1000).toISOString(),
+        amountCents: invoice.amount_paid || invoice.amount_due,
+        currency: invoice.currency.toUpperCase(),
+        status: invoice.status,
+        hostedUrl: invoice.hosted_invoice_url ?? null,
+        pdfUrl: invoice.invoice_pdf ?? null,
+      }));
   }
 
   return {
@@ -146,12 +213,23 @@ export async function getBillingSummary(): Promise<BillingSummary | null> {
     planName: plan?.name ?? subscription.plan_id,
     billingInterval: subscription.billing_interval,
     status: subscription.status,
+    currentPeriodStart: subscription.current_period_start,
     currentPeriodEnd: subscription.current_period_end,
+    pauseStartsAt: subscription.pause_starts_at,
+    pauseEndsAt: subscription.pause_ends_at,
     cancelAtPeriodEnd: subscription.cancel_at_period_end,
+    canceledAt: subscription.canceled_at,
     customerId: subscription.provider_customer_id,
     subscriptionId: subscription.provider_subscription_id,
+    localSubscriptionId: subscription.id,
     amountCents,
     currency: plan?.currency ?? "CAD",
+    includedSeats: plan?.included_seats ?? 1,
+    seatQuantity,
+    seatUnitAmountCents,
+    seatCurrency,
+    seatsUsed: activeMemberCount ?? 0,
+    seatsReserved: (activeMemberCount ?? 0) + (pendingInvitationCount ?? 0),
     paymentMethod: getPaymentMethodLabel(paymentMethod),
     invoices,
   };

@@ -8,6 +8,14 @@ type BillingCycle = RegistrationState["billingCycle"];
 
 let stripeClient: Stripe | undefined;
 
+const membershipTiers: MembershipTier[] = [
+  "seedling",
+  "roots",
+  "canopy",
+  "harvest",
+];
+const billingCycles: BillingCycle[] = ["monthly", "annual"];
+
 export function getStripe() {
   const secretKey = process.env.STRIPE_SECRET_KEY;
 
@@ -33,6 +41,20 @@ export function getStripePriceId(
   return priceId;
 }
 
+export function getStripeSeatPriceId() {
+  const priceId = process.env.STRIPE_PRICE_SEAT_MONTHLY;
+
+  if (!priceId) {
+    throw new Error("STRIPE_PRICE_SEAT_MONTHLY is not configured.");
+  }
+
+  return priceId;
+}
+
+function getOptionalStripeSeatPriceId() {
+  return process.env.STRIPE_PRICE_SEAT_MONTHLY || null;
+}
+
 export function getWebhookSecret() {
   const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET;
 
@@ -43,23 +65,43 @@ export function getWebhookSecret() {
   return webhookSecret;
 }
 
-export async function getBillingPortalConfigurationId() {
-  const configuredId = process.env.STRIPE_BILLING_PORTAL_CONFIGURATION_ID;
-  if (configuredId) return configuredId;
-
+async function getPortalUpdateProducts() {
   const stripe = getStripe();
-  const configurations = await stripe.billingPortal.configurations.list({
-    active: true,
-    limit: 10,
-  });
-  const existing = configurations.data.find(
-    (configuration) =>
-      configuration.metadata?.olea_connects === "billing_recovery",
+  const seatPriceId = getOptionalStripeSeatPriceId();
+  const priceIds = [
+    ...membershipTiers.flatMap((tier) =>
+      billingCycles.map((cycle) => getStripePriceId(tier, cycle)),
+    ),
+    ...(seatPriceId ? [seatPriceId] : []),
+  ];
+  const prices = await Promise.all(
+    priceIds.map((priceId) => stripe.prices.retrieve(priceId)),
   );
+  const products = new Map<string, string[]>();
 
-  if (existing) return existing.id;
+  prices.forEach((price) => {
+    const productId =
+      typeof price.product === "string" ? price.product : price.product.id;
+    products.set(productId, [...(products.get(productId) ?? []), price.id]);
+  });
 
-  const configuration = await stripe.billingPortal.configurations.create({
+  return [...products.entries()].map(([product, pricesForProduct]) => ({
+    product,
+    prices: pricesForProduct,
+    ...(seatPriceId && pricesForProduct.includes(seatPriceId)
+      ? {
+          adjustable_quantity: {
+            enabled: true,
+            minimum: 1,
+            maximum: 100,
+          },
+        }
+      : {}),
+  }));
+}
+
+async function getBillingPortalConfigurationParams() {
+  return {
     business_profile: {
       headline: "Manage your Olea Connects membership and payment details.",
     },
@@ -87,9 +129,52 @@ export async function getBillingPortalConfigurationId() {
         enabled: true,
         mode: "at_period_end",
       },
+      subscription_update: {
+        default_allowed_updates: ["price", "quantity"],
+        enabled: true,
+        products: await getPortalUpdateProducts(),
+        proration_behavior: "always_invoice",
+        schedule_at_period_end: {
+          conditions: [
+            { type: "decreasing_item_amount" },
+            { type: "shortening_interval" },
+          ],
+        },
+      },
     },
-    metadata: { olea_connects: "billing_recovery" },
+    metadata: { olea_connects: "subscription_management" },
+  } satisfies Stripe.BillingPortal.ConfigurationCreateParams;
+}
+
+export async function getBillingPortalConfigurationId() {
+  const configuredId = process.env.STRIPE_BILLING_PORTAL_CONFIGURATION_ID;
+
+  const stripe = getStripe();
+  const configurationParams = await getBillingPortalConfigurationParams();
+  if (configuredId) {
+    const configuration = await stripe.billingPortal.configurations.update(
+      configuredId,
+      configurationParams,
+    );
+    return configuration.id;
+  }
+
+  const configurations = await stripe.billingPortal.configurations.list({
+    active: true,
+    limit: 10,
   });
+  const existing = configurations.data.find(
+    (configuration) =>
+      configuration.metadata?.olea_connects === "subscription_management" ||
+      configuration.metadata?.olea_connects === "billing_recovery",
+  );
+
+  const configuration = existing
+    ? await stripe.billingPortal.configurations.update(
+        existing.id,
+        configurationParams,
+      )
+    : await stripe.billingPortal.configurations.create(configurationParams);
 
   return configuration.id;
 }
