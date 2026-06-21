@@ -9,7 +9,7 @@ import {
   Settings2,
   XCircle,
 } from "lucide-react";
-import { useState, useTransition } from "react";
+import { useEffect, useRef, useState, useTransition } from "react";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -220,18 +220,23 @@ export function SeatManagementControls({
   seatPriceLabel,
 }: SeatManagementControlsProps) {
   const [error, setError] = useState("");
+  const [confirmOpen, setConfirmOpen] = useState(false);
+  const confirmButtonRef = useRef<HTMLButtonElement>(null);
   const [isPending, startTransition] = useTransition();
   const unavailable = disabled || isPending || !canManage;
 
-  const addSeat = () => {
-    if (
-      !window.confirm(
-        `Add one paid seat for ${seatPriceLabel}? Stripe will bill the prorated amount now.`,
-      )
-    ) {
-      return;
-    }
+  useEffect(() => {
+    if (!confirmOpen) return;
+    confirmButtonRef.current?.focus();
 
+    const closeOnEscape = (event: KeyboardEvent) => {
+      if (event.key === "Escape") setConfirmOpen(false);
+    };
+    window.addEventListener("keydown", closeOnEscape);
+    return () => window.removeEventListener("keydown", closeOnEscape);
+  }, [confirmOpen]);
+
+  const addSeat = () => {
     startTransition(async () => {
       setError("");
       try {
@@ -246,12 +251,14 @@ export function SeatManagementControls({
 
         if (!response.ok) {
           setError(result.error ?? "Unable to add a seat.");
+          setConfirmOpen(false);
           return;
         }
 
         window.location.reload();
       } catch {
         setError("Unable to reach billing management. Please try again.");
+        setConfirmOpen(false);
       }
     });
   };
@@ -273,7 +280,11 @@ export function SeatManagementControls({
             </p>
           ) : null}
         </div>
-        <Button disabled={unavailable} onClick={addSeat} type="button">
+        <Button
+          disabled={unavailable}
+          onClick={() => setConfirmOpen(true)}
+          type="button"
+        >
           {isPending ? (
             <LoaderCircle className="size-4 animate-spin" />
           ) : (
@@ -282,6 +293,58 @@ export function SeatManagementControls({
           Add paid seat
         </Button>
       </div>
+      {confirmOpen ? (
+        <div className="fixed inset-0 z-50 grid place-items-center bg-slate-950/45 px-4">
+          <div
+            aria-describedby="add-seat-dialog-description"
+            aria-labelledby="add-seat-dialog-title"
+            aria-modal="true"
+            className="w-full max-w-md rounded-[14px] border bg-white p-6 shadow-elevated"
+            role="dialog"
+          >
+            <div className="flex size-11 items-center justify-center rounded-xl bg-emerald-50 text-olea-green">
+              <Plus className="size-5" />
+            </div>
+            <h3
+              id="add-seat-dialog-title"
+              className="mt-4 text-lg font-bold text-slate-900"
+            >
+              Add one paid seat?
+            </h3>
+            <p
+              id="add-seat-dialog-description"
+              className="mt-2 text-sm leading-6 text-slate-600"
+            >
+              This adds one teammate seat for {seatPriceLabel}. Stripe will bill
+              the prorated amount now, then you can invite the teammate from
+              Team.
+            </p>
+            <div className="mt-6 flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
+              <Button
+                disabled={isPending}
+                onClick={() => setConfirmOpen(false)}
+                type="button"
+                variant="outline"
+              >
+                Cancel
+              </Button>
+              <Button
+                disabled={isPending}
+                onClick={addSeat}
+                ref={confirmButtonRef}
+                type="button"
+              >
+                {isPending ? (
+                  <LoaderCircle className="size-4 animate-spin" />
+                ) : (
+                  <Plus className="size-4" />
+                )}
+                Confirm seat
+              </Button>
+            </div>
+          </div>
+        </div>
+      ) : null}
       {error ? (
         <p role="alert" className="mt-3 text-sm font-medium text-red-700">
           {error}

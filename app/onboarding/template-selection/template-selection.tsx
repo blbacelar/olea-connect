@@ -4,7 +4,7 @@ import { Check, FileText } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useMemo, useState, useTransition } from "react";
 
-import { PublicHeader } from "@/components/auth/PublicHeader";
+import { OnboardingHeader } from "@/components/onboarding/OnboardingHeader";
 import { Button } from "@/components/ui/button";
 import type { Template } from "@/lib/types";
 import { cn } from "@/lib/utils";
@@ -67,7 +67,7 @@ export function TemplateSelection({ templates }: { templates: Template[] }) {
 
   return (
     <div className="min-h-screen bg-slate-100">
-      <PublicHeader />
+      <OnboardingHeader />
       <main className="mx-auto max-w-6xl px-4 py-10">
         <p className="text-sm font-semibold text-olea-green">Step 2 of 2</p>
         <h1 className="mt-1 text-3xl font-bold">Choose your 3 templates</h1>
