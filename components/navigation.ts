@@ -14,7 +14,7 @@ export const navigationGroups = [
   [
     { label: "Dashboard", href: "/dashboard", icon: Home },
     { label: "Templates", href: "/templates", icon: FileText, dot: true },
-    { label: "Community", href: "/community", icon: Users },
+    { label: "Community", href: "/api/circle-sso", icon: Users },
     { label: "Grants", href: "/grants", icon: Gift },
     { label: "Webinars", href: "/webinars", icon: CalendarDays },
   ],

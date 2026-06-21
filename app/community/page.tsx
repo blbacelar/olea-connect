@@ -1,4 +1,5 @@
 import { MessageSquareText } from "lucide-react";
+import Link from "next/link";
 
 import { PageHeader } from "@/components/PageHeader";
 
@@ -42,12 +43,19 @@ export default function CommunityPage() {
                 <MessageSquareText className="size-6" />
               </span>
               <h2 className="mt-4 text-[15px] font-semibold text-slate-600">
-                The Olea Connects community loads here
+                Open Olea Connects on Circle
               </h2>
               <p className="mx-auto mt-2 max-w-sm text-[13.5px] leading-6 text-slate-400">
-                Discussions, peer support, and shared resources will appear in
-                this embedded community workspace.
+                Active members are passed through with single sign-on and the
+                right tier access.
               </p>
+              <Link
+                href="/api/circle-sso"
+                prefetch={false}
+                className="mt-5 inline-flex h-10 items-center rounded-full bg-black px-5 text-[13px] font-semibold text-white"
+              >
+                Continue to community
+              </Link>
             </div>
           </div>
         </div>
