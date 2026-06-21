@@ -5,7 +5,7 @@ import { useMemo, useState, useTransition } from "react";
 
 import { BrandPreview } from "@/components/BrandPreview";
 import { LogoUpload } from "@/components/LogoUpload";
-import { PublicHeader } from "@/components/auth/PublicHeader";
+import { OnboardingHeader } from "@/components/onboarding/OnboardingHeader";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -109,7 +109,7 @@ export default function BrandSetupPage() {
 
   return (
     <div className="min-h-screen bg-slate-100">
-      <PublicHeader />
+      <OnboardingHeader />
       <main className="mx-auto max-w-6xl px-4 py-10">
         <div className="mb-7">
           <p className="text-sm font-semibold text-olea-green">
