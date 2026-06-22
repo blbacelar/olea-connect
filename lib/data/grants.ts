@@ -78,6 +78,7 @@ export async function getGrantsData(): Promise<{
 }> {
   const { member, organization } = await requireMemberContext();
   const supabase = await createClient();
+  const admin = createAdminClient();
   const [
     { data: organizationRecord, error: organizationError },
     { data: subscription, error: subscriptionError },
@@ -99,7 +100,7 @@ export async function getGrantsData(): Promise<{
       .order("created_at", { ascending: false })
       .limit(1)
       .maybeSingle(),
-    supabase
+    admin
       .from("platform_user_roles")
       .select("role")
       .eq("user_id", member.id)
@@ -129,7 +130,6 @@ export async function getGrantsData(): Promise<{
   const canAdministerGrants = (roles ?? []).some((role) =>
     grantsAdminRoles.has(role.role as PlatformRole),
   );
-  const admin = createAdminClient();
   let adminApplications: GrantApplicationSummary[] = [];
 
   if (canAdministerGrants) {

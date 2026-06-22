@@ -66,6 +66,16 @@ const portalActions: Array<{
   },
 ];
 
+function createSeatUpdateIdempotencyKey() {
+  if (globalThis.crypto?.randomUUID) {
+    return `seat_${globalThis.crypto.randomUUID().replaceAll("-", "")}`;
+  }
+
+  return `seat_${Date.now().toString(36)}_${Math.random()
+    .toString(36)
+    .slice(2, 18)}`;
+}
+
 export function BillingManagementControls({
   canManage,
   disabled = false,
@@ -234,19 +244,35 @@ export function SeatManagementControls({
   const [seatQuantity, setSeatQuantity] = useState("1");
   const [confirmOpen, setConfirmOpen] = useState(false);
   const confirmButtonRef = useRef<HTMLButtonElement>(null);
+  const seatUpdateIdempotencyKeyRef = useRef<string | null>(null);
   const [isPending, startTransition] = useTransition();
   const unavailable = disabled || isPending || !canManage;
 
-  useEffect(() => {
-    if (!confirmOpen) return;
+  const openConfirmation = () => {
+    seatUpdateIdempotencyKeyRef.current = createSeatUpdateIdempotencyKey();
+    setConfirmOpen(true);
+  };
+
+  const closeConfirmation = () => {
+    if (!isPending) {
+      seatUpdateIdempotencyKeyRef.current = null;
+      setConfirmOpen(false);
+    }
+  };
+
+	  useEffect(() => {
+	    if (!confirmOpen) return;
     confirmButtonRef.current?.focus();
 
     const closeOnEscape = (event: KeyboardEvent) => {
-      if (event.key === "Escape") setConfirmOpen(false);
+      if (event.key === "Escape" && !isPending) {
+        seatUpdateIdempotencyKeyRef.current = null;
+        setConfirmOpen(false);
+      }
     };
     window.addEventListener("keydown", closeOnEscape);
     return () => window.removeEventListener("keydown", closeOnEscape);
-  }, [confirmOpen]);
+	  }, [confirmOpen, isPending]);
 
   const addSeat = () => {
     startTransition(async () => {
@@ -256,6 +282,9 @@ export function SeatManagementControls({
         const response = await fetch("/api/stripe/portal", {
           body: JSON.stringify({
             action: "add_seat",
+            idempotencyKey:
+              seatUpdateIdempotencyKeyRef.current ??
+              createSeatUpdateIdempotencyKey(),
             seatQuantity: Number(seatQuantity),
           }),
           headers: { "Content-Type": "application/json" },
@@ -263,19 +292,32 @@ export function SeatManagementControls({
         });
         const result = (await response.json().catch(() => ({}))) as {
           error?: string;
+          message?: string;
         };
 
-        if (!response.ok) {
-          setError(result.error ?? "Unable to add a seat.");
-          setConfirmOpen(false);
-          return;
-        }
+	        if (response.status === 202) {
+	          setSuccessMessage(
+	            result.message ??
+	              "Stripe confirmed the seat update. Team access is still syncing and should be available shortly.",
+	          );
+	          seatUpdateIdempotencyKeyRef.current = null;
+	          setConfirmOpen(false);
+	          return;
+	        }
 
-        window.location.assign(`/subscription?seat=added&quantity=${seatQuantity}`);
-      } catch {
-        setError("Unable to reach billing management. Please try again.");
-        setConfirmOpen(false);
-      }
+	        if (!response.ok) {
+	          setError(result.error ?? "Unable to add a seat.");
+	          seatUpdateIdempotencyKeyRef.current = null;
+	          setConfirmOpen(false);
+	          return;
+	        }
+
+	        window.location.assign(`/subscription?seat=added&quantity=${seatQuantity}`);
+	      } catch {
+	        setError("Unable to reach billing management. Please try again.");
+	        seatUpdateIdempotencyKeyRef.current = null;
+	        setConfirmOpen(false);
+	      }
     });
   };
 
@@ -298,7 +340,7 @@ export function SeatManagementControls({
         </div>
         <Button
           disabled={unavailable}
-          onClick={() => setConfirmOpen(true)}
+          onClick={openConfirmation}
           type="button"
         >
           {isPending ? (
@@ -362,7 +404,7 @@ export function SeatManagementControls({
             <div className="mt-6 flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
               <Button
                 disabled={isPending}
-                onClick={() => setConfirmOpen(false)}
+                onClick={closeConfirmation}
                 type="button"
                 variant="outline"
               >

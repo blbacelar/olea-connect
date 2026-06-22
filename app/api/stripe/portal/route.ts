@@ -5,7 +5,7 @@ import { getBillingSummary } from "@/lib/billing/server";
 import {
   getBillingPortalConfigurationId,
   getStripe,
-  getStripeSeatPriceId,
+  getStripeSeatPriceIdForInterval,
 } from "@/lib/stripe/server";
 import { syncStripeSubscription } from "@/lib/stripe/subscriptions";
 import { createAdminClient } from "@/utils/supabase/admin";
@@ -23,6 +23,7 @@ type BillingAction =
 
 type BillingActionBody = {
   action?: BillingAction;
+  idempotencyKey?: string;
   pauseDays?: number;
   seatQuantity?: number;
 };
@@ -45,6 +46,7 @@ function parseActionBody(value: unknown): BillingActionBody {
   const body = value as BillingActionBody;
   return {
     action: body.action,
+    idempotencyKey: body.idempotencyKey,
     pauseDays: body.pauseDays,
     seatQuantity: body.seatQuantity,
   };
@@ -60,6 +62,19 @@ function getSeatQuantity(value: number | undefined) {
   }
 
   return quantity;
+}
+
+function getIdempotencyKey(value: string | undefined) {
+  const normalized = value?.trim();
+  if (!normalized) {
+    throw new BillingActionError("Seat update idempotency key is required.", 400);
+  }
+
+  if (!/^[A-Za-z0-9_-]{16,128}$/.test(normalized)) {
+    throw new BillingActionError("Seat update idempotency key is invalid.", 400);
+  }
+
+  return normalized;
 }
 
 function getPortalFlowData(
@@ -155,9 +170,19 @@ function assertSeatAdjustmentAllowed(status: string) {
   }
 }
 
-async function addSeatToSubscription(subscriptionId: string, quantity: number) {
+async function addSeatToSubscription({
+  idempotencyKey,
+  interval,
+  quantity,
+  subscriptionId,
+}: {
+  idempotencyKey: string;
+  interval: "month" | "year";
+  quantity: number;
+  subscriptionId: string;
+}) {
   const stripe = getStripe();
-  const seatPriceId = getStripeSeatPriceId();
+  const seatPriceId = getStripeSeatPriceIdForInterval(interval);
   const subscription = await stripe.subscriptions.retrieve(subscriptionId, {
     expand: ["items.data.price"],
   });
@@ -167,22 +192,26 @@ async function addSeatToSubscription(subscriptionId: string, quantity: number) {
     return priceId === seatPriceId;
   });
 
-  return stripe.subscriptions.update(subscriptionId, {
-    items: seatItem
-      ? [
-          {
-            id: seatItem.id,
-            quantity: (seatItem.quantity ?? 0) + quantity,
-          },
-        ]
-      : [
-          {
-            price: seatPriceId,
-            quantity,
-          },
-        ],
-    proration_behavior: "always_invoice",
-  });
+  return stripe.subscriptions.update(
+    subscriptionId,
+    {
+      items: seatItem
+        ? [
+            {
+              id: seatItem.id,
+              quantity: (seatItem.quantity ?? 0) + quantity,
+            },
+          ]
+        : [
+            {
+              price: seatPriceId,
+              quantity,
+            },
+          ],
+      proration_behavior: "always_invoice",
+    },
+    { idempotencyKey },
+  );
 }
 
 export async function POST(request: Request) {
@@ -238,10 +267,12 @@ export async function POST(request: Request) {
             ? await getStripe().subscriptions.update(billing.subscriptionId, {
                 pause_collection: "",
               })
-            : await addSeatToSubscription(
-                billing.subscriptionId,
-                getSeatQuantity(body.seatQuantity),
-              );
+            : await addSeatToSubscription({
+                idempotencyKey: getIdempotencyKey(body.idempotencyKey),
+                interval: billing.billingInterval,
+                quantity: getSeatQuantity(body.seatQuantity),
+                subscriptionId: billing.subscriptionId,
+              });
 
       try {
         await syncStripeSubscription(createAdminClient(), subscription);
@@ -251,6 +282,17 @@ export async function POST(request: Request) {
           subscriptionId: subscription.id,
           syncError,
         });
+        if (action === "add_seat") {
+          return NextResponse.json(
+            {
+              ok: false,
+              pendingSync: true,
+              message:
+                "Stripe confirmed the seat update, but local access is still syncing.",
+            },
+            { status: 202 },
+          );
+        }
       }
       return NextResponse.json({ ok: true });
     }
