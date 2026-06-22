@@ -45,7 +45,15 @@ function formatDate(value: string) {
   }).format(new Date(value));
 }
 
-export default async function SubscriptionPage() {
+type SubscriptionPageProps = {
+  searchParams?: {
+    seat?: string;
+  };
+};
+
+export default async function SubscriptionPage({
+  searchParams,
+}: SubscriptionPageProps) {
   const billing = await getBillingSummary();
 
   if (!billing) {
@@ -282,6 +290,11 @@ export default async function SubscriptionPage() {
               !billing.customerId ||
               !billing.subscriptionId ||
               accessRestricted
+            }
+            initialSuccessMessage={
+              searchParams?.seat === "added"
+                ? "Paid seat added. Stripe has confirmed the update, and the new seat is available for invitations."
+                : undefined
             }
             seatPriceLabel={`${formatMoney(
               billing.seatUnitAmountCents,

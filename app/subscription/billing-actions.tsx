@@ -1,6 +1,7 @@
 "use client";
 
 import {
+  CheckCircle2,
   CreditCard,
   ExternalLink,
   LoaderCircle,
@@ -211,15 +212,18 @@ export function BillingManagementControls({
 type SeatManagementControlsProps = {
   canManage: boolean;
   disabled?: boolean;
+  initialSuccessMessage?: string;
   seatPriceLabel: string;
 };
 
 export function SeatManagementControls({
   canManage,
   disabled = false,
+  initialSuccessMessage = "",
   seatPriceLabel,
 }: SeatManagementControlsProps) {
   const [error, setError] = useState("");
+  const [successMessage, setSuccessMessage] = useState(initialSuccessMessage);
   const [confirmOpen, setConfirmOpen] = useState(false);
   const confirmButtonRef = useRef<HTMLButtonElement>(null);
   const [isPending, startTransition] = useTransition();
@@ -239,6 +243,7 @@ export function SeatManagementControls({
   const addSeat = () => {
     startTransition(async () => {
       setError("");
+      setSuccessMessage("");
       try {
         const response = await fetch("/api/stripe/portal", {
           body: JSON.stringify({ action: "add_seat" }),
@@ -255,7 +260,7 @@ export function SeatManagementControls({
           return;
         }
 
-        window.location.reload();
+        window.location.assign("/subscription?seat=added");
       } catch {
         setError("Unable to reach billing management. Please try again.");
         setConfirmOpen(false);
@@ -348,6 +353,15 @@ export function SeatManagementControls({
       {error ? (
         <p role="alert" className="mt-3 text-sm font-medium text-red-700">
           {error}
+        </p>
+      ) : null}
+      {successMessage ? (
+        <p
+          role="status"
+          className="mt-3 flex gap-2 rounded-lg border border-emerald-200 bg-white p-3 text-sm font-medium text-emerald-800"
+        >
+          <CheckCircle2 className="mt-0.5 size-4 shrink-0" />
+          <span>{successMessage}</span>
         </p>
       ) : null}
     </div>

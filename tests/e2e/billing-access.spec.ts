@@ -71,4 +71,35 @@ testWithData.describe("@critical billing access states", () => {
       await context.close();
     }
   });
+
+  testWithData("shows paid seat confirmation after Stripe confirms an add-on", async ({
+    browser,
+    testData,
+    baseURL,
+  }) => {
+    if (!baseURL) throw new Error("Playwright baseURL is required.");
+
+    const member = await testData.createOrganizationOwner({
+      activeSubscription: true,
+    });
+    const context = await browser.newContext({
+      storageState: await createAuthenticatedStorageState(
+        member.email,
+        member.password,
+        baseURL,
+      ),
+    });
+    const page = await context.newPage();
+
+    try {
+      await page.goto(`${baseURL}/subscription?seat=added`);
+      await expect(
+        page.getByRole("status").filter({
+          hasText: "Paid seat added. Stripe has confirmed the update",
+        }),
+      ).toBeVisible();
+    } finally {
+      await context.close();
+    }
+  });
 });
