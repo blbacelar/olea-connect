@@ -24,6 +24,7 @@ type BillingAction =
 type BillingActionBody = {
   action?: BillingAction;
   pauseDays?: number;
+  seatQuantity?: number;
 };
 
 class BillingActionError extends Error {
@@ -45,7 +46,20 @@ function parseActionBody(value: unknown): BillingActionBody {
   return {
     action: body.action,
     pauseDays: body.pauseDays,
+    seatQuantity: body.seatQuantity,
   };
+}
+
+function getSeatQuantity(value: number | undefined) {
+  const quantity = value ?? 1;
+  if (!Number.isInteger(quantity) || quantity < 1 || quantity > 3) {
+    throw new BillingActionError(
+      "Paid seat quantity must be between 1 and 3.",
+      400,
+    );
+  }
+
+  return quantity;
 }
 
 function getPortalFlowData(
@@ -141,7 +155,7 @@ function assertSeatAdjustmentAllowed(status: string) {
   }
 }
 
-async function addSeatToSubscription(subscriptionId: string) {
+async function addSeatToSubscription(subscriptionId: string, quantity: number) {
   const stripe = getStripe();
   const seatPriceId = getStripeSeatPriceId();
   const subscription = await stripe.subscriptions.retrieve(subscriptionId, {
@@ -158,13 +172,13 @@ async function addSeatToSubscription(subscriptionId: string) {
       ? [
           {
             id: seatItem.id,
-            quantity: (seatItem.quantity ?? 0) + 1,
+            quantity: (seatItem.quantity ?? 0) + quantity,
           },
         ]
       : [
           {
             price: seatPriceId,
-            quantity: 1,
+            quantity,
           },
         ],
     proration_behavior: "always_invoice",
@@ -224,7 +238,10 @@ export async function POST(request: Request) {
             ? await getStripe().subscriptions.update(billing.subscriptionId, {
                 pause_collection: "",
               })
-            : await addSeatToSubscription(billing.subscriptionId);
+            : await addSeatToSubscription(
+                billing.subscriptionId,
+                getSeatQuantity(body.seatQuantity),
+              );
 
       try {
         await syncStripeSubscription(createAdminClient(), subscription);

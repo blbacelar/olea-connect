@@ -92,10 +92,10 @@ testWithData.describe("@critical billing access states", () => {
     const page = await context.newPage();
 
     try {
-      await page.goto(`${baseURL}/subscription?seat=added`);
+      await page.goto(`${baseURL}/subscription?seat=added&quantity=3`);
       await expect(
         page.getByRole("status").filter({
-          hasText: "Paid seat added. Stripe has confirmed the update",
+          hasText: "3 paid seats added. Stripe has confirmed the update",
         }),
       ).toBeVisible();
     } finally {

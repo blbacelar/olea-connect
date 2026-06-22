@@ -45,8 +45,21 @@ function formatDate(value: string) {
   }).format(new Date(value));
 }
 
+function getSeatAddedMessage(quantityValue?: string) {
+  const quantity = Number(quantityValue);
+  const normalizedQuantity =
+    Number.isInteger(quantity) && quantity >= 1 && quantity <= 3 ? quantity : 1;
+
+  return `${normalizedQuantity} paid seat${
+    normalizedQuantity === 1 ? "" : "s"
+  } added. Stripe has confirmed the update, and ${
+    normalizedQuantity === 1 ? "the new seat is" : "the new seats are"
+  } available for invitations.`;
+}
+
 type SubscriptionPageProps = {
   searchParams?: {
+    quantity?: string;
     seat?: string;
   };
 };
@@ -293,7 +306,7 @@ export default async function SubscriptionPage({
             }
             initialSuccessMessage={
               searchParams?.seat === "added"
-                ? "Paid seat added. Stripe has confirmed the update, and the new seat is available for invitations."
+                ? getSeatAddedMessage(searchParams.quantity)
                 : undefined
             }
             seatPriceLabel={`${formatMoney(

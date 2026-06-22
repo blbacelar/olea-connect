@@ -14,6 +14,13 @@ import { useEffect, useRef, useState, useTransition } from "react";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 type BillingAction =
   | "manage"
@@ -224,6 +231,7 @@ export function SeatManagementControls({
 }: SeatManagementControlsProps) {
   const [error, setError] = useState("");
   const [successMessage, setSuccessMessage] = useState(initialSuccessMessage);
+  const [seatQuantity, setSeatQuantity] = useState("1");
   const [confirmOpen, setConfirmOpen] = useState(false);
   const confirmButtonRef = useRef<HTMLButtonElement>(null);
   const [isPending, startTransition] = useTransition();
@@ -246,7 +254,10 @@ export function SeatManagementControls({
       setSuccessMessage("");
       try {
         const response = await fetch("/api/stripe/portal", {
-          body: JSON.stringify({ action: "add_seat" }),
+          body: JSON.stringify({
+            action: "add_seat",
+            seatQuantity: Number(seatQuantity),
+          }),
           headers: { "Content-Type": "application/json" },
           method: "POST",
         });
@@ -260,7 +271,7 @@ export function SeatManagementControls({
           return;
         }
 
-        window.location.assign("/subscription?seat=added");
+        window.location.assign(`/subscription?seat=added&quantity=${seatQuantity}`);
       } catch {
         setError("Unable to reach billing management. Please try again.");
         setConfirmOpen(false);
@@ -314,16 +325,40 @@ export function SeatManagementControls({
               id="add-seat-dialog-title"
               className="mt-4 text-lg font-bold text-slate-900"
             >
-              Add one paid seat?
+              Add paid seats?
             </h3>
             <p
               id="add-seat-dialog-description"
               className="mt-2 text-sm leading-6 text-slate-600"
             >
-              This adds one teammate seat for {seatPriceLabel}. Stripe will bill
-              the prorated amount now, then you can invite the teammate from
-              Team.
+              Select how many teammate seats to add for {seatPriceLabel} each.
+              Stripe will bill the prorated amount now, then you can invite the
+              teammate from Team.
             </p>
+            <div className="mt-5 space-y-2">
+              <label
+                className="text-sm font-semibold text-slate-800"
+                htmlFor="seat-quantity"
+              >
+                Seats to add
+              </label>
+              <Select
+                disabled={isPending}
+                onValueChange={setSeatQuantity}
+                value={seatQuantity}
+              >
+                <SelectTrigger id="seat-quantity">
+                  <SelectValue placeholder="Choose quantity" />
+                </SelectTrigger>
+                <SelectContent>
+                  {[1, 2, 3].map((quantity) => (
+                    <SelectItem key={quantity} value={String(quantity)}>
+                      {quantity} seat{quantity === 1 ? "" : "s"}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
             <div className="mt-6 flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
               <Button
                 disabled={isPending}
@@ -344,7 +379,7 @@ export function SeatManagementControls({
                 ) : (
                   <Plus className="size-4" />
                 )}
-                Confirm seat
+                Add {seatQuantity} seat{seatQuantity === "1" ? "" : "s"}
               </Button>
             </div>
           </div>

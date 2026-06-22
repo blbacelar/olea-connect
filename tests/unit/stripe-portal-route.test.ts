@@ -232,6 +232,33 @@ describe("Stripe billing portal route", () => {
     expect(routeMocks.syncStripeSubscription).toHaveBeenCalled();
   });
 
+  it("adds multiple paid seats through the Stripe seat add-on price", async () => {
+    const { POST } = await import("@/app/api/stripe/portal/route");
+
+    const response = await POST(
+      makeRequest({ action: "add_seat", seatQuantity: 3 }),
+    );
+
+    expect(response.status).toBe(200);
+    expect(routeMocks.stripeSubscriptionUpdate).toHaveBeenCalledWith("sub_123", {
+      items: [{ id: "si_seat", quantity: 4 }],
+      proration_behavior: "always_invoice",
+    });
+  });
+
+  it("rejects paid seat quantities outside the supported range", async () => {
+    const { POST } = await import("@/app/api/stripe/portal/route");
+
+    const response = await POST(
+      makeRequest({ action: "add_seat", seatQuantity: 4 }),
+    );
+    const body = (await response.json()) as { error: string };
+
+    expect(response.status).toBe(400);
+    expect(body.error).toContain("between 1 and 3");
+    expect(routeMocks.stripeSubscriptionUpdate).not.toHaveBeenCalled();
+  });
+
   it("creates the seat add-on item when none exists yet", async () => {
     const { POST } = await import("@/app/api/stripe/portal/route");
     routeMocks.stripeSubscriptionRetrieve.mockResolvedValue(
@@ -242,11 +269,13 @@ describe("Stripe billing portal route", () => {
       }),
     );
 
-    const response = await POST(makeRequest({ action: "add_seat" }));
+    const response = await POST(
+      makeRequest({ action: "add_seat", seatQuantity: 2 }),
+    );
 
     expect(response.status).toBe(200);
     expect(routeMocks.stripeSubscriptionUpdate).toHaveBeenCalledWith("sub_123", {
-      items: [{ price: "price_seat", quantity: 1 }],
+      items: [{ price: "price_seat", quantity: 2 }],
       proration_behavior: "always_invoice",
     });
   });
