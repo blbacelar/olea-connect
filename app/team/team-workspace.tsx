@@ -17,6 +17,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { getRemainingInviteSeatCount } from "@/lib/team/seats";
 import type { OrganizationRole, TeamData } from "@/lib/types";
 
 import {
@@ -42,9 +43,9 @@ export function TeamWorkspace({ team }: { team: TeamData }) {
   const [sent, setSent] = useState(false);
   const [error, setError] = useState("");
   const [isPending, startTransition] = useTransition();
-  const availableSeats = Math.max(
-    team.organization.seatLimit - team.reservedSeatCount,
-    0,
+  const remainingInviteSeats = getRemainingInviteSeatCount(
+    team.organization.seatLimit,
+    team.reservedSeatCount,
   );
 
   const runMutation = (mutation: () => Promise<void>) => {
@@ -85,7 +86,7 @@ export function TeamWorkspace({ team }: { team: TeamData }) {
               <strong className="text-slate-800">
                 {team.reservedSeatCount} of {team.organization.seatLimit}
               </strong>{" "}
-              seats reserved
+              total seats reserved
             </span>
             <Button asChild variant="outline" size="sm">
               <Link href="/subscription">Manage seats</Link>
@@ -246,16 +247,18 @@ export function TeamWorkspace({ team }: { team: TeamData }) {
             </Select>
             <Button
               onClick={sendInvite}
-              disabled={!email.trim() || isPending || availableSeats === 0}
+              disabled={!email.trim() || isPending || remainingInviteSeats === 0}
             >
               {sent ? <Check className="size-4" /> : <Send className="size-4" />}
               {isPending ? "Sending..." : sent ? "Invite sent" : "Send invite"}
             </Button>
           </div>
           <p className="mb-8 text-sm text-slate-500">
-            {availableSeats > 0
-              ? `${availableSeats} seat${availableSeats === 1 ? "" : "s"} available. Invitations expire after 7 days.`
-              : "No seats are available. Revoke an invitation or add a seat before inviting someone."}
+            {remainingInviteSeats > 0
+              ? `${remainingInviteSeats} invite slot${
+                  remainingInviteSeats === 1 ? "" : "s"
+                } remaining. Invitations expire after 7 days.`
+              : "No invite slots remain. Revoke an invitation or add a seat before inviting someone."}
           </p>
 
           <SectionHeading>Pending invites</SectionHeading>
