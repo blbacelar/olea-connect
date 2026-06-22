@@ -94,14 +94,6 @@ function getPortalFlowData(
     };
   }
 
-  if (action === "subscription_update") {
-    return {
-      after_completion,
-      subscription_update: { subscription: subscriptionId },
-      type: "subscription_update",
-    };
-  }
-
   if (action === "cancel") {
     return {
       after_completion,

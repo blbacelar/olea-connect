@@ -178,7 +178,7 @@ describe("Stripe billing portal route", () => {
     expect(routeMocks.stripeSubscriptionUpdate).not.toHaveBeenCalled();
   });
 
-  it("creates the expected portal flow for plan and seat updates", async () => {
+  it("opens the general portal for plan and seat updates", async () => {
     const { POST } = await import("@/app/api/stripe/portal/route");
 
     const response = await POST(makeRequest({ action: "subscription_update" }));
@@ -187,10 +187,7 @@ describe("Stripe billing portal route", () => {
     expect(routeMocks.createPortalSession).toHaveBeenCalledWith(
       expect.objectContaining({
         customer: "cus_123",
-        flow_data: expect.objectContaining({
-          subscription_update: { subscription: "sub_123" },
-          type: "subscription_update",
-        }),
+        flow_data: undefined,
       }),
     );
   });
