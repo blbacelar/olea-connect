@@ -1,4 +1,8 @@
-import { expect, test } from "../fixtures/authenticated.fixture";
+import {
+  createAuthenticatedStorageState,
+  expect,
+  test,
+} from "../fixtures/authenticated.fixture";
 
 test.describe("@critical @member authenticated access", () => {
   test("opens protected pages with an API-created session", async ({
@@ -50,5 +54,35 @@ test.describe("@critical @member authenticated access", () => {
         name: "Governance Best Practices for Small Nonprofits",
       }),
     ).toBeVisible();
+  });
+
+  test("locked template upgrade CTA opens subscription management", async ({
+    baseURL,
+    page,
+    testData,
+  }) => {
+    if (!baseURL) throw new Error("Playwright baseURL is required.");
+    const seedlingMember = await testData.createOrganizationOwner({
+      activeSubscription: true,
+      planId: "seedling",
+    });
+    const storage = await createAuthenticatedStorageState(
+      seedlingMember.email,
+      seedlingMember.password,
+      baseURL,
+    );
+    await page.context().addCookies(storage.cookies);
+
+    await page.goto("/templates");
+
+    const lockedTemplate = page
+      .locator("article")
+      .filter({ hasText: "canopy & above" })
+      .first();
+    await lockedTemplate.getByRole("link", { name: "Upgrade" }).click();
+
+    await expect(page).toHaveURL(
+      /\/subscription\?upgrade=canopy&resource=conflict-of-interest-policy/,
+    );
   });
 });

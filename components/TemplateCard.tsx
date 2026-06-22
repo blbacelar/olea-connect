@@ -74,11 +74,16 @@ export function TemplateCard({
               🔒 {template.requiredTier} & above
             </span>
             <Button
+              asChild
               variant="outline"
               size="sm"
               className="border-olea-green text-olea-green hover:bg-olea-light"
             >
-              Upgrade{variant === "dashboard" ? " to unlock" : ""}
+              <Link
+                href={`/subscription?upgrade=${template.requiredTier}&resource=${template.slug}`}
+              >
+                Upgrade{variant === "dashboard" ? " to unlock" : ""}
+              </Link>
             </Button>
           </>
         ) : (
