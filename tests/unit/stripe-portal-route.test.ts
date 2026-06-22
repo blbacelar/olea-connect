@@ -6,6 +6,9 @@ const routeMocks = vi.hoisted(() => ({
   createAdminClient: vi.fn(() => ({ from: vi.fn() })),
   createPortalSession: vi.fn(),
   getBillingPortalConfigurationId: vi.fn(),
+  getStripePriceId: vi.fn(
+    (tier: string, cycle: string) => `price_${tier}_${cycle}`,
+  ),
   getStripeSeatPriceIdForInterval: vi.fn(() => "price_seat"),
   stripeSubscriptionRetrieve: vi.fn(),
   stripeSubscriptionUpdate: vi.fn(),
@@ -20,6 +23,7 @@ vi.mock("@/lib/billing/server", () => ({
 
 vi.mock("@/lib/stripe/server", () => ({
   getBillingPortalConfigurationId: routeMocks.getBillingPortalConfigurationId,
+  getStripePriceId: routeMocks.getStripePriceId,
   getStripeSeatPriceIdForInterval: routeMocks.getStripeSeatPriceIdForInterval,
   getStripe: () => ({
     billingPortal: {
@@ -100,6 +104,9 @@ describe("Stripe billing portal route", () => {
       url: "https://billing.stripe.test/session",
     });
     routeMocks.getBillingPortalConfigurationId.mockResolvedValue("bpc_123");
+    routeMocks.getStripePriceId.mockImplementation(
+      (tier: string, cycle: string) => `price_${tier}_${cycle}`,
+    );
     routeMocks.getStripeSeatPriceIdForInterval.mockReturnValue("price_seat");
     routeMocks.stripeSubscriptionRetrieve.mockResolvedValue(
       makeSubscription({
@@ -240,6 +247,176 @@ describe("Stripe billing portal route", () => {
       { idempotencyKey: "seat_1234567890abcdef" },
     );
     expect(routeMocks.syncStripeSubscription).toHaveBeenCalled();
+  });
+
+  it("upgrades the membership item to a higher monthly plan", async () => {
+    const { POST } = await import("@/app/api/stripe/portal/route");
+    routeMocks.stripeSubscriptionRetrieve.mockResolvedValue(
+      makeSubscription({
+        metadata: { local_subscription_id: "local_sub_123", plan_id: "roots" },
+        items: {
+          data: [
+            {
+              id: "si_membership",
+              price: {
+                id: "price_roots_monthly",
+                metadata: { item_type: "membership", plan_id: "roots" },
+              },
+              quantity: 1,
+            },
+            {
+              id: "si_seat",
+              price: { id: "price_seat", metadata: { item_type: "seat" } },
+              quantity: 3,
+            },
+          ],
+        } as unknown as Stripe.ApiList<Stripe.SubscriptionItem>,
+      }),
+    );
+
+    const response = await POST(
+      makeRequest({
+        action: "change_plan",
+        idempotencyKey: "plan_upgrade123456",
+        targetPlanId: "canopy",
+      }),
+    );
+
+    expect(response.status).toBe(200);
+    expect(routeMocks.getStripePriceId).toHaveBeenCalledWith(
+      "canopy",
+      "monthly",
+    );
+    expect(routeMocks.stripeSubscriptionUpdate).toHaveBeenCalledWith(
+      "sub_123",
+      {
+        items: [
+          {
+            id: "si_membership",
+            price: "price_canopy_monthly",
+            quantity: 1,
+          },
+        ],
+        metadata: {
+          local_subscription_id: "local_sub_123",
+          plan_id: "canopy",
+        },
+        proration_behavior: "always_invoice",
+      },
+      { idempotencyKey: "plan_upgrade123456" },
+    );
+    expect(routeMocks.syncStripeSubscription).toHaveBeenCalled();
+  });
+
+  it("uses the annual Stripe price when upgrading an annual membership", async () => {
+    const { POST } = await import("@/app/api/stripe/portal/route");
+    routeMocks.billingSummary.mockResolvedValue(
+      makeBillingSummary({ billingInterval: "year", planId: "seedling" }),
+    );
+    routeMocks.stripeSubscriptionRetrieve.mockResolvedValue(
+      makeSubscription({
+        items: {
+          data: [
+            {
+              id: "si_membership",
+              price: {
+                id: "price_seedling_annual",
+                metadata: { plan_id: "seedling" },
+              },
+              quantity: 1,
+            },
+          ],
+        } as unknown as Stripe.ApiList<Stripe.SubscriptionItem>,
+      }),
+    );
+
+    const response = await POST(
+      makeRequest({
+        action: "change_plan",
+        idempotencyKey: "plan_annual123456",
+        targetPlanId: "roots",
+      }),
+    );
+
+    expect(response.status).toBe(200);
+    expect(routeMocks.getStripePriceId).toHaveBeenCalledWith("roots", "annual");
+    expect(routeMocks.stripeSubscriptionUpdate).toHaveBeenCalledWith(
+      "sub_123",
+      expect.objectContaining({
+        items: [
+          {
+            id: "si_membership",
+            price: "price_roots_annual",
+            quantity: 1,
+          },
+        ],
+      }),
+      { idempotencyKey: "plan_annual123456" },
+    );
+  });
+
+  it("rejects same-plan or downgrade plan changes", async () => {
+    const { POST } = await import("@/app/api/stripe/portal/route");
+
+    const samePlanResponse = await POST(
+      makeRequest({
+        action: "change_plan",
+        idempotencyKey: "plan_same1234567",
+        targetPlanId: "roots",
+      }),
+    );
+    const downgradeResponse = await POST(
+      makeRequest({
+        action: "change_plan",
+        idempotencyKey: "plan_down1234567",
+        targetPlanId: "seedling",
+      }),
+    );
+
+    expect(samePlanResponse.status).toBe(409);
+    expect(downgradeResponse.status).toBe(409);
+    expect(routeMocks.stripeSubscriptionUpdate).not.toHaveBeenCalled();
+  });
+
+  it("rejects plan upgrades when cancellation is already scheduled", async () => {
+    const { POST } = await import("@/app/api/stripe/portal/route");
+    routeMocks.billingSummary.mockResolvedValue(
+      makeBillingSummary({ cancelAtPeriodEnd: true }),
+    );
+
+    const response = await POST(
+      makeRequest({
+        action: "change_plan",
+        idempotencyKey: "plan_cancel123456",
+        targetPlanId: "canopy",
+      }),
+    );
+    const body = (await response.json()) as { error: string };
+
+    expect(response.status).toBe(409);
+    expect(body.error).toContain("scheduled cancellation");
+    expect(routeMocks.stripeSubscriptionUpdate).not.toHaveBeenCalled();
+  });
+
+  it("returns pending sync when a plan upgrade succeeds in Stripe but local sync fails", async () => {
+    const { POST } = await import("@/app/api/stripe/portal/route");
+    routeMocks.syncStripeSubscription.mockRejectedValue(new Error("sync failed"));
+
+    const response = await POST(
+      makeRequest({
+        action: "change_plan",
+        idempotencyKey: "plan_pending123456",
+        targetPlanId: "canopy",
+      }),
+    );
+    const body = (await response.json()) as {
+      message: string;
+      pendingSync: boolean;
+    };
+
+    expect(response.status).toBe(202);
+    expect(body.pendingSync).toBe(true);
+    expect(body.message).toContain("plan upgrade");
   });
 
   it("uses the annual seat price for annual memberships", async () => {

@@ -16,9 +16,11 @@ import {
   getBillingSummary,
   type BillingStatus,
 } from "@/lib/billing/server";
+import type { MembershipTier } from "@/lib/types";
 
 import {
   BillingManagementControls,
+  PlanUpgradeControls,
   SeatManagementControls,
 } from "./billing-actions";
 
@@ -57,10 +59,31 @@ function getSeatAddedMessage(quantityValue?: string) {
   } available for invitations.`;
 }
 
+const membershipTierIds = new Set<MembershipTier>([
+  "seedling",
+  "roots",
+  "canopy",
+  "harvest",
+]);
+
+function isMembershipTier(value: string): value is MembershipTier {
+  return membershipTierIds.has(value as MembershipTier);
+}
+
+function getPlanUpgradedMessage(tierValue?: string) {
+  if (!tierValue || !isMembershipTier(tierValue)) {
+    return "Plan upgraded. Stripe has confirmed the update and access is ready.";
+  }
+
+  return `Plan upgraded to ${tierValue}. Stripe has confirmed the update and access is ready.`;
+}
+
 type SubscriptionPageProps = {
   searchParams?: {
     quantity?: string;
+    plan?: string;
     seat?: string;
+    tier?: string;
   };
 };
 
@@ -173,6 +196,9 @@ export default async function SubscriptionPage({
   const totalSeats = billing.includedSeats + billing.seatQuantity;
   const isPaused = billing.status === "paused";
   const primaryDate = isPaused ? billing.pauseEndsAt : billing.currentPeriodEnd;
+  const currentPlanId = isMembershipTier(billing.planId)
+    ? billing.planId
+    : "seedling";
 
   return (
     <div>
@@ -256,6 +282,25 @@ export default async function SubscriptionPage({
           </div>
         </div>
       </section>
+
+      <div className="mb-7">
+        <PlanUpgradeControls
+          billingInterval={billing.billingInterval}
+          canManage={canManage}
+          currentPlanId={currentPlanId}
+          disabled={
+            !billing.customerId ||
+            !billing.subscriptionId ||
+            accessRestricted ||
+            billing.cancelAtPeriodEnd
+          }
+          initialSuccessMessage={
+            searchParams?.plan === "upgraded"
+              ? getPlanUpgradedMessage(searchParams.tier)
+              : undefined
+          }
+        />
+      </div>
 
       <div className="mb-7 grid gap-5 xl:grid-cols-[1fr_1fr]">
         <section className="rounded-[14px] border bg-white p-[22px] shadow-soft">

@@ -7,7 +7,7 @@ import {
   LoaderCircle,
   Pause,
   Plus,
-  Settings2,
+  TrendingUp,
   XCircle,
 } from "lucide-react";
 import { useEffect, useRef, useState, useTransition } from "react";
@@ -21,15 +21,17 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { membershipPlans } from "@/lib/plans";
+import type { MembershipTier } from "@/lib/types";
 
 type BillingAction =
   | "manage"
   | "payment_method"
-  | "subscription_update"
   | "cancel"
   | "pause"
   | "resume"
-  | "add_seat";
+  | "add_seat"
+  | "change_plan";
 
 type BillingManagementControlsProps = {
   canManage: boolean;
@@ -38,10 +40,7 @@ type BillingManagementControlsProps = {
 };
 
 const portalActions: Array<{
-  action: Extract<
-    BillingAction,
-    "payment_method" | "subscription_update" | "cancel"
-  >;
+  action: Extract<BillingAction, "payment_method" | "cancel">;
   description: string;
   icon: typeof CreditCard;
   label: string;
@@ -53,12 +52,6 @@ const portalActions: Array<{
     label: "Payment method",
   },
   {
-    action: "subscription_update",
-    description: "Change plan or adjust $10/month seat add-ons.",
-    icon: Settings2,
-    label: "Plans & seats",
-  },
-  {
     action: "cancel",
     description: "Schedule cancellation without deleting history.",
     icon: XCircle,
@@ -66,14 +59,188 @@ const portalActions: Array<{
   },
 ];
 
-function createSeatUpdateIdempotencyKey() {
+const planOrder: Record<MembershipTier, number> = {
+  seedling: 0,
+  roots: 1,
+  canopy: 2,
+  harvest: 3,
+};
+
+function createBillingUpdateIdempotencyKey(prefix: "plan" | "seat") {
   if (globalThis.crypto?.randomUUID) {
-    return `seat_${globalThis.crypto.randomUUID().replaceAll("-", "")}`;
+    return `${prefix}_${globalThis.crypto.randomUUID().replaceAll("-", "")}`;
   }
 
-  return `seat_${Date.now().toString(36)}_${Math.random()
+  return `${prefix}_${Date.now().toString(36)}_${Math.random()
     .toString(36)
     .slice(2, 18)}`;
+}
+
+type PlanUpgradeControlsProps = {
+  billingInterval: "month" | "year";
+  canManage: boolean;
+  currentPlanId: MembershipTier;
+  disabled?: boolean;
+  initialSuccessMessage?: string;
+};
+
+function getPlanPriceLabel(planId: MembershipTier, interval: "month" | "year") {
+  const plan = membershipPlans.find((item) => item.id === planId);
+  if (!plan) return "";
+
+  const amount = interval === "year" ? plan.annualPrice : plan.monthlyPrice;
+  return new Intl.NumberFormat("en-CA", {
+    currency: "CAD",
+    style: "currency",
+  }).format(amount);
+}
+
+export function PlanUpgradeControls({
+  billingInterval,
+  canManage,
+  currentPlanId,
+  disabled = false,
+  initialSuccessMessage = "",
+}: PlanUpgradeControlsProps) {
+  const upgradeOptions = membershipPlans.filter(
+    (plan) => planOrder[plan.id] > planOrder[currentPlanId],
+  );
+  const [error, setError] = useState("");
+  const [successMessage, setSuccessMessage] = useState(initialSuccessMessage);
+  const [targetPlanId, setTargetPlanId] = useState<MembershipTier>(
+    upgradeOptions[0]?.id ?? currentPlanId,
+  );
+  const [isPending, startTransition] = useTransition();
+  const unavailable =
+    disabled || isPending || !canManage || upgradeOptions.length === 0;
+  const selectedPlan = membershipPlans.find((plan) => plan.id === targetPlanId);
+
+  const upgradePlan = () => {
+    startTransition(async () => {
+      setError("");
+      setSuccessMessage("");
+      try {
+        const response = await fetch("/api/stripe/portal", {
+          body: JSON.stringify({
+            action: "change_plan",
+            idempotencyKey: createBillingUpdateIdempotencyKey("plan"),
+            targetPlanId,
+          }),
+          headers: { "Content-Type": "application/json" },
+          method: "POST",
+        });
+        const result = (await response.json().catch(() => ({}))) as {
+          error?: string;
+          message?: string;
+          planId?: MembershipTier;
+        };
+
+        if (response.status === 202) {
+          setSuccessMessage(
+            result.message ??
+              "Stripe confirmed the plan upgrade. Platform access is still syncing and should update shortly.",
+          );
+          return;
+        }
+
+        if (!response.ok) {
+          setError(result.error ?? "Unable to upgrade your plan.");
+          return;
+        }
+
+        window.location.assign(`/subscription?plan=upgraded&tier=${targetPlanId}`);
+      } catch {
+        setError("Unable to reach billing management. Please try again.");
+      }
+    });
+  };
+
+  return (
+    <section className="rounded-[14px] border bg-white p-5 shadow-soft">
+      <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
+        <div>
+          <div className="flex size-10 items-center justify-center rounded-xl bg-emerald-50 text-olea-green">
+            <TrendingUp className="size-5" />
+          </div>
+          <h2 className="mt-4 text-base font-bold text-slate-800">
+            Upgrade your plan
+          </h2>
+          <p className="mt-1 max-w-2xl text-sm leading-6 text-slate-500">
+            Move to a higher tier without starting checkout again. Stripe bills
+            the prorated difference immediately and Olea unlocks the new access
+            after the subscription sync completes.
+          </p>
+        </div>
+
+        {upgradeOptions.length > 0 ? (
+          <div className="grid gap-3 sm:min-w-[360px] sm:grid-cols-[1fr_auto]">
+            <Select
+              disabled={unavailable}
+              onValueChange={(value) => setTargetPlanId(value as MembershipTier)}
+              value={targetPlanId}
+            >
+              <SelectTrigger aria-label="Choose plan to upgrade to">
+                <SelectValue placeholder="Choose a plan" />
+              </SelectTrigger>
+              <SelectContent>
+                {upgradeOptions.map((plan) => (
+                  <SelectItem key={plan.id} value={plan.id}>
+                    {plan.name} - {getPlanPriceLabel(plan.id, billingInterval)} /{" "}
+                    {billingInterval}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <Button disabled={unavailable} onClick={upgradePlan} type="button">
+              {isPending ? (
+                <LoaderCircle className="size-4 animate-spin" />
+              ) : (
+                <TrendingUp className="size-4" />
+              )}
+              Upgrade
+            </Button>
+          </div>
+        ) : (
+          <p className="rounded-lg bg-slate-50 px-4 py-3 text-sm font-semibold text-slate-600">
+            You are already on the highest plan.
+          </p>
+        )}
+      </div>
+
+      {selectedPlan && upgradeOptions.length > 0 ? (
+        <p className="mt-4 rounded-lg bg-emerald-50 p-3 text-sm text-emerald-900">
+          Upgrade to <strong>{selectedPlan.name}</strong> for{" "}
+          {getPlanPriceLabel(selectedPlan.id, billingInterval)} /{" "}
+          {billingInterval}. Downgrades are handled by support so access changes
+          stay clean.
+        </p>
+      ) : null}
+
+      {!canManage ? (
+        <p className="mt-3 rounded-lg bg-slate-50 p-3 text-sm text-slate-500">
+          Only organization owners and admins can upgrade the membership.
+        </p>
+      ) : null}
+
+      {error ? (
+        <p
+          className="mt-3 rounded-lg bg-red-50 p-3 text-sm text-red-700"
+          role="alert"
+        >
+          {error}
+        </p>
+      ) : null}
+      {successMessage ? (
+        <p
+          role="status"
+          className="mt-3 flex gap-2 rounded-lg border border-emerald-200 bg-emerald-50 p-3 text-sm font-medium text-emerald-800"
+        >
+          <CheckCircle2 className="mt-0.5 size-4 shrink-0" />
+          <span>{successMessage}</span>
+        </p>
+      ) : null}
+    </section>
+  );
 }
 
 export function BillingManagementControls({
@@ -249,7 +416,8 @@ export function SeatManagementControls({
   const unavailable = disabled || isPending || !canManage;
 
   const openConfirmation = () => {
-    seatUpdateIdempotencyKeyRef.current = createSeatUpdateIdempotencyKey();
+    seatUpdateIdempotencyKeyRef.current =
+      createBillingUpdateIdempotencyKey("seat");
     setConfirmOpen(true);
   };
 
@@ -260,8 +428,8 @@ export function SeatManagementControls({
     }
   };
 
-	  useEffect(() => {
-	    if (!confirmOpen) return;
+  useEffect(() => {
+    if (!confirmOpen) return;
     confirmButtonRef.current?.focus();
 
     const closeOnEscape = (event: KeyboardEvent) => {
@@ -272,7 +440,7 @@ export function SeatManagementControls({
     };
     window.addEventListener("keydown", closeOnEscape);
     return () => window.removeEventListener("keydown", closeOnEscape);
-	  }, [confirmOpen, isPending]);
+  }, [confirmOpen, isPending]);
 
   const addSeat = () => {
     startTransition(async () => {
@@ -284,7 +452,7 @@ export function SeatManagementControls({
             action: "add_seat",
             idempotencyKey:
               seatUpdateIdempotencyKeyRef.current ??
-              createSeatUpdateIdempotencyKey(),
+              createBillingUpdateIdempotencyKey("seat"),
             seatQuantity: Number(seatQuantity),
           }),
           headers: { "Content-Type": "application/json" },
@@ -295,29 +463,31 @@ export function SeatManagementControls({
           message?: string;
         };
 
-	        if (response.status === 202) {
-	          setSuccessMessage(
-	            result.message ??
-	              "Stripe confirmed the seat update. Team access is still syncing and should be available shortly.",
-	          );
-	          seatUpdateIdempotencyKeyRef.current = null;
-	          setConfirmOpen(false);
-	          return;
-	        }
+        if (response.status === 202) {
+          setSuccessMessage(
+            result.message ??
+              "Stripe confirmed the seat update. Team access is still syncing and should be available shortly.",
+          );
+          seatUpdateIdempotencyKeyRef.current = null;
+          setConfirmOpen(false);
+          return;
+        }
 
-	        if (!response.ok) {
-	          setError(result.error ?? "Unable to add a seat.");
-	          seatUpdateIdempotencyKeyRef.current = null;
-	          setConfirmOpen(false);
-	          return;
-	        }
+        if (!response.ok) {
+          setError(result.error ?? "Unable to add a seat.");
+          seatUpdateIdempotencyKeyRef.current = null;
+          setConfirmOpen(false);
+          return;
+        }
 
-	        window.location.assign(`/subscription?seat=added&quantity=${seatQuantity}`);
-	      } catch {
-	        setError("Unable to reach billing management. Please try again.");
-	        seatUpdateIdempotencyKeyRef.current = null;
-	        setConfirmOpen(false);
-	      }
+        window.location.assign(
+          `/subscription?seat=added&quantity=${seatQuantity}`,
+        );
+      } catch {
+        setError("Unable to reach billing management. Please try again.");
+        seatUpdateIdempotencyKeyRef.current = null;
+        setConfirmOpen(false);
+      }
     });
   };
 
