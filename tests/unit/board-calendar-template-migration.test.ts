@@ -17,8 +17,13 @@ const presentationMigrationPath = join(
   process.cwd(),
   "supabase/migrations/20260622235500_board_calendar_editor_presentation.sql",
 );
+const snapshotSyncMigrationPath = join(
+  process.cwd(),
+  "supabase/migrations/20260623012421_sync_board_calendar_instance_snapshots.sql",
+);
 const migrationSql = readFileSync(migrationPath, "utf8");
 const presentationMigrationSql = readFileSync(presentationMigrationPath, "utf8");
+const snapshotSyncMigrationSql = readFileSync(snapshotSyncMigrationPath, "utf8");
 
 function extractJsonBlock(label: string) {
   const match = migrationSql.match(
@@ -182,5 +187,18 @@ describe("board calendar workflow template migration", () => {
     expect(presentationMigrationSql).toContain("'layout', 'two_column'");
     expect(presentationMigrationSql).toContain("'type', 'color'");
     expect(presentationMigrationSql).toContain("schema_version = greatest");
+  });
+
+  it("syncs existing board calendar instance snapshots to the updated definition", () => {
+    expect(snapshotSyncMigrationSql).toContain("public.template_instances");
+    expect(snapshotSyncMigrationSql).toContain(
+      "board-calendar-operational-workflow",
+    );
+    expect(snapshotSyncMigrationSql).toContain(
+      "schema_snapshot = definition.field_schema",
+    );
+    expect(snapshotSyncMigrationSql).toContain(
+      "definition_version = definition.schema_version",
+    );
   });
 });
