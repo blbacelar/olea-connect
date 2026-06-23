@@ -7,10 +7,25 @@ import {
   ChevronRight,
   Clock,
   ListChecks,
+  Plus,
 } from "lucide-react";
 
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Textarea } from "@/components/ui/textarea";
+import {
+  appendBoardCalendarEntry,
+  type BoardCalendarEntryType,
+} from "@/lib/template-renderer/board-calendar-editor";
 import {
   addDays,
   buildCalendarEvents,
@@ -24,23 +39,79 @@ import {
   weekdayNames,
   type CalendarViewEvent,
 } from "@/lib/template-renderer/calendar-view";
-import type { TemplateFormData } from "@/lib/template-renderer/types";
+import type {
+  FieldPath,
+  TemplateFormData,
+  TemplateSection,
+  TemplateValue,
+} from "@/lib/template-renderer/types";
 import { cn } from "@/lib/utils";
 
+import { TemplateFields } from "./TemplateFields";
+
 type CalendarMode = "month" | "week" | "year";
+type WorkspaceMode =
+  | "calendar"
+  | "getting_started"
+  | "committees"
+  | "meeting_schedule"
+  | "operational_calendar"
+  | "annual_calendar"
+  | "monthly_calendar"
+  | "staff_tasks"
+  | "agm_timeline"
+  | "colour_key";
 
 const viewOptions: Array<{ label: string; value: CalendarMode }> = [
   { label: "Month", value: "month" },
   { label: "Week", value: "week" },
-  { label: "Year", value: "year" },
+  { label: "Annual", value: "year" },
+];
+
+const workspaceOptions: Array<{ label: string; value: WorkspaceMode }> = [
+  { label: "Calendar workspace", value: "calendar" },
+  { label: "Getting started", value: "getting_started" },
+  { label: "Committees", value: "committees" },
+  { label: "Meeting schedule", value: "meeting_schedule" },
+  { label: "Operational workflow", value: "operational_calendar" },
+  { label: "Annual calendar", value: "annual_calendar" },
+  { label: "Monthly calendar", value: "monthly_calendar" },
+  { label: "Governance task list", value: "staff_tasks" },
+  { label: "AGM planning timeline", value: "agm_timeline" },
+  { label: "Colour key", value: "colour_key" },
+];
+
+const entryTypes: Array<{
+  defaultCategory: string;
+  label: string;
+  value: BoardCalendarEntryType;
+}> = [
+  { label: "Meeting or event", value: "meeting", defaultCategory: "Board Meeting" },
+  {
+    label: "Annual calendar note",
+    value: "annual_highlight",
+    defaultCategory: "Key Deadline",
+  },
+  { label: "Operational task", value: "staff_task", defaultCategory: "Not Started" },
+  {
+    label: "AGM milestone",
+    value: "agm_milestone",
+    defaultCategory: "Governance",
+  },
 ];
 
 export function BoardCalendarWorkbench({
   data,
+  errorsByPath,
   organizationName,
+  sections,
+  onChange,
 }: {
   data: TemplateFormData;
+  errorsByPath: Map<string, string>;
   organizationName: string;
+  sections: TemplateSection[];
+  onChange: (path: FieldPath, value: TemplateValue) => void;
 }) {
   const events = useMemo(() => buildCalendarEvents(data), [data]);
   const eventsByDate = useMemo(() => groupEventsByDate(events), [events]);
@@ -48,9 +119,20 @@ export function BoardCalendarWorkbench({
   const configuredMonth = getTemplateMonthIndex(data);
   const firstDatedEvent = events.find((event) => event.date);
   const [mode, setMode] = useState<CalendarMode>("month");
+  const [workspaceMode, setWorkspaceMode] = useState<WorkspaceMode>("calendar");
   const [anchorDate, setAnchorDate] = useState(
     firstDatedEvent?.date ?? new Date(configuredYear, configuredMonth, 1),
   );
+  const [selectedDateKey, setSelectedDateKey] = useState(
+    firstDatedEvent?.dateKey ??
+      toDateKey(new Date(configuredYear, configuredMonth, 1)),
+  );
+  const [entryType, setEntryType] = useState<BoardCalendarEntryType>("meeting");
+  const [entryTitle, setEntryTitle] = useState("");
+  const [entryCategory, setEntryCategory] = useState("Board Meeting");
+  const [entryTime, setEntryTime] = useState("");
+  const [entryLocation, setEntryLocation] = useState("");
+  const [entryNotes, setEntryNotes] = useState("");
 
   const monthIndex = anchorDate.getMonth();
   const year = anchorDate.getFullYear();
@@ -67,6 +149,8 @@ export function BoardCalendarWorkbench({
       return items;
     }, new Map()),
   ).slice(0, 8);
+  const selectedSection = sections.find((section) => section.id === workspaceMode);
+  const selectedDateEvents = eventsByDate.get(selectedDateKey) ?? [];
 
   function moveBackward() {
     setAnchorDate((current) => {
@@ -88,6 +172,41 @@ export function BoardCalendarWorkbench({
     setAnchorDate(new Date(configuredYear, configuredMonth, 1));
   }
 
+  function selectDate(dateKey: string) {
+    setSelectedDateKey(dateKey);
+    setWorkspaceMode("calendar");
+    const date = parseCalendarDateKey(dateKey);
+    if (date) setAnchorDate(date);
+  }
+
+  function updateEntryType(value: BoardCalendarEntryType) {
+    setEntryType(value);
+    setEntryCategory(
+      entryTypes.find((option) => option.value === value)?.defaultCategory ??
+        "Board Meeting",
+    );
+  }
+
+  function addCalendarEntry() {
+    if (!entryTitle.trim()) return;
+
+    const mutation = appendBoardCalendarEntry(data, {
+      type: entryType,
+      dateKey: selectedDateKey,
+      title: entryTitle,
+      category: entryCategory,
+      time: entryTime,
+      location: entryLocation,
+      notes: entryNotes,
+    });
+
+    onChange(mutation.path, mutation.value);
+    setEntryTitle("");
+    setEntryTime("");
+    setEntryLocation("");
+    setEntryNotes("");
+  }
+
   return (
     <section className="space-y-5 rounded-xl border bg-white p-6 shadow-soft">
       <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
@@ -100,13 +219,30 @@ export function BoardCalendarWorkbench({
             {organizationName} board calendar
           </h2>
           <p className="mt-1.5 max-w-3xl text-sm leading-6 text-slate-600">
-            This view is generated from your meeting schedule, annual
-            highlights, staff tasks, and AGM milestones. Edit the source tabs to
-            update the calendar automatically.
+            Add meetings, notes, deadlines, staff tasks, and AGM milestones
+            directly from the calendar. Annual and monthly views are generated
+            from the same entries, so your workbook stays connected.
           </p>
         </div>
 
-        <div className="flex flex-wrap items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2 lg:justify-end">
+          <div className="min-w-[260px]">
+            <Select
+              value={workspaceMode}
+              onValueChange={(value) => setWorkspaceMode(value as WorkspaceMode)}
+            >
+              <SelectTrigger aria-label="Choose calendar workspace view">
+                <SelectValue placeholder="Choose a view" />
+              </SelectTrigger>
+              <SelectContent>
+                {workspaceOptions.map((option) => (
+                  <SelectItem key={option.value} value={option.value}>
+                    {option.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
           <div className="inline-flex rounded-lg border bg-white p-1 shadow-sm">
             {viewOptions.map((option) => (
               <Button
@@ -157,13 +293,13 @@ export function BoardCalendarWorkbench({
           icon={Clock}
           label="Next dated item"
           value={nextEvent?.dateKey ?? "Not scheduled"}
-          detail={nextEvent?.title ?? "Add dates in the source tabs"}
+          detail={nextEvent?.title ?? "Add a date from the calendar"}
         />
         <SummaryCard
           icon={ListChecks}
           label="Board meetings"
           value={String(boardMeetings)}
-          detail="Pulled from Meeting Schedule"
+          detail="Generated from calendar entries"
         />
       </div>
 
@@ -185,17 +321,79 @@ export function BoardCalendarWorkbench({
         </div>
       ) : null}
 
-      {mode === "year" ? (
-        <YearCalendar events={events} year={year} />
-      ) : mode === "week" ? (
-        <WeekCalendar anchorDate={anchorDate} eventsByDate={eventsByDate} />
-      ) : (
-        <MonthCalendar
-          eventsByDate={eventsByDate}
-          monthIndex={monthIndex}
-          year={year}
-        />
-      )}
+      {workspaceMode === "calendar" ? (
+        <>
+          {mode === "year" ? (
+            <YearCalendar
+              events={events}
+              year={year}
+              onSelectDate={selectDate}
+            />
+          ) : mode === "week" ? (
+            <WeekCalendar
+              anchorDate={anchorDate}
+              eventsByDate={eventsByDate}
+              onSelectDate={selectDate}
+              selectedDateKey={selectedDateKey}
+            />
+          ) : (
+            <MonthCalendar
+              eventsByDate={eventsByDate}
+              monthIndex={monthIndex}
+              onSelectDate={selectDate}
+              selectedDateKey={selectedDateKey}
+              year={year}
+            />
+          )}
+
+          <CalendarEntryComposer
+            entryCategory={entryCategory}
+            entryLocation={entryLocation}
+            entryNotes={entryNotes}
+            entryTime={entryTime}
+            entryTitle={entryTitle}
+            entryType={entryType}
+            selectedDateEvents={selectedDateEvents}
+            selectedDateKey={selectedDateKey}
+            onAdd={addCalendarEntry}
+            onCategoryChange={setEntryCategory}
+            onEntryTypeChange={updateEntryType}
+            onLocationChange={setEntryLocation}
+            onNotesChange={setEntryNotes}
+            onTimeChange={setEntryTime}
+            onTitleChange={setEntryTitle}
+          />
+        </>
+      ) : selectedSection ? (
+        <section
+          className="rounded-xl border bg-white p-6 shadow-sm"
+          aria-labelledby={`${selectedSection.id}-heading`}
+        >
+          <h3 id={`${selectedSection.id}-heading`} className="text-xl font-semibold">
+            {selectedSection.title}
+          </h3>
+          {selectedSection.description ? (
+            <p className="mt-1.5 text-sm leading-6 text-slate-500">
+              {selectedSection.description}
+            </p>
+          ) : null}
+          <div
+            className={cn(
+              "mt-5",
+              selectedSection.layout === "two_column"
+                ? "grid gap-5 md:grid-cols-2"
+                : "space-y-5",
+            )}
+          >
+            <TemplateFields
+              fields={selectedSection.questions}
+              data={data}
+              errorsByPath={errorsByPath}
+              onChange={onChange}
+            />
+          </div>
+        </section>
+      ) : null}
     </section>
   );
 }
@@ -232,11 +430,15 @@ function SummaryCard({
 function MonthCalendar({
   eventsByDate,
   monthIndex,
+  selectedDateKey,
   year,
+  onSelectDate,
 }: {
   eventsByDate: Map<string, CalendarViewEvent[]>;
   monthIndex: number;
+  selectedDateKey: string;
   year: number;
+  onSelectDate: (dateKey: string) => void;
 }) {
   const days = buildMonthGrid(year, monthIndex);
 
@@ -248,8 +450,10 @@ function MonthCalendar({
           <DayCell
             key={day.dateKey}
             dayNumber={day.date.getDate()}
-            muted={!day.isCurrentMonth}
             events={eventsByDate.get(day.dateKey) ?? []}
+            muted={!day.isCurrentMonth}
+            selected={day.dateKey === selectedDateKey}
+            onSelect={() => onSelectDate(day.dateKey)}
           />
         ))}
       </div>
@@ -260,9 +464,13 @@ function MonthCalendar({
 function WeekCalendar({
   anchorDate,
   eventsByDate,
+  selectedDateKey,
+  onSelectDate,
 }: {
   anchorDate: Date;
   eventsByDate: Map<string, CalendarViewEvent[]>;
+  selectedDateKey: string;
+  onSelectDate: (dateKey: string) => void;
 }) {
   const weekDays = getWeekDays(anchorDate);
 
@@ -272,7 +480,15 @@ function WeekCalendar({
         const dateKey = toDateKey(day);
         const events = eventsByDate.get(dateKey) ?? [];
         return (
-          <div key={dateKey} className="rounded-xl border bg-white p-3">
+          <button
+            key={dateKey}
+            type="button"
+            className={cn(
+              "rounded-xl border bg-white p-3 text-left transition hover:border-olea-green",
+              selectedDateKey === dateKey && "border-olea-green ring-2 ring-olea-green/20",
+            )}
+            onClick={() => onSelectDate(dateKey)}
+          >
             <p className="text-xs font-semibold uppercase tracking-[0.08em] text-slate-400">
               {weekdayNames[day.getDay()]}
             </p>
@@ -290,7 +506,7 @@ function WeekCalendar({
                 </p>
               )}
             </div>
-          </div>
+          </button>
         );
       })}
     </div>
@@ -300,9 +516,11 @@ function WeekCalendar({
 function YearCalendar({
   events,
   year,
+  onSelectDate,
 }: {
   events: CalendarViewEvent[];
   year: number;
+  onSelectDate: (dateKey: string) => void;
 }) {
   return (
     <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
@@ -326,7 +544,14 @@ function YearCalendar({
             <div className="mt-3 space-y-2">
               {monthEvents.length ? (
                 monthEvents.slice(0, 5).map((event) => (
-                  <CalendarEventPill key={event.id} event={event} compact />
+                  <CalendarEventPill
+                    key={event.id}
+                    event={event}
+                    compact
+                    onSelectDate={
+                      event.dateKey ? () => onSelectDate(event.dateKey!) : undefined
+                    }
+                  />
                 ))
               ) : (
                 <p className="rounded-lg bg-slate-50 px-3 py-2 text-xs text-slate-400">
@@ -363,19 +588,26 @@ function CalendarWeekHeader() {
 
 function DayCell({
   dayNumber,
-  muted,
   events,
+  muted,
+  selected,
+  onSelect,
 }: {
   dayNumber: number;
-  muted: boolean;
   events: CalendarViewEvent[];
+  muted: boolean;
+  selected: boolean;
+  onSelect: () => void;
 }) {
   return (
-    <div
+    <button
+      type="button"
       className={cn(
-        "min-h-[150px] border-b border-r bg-white p-3 last:border-r-0",
+        "min-h-[150px] border-b border-r bg-white p-3 text-left transition hover:border-olea-green last:border-r-0",
         muted && "bg-slate-50 text-slate-400",
+        selected && "relative z-10 border-olea-green ring-2 ring-inset ring-olea-green",
       )}
+      onClick={onSelect}
     >
       <div className="flex items-center justify-between gap-2">
         <span
@@ -397,6 +629,155 @@ function DayCell({
           <CalendarEventPill key={event.id} event={event} compact />
         ))}
       </div>
+    </button>
+  );
+}
+
+function CalendarEntryComposer({
+  entryCategory,
+  entryLocation,
+  entryNotes,
+  entryTime,
+  entryTitle,
+  entryType,
+  selectedDateEvents,
+  selectedDateKey,
+  onAdd,
+  onCategoryChange,
+  onEntryTypeChange,
+  onLocationChange,
+  onNotesChange,
+  onTimeChange,
+  onTitleChange,
+}: {
+  entryCategory: string;
+  entryLocation: string;
+  entryNotes: string;
+  entryTime: string;
+  entryTitle: string;
+  entryType: BoardCalendarEntryType;
+  selectedDateEvents: CalendarViewEvent[];
+  selectedDateKey: string;
+  onAdd: () => void;
+  onCategoryChange: (value: string) => void;
+  onEntryTypeChange: (value: BoardCalendarEntryType) => void;
+  onLocationChange: (value: string) => void;
+  onNotesChange: (value: string) => void;
+  onTimeChange: (value: string) => void;
+  onTitleChange: (value: string) => void;
+}) {
+  return (
+    <div className="grid gap-5 rounded-xl border bg-slate-50 p-4 lg:grid-cols-[0.9fr_1.1fr]">
+      <div className="rounded-xl bg-white p-4 shadow-sm">
+        <p className="text-xs font-semibold uppercase tracking-[0.08em] text-slate-400">
+          Selected date
+        </p>
+        <h3 className="mt-1 text-lg font-semibold text-slate-950">
+          {selectedDateKey}
+        </h3>
+        <div className="mt-4 space-y-2">
+          {selectedDateEvents.length ? (
+            selectedDateEvents.map((event) => (
+              <CalendarEventPill key={event.id} event={event} />
+            ))
+          ) : (
+            <p className="rounded-lg border border-dashed px-3 py-4 text-sm text-slate-500">
+              Nothing scheduled yet. Add a meeting, note, task, or milestone for
+              this date.
+            </p>
+          )}
+        </div>
+      </div>
+
+      <div className="rounded-xl bg-white p-4 shadow-sm">
+        <div className="flex items-center gap-2">
+          <div className="rounded-lg bg-olea-light p-2 text-olea-dark">
+            <Plus className="size-4" />
+          </div>
+          <div>
+            <h3 className="font-semibold text-slate-950">Add through calendar</h3>
+            <p className="text-sm text-slate-500">
+              This creates the matching workbook record automatically.
+            </p>
+          </div>
+        </div>
+
+        <div className="mt-4 grid gap-4 md:grid-cols-2">
+          <div className="space-y-2">
+            <Label htmlFor="calendar-entry-type">Entry type</Label>
+            <Select
+              value={entryType}
+              onValueChange={(value) =>
+                onEntryTypeChange(value as BoardCalendarEntryType)
+              }
+            >
+              <SelectTrigger id="calendar-entry-type">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {entryTypes.map((option) => (
+                  <SelectItem key={option.value} value={option.value}>
+                    {option.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="calendar-entry-category">Category/status</Label>
+            <Input
+              id="calendar-entry-category"
+              value={entryCategory}
+              onChange={(event) => onCategoryChange(event.target.value)}
+            />
+          </div>
+          <div className="space-y-2 md:col-span-2">
+            <Label htmlFor="calendar-entry-title">Title</Label>
+            <Input
+              id="calendar-entry-title"
+              placeholder="Board meeting, budget review, AGM notice..."
+              value={entryTitle}
+              onChange={(event) => onTitleChange(event.target.value)}
+            />
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="calendar-entry-time">Time</Label>
+            <Input
+              id="calendar-entry-time"
+              type="time"
+              value={entryTime}
+              onChange={(event) => onTimeChange(event.target.value)}
+            />
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="calendar-entry-location">Location / platform</Label>
+            <Input
+              id="calendar-entry-location"
+              placeholder="Boardroom, Zoom, community hall"
+              value={entryLocation}
+              onChange={(event) => onLocationChange(event.target.value)}
+            />
+          </div>
+          <div className="space-y-2 md:col-span-2">
+            <Label htmlFor="calendar-entry-notes">Notes</Label>
+            <Textarea
+              id="calendar-entry-notes"
+              placeholder="Add context, prep notes, owner details, or reminders."
+              value={entryNotes}
+              onChange={(event) => onNotesChange(event.target.value)}
+            />
+          </div>
+        </div>
+        <Button
+          type="button"
+          className="mt-4"
+          disabled={!entryTitle.trim()}
+          onClick={onAdd}
+        >
+          <Plus className="size-4" />
+          Add to calendar
+        </Button>
+      </div>
     </div>
   );
 }
@@ -404,28 +785,54 @@ function DayCell({
 function CalendarEventPill({
   event,
   compact = false,
+  onSelectDate,
 }: {
   event: CalendarViewEvent;
   compact?: boolean;
+  onSelectDate?: () => void;
 }) {
-  return (
-    <div
-      className={cn(
-        "rounded-lg border px-2.5 py-2 text-xs leading-5 shadow-sm",
-        compact ? "space-y-0.5" : "space-y-1",
-      )}
-      style={{
-        backgroundColor: `${event.color}14`,
-        borderColor: `${event.color}55`,
-        color: event.color,
-      }}
-    >
+  const content = (
+    <>
       <p className="font-semibold text-slate-900">{event.title}</p>
       <div className="flex flex-wrap items-center gap-x-2 gap-y-0.5 text-[11px] font-medium">
         {event.dateKey ? <span>{event.dateKey}</span> : null}
         {event.time ? <span>{event.time}</span> : null}
         {event.location && !compact ? <span>{event.location}</span> : null}
       </div>
+      {event.notes && !compact ? (
+        <p className="text-[11px] leading-4 text-slate-600">{event.notes}</p>
+      ) : null}
+    </>
+  );
+
+  const className = cn(
+    "rounded-lg border px-2.5 py-2 text-xs leading-5 shadow-sm",
+    compact ? "space-y-0.5" : "space-y-1",
+    onSelectDate && "w-full text-left transition hover:brightness-95",
+  );
+  const style = {
+    backgroundColor: `${event.color}14`,
+    borderColor: `${event.color}55`,
+    color: event.color,
+  };
+
+  if (onSelectDate) {
+    return (
+      <button type="button" className={className} style={style} onClick={onSelectDate}>
+        {content}
+      </button>
+    );
+  }
+
+  return (
+    <div className={className} style={style}>
+      {content}
     </div>
   );
+}
+
+function parseCalendarDateKey(dateKey: string) {
+  const match = dateKey.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+  if (!match) return null;
+  return new Date(Number(match[1]), Number(match[2]) - 1, Number(match[3]));
 }

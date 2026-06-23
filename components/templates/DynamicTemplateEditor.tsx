@@ -165,20 +165,20 @@ export function DynamicTemplateEditor({
           </section>
         ) : null}
 
-        {renderSectionsAsTabs ? (
+        {calendarEnabled ? (
+          <BoardCalendarWorkbench
+            data={session.formData}
+            errorsByPath={errorsByPath}
+            organizationName={session.brandingSnapshot.organizationName}
+            sections={session.schemaSnapshot.sections}
+            onChange={updateValue}
+          />
+        ) : renderSectionsAsTabs ? (
           <Tabs
             defaultValue={defaultTabValue}
             className="rounded-xl border bg-white p-4 shadow-soft"
           >
             <TabsList className="h-auto w-full flex-wrap justify-start gap-1 bg-slate-100">
-              {calendarEnabled ? (
-                <TabsTrigger
-                  value="calendar"
-                  className="data-[state=active]:bg-white"
-                >
-                  Calendar
-                </TabsTrigger>
-              ) : null}
               {session.schemaSnapshot.sections.map((section) => (
                 <TabsTrigger
                   key={section.id}
@@ -189,14 +189,6 @@ export function DynamicTemplateEditor({
                 </TabsTrigger>
               ))}
             </TabsList>
-            {calendarEnabled ? (
-              <TabsContent value="calendar">
-                <BoardCalendarWorkbench
-                  data={session.formData}
-                  organizationName={session.brandingSnapshot.organizationName}
-                />
-              </TabsContent>
-            ) : null}
             {session.schemaSnapshot.sections.map((section) => (
               <TabsContent key={section.id} value={section.id}>
                 <SectionFields
