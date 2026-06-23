@@ -43,16 +43,18 @@ function makeSubscription({
       quantity: 1,
     }),
   ],
+  metadata = {},
   pauseCollection,
 }: {
   items?: Array<Record<string, unknown>>;
+  metadata?: Record<string, string>;
   pauseCollection: Stripe.Subscription["pause_collection"];
 }) {
   return {
     id: "sub_123",
     customer: "cus_123",
     status: "active",
-    metadata: {},
+    metadata,
     pause_collection: pauseCollection,
     items: {
       data: items,
@@ -206,6 +208,42 @@ describe("Stripe subscription synchronization", () => {
       quantity: 1,
       metadata: expect.objectContaining({
         stripe_price_id: "price_si_membership",
+      }),
+    });
+  });
+
+  it("falls back to subscription metadata when upgraded price metadata is missing", async () => {
+    const { syncStripeSubscription } = await import("@/lib/stripe/subscriptions");
+    const { client, subscriptionUpdates } = makeSupabaseMock(null);
+
+    await syncStripeSubscription(
+      client as unknown as SupabaseClient,
+      makeSubscription({
+        metadata: { plan_id: "canopy" },
+        items: [
+          {
+            ...makeSubscriptionItem({
+              id: "si_membership",
+              itemType: "membership",
+              quantity: 1,
+            }),
+            price: {
+              currency: "cad",
+              id: "price_without_plan_metadata",
+              metadata: { item_type: "membership" },
+              recurring: { interval: "month" },
+              unit_amount: 9900,
+            },
+          },
+        ],
+        pauseCollection: null,
+      }),
+    );
+
+    expect(subscriptionUpdates[0]).toMatchObject({
+      plan_id: "canopy",
+      metadata: expect.objectContaining({
+        stripe_price_id: "price_without_plan_metadata",
       }),
     });
   });

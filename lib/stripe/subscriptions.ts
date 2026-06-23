@@ -8,9 +8,48 @@ import {
   mapSubscriptionStatus,
   toIsoDate,
 } from "@/lib/stripe/subscription-domain";
+import type { MembershipTier, RegistrationState } from "@/lib/types";
+
+const membershipTiers: MembershipTier[] = [
+  "seedling",
+  "roots",
+  "canopy",
+  "harvest",
+];
+const billingCycles: RegistrationState["billingCycle"][] = [
+  "monthly",
+  "annual",
+];
+
+function isMembershipTier(value: unknown): value is MembershipTier {
+  return typeof value === "string" && membershipTiers.includes(value as MembershipTier);
+}
+
+function getConfiguredPlanIdFromPriceId(priceId: string | undefined) {
+  if (!priceId) return null;
+
+  for (const tier of membershipTiers) {
+    for (const cycle of billingCycles) {
+      const key = `STRIPE_PRICE_${tier.toUpperCase()}_${cycle.toUpperCase()}`;
+      if (process.env[key] === priceId) return tier;
+    }
+  }
+
+  return null;
+}
+
+function getSubscriptionMetadataPlanId(subscription: Stripe.Subscription) {
+  return isMembershipTier(subscription.metadata.plan_id)
+    ? subscription.metadata.plan_id
+    : null;
+}
+
+function getItemPlanId(item: Stripe.SubscriptionItem | undefined) {
+  return getPlanId(item) ?? getConfiguredPlanIdFromPriceId(item?.price.id);
+}
 
 function getSubscriptionItemType(item: Stripe.SubscriptionItem) {
-  return item.price.metadata.item_type || (getPlanId(item) ? "membership" : "seat");
+  return item.price.metadata.item_type || (getItemPlanId(item) ? "membership" : "seat");
 }
 
 function getMembershipItem(subscription: Stripe.Subscription) {
@@ -35,7 +74,8 @@ export async function syncStripeSubscription(
       ? subscription.customer
       : subscription.customer.id;
   const membershipItem = getMembershipItem(subscription);
-  const planId = getPlanId(membershipItem);
+  const planId =
+    getItemPlanId(membershipItem) ?? getSubscriptionMetadataPlanId(subscription);
   const billingInterval = membershipItem?.price.recurring?.interval;
 
   let lookup = supabase
