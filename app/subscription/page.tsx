@@ -54,7 +54,7 @@ function getSeatAddedMessage(quantityValue?: string) {
 
   return `${normalizedQuantity} paid seat${
     normalizedQuantity === 1 ? "" : "s"
-  } added. Stripe has confirmed the update, and ${
+  } added. The billing update is confirmed, and ${
     normalizedQuantity === 1 ? "the new seat is" : "the new seats are"
   } available for invitations.`;
 }
@@ -72,10 +72,10 @@ function isMembershipTier(value: string): value is MembershipTier {
 
 function getPlanUpgradedMessage(tierValue?: string) {
   if (!tierValue || !isMembershipTier(tierValue)) {
-    return "Plan upgraded. Stripe has confirmed the update and access is ready.";
+    return "Plan upgraded. The billing update is confirmed and access is ready.";
   }
 
-  return `Plan upgraded to ${tierValue}. Stripe has confirmed the update and access is ready.`;
+  return `Plan upgraded to ${tierValue}. The billing update is confirmed and access is ready.`;
 }
 
 type SubscriptionPageProps = {
@@ -215,7 +215,7 @@ export default async function SubscriptionPage({
             <p className="mt-1 text-sm leading-6">
               Platform access is limited while the subscription is{" "}
               {statusLabels[billing.status].toLowerCase()}. An organization
-              owner or administrator can resolve this through Stripe.
+              owner or administrator can resolve this through billing.
             </p>
           </div>
         </section>
@@ -274,7 +274,7 @@ export default async function SubscriptionPage({
             <p className="mt-2 text-base font-semibold">
               {primaryDate
                 ? formatDate(primaryDate)
-                : "Pending Stripe confirmation"}
+                : "Pending billing confirmation"}
             </p>
             <p className="mt-1 text-[13px] text-slate-500">
               {billing.paymentMethod ?? "Payment method not available"}
@@ -384,7 +384,7 @@ export default async function SubscriptionPage({
                   ? `${formatDate(billing.currentPeriodStart)} - ${formatDate(
                       billing.currentPeriodEnd,
                     )}`
-                  : "Pending Stripe confirmation"}
+                  : "Pending billing confirmation"}
               </dd>
             </div>
           </dl>
@@ -454,7 +454,7 @@ export default async function SubscriptionPage({
           ))
         ) : (
           <p className="px-[22px] py-8 text-center text-sm text-slate-500">
-            No Stripe invoices are available yet.
+            No invoices are available yet.
           </p>
         )}
       </div>

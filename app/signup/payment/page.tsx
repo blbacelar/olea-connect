@@ -91,7 +91,7 @@ export default function SignupPaymentPage() {
               <div className="rounded-xl border border-olea-green/20 bg-olea-light/50 p-5">
                 <Lock className="size-6 text-olea-green" />
                 <p className="mt-3 font-semibold text-olea-dark">
-                  Payment is completed on Stripe
+                  Payment is completed securely
                 </p>
                 <p className="mt-1 text-sm leading-6 text-slate-500">
                   Olea Connects never receives or stores your card number or
@@ -133,7 +133,9 @@ export default function SignupPaymentPage() {
                 {isPending ? (
                   <LoaderCircle className="size-4 animate-spin" />
                 ) : null}
-                {isPending ? "Opening Stripe..." : "Continue to Stripe →"}
+                {isPending
+                  ? "Opening secure checkout..."
+                  : "Continue to secure checkout ->"}
               </Button>
               {error ? (
                 <p className="rounded-lg bg-red-50 p-3 text-sm text-red-700">
@@ -141,7 +143,7 @@ export default function SignupPaymentPage() {
                 </p>
               ) : null}
               <p className="flex items-center justify-center gap-1.5 text-xs text-slate-400">
-                <Lock className="size-3.5" /> Secure checkout powered by Stripe
+                <Lock className="size-3.5" /> Secure checkout
               </p>
             </div>
           </section>

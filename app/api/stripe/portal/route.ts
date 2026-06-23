@@ -292,7 +292,7 @@ async function changePlanSubscription({
 
   if (!membershipItem) {
     throw new BillingActionError(
-      "Stripe subscription does not have a membership item to upgrade.",
+      "Subscription billing does not have a membership item to upgrade.",
       409,
     );
   }
@@ -344,13 +344,13 @@ export async function POST(request: Request) {
     }
     if (!billing.customerId) {
       return NextResponse.json(
-        { error: "Stripe billing is not ready for this membership yet." },
+        { error: "Billing is not ready for this membership yet." },
         { status: 409 },
       );
     }
     if (!billing.subscriptionId) {
       return NextResponse.json(
-        { error: "Stripe subscription is not ready for this membership yet." },
+        { error: "Subscription billing is not ready for this membership yet." },
         { status: 409 },
       );
     }
@@ -421,8 +421,8 @@ export async function POST(request: Request) {
               pendingSync: true,
               message:
                 action === "add_seat"
-                  ? "Stripe confirmed the seat update, but local access is still syncing."
-                  : "Stripe confirmed the plan upgrade, but local access is still syncing.",
+                  ? "The seat update was confirmed, but local access is still syncing."
+                  : "The plan upgrade was confirmed, but local access is still syncing.",
             },
             { status: 202 },
           );
@@ -460,7 +460,7 @@ export async function POST(request: Request) {
     return NextResponse.json(
       {
         error:
-          error instanceof Error
+          error instanceof BillingActionError
             ? error.message
             : "Unable to open billing management.",
       },

@@ -47,7 +47,7 @@ const portalActions: Array<{
 }> = [
   {
     action: "payment_method",
-    description: "Update card details in Stripe.",
+    description: "Update card details securely.",
     icon: CreditCard,
     label: "Payment method",
   },
@@ -138,7 +138,7 @@ export function PlanUpgradeControls({
         if (response.status === 202) {
           setSuccessMessage(
             result.message ??
-              "Stripe confirmed the plan upgrade. Platform access is still syncing and should update shortly.",
+              "Your plan upgrade was confirmed. Platform access is still syncing and should update shortly.",
           );
           return;
         }
@@ -166,8 +166,8 @@ export function PlanUpgradeControls({
             Upgrade your plan
           </h2>
           <p className="mt-1 max-w-2xl text-sm leading-6 text-slate-500">
-            Move to a higher tier without starting checkout again. Stripe bills
-            the prorated difference immediately and Olea unlocks the new access
+            Move to a higher tier without starting checkout again. The prorated
+            difference is billed immediately, and Olea unlocks the new access
             after the subscription sync completes.
           </p>
         </div>
@@ -296,9 +296,9 @@ export function BillingManagementControls({
             Admin billing actions
           </h2>
           <p className="mt-1 max-w-2xl text-sm leading-6 text-slate-500">
-            Payment-sensitive changes open Stripe-hosted flows. Access changes
-            are applied only after Stripe syncs the confirmed subscription
-            state.
+            Payment-sensitive changes open secure hosted billing flows. Access
+            changes are applied only after the confirmed subscription state
+            syncs.
           </p>
         </div>
         <Button
@@ -350,7 +350,7 @@ export function BillingManagementControls({
             </h3>
             <p className="mt-1 max-w-xl text-xs leading-5 text-amber-900">
               Pauses are limited to 60 days. During a pause, platform access is
-              restricted until Stripe confirms collection has resumed.
+              restricted until billing confirms collection has resumed.
             </p>
           </div>
           <div className="flex flex-wrap items-center gap-2">
@@ -466,7 +466,7 @@ export function SeatManagementControls({
         if (response.status === 202) {
           setSuccessMessage(
             result.message ??
-              "Stripe confirmed the seat update. Team access is still syncing and should be available shortly.",
+              "Your seat update was confirmed. Team access is still syncing and should be available shortly.",
           );
           seatUpdateIdempotencyKeyRef.current = null;
           setConfirmOpen(false);
@@ -499,8 +499,8 @@ export function SeatManagementControls({
             Need another teammate?
           </h3>
           <p className="mt-1 text-xs leading-5 text-emerald-900">
-            Add one paid seat for {seatPriceLabel}. After Stripe confirms it,
-            invite the teammate from Team.
+            Add one paid seat for {seatPriceLabel}. After the update is
+            confirmed, invite the teammate from Team.
           </p>
           {!canManage ? (
             <p className="mt-2 text-xs font-semibold text-emerald-900">
@@ -544,7 +544,7 @@ export function SeatManagementControls({
               className="mt-2 text-sm leading-6 text-slate-600"
             >
               Select how many teammate seats to add for {seatPriceLabel} each.
-              Stripe will bill the prorated amount now, then you can invite the
+              The prorated amount is billed now, then you can invite the
               teammate from Team.
             </p>
             <div className="mt-5 space-y-2">

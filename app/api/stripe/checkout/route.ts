@@ -159,7 +159,7 @@ export async function POST(request: Request) {
     });
 
     if (!session.url) {
-      throw new Error("Stripe did not return a checkout URL.");
+      throw new Error("Secure checkout did not return a checkout URL.");
     }
 
     await attachCheckoutSession(supabase, prepared.requestId, session.id);
@@ -169,10 +169,7 @@ export async function POST(request: Request) {
     console.error("Unable to create Stripe Checkout session", error);
     return NextResponse.json(
       {
-        error:
-          error instanceof Error
-            ? error.message
-            : "Unable to start secure checkout.",
+        error: "Unable to start secure checkout.",
       },
       { status: 500 },
     );

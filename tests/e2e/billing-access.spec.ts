@@ -72,7 +72,7 @@ testWithData.describe("@critical billing access states", () => {
     }
   });
 
-  testWithData("shows paid seat confirmation after Stripe confirms an add-on", async ({
+  testWithData("shows paid seat confirmation after billing confirms an add-on", async ({
     browser,
     testData,
     baseURL,
@@ -95,7 +95,7 @@ testWithData.describe("@critical billing access states", () => {
       await page.goto(`${baseURL}/subscription?seat=added&quantity=3`);
       await expect(
         page.getByRole("status").filter({
-          hasText: "3 paid seats added. Stripe has confirmed the update",
+          hasText: "3 paid seats added. The billing update is confirmed",
         }),
       ).toBeVisible();
     } finally {
