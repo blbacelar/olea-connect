@@ -61,7 +61,7 @@ export default function SubscriptionPage() {
           </h2>
           <p className="mt-2 text-sm leading-6 text-slate-600">
             Unlock the full template library, monthly webinars, and funder AMAs
-            for $225/month.
+            for $199/month.
           </p>
         </div>
         <DemoActionButton message="Your Canopy upgrade checkout is ready.">
