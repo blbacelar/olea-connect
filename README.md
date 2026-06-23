@@ -379,7 +379,7 @@ All prices are in CAD. Annual billing charges for 10 months and provides 12.
 | --- | ---: | ---: | ---: |
 | Seedling | $44 | $440 | 1 |
 | Roots | $99 | $990 | 2 |
-| Canopy | $225 | $2,250 | 3 |
+| Canopy | $199 | $1,990 | 3 |
 | Harvest | $1,350 | $13,500 | 3 |
 
 Every membership tier includes access to the Olea Connects community. Resource
