@@ -147,6 +147,36 @@ function FieldInput({
 }) {
   const inputClassName = cn(hasError && "border-red-300 focus-visible:ring-red-300");
 
+  if (field.type === "color") {
+    const colorValue =
+      typeof value === "string" && /^#[0-9A-Fa-f]{6}$/.test(value)
+        ? value
+        : "#000000";
+
+    return (
+      <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
+        <Input
+          id={id}
+          type="color"
+          aria-describedby={describedBy}
+          aria-invalid={hasError}
+          className={cn("h-11 w-full p-1 sm:w-16", inputClassName)}
+          value={colorValue}
+          onChange={(event) => onChange(event.target.value.toUpperCase())}
+        />
+        <Input
+          aria-label={`${fieldLabel(field)} hex value`}
+          aria-describedby={describedBy}
+          aria-invalid={hasError}
+          className={cn("font-mono uppercase", inputClassName)}
+          placeholder={field.placeholder ?? "#1A6B6B"}
+          value={value === undefined || value === null ? "" : String(value)}
+          onChange={(event) => onChange(event.target.value.toUpperCase())}
+        />
+      </div>
+    );
+  }
+
   if (field.type === "textarea" || field.type === "rich_text") {
     return (
       <Textarea

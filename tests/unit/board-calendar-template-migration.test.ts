@@ -13,7 +13,12 @@ const migrationPath = join(
   process.cwd(),
   "supabase/migrations/20260622193112_add_board_calendar_workflow_template.sql",
 );
+const presentationMigrationPath = join(
+  process.cwd(),
+  "supabase/migrations/20260622235500_board_calendar_editor_presentation.sql",
+);
 const migrationSql = readFileSync(migrationPath, "utf8");
+const presentationMigrationSql = readFileSync(presentationMigrationPath, "utf8");
 
 function extractJsonBlock(label: string) {
   const match = migrationSql.match(
@@ -54,6 +59,11 @@ describe("board calendar workflow template migration", () => {
     const schema = normalizeTemplateSchema(extractJsonBlock("schema"));
     expect(schema).not.toBeNull();
 
+    expect(schema?.presentation?.section_layout).toBe("tabs");
+    expect(schema?.presentation?.calendar).toMatchObject({
+      enabled: true,
+      source: "meetings",
+    });
     expect(schema?.sections.map((section) => section.id)).toEqual([
       "getting_started",
       "committees",
@@ -104,6 +114,10 @@ describe("board calendar workflow template migration", () => {
       required: true,
     });
 
+    expect(findSection(schema.sections, "operational_calendar").layout).toBe(
+      "two_column",
+    );
+
     const staffTasks = findQuestion(
       findSection(schema.sections, "staff_tasks"),
       "tasks",
@@ -124,6 +138,20 @@ describe("board calendar workflow template migration", () => {
     });
   });
 
+  it("uses color picker fields for calendar colour keys", () => {
+    const schema = normalizeTemplateSchema(extractJsonBlock("schema"));
+    if (!schema) throw new Error("Template schema did not normalize.");
+
+    const eventCategories = findQuestion(
+      findSection(schema.sections, "colour_key"),
+      "event_categories",
+    );
+    expect(findSubfield(eventCategories, "hex_code")).toMatchObject({
+      type: "color",
+      validation: { pattern: "^#[0-9A-Fa-f]{6}$" },
+    });
+  });
+
   it("seeds default lead times, categories, and paid-plan access", () => {
     expect(migrationSql).toContain("'save_the_date_days', 42");
     expect(migrationSql).toContain("'agenda_request_days', 28");
@@ -141,5 +169,18 @@ describe("board calendar workflow template migration", () => {
     expect(migrationSql).toContain(
       "('10000000-0000-4000-8000-000000000007', 'harvest')",
     );
+  });
+
+  it("updates existing board calendar definitions with editor presentation metadata", () => {
+    expect(presentationMigrationSql).toContain(
+      "board-calendar-operational-workflow",
+    );
+    expect(presentationMigrationSql).toContain("'section_layout', 'tabs'");
+    expect(presentationMigrationSql).toContain("'calendar'");
+    expect(presentationMigrationSql).toContain("'enabled', true");
+    expect(presentationMigrationSql).toContain("'source', 'meetings'");
+    expect(presentationMigrationSql).toContain("'layout', 'two_column'");
+    expect(presentationMigrationSql).toContain("'type', 'color'");
+    expect(presentationMigrationSql).toContain("schema_version = greatest");
   });
 });

@@ -4,15 +4,26 @@ import { AlertCircle, Check, Clock, LoaderCircle, Save } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
+import {
+  Tabs,
+  TabsContent,
+  TabsList,
+  TabsTrigger,
+} from "@/components/ui/tabs";
 import { useDynamicTemplateSession } from "@/hooks/use-dynamic-template-session";
 import type {
   DynamicTemplateEditorData,
   DynamicTemplateSession,
+  FieldPath,
+  TemplateSection,
   TemplateExportFormat,
   TemplateExportRecord,
   TemplateSavePayload,
+  TemplateValue,
 } from "@/lib/template-renderer/types";
+import { cn } from "@/lib/utils";
 
+import { BoardCalendarWorkbench } from "./BoardCalendarWorkbench";
 import { TemplateExportPanel } from "./TemplateExportPanel";
 import { TemplateFields } from "./TemplateFields";
 
@@ -48,6 +59,15 @@ export function DynamicTemplateEditor({
   const errorsByPath = new Map(
     validationErrors.map((error) => [error.path, error.message]),
   );
+  const renderSectionsAsTabs =
+    (session.schemaSnapshot.presentation?.section_layout ??
+      session.schemaSnapshot.presentation?.sectionLayout) === "tabs";
+  const calendarEnabled =
+    renderSectionsAsTabs &&
+    Boolean(session.schemaSnapshot.presentation?.calendar?.enabled);
+  const defaultTabValue = calendarEnabled
+    ? "calendar"
+    : session.schemaSnapshot.sections[0]?.id;
 
   return (
     <div className="space-y-6">
@@ -145,30 +165,60 @@ export function DynamicTemplateEditor({
           </section>
         ) : null}
 
-        {session.schemaSnapshot.sections.map((section) => (
-          <section
-            key={section.id}
-            className="rounded-xl border bg-white p-6 shadow-soft"
-            aria-labelledby={`${section.id}-heading`}
+        {renderSectionsAsTabs ? (
+          <Tabs
+            defaultValue={defaultTabValue}
+            className="rounded-xl border bg-white p-4 shadow-soft"
           >
-            <h2 id={`${section.id}-heading`} className="text-xl font-semibold">
-              {section.title}
-            </h2>
-            {section.description ? (
-              <p className="mt-1.5 text-sm leading-6 text-slate-500">
-                {section.description}
-              </p>
+            <TabsList className="h-auto w-full flex-wrap justify-start gap-1 bg-slate-100">
+              {calendarEnabled ? (
+                <TabsTrigger
+                  value="calendar"
+                  className="data-[state=active]:bg-white"
+                >
+                  Calendar
+                </TabsTrigger>
+              ) : null}
+              {session.schemaSnapshot.sections.map((section) => (
+                <TabsTrigger
+                  key={section.id}
+                  value={section.id}
+                  className="data-[state=active]:bg-white"
+                >
+                  {section.title}
+                </TabsTrigger>
+              ))}
+            </TabsList>
+            {calendarEnabled ? (
+              <TabsContent value="calendar">
+                <BoardCalendarWorkbench
+                  data={session.formData}
+                  organizationName={session.brandingSnapshot.organizationName}
+                />
+              </TabsContent>
             ) : null}
-            <div className="mt-5 space-y-5">
-              <TemplateFields
-                fields={section.questions}
-                data={session.formData}
-                errorsByPath={errorsByPath}
-                onChange={updateValue}
-              />
-            </div>
-          </section>
-        ))}
+            {session.schemaSnapshot.sections.map((section) => (
+              <TabsContent key={section.id} value={section.id}>
+                <SectionFields
+                  section={section}
+                  data={session.formData}
+                  errorsByPath={errorsByPath}
+                  onChange={updateValue}
+                />
+              </TabsContent>
+            ))}
+          </Tabs>
+        ) : (
+          session.schemaSnapshot.sections.map((section) => (
+            <SectionFields
+              key={section.id}
+              section={section}
+              data={session.formData}
+              errorsByPath={errorsByPath}
+              onChange={updateValue}
+            />
+          ))
+        )}
       </div>
 
       <TemplateExportPanel
@@ -180,6 +230,49 @@ export function DynamicTemplateEditor({
         createDownloadUrl={createDownloadUrl}
       />
     </div>
+  );
+}
+
+function SectionFields({
+  section,
+  data,
+  errorsByPath,
+  onChange,
+}: {
+  section: TemplateSection;
+  data: DynamicTemplateSession["formData"];
+  errorsByPath: Map<string, string>;
+  onChange: (path: FieldPath, value: TemplateValue) => void;
+}) {
+  return (
+    <section
+      className="rounded-xl border bg-white p-6 shadow-soft"
+      aria-labelledby={`${section.id}-heading`}
+    >
+      <h2 id={`${section.id}-heading`} className="text-xl font-semibold">
+        {section.title}
+      </h2>
+      {section.description ? (
+        <p className="mt-1.5 text-sm leading-6 text-slate-500">
+          {section.description}
+        </p>
+      ) : null}
+      <div
+        className={cn(
+          "mt-5",
+          section.layout === "two_column"
+            ? "grid gap-5 md:grid-cols-2"
+            : "space-y-5",
+        )}
+      >
+        <TemplateFields
+          fields={section.questions}
+          data={data}
+          errorsByPath={errorsByPath}
+          onChange={onChange}
+        />
+      </div>
+    </section>
   );
 }
 

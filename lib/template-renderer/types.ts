@@ -17,6 +17,7 @@ export type TemplateFieldType =
   | "signature"
   | "email"
   | "url"
+  | "color"
   | "file"
   | "heading"
   | "paragraph";
@@ -72,11 +73,22 @@ export interface TemplateSection {
   id: string;
   title: string;
   description?: string;
+  layout?: "default" | "two_column";
   questions: TemplateField[];
+}
+
+export interface TemplateSchemaPresentation {
+  section_layout?: "stack" | "tabs";
+  sectionLayout?: "stack" | "tabs";
+  calendar?: {
+    enabled?: boolean;
+    source?: string;
+  };
 }
 
 export interface TemplateFieldSchema {
   version: number;
+  presentation?: TemplateSchemaPresentation;
   header_fields?: TemplateField[];
   sections: TemplateSection[];
 }

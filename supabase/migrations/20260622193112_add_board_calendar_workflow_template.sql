@@ -54,6 +54,13 @@ values (
   $schema$
   {
     "version": 1,
+    "presentation": {
+      "section_layout": "tabs",
+      "calendar": {
+        "enabled": true,
+        "source": "meetings"
+      }
+    },
     "header_fields": [
       {
         "id": "fiscal_year",
@@ -132,6 +139,7 @@ values (
       {
         "id": "operational_calendar",
         "title": "Operational calendar",
+        "layout": "two_column",
         "description": "Set the default preparation timeline used to plan staff tasks for each meeting.",
         "questions": [
           {
@@ -512,7 +520,7 @@ values (
               },
               {
                 "id": "hex_code",
-                "type": "text",
+                "type": "color",
                 "label": "Hex code",
                 "validation": { "pattern": "^#[0-9A-Fa-f]{6}$" }
               },
