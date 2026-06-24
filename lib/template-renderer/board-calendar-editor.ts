@@ -2,6 +2,7 @@ import {
   monthNames,
   parseDateKey,
 } from "@/lib/template-renderer/calendar-view";
+import { toCalendarTimeInputValue } from "@/lib/template-renderer/calendar-time";
 import type {
   FieldPath,
   TemplateFormData,
@@ -193,7 +194,7 @@ export function getBoardCalendarEntryInput(
         dateKey: getString(row, "date"),
         title: getString(row, "committee") || getString(row, "type"),
         category: getString(row, "type") || "Board Meeting",
-        time: getString(row, "time"),
+        time: toCalendarTimeInputValue(getString(row, "time")),
         location: getString(row, "location"),
         notes: getString(row, "notes"),
       };

@@ -1,4 +1,8 @@
 import type { TemplateFormData } from "./types";
+import {
+  formatCalendarTime,
+  parseCalendarTimeToMinutes,
+} from "./calendar-time";
 
 export const monthNames = [
   "January",
@@ -188,7 +192,7 @@ export function buildCalendarEvents(data: TemplateFormData) {
         monthIndex: date?.getMonth() ?? null,
         category,
         source: "meeting",
-        time: getString(record, "time"),
+        time: formatCalendarTime(getString(record, "time")),
         location: getString(record, "location"),
         notes,
       }),
@@ -256,7 +260,18 @@ export function buildCalendarEvents(data: TemplateFormData) {
     }
     if (!left.dateKey) return 1;
     if (!right.dateKey) return -1;
-    return left.dateKey.localeCompare(right.dateKey);
+    const dateOrder = left.dateKey.localeCompare(right.dateKey);
+    if (dateOrder !== 0) return dateOrder;
+
+    const leftTime = parseCalendarTimeToMinutes(left.time);
+    const rightTime = parseCalendarTimeToMinutes(right.time);
+    if (leftTime !== null && rightTime !== null && leftTime !== rightTime) {
+      return leftTime - rightTime;
+    }
+    if (leftTime !== null) return -1;
+    if (rightTime !== null) return 1;
+
+    return left.title.localeCompare(right.title);
   });
 }
 

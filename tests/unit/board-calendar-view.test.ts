@@ -100,6 +100,38 @@ describe("board calendar view helpers", () => {
     expect(getTemplateMonthIndex(templateData)).toBe(3);
   });
 
+  it("orders same-day calendar events by time and formats time consistently", () => {
+    const events = buildCalendarEvents({
+      meetings: [
+        {
+          date: "2026-04-15",
+          type: "Board Meeting",
+          time: "2:00 PM",
+        },
+        {
+          date: "2026-04-15",
+          type: "Committee Meeting",
+          time: "09:30",
+        },
+        {
+          date: "2026-04-15",
+          type: "Board Recruitment",
+        },
+      ],
+    });
+
+    expect(events.map((event) => event.id)).toEqual([
+      "meeting-1",
+      "meeting-0",
+      "meeting-2",
+    ]);
+    expect(events.map((event) => event.time)).toEqual([
+      "9:30 AM",
+      "2:00 PM",
+      "",
+    ]);
+  });
+
   it("builds a six-week month grid starting on Sunday", () => {
     const grid = buildMonthGrid(2026, 3);
 

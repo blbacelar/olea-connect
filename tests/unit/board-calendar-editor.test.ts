@@ -146,6 +146,23 @@ describe("board calendar editor helpers", () => {
     });
   });
 
+  it("converts workbook display times into time input values when editing", () => {
+    const data: TemplateFormData = {
+      meetings: [
+        {
+          date: "2026-04-15",
+          type: "Board Meeting",
+          committee: "",
+          time: "6:30 PM",
+        },
+      ],
+    };
+
+    expect(getBoardCalendarEntryInput(data, "meeting-0")).toMatchObject({
+      time: "18:30",
+    });
+  });
+
   it("updates the existing backing row instead of appending a duplicate", () => {
     const data: TemplateFormData = {
       meetings: [
