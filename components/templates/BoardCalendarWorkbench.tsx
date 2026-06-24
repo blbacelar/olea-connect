@@ -7,7 +7,9 @@ import {
   ChevronRight,
   Clock,
   ListChecks,
+  Pencil,
   Plus,
+  X,
 } from "lucide-react";
 
 import { Badge } from "@/components/ui/badge";
@@ -24,7 +26,9 @@ import {
 import { Textarea } from "@/components/ui/textarea";
 import {
   appendBoardCalendarEntry,
+  getBoardCalendarEntryInput,
   type BoardCalendarEntryType,
+  updateBoardCalendarEntry,
 } from "@/lib/template-renderer/board-calendar-editor";
 import {
   addDays,
@@ -133,6 +137,7 @@ export function BoardCalendarWorkbench({
   const [entryTime, setEntryTime] = useState("");
   const [entryLocation, setEntryLocation] = useState("");
   const [entryNotes, setEntryNotes] = useState("");
+  const [editingEventId, setEditingEventId] = useState<string | null>(null);
 
   const monthIndex = anchorDate.getMonth();
   const year = anchorDate.getFullYear();
@@ -190,7 +195,7 @@ export function BoardCalendarWorkbench({
   function addCalendarEntry() {
     if (!entryTitle.trim()) return;
 
-    const mutation = appendBoardCalendarEntry(data, {
+    const input = {
       type: entryType,
       dateKey: selectedDateKey,
       title: entryTitle,
@@ -198,13 +203,40 @@ export function BoardCalendarWorkbench({
       time: entryTime,
       location: entryLocation,
       notes: entryNotes,
-    });
+    };
+    const mutation = editingEventId
+      ? updateBoardCalendarEntry(data, editingEventId, input)
+      : appendBoardCalendarEntry(data, input);
+
+    if (!mutation) return;
 
     onChange(mutation.path, mutation.value);
+    clearEntryForm();
+  }
+
+  function clearEntryForm() {
+    setEditingEventId(null);
     setEntryTitle("");
     setEntryTime("");
     setEntryLocation("");
     setEntryNotes("");
+  }
+
+  function editCalendarEntry(event: CalendarViewEvent) {
+    const input = getBoardCalendarEntryInput(data, event.id);
+    if (!input) return;
+
+    setEditingEventId(event.id);
+    setSelectedDateKey(input.dateKey || event.dateKey || selectedDateKey);
+    setEntryType(input.type);
+    setEntryCategory(input.category);
+    setEntryTitle(input.title);
+    setEntryTime(input.time ?? "");
+    setEntryLocation(input.location ?? "");
+    setEntryNotes(input.notes ?? "");
+    setWorkspaceMode("calendar");
+    const date = parseCalendarDateKey(input.dateKey);
+    if (date) setAnchorDate(date);
   }
 
   return (
@@ -357,11 +389,14 @@ export function BoardCalendarWorkbench({
             selectedDateKey={selectedDateKey}
             onAdd={addCalendarEntry}
             onCategoryChange={setEntryCategory}
+            onCancelEdit={clearEntryForm}
+            onEditEvent={editCalendarEntry}
             onEntryTypeChange={updateEntryType}
             onLocationChange={setEntryLocation}
             onNotesChange={setEntryNotes}
             onTimeChange={setEntryTime}
             onTitleChange={setEntryTitle}
+            editingEventId={editingEventId}
           />
         </>
       ) : selectedSection ? (
@@ -634,6 +669,7 @@ function DayCell({
 }
 
 function CalendarEntryComposer({
+  editingEventId,
   entryCategory,
   entryLocation,
   entryNotes,
@@ -644,12 +680,15 @@ function CalendarEntryComposer({
   selectedDateKey,
   onAdd,
   onCategoryChange,
+  onCancelEdit,
+  onEditEvent,
   onEntryTypeChange,
   onLocationChange,
   onNotesChange,
   onTimeChange,
   onTitleChange,
 }: {
+  editingEventId: string | null;
   entryCategory: string;
   entryLocation: string;
   entryNotes: string;
@@ -660,6 +699,8 @@ function CalendarEntryComposer({
   selectedDateKey: string;
   onAdd: () => void;
   onCategoryChange: (value: string) => void;
+  onCancelEdit: () => void;
+  onEditEvent: (event: CalendarViewEvent) => void;
   onEntryTypeChange: (value: BoardCalendarEntryType) => void;
   onLocationChange: (value: string) => void;
   onNotesChange: (value: string) => void;
@@ -678,7 +719,25 @@ function CalendarEntryComposer({
         <div className="mt-4 space-y-2">
           {selectedDateEvents.length ? (
             selectedDateEvents.map((event) => (
-              <CalendarEventPill key={event.id} event={event} />
+              <div
+                key={event.id}
+                className={cn(
+                  "rounded-xl border bg-white p-2",
+                  editingEventId === event.id && "border-olea-green ring-2 ring-olea-green/20",
+                )}
+              >
+                <CalendarEventPill event={event} />
+                <Button
+                  type="button"
+                  size="sm"
+                  variant="ghost"
+                  className="mt-2 h-8 px-2 text-xs"
+                  onClick={() => onEditEvent(event)}
+                >
+                  <Pencil className="size-3.5" />
+                  Edit entry
+                </Button>
+              </div>
             ))
           ) : (
             <p className="rounded-lg border border-dashed px-3 py-4 text-sm text-slate-500">
@@ -695,9 +754,13 @@ function CalendarEntryComposer({
             <Plus className="size-4" />
           </div>
           <div>
-            <h3 className="font-semibold text-slate-950">Add through calendar</h3>
+            <h3 className="font-semibold text-slate-950">
+              {editingEventId ? "Edit entry" : "Add Entry"}
+            </h3>
             <p className="text-sm text-slate-500">
-              This creates the matching workbook record automatically.
+              {editingEventId
+                ? "Update this calendar item without leaving the calendar."
+                : "This creates the matching workbook record automatically."}
             </p>
           </div>
         </div>
@@ -706,6 +769,7 @@ function CalendarEntryComposer({
           <div className="space-y-2">
             <Label htmlFor="calendar-entry-type">Entry type</Label>
             <Select
+              disabled={Boolean(editingEventId)}
               value={entryType}
               onValueChange={(value) =>
                 onEntryTypeChange(value as BoardCalendarEntryType)
@@ -722,6 +786,11 @@ function CalendarEntryComposer({
                 ))}
               </SelectContent>
             </Select>
+            {editingEventId ? (
+              <p className="text-xs text-slate-500">
+                Entry type is fixed while editing so this updates the original record.
+              </p>
+            ) : null}
           </div>
           <div className="space-y-2">
             <Label htmlFor="calendar-entry-category">Category/status</Label>
@@ -774,9 +843,20 @@ function CalendarEntryComposer({
           disabled={!entryTitle.trim()}
           onClick={onAdd}
         >
-          <Plus className="size-4" />
-          Add to calendar
+          {editingEventId ? <Pencil className="size-4" /> : <Plus className="size-4" />}
+          {editingEventId ? "Update entry" : "Add to calendar"}
         </Button>
+        {editingEventId ? (
+          <Button
+            type="button"
+            className="ml-2 mt-4"
+            variant="outline"
+            onClick={onCancelEdit}
+          >
+            <X className="size-4" />
+            Cancel edit
+          </Button>
+        ) : null}
       </div>
     </div>
   );

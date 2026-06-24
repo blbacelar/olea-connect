@@ -3,6 +3,8 @@ import { describe, expect, it } from "vitest";
 import {
   appendBoardCalendarEntry,
   createBoardCalendarEntryRow,
+  getBoardCalendarEntryInput,
+  updateBoardCalendarEntry,
 } from "@/lib/template-renderer/board-calendar-editor";
 import type { TemplateFormData } from "@/lib/template-renderer/types";
 
@@ -114,6 +116,76 @@ describe("board calendar editor helpers", () => {
           responsible: "Administrator",
           status: "Not Started",
           notes: "Book venue if in person.",
+        },
+      ],
+    });
+  });
+
+  it("reads an existing calendar event into editable form values", () => {
+    const data: TemplateFormData = {
+      meetings: [
+        {
+          date: "2026-04-15",
+          type: "Committee Meeting",
+          committee: "Finance Committee",
+          time: "18:30",
+          location: "Zoom",
+          notes: "Budget package review",
+        },
+      ],
+    };
+
+    expect(getBoardCalendarEntryInput(data, "meeting-0")).toEqual({
+      type: "meeting",
+      dateKey: "2026-04-15",
+      title: "Finance Committee",
+      category: "Committee Meeting",
+      time: "18:30",
+      location: "Zoom",
+      notes: "Budget package review",
+    });
+  });
+
+  it("updates the existing backing row instead of appending a duplicate", () => {
+    const data: TemplateFormData = {
+      meetings: [
+        {
+          date: "2026-04-15",
+          type: "Committee Meeting",
+          committee: "Finance Committee",
+          time: "18:30",
+          location: "Zoom",
+          virtual_link: "https://example.com/meeting",
+          lead_contact: "Treasurer",
+          notes: "Budget package review",
+          confirmed: "Yes",
+        },
+      ],
+    };
+
+    const mutation = updateBoardCalendarEntry(data, "meeting-0", {
+      type: "meeting",
+      dateKey: "2026-04-22",
+      title: "Finance and Audit Committee",
+      category: "Committee Meeting",
+      time: "19:00",
+      location: "Boardroom",
+      notes: "Updated agenda.",
+    });
+
+    expect(mutation).toEqual({
+      path: ["meetings"],
+      value: [
+        {
+          date: "2026-04-22",
+          type: "Committee Meeting",
+          committee: "Finance and Audit Committee",
+          time: "19:00",
+          location: "Boardroom",
+          virtual_link: "https://example.com/meeting",
+          lead_contact: "Treasurer",
+          notes: "Updated agenda.",
+          confirmed: "Yes",
         },
       ],
     });

@@ -29,6 +29,12 @@ export interface BoardCalendarEntryMutation {
   value: TemplateValue;
 }
 
+interface BoardCalendarEntryIdentity {
+  index: number;
+  key: string;
+  type: BoardCalendarEntryType;
+}
+
 function getRows(data: TemplateFormData, key: string): Array<Record<string, unknown>> {
   const value = data[key];
   if (!Array.isArray(value)) return [];
@@ -115,4 +121,148 @@ export function appendBoardCalendarEntry(
     path: [fieldKey],
     value: [...getRows(data, fieldKey), createBoardCalendarEntryRow(input)],
   };
+}
+
+export function getBoardCalendarEntryIdentity(
+  eventId: string,
+): BoardCalendarEntryIdentity | null {
+  const match = eventId.match(/^(meeting|annual|task|agm)-(\d+)$/);
+  if (!match) return null;
+
+  const source = match[1];
+  const index = Number(match[2]);
+  if (!Number.isInteger(index) || index < 0) return null;
+
+  switch (source) {
+    case "annual":
+      return { index, key: "annual_highlights", type: "annual_highlight" };
+    case "task":
+      return { index, key: "tasks", type: "staff_task" };
+    case "agm":
+      return { index, key: "agm_milestones", type: "agm_milestone" };
+    case "meeting":
+    default:
+      return { index, key: "meetings", type: "meeting" };
+  }
+}
+
+function getString(record: Record<string, unknown>, key: string) {
+  const value = record[key];
+  return typeof value === "string" ? value : "";
+}
+
+export function getBoardCalendarEntryInput(
+  data: TemplateFormData,
+  eventId: string,
+): BoardCalendarEntryInput | null {
+  const identity = getBoardCalendarEntryIdentity(eventId);
+  if (!identity) return null;
+
+  const row = getRows(data, identity.key)[identity.index];
+  if (!row) return null;
+
+  switch (identity.type) {
+    case "annual_highlight":
+      return {
+        type: identity.type,
+        dateKey: getString(row, "date"),
+        title: getString(row, "title"),
+        category: getString(row, "category") || "Key Deadline",
+        notes: getString(row, "notes"),
+      };
+    case "staff_task":
+      return {
+        type: identity.type,
+        dateKey: getString(row, "due_date"),
+        title: getString(row, "task"),
+        category: getString(row, "status") || "Not Started",
+        notes: getString(row, "related_meeting"),
+      };
+    case "agm_milestone":
+      return {
+        type: identity.type,
+        dateKey: getString(row, "calculated_date"),
+        title: getString(row, "task"),
+        category: getString(row, "track") || "Governance",
+        notes: getString(row, "notes"),
+      };
+    case "meeting":
+    default:
+      return {
+        type: identity.type,
+        dateKey: getString(row, "date"),
+        title: getString(row, "committee") || getString(row, "type"),
+        category: getString(row, "type") || "Board Meeting",
+        time: getString(row, "time"),
+        location: getString(row, "location"),
+        notes: getString(row, "notes"),
+      };
+  }
+}
+
+export function updateBoardCalendarEntry(
+  data: TemplateFormData,
+  eventId: string,
+  input: BoardCalendarEntryInput,
+): BoardCalendarEntryMutation | null {
+  const identity = getBoardCalendarEntryIdentity(eventId);
+  if (!identity) return null;
+
+  const rows = getRows(data, identity.key);
+  const existingRow = rows[identity.index];
+  if (!existingRow) return null;
+
+  return {
+    path: [identity.key],
+    value: rows.map((row, index) =>
+      index === identity.index
+        ? createUpdatedBoardCalendarEntryRow(row, {
+            ...input,
+            type: identity.type,
+          })
+        : row,
+    ),
+  };
+}
+
+function createUpdatedBoardCalendarEntryRow(
+  existingRow: Record<string, unknown>,
+  input: BoardCalendarEntryInput,
+) {
+  const nextRow = {
+    ...existingRow,
+    ...createBoardCalendarEntryRow(input),
+  };
+
+  switch (input.type) {
+    case "meeting":
+      return {
+        ...nextRow,
+        virtual_link: getString(existingRow, "virtual_link"),
+        lead_contact:
+          getString(existingRow, "lead_contact") ||
+          getString(nextRow, "lead_contact"),
+        confirmed:
+          getString(existingRow, "confirmed") || getString(nextRow, "confirmed"),
+      };
+    case "staff_task":
+      return {
+        ...nextRow,
+        responsible:
+          getString(existingRow, "responsible") ||
+          getString(nextRow, "responsible"),
+      };
+    case "agm_milestone":
+      return {
+        ...nextRow,
+        weeks_before: existingRow.weeks_before ?? nextRow.weeks_before,
+        responsible:
+          getString(existingRow, "responsible") ||
+          getString(nextRow, "responsible"),
+        status: getString(existingRow, "status") || getString(nextRow, "status"),
+      };
+    case "annual_highlight":
+    default:
+      return nextRow;
+  }
 }
