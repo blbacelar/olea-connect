@@ -127,15 +127,17 @@ export function BoardCalendarWorkbench({
   const configuredYear = getTemplateYear(data);
   const configuredMonth = getTemplateMonthIndex(data);
   const firstDatedEvent = events.find((event) => event.date);
+  const todayKey = toDateKey(new Date());
+  const configuredDate = new Date(configuredYear, configuredMonth, 1);
+  const configuredDateKey = toDateKey(configuredDate);
+  const initialDate =
+    firstDatedEvent?.date ??
+    (configuredDateKey < todayKey ? new Date() : configuredDate);
+  const initialDateKey = firstDatedEvent?.dateKey ?? toDateKey(initialDate);
   const [mode, setMode] = useState<CalendarMode>("month");
   const [workspaceMode, setWorkspaceMode] = useState<WorkspaceMode>("calendar");
-  const [anchorDate, setAnchorDate] = useState(
-    firstDatedEvent?.date ?? new Date(configuredYear, configuredMonth, 1),
-  );
-  const [selectedDateKey, setSelectedDateKey] = useState(
-    firstDatedEvent?.dateKey ??
-      toDateKey(new Date(configuredYear, configuredMonth, 1)),
-  );
+  const [anchorDate, setAnchorDate] = useState(initialDate);
+  const [selectedDateKey, setSelectedDateKey] = useState(initialDateKey);
   const [entryType, setEntryType] = useState<BoardCalendarEntryType>("meeting");
   const [entryTitle, setEntryTitle] = useState("");
   const [entryCategory, setEntryCategory] = useState("Board Meeting");
@@ -154,7 +156,7 @@ export function BoardCalendarWorkbench({
 
   const monthIndex = anchorDate.getMonth();
   const year = anchorDate.getFullYear();
-  const todayKey = toDateKey(new Date());
+  const isSelectedDateInPast = selectedDateKey < todayKey;
   const nextEvent =
     events.find((event) => event.dateKey && event.dateKey >= todayKey) ??
     events.find((event) => event.dateKey);
@@ -220,6 +222,7 @@ export function BoardCalendarWorkbench({
 
   function addCalendarEntry() {
     if (!entryTitle.trim()) return;
+    if (!editingEventId && isSelectedDateInPast) return;
 
     const input = {
       type: entryType,
@@ -464,6 +467,8 @@ export function BoardCalendarWorkbench({
             onDoneChange={setEntryDone}
             onDeleteEntry={deleteCalendarEntry}
             onSelectedDateChange={selectDate}
+            isSelectedDateInPast={isSelectedDateInPast}
+            todayKey={todayKey}
             editingEventId={editingEventId}
             entryConfirmed={entryConfirmed}
             entryDone={entryDone}
@@ -762,6 +767,8 @@ function CalendarEntryComposer({
   entryWeeksBefore,
   selectedDateEvents,
   selectedDateKey,
+  isSelectedDateInPast,
+  todayKey,
   onAdd,
   onCategoryChange,
   onCancelEdit,
@@ -799,6 +806,8 @@ function CalendarEntryComposer({
   entryWeeksBefore: string;
   selectedDateEvents: CalendarViewEvent[];
   selectedDateKey: string;
+  isSelectedDateInPast: boolean;
+  todayKey: string;
   onAdd: () => void;
   onCategoryChange: (value: string) => void;
   onCancelEdit: () => void;
@@ -888,11 +897,21 @@ function CalendarEntryComposer({
             <Input
               id="calendar-entry-date"
               type="date"
+              min={editingEventId ? undefined : todayKey}
               value={selectedDateKey}
               onChange={(event) => onSelectedDateChange(event.target.value)}
             />
-            <p className="text-xs text-slate-500">
-              Historical dates are allowed for past meetings and records.
+            <p
+              className={cn(
+                "text-xs",
+                !editingEventId && isSelectedDateInPast
+                  ? "font-medium text-red-600"
+                  : "text-slate-500",
+              )}
+            >
+              {!editingEventId && isSelectedDateInPast
+                ? "Choose today or a future date to add a new entry."
+                : "New entries can be scheduled for today or a future date."}
             </p>
           </div>
           <div className="space-y-2">
@@ -1090,7 +1109,7 @@ function CalendarEntryComposer({
         <Button
           type="button"
           className="mt-4"
-          disabled={!entryTitle.trim()}
+          disabled={!entryTitle.trim() || (!editingEventId && isSelectedDateInPast)}
           onClick={onAdd}
         >
           {editingEventId ? <Pencil className="size-4" /> : <Plus className="size-4" />}

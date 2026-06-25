@@ -27,6 +27,8 @@ test.describe("@critical dynamic template renderer", () => {
   test("creates, edits, and deletes a board calendar entry from a new workbook", async ({
     page,
   }) => {
+    const futureDate = getFutureDateKey(14);
+
     await page.goto("/templates/board-calendar-operational-workflow?session=new");
 
     await expect(
@@ -37,6 +39,11 @@ test.describe("@critical dynamic template renderer", () => {
       .fill("2026 Board Calendar - Test workbook");
     await page.getByLabel("Entry date").fill("2026-01-14");
     await page.getByLabel("Title").fill("Finance Committee");
+    await expect(page.getByRole("button", { name: "Add to calendar" })).toBeDisabled();
+    await expect(
+      page.getByText("Choose today or a future date to add a new entry."),
+    ).toBeVisible();
+    await page.getByLabel("Entry date").fill(futureDate);
     await page.getByLabel("Time").fill("18:30");
     await page.getByLabel("Location / platform").fill("Boardroom");
     await page
@@ -49,7 +56,7 @@ test.describe("@critical dynamic template renderer", () => {
     await page.getByRole("button", { name: "Add to calendar" }).click();
 
     await expect(page.getByText("Board Meeting - Finance Committee").first()).toBeVisible();
-    await expect(page.getByText("2026-01-14").first()).toBeVisible();
+    await expect(page.getByText(futureDate).first()).toBeVisible();
     await expect(page.getByText("6:30 PM").first()).toBeVisible();
     await expect(page.getByText("Boardroom").first()).toBeVisible();
     await expect(page.getByText("Unsaved changes")).toBeVisible();
@@ -175,3 +182,12 @@ test.describe("@critical dynamic template renderer", () => {
     );
   });
 });
+
+function getFutureDateKey(daysFromNow: number) {
+  const date = new Date();
+  date.setDate(date.getDate() + daysFromNow);
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const day = String(date.getDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
+}
