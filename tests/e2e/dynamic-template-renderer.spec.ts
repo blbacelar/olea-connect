@@ -24,6 +24,80 @@ test.describe("@critical dynamic template renderer", () => {
     ).toBeVisible();
   });
 
+  test("creates, edits, and deletes a board calendar entry from a new workbook", async ({
+    page,
+  }) => {
+    await page.goto("/templates/board-calendar-operational-workflow?session=new");
+
+    await expect(
+      page.getByRole("heading", { name: "Board Calendar & Operational Workflow" }),
+    ).toBeVisible();
+    await page
+      .getByLabel("Workbook name")
+      .fill("2026 Board Calendar - Test workbook");
+    await page.getByLabel("Title").fill("Finance Committee");
+    await page.getByLabel("Time").fill("18:30");
+    await page.getByLabel("Location / platform").fill("Boardroom");
+    await page
+      .getByLabel("Virtual link")
+      .fill("https://example.com/finance-committee");
+    await page.getByLabel("Lead contact").fill("Treasurer");
+    await page.getByLabel("Confirmed?").click();
+    await page.getByRole("option", { name: "Yes" }).click();
+    await page.getByLabel("Notes").fill("Review quarterly budget.");
+    await page.getByRole("button", { name: "Add to calendar" }).click();
+
+    await expect(page.getByText("Board Meeting - Finance Committee").first()).toBeVisible();
+    await expect(page.getByText("6:30 PM").first()).toBeVisible();
+    await expect(page.getByText("Boardroom").first()).toBeVisible();
+    await expect(page.getByText("Unsaved changes")).toBeVisible();
+    await expect(page.getByText(/^Saved$/)).toBeVisible({ timeout: 10_000 });
+    await expect
+      .poll(() => new URL(page.url()).searchParams.get("session"))
+      .not.toBe("new");
+
+    await page.getByRole("link", { name: "Start new" }).click();
+    await expect
+      .poll(() => new URL(page.url()).searchParams.get("session"))
+      .toBe("new");
+    await expect(page.getByLabel("Title")).toHaveValue("");
+    await page
+      .getByLabel("Workbook name")
+      .fill("2027 Board Calendar - Test workbook");
+    await page.getByLabel("Title").fill("Governance Committee");
+    await page.getByLabel("Time").fill("17:00");
+    await page.getByLabel("Location / platform").fill("Zoom");
+    await page
+      .getByLabel("Virtual link")
+      .fill("https://example.com/governance-committee");
+    await page.getByLabel("Lead contact").fill("Governance Chair");
+    await page.getByRole("button", { name: "Add to calendar" }).click();
+    await expect(page.getByText("Board Meeting - Governance Committee").first()).toBeVisible();
+    await expect(page.getByText("Unsaved changes")).toBeVisible();
+    await expect(page.getByText(/^Saved$/)).toBeVisible({ timeout: 10_000 });
+    await expect
+      .poll(() => new URL(page.url()).searchParams.get("session"))
+      .not.toBe("new");
+
+    await page.getByRole("button", { name: "Edit entry" }).last().click();
+    await expect(page.getByLabel("Virtual link")).toHaveValue(
+      "https://example.com/governance-committee",
+    );
+    await expect(page.getByLabel("Lead contact")).toHaveValue("Governance Chair");
+    await page.getByLabel("Title").fill("Governance and Nominating Committee");
+    await page.getByLabel("Time").fill("19:00");
+    await page.getByRole("button", { name: "Update entry" }).click();
+
+    await expect(
+      page.getByText("Board Meeting - Governance and Nominating Committee").first(),
+    ).toBeVisible();
+    await expect(page.getByText("7:00 PM").first()).toBeVisible();
+
+    await page.getByRole("button", { name: "Edit entry" }).last().click();
+    await page.getByRole("button", { name: "Delete entry" }).click();
+    await expect(page.getByText("Nothing scheduled yet.")).toBeVisible();
+  });
+
   test("@smoke edits repeatable agenda rows, exports files, and audits downloads", async ({
     authenticatedMember,
     page,

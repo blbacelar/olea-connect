@@ -24,8 +24,14 @@ function formatSlug(slug: string) {
     .join(" ");
 }
 
-export async function TemplateSlugPage({ slug }: { slug: string }) {
-  const editorData = await getDynamicTemplateEditorData(slug);
+export async function TemplateSlugPage({
+  slug,
+  sessionId,
+}: {
+  slug: string;
+  sessionId?: string;
+}) {
+  const editorData = await getDynamicTemplateEditorData(slug, sessionId);
   if (editorData) {
     return (
       <DynamicTemplateEditor

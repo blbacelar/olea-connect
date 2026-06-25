@@ -20,9 +20,17 @@ export interface BoardCalendarEntryInput {
   dateKey: string;
   title: string;
   category: string;
+  confirmed?: string;
+  done?: boolean;
+  leadContact?: string;
   time?: string;
   location?: string;
+  relatedMeeting?: string;
+  responsible?: string;
+  status?: string;
   notes?: string;
+  virtualLink?: string;
+  weeksBefore?: number;
 }
 
 export interface BoardCalendarEntryMutation {
@@ -67,19 +75,22 @@ export function createBoardCalendarEntryRow(input: BoardCalendarEntryInput) {
       return {
         task: title,
         due_date: input.dateKey,
-        related_meeting: notes,
-        responsible: "Administrator",
-        status: "Not Started",
+        related_meeting: input.relatedMeeting?.trim() ?? "",
+        responsible: input.responsible?.trim() || "Administrator",
+        status: input.status || input.category || "Not Started",
+        notes,
+        done: input.done ?? false,
       };
     case "agm_milestone":
       return {
         track: input.category || "Governance",
         task: title,
-        weeks_before: 0,
+        weeks_before: input.weeksBefore ?? 0,
         calculated_date: input.dateKey,
-        responsible: "Administrator",
-        status: "Not Started",
+        responsible: input.responsible?.trim() || "Administrator",
+        status: input.status || "Not Started",
         notes,
+        done: input.done ?? false,
       };
     case "meeting":
     default:
@@ -89,10 +100,10 @@ export function createBoardCalendarEntryRow(input: BoardCalendarEntryInput) {
         committee: title,
         time: input.time?.trim() ?? "",
         location: input.location?.trim() ?? "",
-        virtual_link: "",
-        lead_contact: "Administrator",
+        virtual_link: input.virtualLink?.trim() ?? "",
+        lead_contact: input.leadContact?.trim() || "Administrator",
         notes,
-        confirmed: "TBC",
+        confirmed: input.confirmed || "TBC",
       };
   }
 }
@@ -152,6 +163,15 @@ function getString(record: Record<string, unknown>, key: string) {
   return typeof value === "string" ? value : "";
 }
 
+function getBoolean(record: Record<string, unknown>, key: string) {
+  return record[key] === true;
+}
+
+function getNumber(record: Record<string, unknown>, key: string) {
+  const value = record[key];
+  return typeof value === "number" && Number.isFinite(value) ? value : undefined;
+}
+
 export function getBoardCalendarEntryInput(
   data: TemplateFormData,
   eventId: string,
@@ -177,7 +197,11 @@ export function getBoardCalendarEntryInput(
         dateKey: getString(row, "due_date"),
         title: getString(row, "task"),
         category: getString(row, "status") || "Not Started",
-        notes: getString(row, "related_meeting"),
+        relatedMeeting: getString(row, "related_meeting"),
+        responsible: getString(row, "responsible"),
+        status: getString(row, "status") || "Not Started",
+        notes: getString(row, "notes"),
+        done: getBoolean(row, "done"),
       };
     case "agm_milestone":
       return {
@@ -185,7 +209,11 @@ export function getBoardCalendarEntryInput(
         dateKey: getString(row, "calculated_date"),
         title: getString(row, "task"),
         category: getString(row, "track") || "Governance",
+        weeksBefore: getNumber(row, "weeks_before"),
+        responsible: getString(row, "responsible"),
+        status: getString(row, "status") || "Not Started",
         notes: getString(row, "notes"),
+        done: getBoolean(row, "done"),
       };
     case "meeting":
     default:
@@ -196,7 +224,10 @@ export function getBoardCalendarEntryInput(
         category: getString(row, "type") || "Board Meeting",
         time: toCalendarTimeInputValue(getString(row, "time")),
         location: getString(row, "location"),
+        virtualLink: getString(row, "virtual_link"),
+        leadContact: getString(row, "lead_contact"),
         notes: getString(row, "notes"),
+        confirmed: getString(row, "confirmed") || "TBC",
       };
   }
 }
@@ -230,40 +261,24 @@ function createUpdatedBoardCalendarEntryRow(
   existingRow: Record<string, unknown>,
   input: BoardCalendarEntryInput,
 ) {
-  const nextRow = {
+  return {
     ...existingRow,
     ...createBoardCalendarEntryRow(input),
   };
+}
 
-  switch (input.type) {
-    case "meeting":
-      return {
-        ...nextRow,
-        virtual_link: getString(existingRow, "virtual_link"),
-        lead_contact:
-          getString(existingRow, "lead_contact") ||
-          getString(nextRow, "lead_contact"),
-        confirmed:
-          getString(existingRow, "confirmed") || getString(nextRow, "confirmed"),
-      };
-    case "staff_task":
-      return {
-        ...nextRow,
-        responsible:
-          getString(existingRow, "responsible") ||
-          getString(nextRow, "responsible"),
-      };
-    case "agm_milestone":
-      return {
-        ...nextRow,
-        weeks_before: existingRow.weeks_before ?? nextRow.weeks_before,
-        responsible:
-          getString(existingRow, "responsible") ||
-          getString(nextRow, "responsible"),
-        status: getString(existingRow, "status") || getString(nextRow, "status"),
-      };
-    case "annual_highlight":
-    default:
-      return nextRow;
-  }
+export function deleteBoardCalendarEntry(
+  data: TemplateFormData,
+  eventId: string,
+): BoardCalendarEntryMutation | null {
+  const identity = getBoardCalendarEntryIdentity(eventId);
+  if (!identity) return null;
+
+  const rows = getRows(data, identity.key);
+  if (!rows[identity.index]) return null;
+
+  return {
+    path: [identity.key],
+    value: rows.filter((_, index) => index !== identity.index),
+  };
 }

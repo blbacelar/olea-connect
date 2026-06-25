@@ -9,6 +9,7 @@ import {
   ListChecks,
   Pencil,
   Plus,
+  Trash2,
   X,
 } from "lucide-react";
 
@@ -26,6 +27,7 @@ import {
 import { Textarea } from "@/components/ui/textarea";
 import {
   appendBoardCalendarEntry,
+  deleteBoardCalendarEntry,
   getBoardCalendarEntryInput,
   type BoardCalendarEntryType,
   updateBoardCalendarEntry,
@@ -104,6 +106,9 @@ const entryTypes: Array<{
   },
 ];
 
+const confirmedOptions = ["Yes", "TBC", "No"];
+const statusOptions = ["Not Started", "In Progress", "Complete"];
+
 export function BoardCalendarWorkbench({
   data,
   errorsByPath,
@@ -137,6 +142,14 @@ export function BoardCalendarWorkbench({
   const [entryTime, setEntryTime] = useState("");
   const [entryLocation, setEntryLocation] = useState("");
   const [entryNotes, setEntryNotes] = useState("");
+  const [entryVirtualLink, setEntryVirtualLink] = useState("");
+  const [entryLeadContact, setEntryLeadContact] = useState("");
+  const [entryConfirmed, setEntryConfirmed] = useState("TBC");
+  const [entryRelatedMeeting, setEntryRelatedMeeting] = useState("");
+  const [entryResponsible, setEntryResponsible] = useState("");
+  const [entryStatus, setEntryStatus] = useState("Not Started");
+  const [entryDone, setEntryDone] = useState(false);
+  const [entryWeeksBefore, setEntryWeeksBefore] = useState("0");
   const [editingEventId, setEditingEventId] = useState<string | null>(null);
 
   const monthIndex = anchorDate.getMonth();
@@ -185,11 +198,22 @@ export function BoardCalendarWorkbench({
   }
 
   function updateEntryType(value: BoardCalendarEntryType) {
-    setEntryType(value);
-    setEntryCategory(
+    const defaultCategory =
       entryTypes.find((option) => option.value === value)?.defaultCategory ??
-        "Board Meeting",
-    );
+      "Board Meeting";
+
+    setEntryType(value);
+    setEntryCategory(defaultCategory);
+    setEntryTime("");
+    setEntryLocation("");
+    setEntryVirtualLink("");
+    setEntryLeadContact("");
+    setEntryConfirmed("TBC");
+    setEntryRelatedMeeting("");
+    setEntryResponsible("");
+    setEntryStatus(value === "staff_task" ? defaultCategory : "Not Started");
+    setEntryDone(false);
+    setEntryWeeksBefore("0");
   }
 
   function addCalendarEntry() {
@@ -202,6 +226,14 @@ export function BoardCalendarWorkbench({
       category: entryCategory,
       time: entryTime,
       location: entryLocation,
+      virtualLink: entryVirtualLink,
+      leadContact: entryLeadContact,
+      confirmed: entryConfirmed,
+      relatedMeeting: entryRelatedMeeting,
+      responsible: entryResponsible,
+      status: entryStatus,
+      done: entryDone,
+      weeksBefore: Number.parseInt(entryWeeksBefore, 10) || 0,
       notes: entryNotes,
     };
     const mutation = editingEventId
@@ -220,6 +252,14 @@ export function BoardCalendarWorkbench({
     setEntryTime("");
     setEntryLocation("");
     setEntryNotes("");
+    setEntryVirtualLink("");
+    setEntryLeadContact("");
+    setEntryConfirmed("TBC");
+    setEntryRelatedMeeting("");
+    setEntryResponsible("");
+    setEntryStatus("Not Started");
+    setEntryDone(false);
+    setEntryWeeksBefore("0");
   }
 
   function editCalendarEntry(event: CalendarViewEvent) {
@@ -234,9 +274,25 @@ export function BoardCalendarWorkbench({
     setEntryTime(input.time ?? "");
     setEntryLocation(input.location ?? "");
     setEntryNotes(input.notes ?? "");
+    setEntryVirtualLink(input.virtualLink ?? "");
+    setEntryLeadContact(input.leadContact ?? "");
+    setEntryConfirmed(input.confirmed ?? "TBC");
+    setEntryRelatedMeeting(input.relatedMeeting ?? "");
+    setEntryResponsible(input.responsible ?? "");
+    setEntryStatus(input.status ?? input.category ?? "Not Started");
+    setEntryDone(Boolean(input.done));
+    setEntryWeeksBefore(String(input.weeksBefore ?? 0));
     setWorkspaceMode("calendar");
     const date = parseCalendarDateKey(input.dateKey);
     if (date) setAnchorDate(date);
+  }
+
+  function deleteCalendarEntry(eventId: string) {
+    const mutation = deleteBoardCalendarEntry(data, eventId);
+    if (!mutation) return;
+
+    onChange(mutation.path, mutation.value);
+    clearEntryForm();
   }
 
   return (
@@ -396,7 +452,24 @@ export function BoardCalendarWorkbench({
             onNotesChange={setEntryNotes}
             onTimeChange={setEntryTime}
             onTitleChange={setEntryTitle}
+            onVirtualLinkChange={setEntryVirtualLink}
+            onWeeksBeforeChange={setEntryWeeksBefore}
+            onLeadContactChange={setEntryLeadContact}
+            onConfirmedChange={setEntryConfirmed}
+            onRelatedMeetingChange={setEntryRelatedMeeting}
+            onResponsibleChange={setEntryResponsible}
+            onStatusChange={setEntryStatus}
+            onDoneChange={setEntryDone}
+            onDeleteEntry={deleteCalendarEntry}
             editingEventId={editingEventId}
+            entryConfirmed={entryConfirmed}
+            entryDone={entryDone}
+            entryLeadContact={entryLeadContact}
+            entryRelatedMeeting={entryRelatedMeeting}
+            entryResponsible={entryResponsible}
+            entryStatus={entryStatus}
+            entryVirtualLink={entryVirtualLink}
+            entryWeeksBefore={entryWeeksBefore}
           />
         </>
       ) : selectedSection ? (
@@ -671,42 +744,81 @@ function DayCell({
 function CalendarEntryComposer({
   editingEventId,
   entryCategory,
+  entryConfirmed,
+  entryDone,
+  entryLeadContact,
   entryLocation,
   entryNotes,
+  entryRelatedMeeting,
+  entryResponsible,
+  entryStatus,
   entryTime,
   entryTitle,
   entryType,
+  entryVirtualLink,
+  entryWeeksBefore,
   selectedDateEvents,
   selectedDateKey,
   onAdd,
   onCategoryChange,
   onCancelEdit,
+  onConfirmedChange,
+  onDeleteEntry,
+  onDoneChange,
   onEditEvent,
   onEntryTypeChange,
+  onLeadContactChange,
   onLocationChange,
   onNotesChange,
+  onRelatedMeetingChange,
+  onResponsibleChange,
+  onStatusChange,
   onTimeChange,
   onTitleChange,
+  onVirtualLinkChange,
+  onWeeksBeforeChange,
 }: {
   editingEventId: string | null;
   entryCategory: string;
+  entryConfirmed: string;
+  entryDone: boolean;
+  entryLeadContact: string;
   entryLocation: string;
   entryNotes: string;
+  entryRelatedMeeting: string;
+  entryResponsible: string;
+  entryStatus: string;
   entryTime: string;
   entryTitle: string;
   entryType: BoardCalendarEntryType;
+  entryVirtualLink: string;
+  entryWeeksBefore: string;
   selectedDateEvents: CalendarViewEvent[];
   selectedDateKey: string;
   onAdd: () => void;
   onCategoryChange: (value: string) => void;
   onCancelEdit: () => void;
+  onConfirmedChange: (value: string) => void;
+  onDeleteEntry: (eventId: string) => void;
+  onDoneChange: (value: boolean) => void;
   onEditEvent: (event: CalendarViewEvent) => void;
   onEntryTypeChange: (value: BoardCalendarEntryType) => void;
+  onLeadContactChange: (value: string) => void;
   onLocationChange: (value: string) => void;
   onNotesChange: (value: string) => void;
+  onRelatedMeetingChange: (value: string) => void;
+  onResponsibleChange: (value: string) => void;
+  onStatusChange: (value: string) => void;
   onTimeChange: (value: string) => void;
   onTitleChange: (value: string) => void;
+  onVirtualLinkChange: (value: string) => void;
+  onWeeksBeforeChange: (value: string) => void;
 }) {
+  const isMeeting = entryType === "meeting";
+  const isAnnualHighlight = entryType === "annual_highlight";
+  const isStaffTask = entryType === "staff_task";
+  const isAgmMilestone = entryType === "agm_milestone";
+
   return (
     <div className="grid gap-5 rounded-xl border bg-slate-50 p-4 lg:grid-cols-[0.9fr_1.1fr]">
       <div className="rounded-xl bg-white p-4 shadow-sm">
@@ -792,14 +904,35 @@ function CalendarEntryComposer({
               </p>
             ) : null}
           </div>
-          <div className="space-y-2">
-            <Label htmlFor="calendar-entry-category">Category/status</Label>
-            <Input
-              id="calendar-entry-category"
-              value={entryCategory}
-              onChange={(event) => onCategoryChange(event.target.value)}
-            />
-          </div>
+          {!isStaffTask ? (
+            <div className="space-y-2">
+              <Label htmlFor="calendar-entry-category">
+                {isAgmMilestone ? "Track" : "Category"}
+              </Label>
+              <Input
+                id="calendar-entry-category"
+                value={entryCategory}
+                onChange={(event) => onCategoryChange(event.target.value)}
+              />
+            </div>
+          ) : null}
+          {isStaffTask || isAgmMilestone ? (
+            <div className="space-y-2">
+              <Label htmlFor="calendar-entry-status">Workflow status</Label>
+              <Select value={entryStatus} onValueChange={onStatusChange}>
+                <SelectTrigger id="calendar-entry-status">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {statusOptions.map((status) => (
+                    <SelectItem key={status} value={status}>
+                      {status}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          ) : null}
           <div className="space-y-2 md:col-span-2">
             <Label htmlFor="calendar-entry-title">Title</Label>
             <Input
@@ -809,24 +942,124 @@ function CalendarEntryComposer({
               onChange={(event) => onTitleChange(event.target.value)}
             />
           </div>
-          <div className="space-y-2">
-            <Label htmlFor="calendar-entry-time">Time</Label>
-            <Input
-              id="calendar-entry-time"
-              type="time"
-              value={entryTime}
-              onChange={(event) => onTimeChange(event.target.value)}
-            />
-          </div>
-          <div className="space-y-2">
-            <Label htmlFor="calendar-entry-location">Location / platform</Label>
-            <Input
-              id="calendar-entry-location"
-              placeholder="Boardroom, Zoom, community hall"
-              value={entryLocation}
-              onChange={(event) => onLocationChange(event.target.value)}
-            />
-          </div>
+          {isMeeting ? (
+            <>
+              <div className="space-y-2">
+                <Label htmlFor="calendar-entry-time">Time</Label>
+                <Input
+                  id="calendar-entry-time"
+                  type="time"
+                  value={entryTime}
+                  onChange={(event) => onTimeChange(event.target.value)}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="calendar-entry-location">Location / platform</Label>
+                <Input
+                  id="calendar-entry-location"
+                  placeholder="Boardroom, Zoom, community hall"
+                  value={entryLocation}
+                  onChange={(event) => onLocationChange(event.target.value)}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="calendar-entry-virtual-link">Virtual link</Label>
+                <Input
+                  id="calendar-entry-virtual-link"
+                  placeholder="https://zoom.us/j/..."
+                  value={entryVirtualLink}
+                  onChange={(event) => onVirtualLinkChange(event.target.value)}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="calendar-entry-lead-contact">Lead contact</Label>
+                <Input
+                  id="calendar-entry-lead-contact"
+                  placeholder="Administrator, Treasurer, Board Chair"
+                  value={entryLeadContact}
+                  onChange={(event) => onLeadContactChange(event.target.value)}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="calendar-entry-confirmed">Confirmed?</Label>
+                <Select value={entryConfirmed} onValueChange={onConfirmedChange}>
+                  <SelectTrigger id="calendar-entry-confirmed">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {confirmedOptions.map((option) => (
+                      <SelectItem key={option} value={option}>
+                        {option}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            </>
+          ) : null}
+          {isStaffTask ? (
+            <>
+              <div className="space-y-2">
+                <Label htmlFor="calendar-entry-related-meeting">
+                  Related meeting
+                </Label>
+                <Input
+                  id="calendar-entry-related-meeting"
+                  placeholder="Board Meeting - Apr 15"
+                  value={entryRelatedMeeting}
+                  onChange={(event) => onRelatedMeetingChange(event.target.value)}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="calendar-entry-responsible">Responsible</Label>
+                <Input
+                  id="calendar-entry-responsible"
+                  placeholder="Administrator"
+                  value={entryResponsible}
+                  onChange={(event) => onResponsibleChange(event.target.value)}
+                />
+              </div>
+            </>
+          ) : null}
+          {isAgmMilestone ? (
+            <>
+              <div className="space-y-2">
+                <Label htmlFor="calendar-entry-weeks-before">Weeks before AGM</Label>
+                <Input
+                  id="calendar-entry-weeks-before"
+                  type="number"
+                  value={entryWeeksBefore}
+                  onChange={(event) => onWeeksBeforeChange(event.target.value)}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="calendar-entry-responsible">Responsible</Label>
+                <Input
+                  id="calendar-entry-responsible"
+                  placeholder="Administrator"
+                  value={entryResponsible}
+                  onChange={(event) => onResponsibleChange(event.target.value)}
+                />
+              </div>
+            </>
+          ) : null}
+          {isAnnualHighlight ? (
+            <p className="rounded-lg bg-slate-50 px-3 py-2 text-xs leading-5 text-slate-500 md:col-span-2">
+              Annual notes use the selected calendar date and automatically set
+              the matching month in the workbook.
+            </p>
+          ) : null}
+          {isStaffTask || isAgmMilestone ? (
+            <label className="flex items-center gap-2 rounded-lg border bg-slate-50 px-3 py-2 text-sm font-medium text-slate-600">
+              <input
+                type="checkbox"
+                checked={entryDone}
+                onChange={(event) => onDoneChange(event.target.checked)}
+                className="size-4 accent-olea-green"
+              />
+              Done
+            </label>
+          ) : null}
           <div className="space-y-2 md:col-span-2">
             <Label htmlFor="calendar-entry-notes">Notes</Label>
             <Textarea
@@ -855,6 +1088,17 @@ function CalendarEntryComposer({
           >
             <X className="size-4" />
             Cancel edit
+          </Button>
+        ) : null}
+        {editingEventId ? (
+          <Button
+            type="button"
+            className="ml-2 mt-4"
+            variant="destructive"
+            onClick={() => onDeleteEntry(editingEventId)}
+          >
+            <Trash2 className="size-4" />
+            Delete entry
           </Button>
         ) : null}
       </div>

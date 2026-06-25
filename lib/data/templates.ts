@@ -211,6 +211,7 @@ export async function getTemplateSession(): Promise<TemplateSession> {
 
 export async function getDynamicTemplateEditorData(
   slug: string,
+  sessionId?: string,
 ): Promise<DynamicTemplateEditorData | null> {
   const { member, organization } = await requireMemberContext();
   const templateSummary = await getTemplateBySlug(slug);
@@ -238,7 +239,7 @@ export async function getDynamicTemplateEditorData(
 
   if (!definition || !schema) return null;
 
-  const { data: existing, error: existingError } = await supabase
+  const { data: instances, error: instancesError } = await supabase
     .from("template_instances")
     .select(
       "id, title, status, form_data, branding_snapshot, definition_version, schema_snapshot, completion_percent, last_saved_at, updated_at",
@@ -246,10 +247,16 @@ export async function getDynamicTemplateEditorData(
     .eq("organization_id", organization.id)
     .eq("resource_id", resource.id)
     .order("updated_at", { ascending: false })
-    .limit(1)
-    .maybeSingle();
+    .limit(25);
 
-  if (existingError) throw existingError;
+  if (instancesError) throw instancesError;
+
+  const existing =
+    sessionId === "new"
+      ? null
+      : sessionId
+        ? (instances ?? []).find((instance) => instance.id === sessionId) ?? null
+        : (instances ?? [])[0] ?? null;
 
   const defaultValues = (definition.default_values ?? {}) as TemplateFormData;
   const formData = {
@@ -316,6 +323,12 @@ export async function getDynamicTemplateEditorData(
       fileName: item.file_name,
       generatedAt: item.generated_at,
       generatedBy: item.created_by,
+    })),
+    sessions: (instances ?? []).map((instance) => ({
+      id: instance.id,
+      title: instance.title,
+      status: instance.status as DynamicTemplateSession["status"],
+      updatedAt: instance.updated_at,
     })),
   };
 }

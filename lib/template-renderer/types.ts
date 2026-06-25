@@ -132,6 +132,12 @@ export interface DynamicTemplateEditorData {
     supportsDocx: boolean;
   };
   session: DynamicTemplateSession;
+  sessions: Array<{
+    id: string;
+    title: string;
+    status: DynamicTemplateSession["status"];
+    updatedAt: string;
+  }>;
   exports: TemplateExportRecord[];
 }
 

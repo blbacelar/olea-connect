@@ -3,6 +3,7 @@ import { describe, expect, it } from "vitest";
 import {
   appendBoardCalendarEntry,
   createBoardCalendarEntryRow,
+  deleteBoardCalendarEntry,
   getBoardCalendarEntryInput,
   updateBoardCalendarEntry,
 } from "@/lib/template-renderer/board-calendar-editor";
@@ -78,7 +79,8 @@ describe("board calendar editor helpers", () => {
           dateKey: "2026-05-01",
           title: "Draft board package",
           category: "Not Started",
-          notes: "Related to May board meeting",
+          relatedMeeting: "Related to May board meeting",
+          notes: "Prep materials.",
         },
       ),
     ).toMatchObject({
@@ -90,6 +92,8 @@ describe("board calendar editor helpers", () => {
           related_meeting: "Related to May board meeting",
           responsible: "Administrator",
           status: "Not Started",
+          notes: "Prep materials.",
+          done: false,
         },
       ],
     });
@@ -130,7 +134,10 @@ describe("board calendar editor helpers", () => {
           committee: "Finance Committee",
           time: "18:30",
           location: "Zoom",
+          virtual_link: "https://example.com/meeting",
+          lead_contact: "Treasurer",
           notes: "Budget package review",
+          confirmed: "Yes",
         },
       ],
     };
@@ -142,7 +149,10 @@ describe("board calendar editor helpers", () => {
       category: "Committee Meeting",
       time: "18:30",
       location: "Zoom",
+      virtualLink: "https://example.com/meeting",
+      leadContact: "Treasurer",
       notes: "Budget package review",
+      confirmed: "Yes",
     });
   });
 
@@ -187,7 +197,10 @@ describe("board calendar editor helpers", () => {
       category: "Committee Meeting",
       time: "19:00",
       location: "Boardroom",
+      virtualLink: "https://example.com/updated",
+      leadContact: "Governance Chair",
       notes: "Updated agenda.",
+      confirmed: "No",
     });
 
     expect(mutation).toEqual({
@@ -199,12 +212,138 @@ describe("board calendar editor helpers", () => {
           committee: "Finance and Audit Committee",
           time: "19:00",
           location: "Boardroom",
-          virtual_link: "https://example.com/meeting",
-          lead_contact: "Treasurer",
+          virtual_link: "https://example.com/updated",
+          lead_contact: "Governance Chair",
           notes: "Updated agenda.",
-          confirmed: "Yes",
+          confirmed: "No",
         },
       ],
+    });
+  });
+
+  it("reads and updates all staff task fields", () => {
+    const data: TemplateFormData = {
+      tasks: [
+        {
+          task: "Draft board package",
+          due_date: "2026-05-01",
+          related_meeting: "May board meeting",
+          responsible: "Administrator",
+          status: "In Progress",
+          notes: "Use the finance report.",
+          done: false,
+        },
+      ],
+    };
+
+    expect(getBoardCalendarEntryInput(data, "task-0")).toEqual({
+      type: "staff_task",
+      dateKey: "2026-05-01",
+      title: "Draft board package",
+      category: "In Progress",
+      relatedMeeting: "May board meeting",
+      responsible: "Administrator",
+      status: "In Progress",
+      notes: "Use the finance report.",
+      done: false,
+    });
+
+    expect(
+      updateBoardCalendarEntry(data, "task-0", {
+        type: "staff_task",
+        dateKey: "2026-05-02",
+        title: "Send board package",
+        category: "Complete",
+        relatedMeeting: "May board meeting",
+        responsible: "Board Chair",
+        status: "Complete",
+        notes: "Sent by email.",
+        done: true,
+      }),
+    ).toEqual({
+      path: ["tasks"],
+      value: [
+        {
+          task: "Send board package",
+          due_date: "2026-05-02",
+          related_meeting: "May board meeting",
+          responsible: "Board Chair",
+          status: "Complete",
+          notes: "Sent by email.",
+          done: true,
+        },
+      ],
+    });
+  });
+
+  it("reads and updates all AGM milestone fields", () => {
+    const data: TemplateFormData = {
+      agm_milestones: [
+        {
+          track: "Governance",
+          task: "Confirm AGM venue",
+          weeks_before: 16,
+          calculated_date: "2026-02-25",
+          responsible: "Governance Chair",
+          status: "Not Started",
+          notes: "Book venue if in person.",
+          done: false,
+        },
+      ],
+    };
+
+    expect(getBoardCalendarEntryInput(data, "agm-0")).toEqual({
+      type: "agm_milestone",
+      dateKey: "2026-02-25",
+      title: "Confirm AGM venue",
+      category: "Governance",
+      weeksBefore: 16,
+      responsible: "Governance Chair",
+      status: "Not Started",
+      notes: "Book venue if in person.",
+      done: false,
+    });
+
+    expect(
+      updateBoardCalendarEntry(data, "agm-0", {
+        type: "agm_milestone",
+        dateKey: "2026-03-01",
+        title: "Confirm hybrid AGM venue",
+        category: "Operations",
+        weeksBefore: 14,
+        responsible: "Administrator",
+        status: "In Progress",
+        notes: "Confirm AV.",
+        done: true,
+      }),
+    ).toEqual({
+      path: ["agm_milestones"],
+      value: [
+        {
+          track: "Operations",
+          task: "Confirm hybrid AGM venue",
+          weeks_before: 14,
+          calculated_date: "2026-03-01",
+          responsible: "Administrator",
+          status: "In Progress",
+          notes: "Confirm AV.",
+          done: true,
+        },
+      ],
+    });
+  });
+
+  it("deletes an existing backing row by calendar event id", () => {
+    const data: TemplateFormData = {
+      annual_highlights: [
+        { date: "2026-06-01", title: "Budget review" },
+        { date: "2026-06-17", title: "AGM" },
+      ],
+    };
+
+    expect(deleteBoardCalendarEntry(data, "annual-0")).toEqual({
+      path: ["annual_highlights"],
+      value: [{ date: "2026-06-17", title: "AGM" }],
     });
   });
 });

@@ -1,9 +1,20 @@
 "use client";
 
 import { AlertCircle, Check, Clock, LoaderCircle, Save } from "lucide-react";
+import Link from "next/link";
+import { useRouter } from "next/navigation";
 
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import {
   Tabs,
   TabsContent,
@@ -41,8 +52,10 @@ export function DynamicTemplateEditor({
   }) => Promise<TemplateExportRecord>;
   createDownloadUrl: (exportId: string) => Promise<string>;
 }) {
+  const router = useRouter();
   const {
     session,
+    updateTitle,
     updateValue,
     saveState,
     saveError,
@@ -53,6 +66,13 @@ export function DynamicTemplateEditor({
     complete,
   } = useDynamicTemplateSession({
     initialSession: data.session,
+    onSaved: (saved, previousSession) => {
+      if (!previousSession.id && saved.id) {
+        router.replace(`/templates/${data.template.slug}?session=${saved.id}`, {
+          scroll: false,
+        });
+      }
+    },
     saveSession,
   });
 
@@ -100,6 +120,49 @@ export function DynamicTemplateEditor({
           </Button>
         </div>
       </div>
+
+      <Card className="border-olea-green/15 bg-gradient-to-br from-white to-olea-light/50 shadow-soft">
+        <CardContent className="grid gap-5 p-5 lg:grid-cols-[1.2fr_1fr_auto] lg:items-end">
+          <div className="space-y-2">
+            <Label htmlFor="template-session-title">Workbook name</Label>
+            <Input
+              id="template-session-title"
+              value={session.title}
+              onChange={(event) => updateTitle(event.target.value)}
+              placeholder={`${data.template.title} ${new Date().getFullYear()}`}
+            />
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="template-session-picker">Saved workbooks</Label>
+            <Select
+              value={session.id || "new"}
+              onValueChange={(value) =>
+                router.push(`/templates/${data.template.slug}?session=${value}`)
+              }
+            >
+              <SelectTrigger id="template-session-picker">
+                <SelectValue placeholder="Choose a workbook" />
+              </SelectTrigger>
+              <SelectContent>
+                {!session.id ? (
+                  <SelectItem value="new">Unsaved new workbook</SelectItem>
+                ) : null}
+                {data.sessions.map((savedSession) => (
+                  <SelectItem key={savedSession.id} value={savedSession.id}>
+                    {savedSession.title}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+          <Button asChild variant="outline">
+            <Link href={`/templates/${data.template.slug}?session=new`}>
+              <PlusIcon />
+              Start new
+            </Link>
+          </Button>
+        </CardContent>
+      </Card>
 
       <Card className="border-olea-green/15 bg-gradient-to-br from-white to-olea-light/50 shadow-soft">
         <CardContent className="grid gap-4 p-5 md:grid-cols-[1fr_auto] md:items-center">
@@ -223,6 +286,10 @@ export function DynamicTemplateEditor({
       />
     </div>
   );
+}
+
+function PlusIcon() {
+  return <span className="text-lg leading-none">+</span>;
 }
 
 function SectionFields({

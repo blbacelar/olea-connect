@@ -19,9 +19,14 @@ type SaveState = "saved" | "saving" | "unsaved" | "error";
 
 export function useDynamicTemplateSession({
   initialSession,
+  onSaved,
   saveSession,
 }: {
   initialSession: DynamicTemplateSession;
+  onSaved?: (
+    saved: DynamicTemplateSession,
+    previousSession: DynamicTemplateSession,
+  ) => void;
   saveSession: (payload: TemplateSavePayload) => Promise<DynamicTemplateSession>;
 }) {
   const [session, setSession] = useState(initialSession);
@@ -29,6 +34,8 @@ export function useDynamicTemplateSession({
   const [saveError, setSaveError] = useState("");
   const [isCompleting, startCompleteTransition] = useTransition();
   const didMount = useRef(false);
+  const initialSessionKey = `${initialSession.id || "new"}:${initialSession.resourceId}:${initialSession.lastSavedAt}`;
+  const previousInitialSessionKey = useRef(initialSessionKey);
 
   const validationErrors = useMemo(
     () => validateTemplateData(session.schemaSnapshot, session.formData),
@@ -38,6 +45,14 @@ export function useDynamicTemplateSession({
     () => calculateCompletionPercent(session.schemaSnapshot, session.formData),
     [session.formData, session.schemaSnapshot],
   );
+
+  useEffect(() => {
+    if (previousInitialSessionKey.current === initialSessionKey) return;
+    previousInitialSessionKey.current = initialSessionKey;
+    setSession(initialSession);
+    setSaveError("");
+    setSaveState("saved");
+  }, [initialSession, initialSessionKey]);
 
   const updateValue = (path: FieldPath, value: TemplateValue) => {
     setSession((current) => {
@@ -55,6 +70,14 @@ export function useDynamicTemplateSession({
     setSaveState("unsaved");
   };
 
+  const updateTitle = (title: string) => {
+    setSession((current) => ({
+      ...current,
+      title,
+    }));
+    setSaveState("unsaved");
+  };
+
   const persist = async (status: "draft" | "completed" = "draft") => {
     const payload = toSavePayload({
       ...session,
@@ -67,8 +90,10 @@ export function useDynamicTemplateSession({
 
     setSaveState("saving");
     try {
+      const previousSession = session;
       const saved = await saveSession(payload);
       setSession((current) => ({ ...current, ...saved, slug: current.slug }));
+      onSaved?.(saved, previousSession);
       setSaveError("");
       setSaveState("saved");
       return saved;
@@ -110,6 +135,7 @@ export function useDynamicTemplateSession({
 
   return {
     session,
+    updateTitle,
     updateValue,
     saveState,
     saveError,
