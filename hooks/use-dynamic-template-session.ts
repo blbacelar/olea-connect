@@ -34,6 +34,7 @@ export function useDynamicTemplateSession({
   const [saveError, setSaveError] = useState("");
   const [isCompleting, startCompleteTransition] = useTransition();
   const didMount = useRef(false);
+  const editVersion = useRef(0);
   const initialSessionKey = `${initialSession.id || "new"}:${initialSession.resourceId}:${initialSession.lastSavedAt}`;
   const previousInitialSessionKey = useRef(initialSessionKey);
 
@@ -55,6 +56,7 @@ export function useDynamicTemplateSession({
   }, [initialSession, initialSessionKey]);
 
   const updateValue = (path: FieldPath, value: TemplateValue) => {
+    editVersion.current += 1;
     setSession((current) => {
       const formData = setValue(current.formData, path, value);
 
@@ -71,6 +73,7 @@ export function useDynamicTemplateSession({
   };
 
   const updateTitle = (title: string) => {
+    editVersion.current += 1;
     setSession((current) => ({
       ...current,
       title,
@@ -79,23 +82,31 @@ export function useDynamicTemplateSession({
   };
 
   const persist = async (status: "draft" | "completed" = "draft") => {
+    const sessionSnapshot = session;
+    const savedEditVersion = editVersion.current;
     const payload = toSavePayload({
-      ...session,
+      ...sessionSnapshot,
       status,
       completionPercent:
         status === "completed"
           ? 100
-          : calculateCompletionPercent(session.schemaSnapshot, session.formData),
+          : calculateCompletionPercent(
+              sessionSnapshot.schemaSnapshot,
+              sessionSnapshot.formData,
+            ),
     });
 
     setSaveState("saving");
     try {
-      const previousSession = session;
       const saved = await saveSession(payload);
-      setSession((current) => ({ ...current, ...saved, slug: current.slug }));
-      onSaved?.(saved, previousSession);
+      const hasNewerLocalEdits = editVersion.current !== savedEditVersion;
+
+      setSession((current) =>
+        mergeSavedSession(current, saved, hasNewerLocalEdits),
+      );
+      onSaved?.(saved, sessionSnapshot);
       setSaveError("");
-      setSaveState("saved");
+      setSaveState(hasNewerLocalEdits ? "unsaved" : "saved");
       return saved;
     } catch (error) {
       setSaveError(
@@ -160,4 +171,21 @@ function toSavePayload(session: DynamicTemplateSession): TemplateSavePayload {
     completionPercent: session.completionPercent,
     status: session.status === "completed" ? "completed" : "draft",
   };
+}
+
+export function mergeSavedSession(
+  current: DynamicTemplateSession,
+  saved: DynamicTemplateSession,
+  hasNewerLocalEdits: boolean,
+): DynamicTemplateSession {
+  if (hasNewerLocalEdits) {
+    return {
+      ...current,
+      id: saved.id || current.id,
+      lastSavedAt: saved.lastSavedAt,
+      slug: current.slug,
+    };
+  }
+
+  return { ...current, ...saved, slug: current.slug };
 }
