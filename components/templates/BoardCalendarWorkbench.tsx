@@ -191,10 +191,12 @@ export function BoardCalendarWorkbench({
   }
 
   function selectDate(dateKey: string) {
+    const date = parseCalendarDateKey(dateKey);
+    if (!date) return;
+
     setSelectedDateKey(dateKey);
     setWorkspaceMode("calendar");
-    const date = parseCalendarDateKey(dateKey);
-    if (date) setAnchorDate(date);
+    setAnchorDate(date);
   }
 
   function updateEntryType(value: BoardCalendarEntryType) {
@@ -461,6 +463,7 @@ export function BoardCalendarWorkbench({
             onStatusChange={setEntryStatus}
             onDoneChange={setEntryDone}
             onDeleteEntry={deleteCalendarEntry}
+            onSelectedDateChange={selectDate}
             editingEventId={editingEventId}
             entryConfirmed={entryConfirmed}
             entryDone={entryDone}
@@ -772,6 +775,7 @@ function CalendarEntryComposer({
   onNotesChange,
   onRelatedMeetingChange,
   onResponsibleChange,
+  onSelectedDateChange,
   onStatusChange,
   onTimeChange,
   onTitleChange,
@@ -808,6 +812,7 @@ function CalendarEntryComposer({
   onNotesChange: (value: string) => void;
   onRelatedMeetingChange: (value: string) => void;
   onResponsibleChange: (value: string) => void;
+  onSelectedDateChange: (value: string) => void;
   onStatusChange: (value: string) => void;
   onTimeChange: (value: string) => void;
   onTitleChange: (value: string) => void;
@@ -878,6 +883,18 @@ function CalendarEntryComposer({
         </div>
 
         <div className="mt-4 grid gap-4 md:grid-cols-2">
+          <div className="space-y-2">
+            <Label htmlFor="calendar-entry-date">Entry date</Label>
+            <Input
+              id="calendar-entry-date"
+              type="date"
+              value={selectedDateKey}
+              onChange={(event) => onSelectedDateChange(event.target.value)}
+            />
+            <p className="text-xs text-slate-500">
+              Historical dates are allowed for past meetings and records.
+            </p>
+          </div>
           <div className="space-y-2">
             <Label htmlFor="calendar-entry-type">Entry type</Label>
             <Select

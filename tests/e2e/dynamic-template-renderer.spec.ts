@@ -35,6 +35,7 @@ test.describe("@critical dynamic template renderer", () => {
     await page
       .getByLabel("Workbook name")
       .fill("2026 Board Calendar - Test workbook");
+    await page.getByLabel("Entry date").fill("2026-01-14");
     await page.getByLabel("Title").fill("Finance Committee");
     await page.getByLabel("Time").fill("18:30");
     await page.getByLabel("Location / platform").fill("Boardroom");
@@ -48,6 +49,7 @@ test.describe("@critical dynamic template renderer", () => {
     await page.getByRole("button", { name: "Add to calendar" }).click();
 
     await expect(page.getByText("Board Meeting - Finance Committee").first()).toBeVisible();
+    await expect(page.getByText("2026-01-14").first()).toBeVisible();
     await expect(page.getByText("6:30 PM").first()).toBeVisible();
     await expect(page.getByText("Boardroom").first()).toBeVisible();
     await expect(page.getByText("Unsaved changes")).toBeVisible();
