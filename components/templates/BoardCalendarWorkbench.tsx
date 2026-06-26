@@ -419,6 +419,7 @@ export function BoardCalendarWorkbench({
           {mode === "year" ? (
             <YearCalendar
               events={events}
+              todayKey={todayKey}
               year={year}
               onSelectDate={selectDate}
             />
@@ -428,6 +429,7 @@ export function BoardCalendarWorkbench({
               eventsByDate={eventsByDate}
               onSelectDate={selectDate}
               selectedDateKey={selectedDateKey}
+              todayKey={todayKey}
             />
           ) : (
             <MonthCalendar
@@ -435,6 +437,7 @@ export function BoardCalendarWorkbench({
               monthIndex={monthIndex}
               onSelectDate={selectDate}
               selectedDateKey={selectedDateKey}
+              todayKey={todayKey}
               year={year}
             />
           )}
@@ -547,12 +550,14 @@ function MonthCalendar({
   eventsByDate,
   monthIndex,
   selectedDateKey,
+  todayKey,
   year,
   onSelectDate,
 }: {
   eventsByDate: Map<string, CalendarViewEvent[]>;
   monthIndex: number;
   selectedDateKey: string;
+  todayKey: string;
   year: number;
   onSelectDate: (dateKey: string) => void;
 }) {
@@ -566,6 +571,7 @@ function MonthCalendar({
           <DayCell
             key={day.dateKey}
             dayNumber={day.date.getDate()}
+            disabled={day.dateKey < todayKey}
             events={eventsByDate.get(day.dateKey) ?? []}
             muted={!day.isCurrentMonth}
             selected={day.dateKey === selectedDateKey}
@@ -581,11 +587,13 @@ function WeekCalendar({
   anchorDate,
   eventsByDate,
   selectedDateKey,
+  todayKey,
   onSelectDate,
 }: {
   anchorDate: Date;
   eventsByDate: Map<string, CalendarViewEvent[]>;
   selectedDateKey: string;
+  todayKey: string;
   onSelectDate: (dateKey: string) => void;
 }) {
   const weekDays = getWeekDays(anchorDate);
@@ -595,12 +603,17 @@ function WeekCalendar({
       {weekDays.map((day) => {
         const dateKey = toDateKey(day);
         const events = eventsByDate.get(dateKey) ?? [];
+        const disabled = dateKey < todayKey;
         return (
           <button
             key={dateKey}
             type="button"
+            disabled={disabled}
+            aria-disabled={disabled}
             className={cn(
               "rounded-xl border bg-white p-3 text-left transition hover:border-olea-green",
+              disabled &&
+                "cursor-not-allowed border-slate-200 bg-slate-100 text-slate-400 opacity-70 hover:border-slate-200",
               selectedDateKey === dateKey && "border-olea-green ring-2 ring-olea-green/20",
             )}
             onClick={() => onSelectDate(dateKey)}
@@ -611,6 +624,11 @@ function WeekCalendar({
             <p className="mt-1 text-lg font-semibold text-slate-950">
               {monthNames[day.getMonth()].slice(0, 3)} {day.getDate()}
             </p>
+            {disabled ? (
+              <p className="mt-1 text-xs font-medium text-slate-400">
+                Past date
+              </p>
+            ) : null}
             <div className="mt-3 space-y-2">
               {events.length ? (
                 events.map((event) => (
@@ -631,10 +649,12 @@ function WeekCalendar({
 
 function YearCalendar({
   events,
+  todayKey,
   year,
   onSelectDate,
 }: {
   events: CalendarViewEvent[];
+  todayKey: string;
   year: number;
   onSelectDate: (dateKey: string) => void;
 }) {
@@ -665,7 +685,9 @@ function YearCalendar({
                     event={event}
                     compact
                     onSelectDate={
-                      event.dateKey ? () => onSelectDate(event.dateKey!) : undefined
+                      event.dateKey && event.dateKey >= todayKey
+                        ? () => onSelectDate(event.dateKey!)
+                        : undefined
                     }
                   />
                 ))
@@ -704,12 +726,14 @@ function CalendarWeekHeader() {
 
 function DayCell({
   dayNumber,
+  disabled,
   events,
   muted,
   selected,
   onSelect,
 }: {
   dayNumber: number;
+  disabled: boolean;
   events: CalendarViewEvent[];
   muted: boolean;
   selected: boolean;
@@ -718,9 +742,13 @@ function DayCell({
   return (
     <button
       type="button"
+      disabled={disabled}
+      aria-disabled={disabled}
       className={cn(
         "min-h-[150px] border-b border-r bg-white p-3 text-left transition hover:border-olea-green last:border-r-0",
         muted && "bg-slate-50 text-slate-400",
+        disabled &&
+          "cursor-not-allowed bg-slate-100 text-slate-400 opacity-70 hover:border-slate-200",
         selected && "relative z-10 border-olea-green ring-2 ring-inset ring-olea-green",
       )}
       onClick={onSelect}
@@ -729,11 +757,20 @@ function DayCell({
         <span
           className={cn(
             "flex size-7 items-center justify-center rounded-full text-sm font-semibold",
-            muted ? "text-slate-400" : "bg-olea-light text-olea-dark",
+            disabled
+              ? "bg-slate-200 text-slate-400"
+              : muted
+                ? "text-slate-400"
+                : "bg-olea-light text-olea-dark",
           )}
         >
           {dayNumber}
         </span>
+        {disabled ? (
+          <span className="text-[11px] font-medium uppercase tracking-[0.08em] text-slate-400">
+            Past
+          </span>
+        ) : null}
         {events.length > 3 ? (
           <span className="text-xs font-medium text-slate-400">
             +{events.length - 3}

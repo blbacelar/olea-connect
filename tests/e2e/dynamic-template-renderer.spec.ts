@@ -43,6 +43,8 @@ test.describe("@critical dynamic template renderer", () => {
     await expect(
       page.getByText("Choose today or a future date to add a new entry."),
     ).toBeVisible();
+    await page.getByRole("button", { name: /^January 2026$/ }).click();
+    await expect(page.getByRole("button", { name: /14 Past/ })).toBeDisabled();
     await page.getByLabel("Entry date").fill(futureDate);
     await page.getByLabel("Time").fill("18:30");
     await page.getByLabel("Location / platform").fill("Boardroom");
