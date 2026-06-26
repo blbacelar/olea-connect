@@ -20,7 +20,37 @@ async function signInPage(
   password: string,
 ) {
   const storage = await createAuthenticatedStorageState(email, password, baseURL);
+  await page.context().clearCookies();
   await page.context().addCookies(storage.cookies);
+}
+
+async function dropLogoFile(
+  page: Page,
+  file: {
+    buffer: Buffer;
+    mimeType: string;
+    name: string;
+  },
+) {
+  const dataTransfer = await page.evaluateHandle(
+    ({ bytes, mimeType, name }) => {
+      const transfer = new DataTransfer();
+      transfer.items.add(
+        new File([new Uint8Array(bytes)], name, { type: mimeType }),
+      );
+      return transfer;
+    },
+    {
+      bytes: Array.from(file.buffer),
+      mimeType: file.mimeType,
+      name: file.name,
+    },
+  );
+
+  await page
+    .getByRole("button", { name: /Drop your logo here or browse/ })
+    .dispatchEvent("drop", { dataTransfer });
+  await dataTransfer.dispose();
 }
 
 test.describe("@member brand profile", () => {
@@ -127,7 +157,7 @@ test.describe("@member brand profile", () => {
     await signInPage(page, baseURL, owner.email, owner.password);
 
     await page.goto("/settings/brand");
-    await page.getByLabel("Upload organization logo").setInputFiles({
+    await dropLogoFile(page, {
       name: "not-a-logo.txt",
       mimeType: "text/plain",
       buffer: Buffer.from("not a logo"),

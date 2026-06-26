@@ -222,7 +222,11 @@ export function TeamWorkspace({ team }: { team: TeamData }) {
               type="email"
               value={email}
               onChange={(event) => {
-                setEmail(event.target.value);
+                setEmail(event.currentTarget.value);
+                setSent(false);
+              }}
+              onInput={(event) => {
+                setEmail(event.currentTarget.value);
                 setSent(false);
               }}
               onKeyDown={(event) => {

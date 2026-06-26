@@ -30,10 +30,10 @@ export default defineConfig({
     baseURL === localBaseUrl &&
     process.env.PLAYWRIGHT_SKIP_WEBSERVER !== "true"
       ? {
-          command: "npm run dev -- -p 3011",
+          command: "npm run build && npm run start -- -p 3011",
           url: localBaseUrl,
           reuseExistingServer: !process.env.CI,
-          timeout: 120_000,
+          timeout: 180_000,
         }
       : undefined,
   projects: [

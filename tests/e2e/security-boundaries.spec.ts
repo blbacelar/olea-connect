@@ -12,6 +12,32 @@ test.describe("@smoke @critical security boundaries", () => {
     ).toBeVisible();
   });
 
+  test("globally protects member-only pages", async ({ page }) => {
+    const protectedPaths = [
+      "/dashboard",
+      "/templates",
+      "/templates/board-meeting-agenda",
+      "/team",
+      "/settings/brand",
+      "/grants",
+      "/webinars",
+      "/community",
+      "/help",
+      "/whats-new",
+    ];
+
+    for (const protectedPath of protectedPaths) {
+      await page.goto(protectedPath);
+
+      await expect(page).toHaveURL(
+        `/login?next=${encodeURIComponent(protectedPath)}`,
+      );
+      await expect(
+        page.getByRole("heading", { name: "Welcome back" }),
+      ).toBeVisible();
+    }
+  });
+
   test("rejects unsigned Stripe webhook requests", async ({ request }) => {
     const response = await request.post("/api/stripe/webhook");
 

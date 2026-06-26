@@ -1,0 +1,289 @@
+# Architecture
+
+Olea Connects is a Next.js App Router application backed by Supabase and Stripe.
+Most authorization is enforced twice: globally in middleware for route access
+and in Supabase/Postgres through RLS/RPC policies for data access.
+
+## Runtime Overview
+
+```text
+Browser
+  -> Next.js App Router pages and client components
+  -> Server Components / Server Actions / Route Handlers
+  -> Supabase Auth + Postgres + Storage
+  -> Stripe API and webhooks
+  -> Resend API and webhooks
+  -> Circle API / SSO
+```
+
+## Next.js Layers
+
+### App Routes
+
+`app/` contains both pages and route handlers:
+
+- Public marketing/auth routes: `/`, `/login`, `/signup`, `/reset-password`,
+  `/verify-email`, `/update-password`, `/auth/*`.
+- Member routes: `/dashboard`, `/templates`, `/team`, `/subscription`,
+  `/settings/brand`, `/grants`, `/webinars`, `/community`, `/help`,
+  `/whats-new`.
+- API routes: Stripe, email, Circle, and provisioning workers.
+
+### App Shell
+
+The authenticated platform layout is composed with:
+
+- `components/AppShell.tsx`
+- `components/Header.tsx`
+- `components/Sidebar.tsx`
+- `components/navigation.ts`
+
+The shell is route-aware and keeps the member app chrome separate from public
+auth/landing pages.
+
+### Shared UI
+
+The project uses shadcn-style components built on Radix primitives:
+
+- `components/ui/button.tsx`
+- `components/ui/input.tsx`
+- `components/ui/select.tsx`
+- `components/ui/tabs.tsx`
+- `components/ui/textarea.tsx`
+- `components/ui/badge.tsx`
+- `components/ui/card.tsx`
+
+Prefer these before introducing raw HTML controls for product UI. Raw semantic
+HTML is still fine when a custom component adds no value.
+
+## Authentication and Authorization
+
+### Supabase Auth
+
+Supabase Auth handles:
+
+- Email/password signup.
+- Email confirmation.
+- Login/logout.
+- Password recovery.
+- SSR session cookies.
+
+Client-side auth helpers live in `lib/auth.ts`. Server-side Supabase clients
+live in `utils/supabase/`.
+
+### Global Auth Middleware
+
+`middleware.ts` calls `utils/supabase/middleware.ts`.
+
+The middleware:
+
+1. Creates a cookie-aware Supabase server client.
+2. Refreshes session cookies when needed.
+3. Allows public marketing/auth/signup and signed webhook paths.
+4. Redirects anonymous users from member routes to `/login?next=<path>`.
+5. Redirects authenticated users without a current subscription to
+   `/subscription?billing=required`, except while already on subscription.
+
+The public allowlist is intentionally centralized in
+`utils/supabase/middleware.ts`.
+
+### Member Context
+
+`lib/data/member-context.ts` is the main authenticated data boundary for app
+pages. `requireMemberContext()`:
+
+- Reads the current Supabase Auth user.
+- Loads the active organization membership.
+- Loads organization, tier, and brand data.
+- Redirects to `/login` if no member context exists.
+
+Use `requireMemberContext()` in Server Components and server actions that need
+organization-scoped data.
+
+### Data Authorization
+
+Data reads/writes should usually use the cookie-backed server client from
+`utils/supabase/server.ts`, so Supabase RLS remains active.
+
+Only use `createAdminClient()` from `utils/supabase/admin.ts` when the operation
+must bypass RLS, such as:
+
+- Stripe webhook synchronization.
+- Test data setup/cleanup.
+- Background workers.
+- Cross-user provisioning tasks.
+
+When using the admin client, manually enforce tenant boundaries in code.
+
+## Database Model
+
+The schema is migration-driven under `supabase/migrations/`.
+
+Core domains:
+
+- Identity: profiles, organizations, memberships.
+- Billing: membership plans, subscriptions, subscription items, invoices.
+- Access: resource categories, template definitions, resource access.
+- Templates: dynamic schemas, instances, exports, downloads.
+- Brand: logo path, colors, footer contact details.
+- Team: invitations, active members, seat limits.
+- Grants: programs, rounds, applications, reviews, awards.
+- Webinars/events/community: webinars, registrations, Circle events.
+- Integrations: webhook events, integration events, audit logs.
+
+Database tests live in `supabase/tests/` and should be updated when migrations
+change behavior.
+
+## Dynamic Template Engine
+
+The template engine separates the template definition from each organization's
+answers.
+
+Important files:
+
+- `lib/template-renderer/schema.ts`
+- `lib/template-renderer/types.ts`
+- `lib/template-renderer/validation.ts`
+- `components/templates/DynamicTemplateEditor.tsx`
+- `components/templates/TemplateFields.tsx`
+- `components/templates/TemplateExportPanel.tsx`
+- `lib/template-renderer/pdf-export.ts`
+- `lib/template-renderer/docx-export.ts`
+
+Database concepts:
+
+- `template_definitions.field_schema` stores the schema.
+- `template_instances.form_data` stores answers.
+- Instances snapshot the schema version and brand state.
+- `template_exports` records generated files.
+- `template_export_downloads` records download events.
+
+### Board Calendar Template
+
+The Board Calendar & Operational Workflow template has additional client-side
+logic:
+
+- `components/templates/BoardCalendarWorkbench.tsx`
+- `lib/template-renderer/board-calendar-editor.ts`
+- `lib/template-renderer/calendar-view.ts`
+- `lib/template-renderer/calendar-time.ts`
+
+It maps a workbook-style template into calendar events and derived annual,
+monthly, operational, task, and AGM views.
+
+## Billing Architecture
+
+### Signup Checkout
+
+`app/api/stripe/checkout/route.ts` is intentionally public because it creates
+new users during signup. It:
+
+1. Validates plan/account payload.
+2. Creates or validates a Supabase Auth user.
+3. Prepares organization/workspace records.
+4. Creates a Stripe Checkout Session.
+5. Attaches the checkout session ID to the registration request.
+
+The browser never sends Stripe price IDs. Price IDs come from environment
+variables via `lib/stripe/server.ts`.
+
+### Stripe Webhook
+
+`app/api/stripe/webhook/route.ts` verifies the raw Stripe signature. It records
+each event once, handles replay safety, and syncs subscription state into
+Supabase.
+
+### Subscription Management
+
+`app/api/stripe/portal/route.ts` handles:
+
+- Billing portal sessions.
+- Payment method update flow.
+- Cancellation flow.
+- Pause/resume subscription.
+- Plan upgrades.
+- Paid seat add-ons.
+
+It uses `getBillingSummary()` for authentication and role checks.
+
+### Seat Counting
+
+`lib/team/seats.ts` defines remaining invite capacity. Reserved seats are active
+members plus pending invitations. Plan-included seats plus paid seat add-ons form
+the seat limit.
+
+## Email Architecture
+
+There are two email systems:
+
+1. Supabase Auth transactional emails through `supabase/functions/send-email`.
+2. Application lifecycle emails through `integration_events` and
+   `/api/email/process`.
+
+### Auth Email Hook
+
+Supabase invokes the `send-email` Edge Function for auth emails. The function
+uses Resend and validates `SEND_EMAIL_HOOK_SECRET`.
+
+### Application Email Worker
+
+Team invitation and lifecycle emails are queued in `integration_events`.
+Supabase Cron calls `/api/email/process` with `Authorization: Bearer
+<CRON_SECRET>`. The route claims one event transactionally and sends through
+Resend.
+
+### Resend Webhook
+
+`app/api/email/webhook/route.ts` validates `RESEND_WEBHOOK_SECRET` and records
+delivery events for observability.
+
+## Circle Integration
+
+Circle SSO and provisioning live under:
+
+- `app/api/circle-sso/route.ts`
+- `lib/circle/config.ts`
+- `lib/circle/sso.ts`
+- `lib/circle/provisioning.ts`
+- `app/api/circle/process/route.ts`
+
+Circle background processing is protected by `CRON_SECRET`.
+
+## Grants and Webinars
+
+Grants:
+
+- `app/grants/page.tsx`
+- `app/grants/actions.ts`
+- `lib/data/grants.ts`
+- `lib/grants/domain.ts`
+
+Webinars:
+
+- `app/webinars/page.tsx`
+- `lib/data/webinars.ts`
+
+Both rely on member context and plan-aware access rules.
+
+## Testing Architecture
+
+See [Testing](./TESTING.md) for commands and policies. At a high level:
+
+- Vitest covers domain logic and route helpers.
+- pgTAP covers database/RLS/security contracts.
+- Playwright covers public flows, protected flows, dynamic templates,
+  accessibility, and test-data isolation.
+- CI runs lint, typecheck, unit tests, build, DB reset/lint/tests, and browser
+  smoke tests.
+
+## Design Principles for New Code
+
+- Prefer Server Components for data loading.
+- Use client components only for browser APIs, local state, or event handlers.
+- Keep Supabase data access in `lib/data/*` where possible.
+- Use server actions for authenticated mutations tied to pages.
+- Use route handlers for external integrations and webhooks.
+- Do not trust client input; validate again server-side.
+- Keep Stripe operations idempotent.
+- Add migration plus database tests for schema/RLS changes.
+- Keep tests isolated and cleanup exact records by ID.

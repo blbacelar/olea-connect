@@ -90,6 +90,13 @@ test.describe("@critical dynamic template renderer", () => {
       .poll(() => new URL(page.url()).searchParams.get("session"))
       .not.toBe("new");
 
+    await page
+      .getByRole("button", { name: /Edit Board Meeting - Governance Committee/ })
+      .first()
+      .click();
+    await expect(page.getByRole("heading", { name: "Edit entry" })).toBeVisible();
+    await expect(page.getByLabel("Title")).toHaveValue("Governance Committee");
+
     await page.getByRole("button", { name: "Edit entry" }).last().click();
     await expect(page.getByLabel("Virtual link")).toHaveValue(
       "https://example.com/governance-committee",
@@ -105,7 +112,22 @@ test.describe("@critical dynamic template renderer", () => {
     await expect(page.getByText("7:00 PM").first()).toBeVisible();
 
     await page.getByRole("button", { name: "Edit entry" }).last().click();
-    await page.getByRole("button", { name: "Delete entry" }).click();
+    await page.getByRole("button", { name: "Delete entry" }).first().click();
+    await expect(
+      page.getByRole("dialog", { name: "Delete this calendar entry?" }),
+    ).toBeVisible();
+    await page
+      .getByRole("dialog", { name: "Delete this calendar entry?" })
+      .getByRole("button", { name: "Cancel", exact: true })
+      .click();
+    await expect(
+      page.getByText("Board Meeting - Governance and Nominating Committee").first(),
+    ).toBeVisible();
+    await page.getByRole("button", { name: "Delete entry" }).last().click();
+    await page
+      .getByRole("dialog", { name: "Delete this calendar entry?" })
+      .getByRole("button", { name: "Delete entry" })
+      .click();
     await expect(page.getByText("Nothing scheduled yet.")).toBeVisible();
   });
 

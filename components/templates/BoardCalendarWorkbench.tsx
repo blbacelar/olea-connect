@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import {
   CalendarDays,
   ChevronLeft,
@@ -171,6 +171,9 @@ export function BoardCalendarWorkbench({
   ).slice(0, 8);
   const selectedSection = sections.find((section) => section.id === workspaceMode);
   const selectedDateEvents = eventsByDate.get(selectedDateKey) ?? [];
+  const editingEvent = editingEventId
+    ? events.find((event) => event.id === editingEventId) ?? null
+    : null;
 
   function moveBackward() {
     setAnchorDate((current) => {
@@ -419,14 +422,14 @@ export function BoardCalendarWorkbench({
           {mode === "year" ? (
             <YearCalendar
               events={events}
-              todayKey={todayKey}
               year={year}
-              onSelectDate={selectDate}
+              onEditEvent={editCalendarEntry}
             />
           ) : mode === "week" ? (
             <WeekCalendar
               anchorDate={anchorDate}
               eventsByDate={eventsByDate}
+              onEditEvent={editCalendarEntry}
               onSelectDate={selectDate}
               selectedDateKey={selectedDateKey}
               todayKey={todayKey}
@@ -435,6 +438,7 @@ export function BoardCalendarWorkbench({
             <MonthCalendar
               eventsByDate={eventsByDate}
               monthIndex={monthIndex}
+              onEditEvent={editCalendarEntry}
               onSelectDate={selectDate}
               selectedDateKey={selectedDateKey}
               todayKey={todayKey}
@@ -481,6 +485,7 @@ export function BoardCalendarWorkbench({
             entryStatus={entryStatus}
             entryVirtualLink={entryVirtualLink}
             entryWeeksBefore={entryWeeksBefore}
+            editingEvent={editingEvent}
           />
         </>
       ) : selectedSection ? (
@@ -552,6 +557,7 @@ function MonthCalendar({
   selectedDateKey,
   todayKey,
   year,
+  onEditEvent,
   onSelectDate,
 }: {
   eventsByDate: Map<string, CalendarViewEvent[]>;
@@ -559,6 +565,7 @@ function MonthCalendar({
   selectedDateKey: string;
   todayKey: string;
   year: number;
+  onEditEvent: (event: CalendarViewEvent) => void;
   onSelectDate: (dateKey: string) => void;
 }) {
   const days = buildMonthGrid(year, monthIndex);
@@ -575,6 +582,7 @@ function MonthCalendar({
             events={eventsByDate.get(day.dateKey) ?? []}
             muted={!day.isCurrentMonth}
             selected={day.dateKey === selectedDateKey}
+            onEditEvent={onEditEvent}
             onSelect={() => onSelectDate(day.dateKey)}
           />
         ))}
@@ -588,12 +596,14 @@ function WeekCalendar({
   eventsByDate,
   selectedDateKey,
   todayKey,
+  onEditEvent,
   onSelectDate,
 }: {
   anchorDate: Date;
   eventsByDate: Map<string, CalendarViewEvent[]>;
   selectedDateKey: string;
   todayKey: string;
+  onEditEvent: (event: CalendarViewEvent) => void;
   onSelectDate: (dateKey: string) => void;
 }) {
   const weekDays = getWeekDays(anchorDate);
@@ -605,34 +615,44 @@ function WeekCalendar({
         const events = eventsByDate.get(dateKey) ?? [];
         const disabled = dateKey < todayKey;
         return (
-          <button
+          <div
             key={dateKey}
-            type="button"
-            disabled={disabled}
             aria-disabled={disabled}
             className={cn(
-              "rounded-xl border bg-white p-3 text-left transition hover:border-olea-green",
+              "rounded-xl border bg-white p-3 text-left transition",
               disabled &&
-                "cursor-not-allowed border-slate-200 bg-slate-100 text-slate-400 opacity-70 hover:border-slate-200",
+                "border-slate-200 bg-slate-100 text-slate-400 opacity-70",
               selectedDateKey === dateKey && "border-olea-green ring-2 ring-olea-green/20",
             )}
-            onClick={() => onSelectDate(dateKey)}
           >
-            <p className="text-xs font-semibold uppercase tracking-[0.08em] text-slate-400">
-              {weekdayNames[day.getDay()]}
-            </p>
-            <p className="mt-1 text-lg font-semibold text-slate-950">
-              {monthNames[day.getMonth()].slice(0, 3)} {day.getDate()}
-            </p>
-            {disabled ? (
-              <p className="mt-1 text-xs font-medium text-slate-400">
-                Past date
+            <button
+              type="button"
+              disabled={disabled}
+              className={cn(
+                "w-full rounded-lg text-left transition hover:text-olea-green disabled:cursor-not-allowed disabled:hover:text-inherit",
+              )}
+              onClick={() => onSelectDate(dateKey)}
+            >
+              <p className="text-xs font-semibold uppercase tracking-[0.08em] text-slate-400">
+                {weekdayNames[day.getDay()]}
               </p>
-            ) : null}
+              <p className="mt-1 text-lg font-semibold text-slate-950">
+                {monthNames[day.getMonth()].slice(0, 3)} {day.getDate()}
+              </p>
+              {disabled ? (
+                <p className="mt-1 text-xs font-medium text-slate-400">
+                  Past date
+                </p>
+              ) : null}
+            </button>
             <div className="mt-3 space-y-2">
               {events.length ? (
                 events.map((event) => (
-                  <CalendarEventPill key={event.id} event={event} />
+                  <CalendarEventPill
+                    key={event.id}
+                    event={event}
+                    onEditEvent={() => onEditEvent(event)}
+                  />
                 ))
               ) : (
                 <p className="rounded-lg bg-slate-50 px-3 py-2 text-xs text-slate-400">
@@ -640,7 +660,7 @@ function WeekCalendar({
                 </p>
               )}
             </div>
-          </button>
+          </div>
         );
       })}
     </div>
@@ -649,14 +669,12 @@ function WeekCalendar({
 
 function YearCalendar({
   events,
-  todayKey,
   year,
-  onSelectDate,
+  onEditEvent,
 }: {
   events: CalendarViewEvent[];
-  todayKey: string;
   year: number;
-  onSelectDate: (dateKey: string) => void;
+  onEditEvent: (event: CalendarViewEvent) => void;
 }) {
   return (
     <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
@@ -684,11 +702,7 @@ function YearCalendar({
                     key={event.id}
                     event={event}
                     compact
-                    onSelectDate={
-                      event.dateKey && event.dateKey >= todayKey
-                        ? () => onSelectDate(event.dateKey!)
-                        : undefined
-                    }
+                    onEditEvent={() => onEditEvent(event)}
                   />
                 ))
               ) : (
@@ -730,6 +744,7 @@ function DayCell({
   events,
   muted,
   selected,
+  onEditEvent,
   onSelect,
 }: {
   dayNumber: number;
@@ -737,23 +752,26 @@ function DayCell({
   events: CalendarViewEvent[];
   muted: boolean;
   selected: boolean;
+  onEditEvent: (event: CalendarViewEvent) => void;
   onSelect: () => void;
 }) {
   return (
-    <button
-      type="button"
-      disabled={disabled}
+    <div
       aria-disabled={disabled}
       className={cn(
-        "min-h-[150px] border-b border-r bg-white p-3 text-left transition hover:border-olea-green last:border-r-0",
+        "min-h-[150px] border-b border-r bg-white p-3 text-left transition last:border-r-0",
         muted && "bg-slate-50 text-slate-400",
         disabled &&
-          "cursor-not-allowed bg-slate-100 text-slate-400 opacity-70 hover:border-slate-200",
+          "bg-slate-100 text-slate-400 opacity-70",
         selected && "relative z-10 border-olea-green ring-2 ring-inset ring-olea-green",
       )}
-      onClick={onSelect}
     >
-      <div className="flex items-center justify-between gap-2">
+      <button
+        type="button"
+        disabled={disabled}
+        className="flex w-full items-center justify-between gap-2 rounded-lg text-left disabled:cursor-not-allowed"
+        onClick={onSelect}
+      >
         <span
           className={cn(
             "flex size-7 items-center justify-center rounded-full text-sm font-semibold",
@@ -776,13 +794,18 @@ function DayCell({
             +{events.length - 3}
           </span>
         ) : null}
-      </div>
+      </button>
       <div className="mt-3 space-y-1.5">
         {events.slice(0, 3).map((event) => (
-          <CalendarEventPill key={event.id} event={event} compact />
+          <CalendarEventPill
+            key={event.id}
+            event={event}
+            compact
+            onEditEvent={() => onEditEvent(event)}
+          />
         ))}
       </div>
-    </button>
+    </div>
   );
 }
 
@@ -802,6 +825,7 @@ function CalendarEntryComposer({
   entryType,
   entryVirtualLink,
   entryWeeksBefore,
+  editingEvent,
   selectedDateEvents,
   selectedDateKey,
   isSelectedDateInPast,
@@ -841,6 +865,7 @@ function CalendarEntryComposer({
   entryType: BoardCalendarEntryType;
   entryVirtualLink: string;
   entryWeeksBefore: string;
+  editingEvent: CalendarViewEvent | null;
   selectedDateEvents: CalendarViewEvent[];
   selectedDateKey: string;
   isSelectedDateInPast: boolean;
@@ -869,6 +894,15 @@ function CalendarEntryComposer({
   const isAnnualHighlight = entryType === "annual_highlight";
   const isStaffTask = entryType === "staff_task";
   const isAgmMilestone = entryType === "agm_milestone";
+  const [entryPendingDelete, setEntryPendingDelete] =
+    useState<CalendarViewEvent | null>(null);
+
+  function confirmDeleteEntry() {
+    if (!entryPendingDelete) return;
+
+    onDeleteEntry(entryPendingDelete.id);
+    setEntryPendingDelete(null);
+  }
 
   return (
     <div className="grid gap-5 rounded-xl border bg-slate-50 p-4 lg:grid-cols-[0.9fr_1.1fr]">
@@ -890,16 +924,28 @@ function CalendarEntryComposer({
                 )}
               >
                 <CalendarEventPill event={event} />
-                <Button
-                  type="button"
-                  size="sm"
-                  variant="ghost"
-                  className="mt-2 h-8 px-2 text-xs"
-                  onClick={() => onEditEvent(event)}
-                >
-                  <Pencil className="size-3.5" />
-                  Edit entry
-                </Button>
+                <div className="mt-2 flex flex-wrap gap-2">
+                  <Button
+                    type="button"
+                    size="sm"
+                    variant="ghost"
+                    className="h-8 px-2 text-xs"
+                    onClick={() => onEditEvent(event)}
+                  >
+                    <Pencil className="size-3.5" />
+                    Edit entry
+                  </Button>
+                  <Button
+                    type="button"
+                    size="sm"
+                    variant="ghost"
+                    className="h-8 px-2 text-xs text-red-700 hover:bg-red-50 hover:text-red-800"
+                    onClick={() => setEntryPendingDelete(event)}
+                  >
+                    <Trash2 className="size-3.5" />
+                    Delete entry
+                  </Button>
+                </div>
               </div>
             ))
           ) : (
@@ -1168,13 +1214,18 @@ function CalendarEntryComposer({
             type="button"
             className="ml-2 mt-4"
             variant="destructive"
-            onClick={() => onDeleteEntry(editingEventId)}
+            onClick={() => setEntryPendingDelete(editingEvent)}
           >
             <Trash2 className="size-4" />
             Delete entry
           </Button>
         ) : null}
       </div>
+      <DeleteEntryDialog
+        event={entryPendingDelete}
+        onCancel={() => setEntryPendingDelete(null)}
+        onConfirm={confirmDeleteEntry}
+      />
     </div>
   );
 }
@@ -1182,11 +1233,11 @@ function CalendarEntryComposer({
 function CalendarEventPill({
   event,
   compact = false,
-  onSelectDate,
+  onEditEvent,
 }: {
   event: CalendarViewEvent;
   compact?: boolean;
-  onSelectDate?: () => void;
+  onEditEvent?: () => void;
 }) {
   const content = (
     <>
@@ -1205,7 +1256,7 @@ function CalendarEventPill({
   const className = cn(
     "rounded-lg border px-2.5 py-2 text-xs leading-5 shadow-sm",
     compact ? "space-y-0.5" : "space-y-1",
-    onSelectDate && "w-full text-left transition hover:brightness-95",
+    onEditEvent && "w-full text-left transition hover:brightness-95",
   );
   const style = {
     backgroundColor: `${event.color}14`,
@@ -1213,9 +1264,15 @@ function CalendarEventPill({
     color: event.color,
   };
 
-  if (onSelectDate) {
+  if (onEditEvent) {
     return (
-      <button type="button" className={className} style={style} onClick={onSelectDate}>
+      <button
+        type="button"
+        aria-label={`Edit ${event.title}`}
+        className={className}
+        style={style}
+        onClick={onEditEvent}
+      >
         {content}
       </button>
     );
@@ -1224,6 +1281,75 @@ function CalendarEventPill({
   return (
     <div className={className} style={style}>
       {content}
+    </div>
+  );
+}
+
+function DeleteEntryDialog({
+  event,
+  onCancel,
+  onConfirm,
+}: {
+  event: CalendarViewEvent | null;
+  onCancel: () => void;
+  onConfirm: () => void;
+}) {
+  const cancelButtonRef = useRef<HTMLButtonElement>(null);
+
+  useEffect(() => {
+    if (!event) return;
+
+    cancelButtonRef.current?.focus();
+
+    function handleKeyDown(keyboardEvent: KeyboardEvent) {
+      if (keyboardEvent.key === "Escape") onCancel();
+    }
+
+    document.addEventListener("keydown", handleKeyDown);
+    return () => document.removeEventListener("keydown", handleKeyDown);
+  }, [event, onCancel]);
+
+  if (!event) return null;
+
+  return (
+    <div
+      aria-labelledby="delete-calendar-entry-title"
+      aria-modal="true"
+      className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/50 p-4"
+      role="dialog"
+    >
+      <div className="w-full max-w-md rounded-2xl bg-white p-6 shadow-2xl">
+        <div className="flex items-start gap-3">
+          <div className="rounded-full bg-red-50 p-2 text-red-700">
+            <Trash2 className="size-5" />
+          </div>
+          <div>
+            <h3
+              id="delete-calendar-entry-title"
+              className="text-lg font-semibold text-slate-950"
+            >
+              Delete this calendar entry?
+            </h3>
+            <p className="mt-2 text-sm leading-6 text-slate-600">
+              This will remove “{event.title}” from this workbook calendar. This
+              action cannot be undone.
+            </p>
+          </div>
+        </div>
+        <div className="mt-6 flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
+          <Button
+            ref={cancelButtonRef}
+            type="button"
+            variant="outline"
+            onClick={onCancel}
+          >
+            Cancel
+          </Button>
+          <Button type="button" variant="destructive" onClick={onConfirm}>
+            Delete entry
+          </Button>
+        </div>
+      </div>
     </div>
   );
 }

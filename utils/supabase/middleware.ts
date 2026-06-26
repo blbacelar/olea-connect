@@ -1,6 +1,32 @@
 import { createServerClient } from "@supabase/ssr";
 import { type NextRequest, NextResponse } from "next/server";
 
+const publicPagePaths = new Set([
+  "/",
+  "/login",
+  "/reset-password",
+  "/update-password",
+  "/verify-email",
+]);
+
+const publicPathPrefixes = [
+  "/auth",
+  "/signup",
+  "/api/email",
+  "/api/stripe",
+];
+
+function isPathOrChild(pathname: string, prefix: string) {
+  return pathname === prefix || pathname.startsWith(`${prefix}/`);
+}
+
+function isPublicPath(pathname: string) {
+  return (
+    publicPagePaths.has(pathname) ||
+    publicPathPrefixes.some((prefix) => isPathOrChild(pathname, prefix))
+  );
+}
+
 export async function updateSession(request: NextRequest) {
   let response = NextResponse.next({ request });
 
@@ -32,16 +58,7 @@ export async function updateSession(request: NextRequest) {
   } = await supabase.auth.getUser();
 
   const pathname = request.nextUrl.pathname;
-  const publicPath =
-    pathname === "/" ||
-    pathname.startsWith("/login") ||
-    pathname.startsWith("/signup") ||
-    pathname.startsWith("/verify-email") ||
-    pathname.startsWith("/reset-password") ||
-    pathname.startsWith("/update-password") ||
-    pathname.startsWith("/auth/") ||
-    pathname.startsWith("/api/stripe/") ||
-    pathname.startsWith("/api/email/");
+  const publicPath = isPublicPath(pathname);
   const billingRecoveryPath = pathname.startsWith("/subscription");
 
   if (!user && !publicPath) {

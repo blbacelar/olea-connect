@@ -22,6 +22,7 @@ test.describe("@critical @member core member journeys", () => {
       seedlingMember.password,
       baseURL,
     );
+    await page.context().clearCookies();
     await page.context().addCookies(seedlingStorage.cookies);
 
     await page.addInitScript(
@@ -89,6 +90,7 @@ test.describe("@critical @member core member journeys", () => {
       rootsMember.password,
       baseURL,
     );
+    await page.context().clearCookies();
     await page.context().addCookies(rootsStorage.cookies);
 
     await page.goto("/onboarding/template-selection");

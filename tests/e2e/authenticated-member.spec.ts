@@ -29,7 +29,7 @@ test.describe("@critical @member authenticated access", () => {
   }) => {
     await page.goto("/dashboard");
     await expect(
-      page.getByText(authenticatedMember.organizationName).first(),
+      page.getByRole("main").getByText(authenticatedMember.organizationName),
     ).toBeVisible();
     await expect(
       page.getByRole("heading", { name: "Board Self-Evaluation" }),
@@ -71,6 +71,7 @@ test.describe("@critical @member authenticated access", () => {
       seedlingMember.password,
       baseURL,
     );
+    await page.context().clearCookies();
     await page.context().addCookies(storage.cookies);
 
     await page.goto("/templates");

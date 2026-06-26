@@ -9,7 +9,11 @@ export function Logo({
   href?: string;
 }) {
   return (
-    <Link href={href} className="inline-flex items-center gap-3">
+    <Link
+      href={href}
+      aria-label="Olea Connects dashboard"
+      className="inline-flex items-center gap-3"
+    >
       <Image
         src="/olea-tree.png"
         alt=""
