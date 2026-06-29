@@ -77,6 +77,13 @@ test.describe("@critical @member authenticated access", () => {
         name: "Governance Best Practices for Small Nonprofits",
       }),
     ).toBeVisible();
+
+    await page.goto("/community");
+    await expect(
+      page.getByRole("heading", { name: "Community" }),
+    ).toBeVisible();
+    await expect(page.getByText("Native Olea community")).toBeVisible();
+    await expect(page.getByText("# General")).toBeVisible();
   });
 
   test("locked template upgrade CTA opens subscription management", async ({

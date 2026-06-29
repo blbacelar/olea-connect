@@ -1,7 +1,7 @@
 # Operations Runbook
 
 This guide covers local setup, environment variables, Supabase, Stripe, Resend,
-Circle, Vercel, deployment, and common troubleshooting.
+native community, Vercel, deployment, and common troubleshooting.
 
 ## Local Development
 
@@ -82,7 +82,7 @@ CRON_SECRET
 Outside production, set `EMAIL_ENVIRONMENT` to a non-production value and set
 `EMAIL_TEST_RECIPIENT`. This prevents accidental delivery to real users.
 
-### Circle
+### Native Community and Deferred Circle
 
 ```text
 CIRCLE_COMMUNITY_URL
@@ -99,8 +99,14 @@ CIRCLE_SPACE_GROUP_CANOPY_IDS
 CIRCLE_SPACE_GROUP_HARVEST_IDS
 ```
 
-Circle values can be left blank in environments where community provisioning is
-not being tested, but Circle routes will fail if required values are missing.
+Native community is the MVP path and does not require Circle environment
+variables. Default communities and spaces are seeded by migration. Community
+events can store manual Zoom URLs in `community_events.zoom_url`.
+
+Circle values can be left blank in environments where deferred Circle
+provisioning is not being tested. Circle routes will fail if required values are
+missing, and should not be configured as the member-facing community path unless
+the product later decides to pay for the required Circle SSO tier.
 
 ### Automated Test Data
 
@@ -192,6 +198,7 @@ Recommended jobs:
 - Circle provisioning processor:
   - URL: `https://<domain>/api/circle/process`
   - Same auth header.
+  - Deferred while native community is the MVP path.
 
 - Provisioning reconciliation:
   - URL: `https://<domain>/api/provisioning/reconcile`

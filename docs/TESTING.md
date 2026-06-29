@@ -20,8 +20,8 @@ npm run test:unit
 ```
 
 Unit tests cover domain logic, route helper logic, email rendering, template
-renderer functions, Stripe subscription mapping, Circle SSO/provisioning, grants
-logic, team seats, and utility functions.
+renderer functions, Stripe subscription mapping, deferred Circle
+SSO/provisioning helpers, grants logic, team seats, and utility functions.
 
 ### Database Tests
 

@@ -19,10 +19,10 @@ The platform also includes:
 - Brand setup and reusable organization identity.
 - Dynamic template sessions with saved workbooks.
 - Board Calendar & Operational Workflow editor.
-- Grants, webinars, and community entry points.
+- Grants, webinars, and native community entry points.
 - Team seats and invitations.
 - Transactional email, webhooks, and background workers.
-- Circle SSO and provisioning integration scaffolding.
+- Native community foundation with deferred Circle SSO/provisioning scaffolding.
 
 ## Business Context
 
@@ -186,9 +186,9 @@ For human developers, mirror the same idea:
 - Hosted Supabase Auth rate limits can affect full E2E runs.
 - Production deployment strategy is unusual because the demo branch may be the
   production Vercel branch while `main` continues production development.
-- Circle, Attio, and Klaviyo-style automations are partially represented; Circle
-  has code-level integration, but operational credentials and behavior must be
-  verified per environment.
+- Circle SSO/provisioning code exists as deferred scaffolding, but native
+  community is the MVP path to avoid Circle SSO cost. Operational credentials,
+  Supabase Cron jobs, and sandbox behavior must be verified per environment.
 - Language localization has a GitHub ticket but is not implemented yet.
 
 ## Where to Look First
@@ -198,6 +198,8 @@ For human developers, mirror the same idea:
 - Member session: `lib/data/member-context.ts`.
 - Billing: `app/api/stripe/*`, `lib/stripe/*`, `lib/billing/server.ts`.
 - Team: `app/team/*`, `lib/data/team.ts`, `lib/team/seats.ts`.
+- Community: `app/community/page.tsx`, `lib/data/community.ts`,
+  `supabase/migrations/*native_community_foundation.sql`.
 - Templates: `lib/data/templates.ts`, `components/templates/*`,
   `lib/template-renderer/*`.
 - Board Calendar: `components/templates/BoardCalendarWorkbench.tsx`,

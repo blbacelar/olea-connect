@@ -13,7 +13,8 @@ Browser
   -> Supabase Auth + Postgres + Storage
   -> Stripe API and webhooks
   -> Resend API and webhooks
-  -> Circle API / SSO
+  -> Native community tables
+  -> Deferred Circle API / SSO scaffolding
 ```
 
 ## Next.js Layers
@@ -27,7 +28,7 @@ Browser
 - Member routes: `/dashboard`, `/templates`, `/team`, `/subscription`,
   `/settings/brand`, `/grants`, `/webinars`, `/community`, `/help`,
   `/whats-new`.
-- API routes: Stripe, email, Circle, and provisioning workers.
+- API routes: Stripe, email, deferred Circle, and provisioning workers.
 
 ### App Shell
 
@@ -128,7 +129,8 @@ Core domains:
 - Brand: logo path, colors, footer contact details.
 - Team: invitations, active members, seat limits.
 - Grants: programs, rounds, applications, reviews, awards.
-- Webinars/events/community: webinars, registrations, Circle events.
+- Webinars/events/community: webinars, registrations, native community spaces,
+  posts, comments, reactions, managers, and Zoom-linked community events.
 - Integrations: webhook events, integration events, audit logs.
 
 Database tests live in `supabase/tests/` and should be updated when migrations
@@ -261,17 +263,30 @@ Resend.
 `app/api/email/webhook/route.ts` validates `RESEND_WEBHOOK_SECRET` and records
 delivery events for observability.
 
-## Circle Integration
+## Native Community
 
-Circle SSO and provisioning live under:
+Native community is the default MVP path because paid Circle SSO would add cost
+and an external dependency to a core member experience. The foundation lives in:
 
-- `app/api/circle-sso/route.ts`
-- `lib/circle/config.ts`
-- `lib/circle/sso.ts`
-- `lib/circle/provisioning.ts`
-- `app/api/circle/process/route.ts`
+- `app/community/page.tsx`
+- `lib/data/community.ts`
+- `public.communities`
+- `public.community_spaces`
+- `public.community_space_access_rules`
+- `public.community_managers`
+- `public.community_posts`
+- `public.community_comments`
+- `public.community_reactions`
+- `public.community_events`
 
-Circle background processing is protected by `CRON_SECRET`.
+The initial community and starter spaces are seeded by migration. Community
+creation and manager assignment are script/migration-driven for MVP; a future
+`/admin` portal can manage these tables directly. Live calls use manually
+attached Zoom URLs for now.
+
+Circle SSO/provisioning code remains deferred scaffolding under `lib/circle/*`
+and `app/api/circle*` in case the product later justifies the higher Circle
+plan.
 
 ## Grants and Webinars
 
