@@ -1,4 +1,8 @@
 import { expect, test } from "../fixtures/authenticated.fixture";
+import {
+  BoardCalendarPage,
+  getFutureDateKey,
+} from "../pages/board-calendar.page";
 
 test.describe("@critical dynamic template renderer", () => {
   test("renders board self-evaluation from a database definition and blocks invalid completion", async ({
@@ -24,110 +28,45 @@ test.describe("@critical dynamic template renderer", () => {
     ).toBeVisible();
   });
 
-  test("creates, edits, and deletes a board calendar entry from a new workbook", async ({
+  test("creates a board calendar workbook and starts a separate blank workbook", async ({
     page,
   }) => {
-    const futureDate = getFutureDateKey(14);
+    const boardCalendar = new BoardCalendarPage(page);
+    const futureDate = getFutureDateKey(1);
 
-    await page.goto("/templates/board-calendar-operational-workflow?session=new");
+    await boardCalendar.openNewWorkbook();
 
-    await expect(
-      page.getByRole("heading", { name: "Board Calendar & Operational Workflow" }),
-    ).toBeVisible();
-    await page
-      .getByLabel("Workbook name")
-      .fill("2026 Board Calendar - Test workbook");
-    await page.getByLabel("Entry date").fill("2026-01-14");
-    await page.getByLabel("Title").fill("Finance Committee");
-    await expect(page.getByRole("button", { name: "Add to calendar" })).toBeDisabled();
-    await expect(
-      page.getByText("Choose today or a future date to add a new entry."),
-    ).toBeVisible();
-    await page.getByRole("button", { name: /^January 2026$/ }).click();
-    await expect(page.getByRole("button", { name: /14 Past/ })).toBeDisabled();
-    await page.getByLabel("Entry date").fill(futureDate);
-    await page.getByLabel("Time").fill("18:30");
-    await page.getByLabel("Location / platform").fill("Boardroom");
-    await page
-      .getByLabel("Virtual link")
-      .fill("https://example.com/finance-committee");
-    await page.getByLabel("Lead contact").fill("Treasurer");
-    await page.getByLabel("Confirmed?").click();
-    await page.getByRole("option", { name: "Yes" }).click();
-    await page.getByLabel("Notes").fill("Review quarterly budget.");
-    await page.getByRole("button", { name: "Add to calendar" }).click();
+    await boardCalendar.nameWorkbook("2026 Board Calendar - Test workbook");
+    await boardCalendar.saveNowAndWaitForPost();
+    await boardCalendar.expectSessionPersisted();
+    await boardCalendar.waitForSaved();
+    await boardCalendar.expectWorkspaceViewOptionHidden("Colour key");
+    await expect(page.getByLabel("Calendar color", { exact: true })).toBeVisible();
+    await expect(page.getByLabel("Calendar color hex code")).toHaveValue("#1A6B6B");
+    await boardCalendar.selectCalendarDate(futureDate);
+    await boardCalendar.addMeeting({
+      title: "Finance Committee",
+      color: "#2563eb",
+      time: "18:30",
+      location: "Boardroom",
+      virtualLink: "https://example.com/finance-committee",
+      leadContact: "Treasurer",
+      confirmed: "Yes",
+      notes: "Review quarterly budget.",
+    });
 
-    await expect(page.getByText("Board Meeting - Finance Committee").first()).toBeVisible();
-    await expect(page.getByText(futureDate).first()).toBeVisible();
-    await expect(page.getByText("6:30 PM").first()).toBeVisible();
-    await expect(page.getByText("Boardroom").first()).toBeVisible();
-    await expect(page.getByText("Unsaved changes")).toBeVisible();
-    await expect(page.getByText(/^Saved$/)).toBeVisible({ timeout: 10_000 });
-    await expect
-      .poll(() => new URL(page.url()).searchParams.get("session"))
-      .not.toBe("new");
+    await boardCalendar.expectSelectedDateText("Board Meeting - Finance Committee");
+    await boardCalendar.expectSelectedDateText(futureDate);
+    await boardCalendar.expectSelectedDateText("6:30 PM");
+    await boardCalendar.expectSelectedDateText("Boardroom");
+    await boardCalendar.saveNowAndWaitForPost();
+    await boardCalendar.waitForSaved();
 
-    await page.getByRole("link", { name: "Start new" }).click();
-    await expect
-      .poll(() => new URL(page.url()).searchParams.get("session"))
-      .toBe("new");
+    await boardCalendar.startNewWorkbook();
     await expect(page.getByLabel("Title")).toHaveValue("");
-    await page
-      .getByLabel("Workbook name")
-      .fill("2027 Board Calendar - Test workbook");
-    await page.getByLabel("Title").fill("Governance Committee");
-    await page.getByLabel("Time").fill("17:00");
-    await page.getByLabel("Location / platform").fill("Zoom");
-    await page
-      .getByLabel("Virtual link")
-      .fill("https://example.com/governance-committee");
-    await page.getByLabel("Lead contact").fill("Governance Chair");
-    await page.getByRole("button", { name: "Add to calendar" }).click();
-    await expect(page.getByText("Board Meeting - Governance Committee").first()).toBeVisible();
-    await expect(page.getByText("Unsaved changes")).toBeVisible();
-    await expect(page.getByText(/^Saved$/)).toBeVisible({ timeout: 10_000 });
-    await expect
-      .poll(() => new URL(page.url()).searchParams.get("session"))
-      .not.toBe("new");
-
-    await page
-      .getByRole("button", { name: /Edit Board Meeting - Governance Committee/ })
-      .first()
-      .click();
-    await expect(page.getByRole("heading", { name: "Edit entry" })).toBeVisible();
-    await expect(page.getByLabel("Title")).toHaveValue("Governance Committee");
-
-    await page.getByRole("button", { name: "Edit entry" }).last().click();
-    await expect(page.getByLabel("Virtual link")).toHaveValue(
-      "https://example.com/governance-committee",
-    );
-    await expect(page.getByLabel("Lead contact")).toHaveValue("Governance Chair");
-    await page.getByLabel("Title").fill("Governance and Nominating Committee");
-    await page.getByLabel("Time").fill("19:00");
-    await page.getByRole("button", { name: "Update entry" }).click();
-
     await expect(
-      page.getByText("Board Meeting - Governance and Nominating Committee").first(),
-    ).toBeVisible();
-    await expect(page.getByText("7:00 PM").first()).toBeVisible();
-
-    await page.getByRole("button", { name: "Edit entry" }).last().click();
-    await page.getByRole("button", { name: "Delete entry" }).first().click();
-    await expect(
-      page.getByRole("dialog", { name: "Delete this calendar entry?" }),
-    ).toBeVisible();
-    await page
-      .getByRole("dialog", { name: "Delete this calendar entry?" })
-      .getByRole("button", { name: "Cancel", exact: true })
-      .click();
-    await expect(
-      page.getByText("Board Meeting - Governance and Nominating Committee").first(),
-    ).toBeVisible();
-    await page.getByRole("button", { name: "Delete entry" }).last().click();
-    await page
-      .getByRole("dialog", { name: "Delete this calendar entry?" })
-      .getByRole("button", { name: "Delete entry" })
-      .click();
+      page.getByText("Board Meeting - Finance Committee"),
+    ).toHaveCount(0);
     await expect(page.getByText("Nothing scheduled yet.")).toBeVisible();
   });
 
@@ -206,12 +145,3 @@ test.describe("@critical dynamic template renderer", () => {
     );
   });
 });
-
-function getFutureDateKey(daysFromNow: number) {
-  const date = new Date();
-  date.setDate(date.getDate() + daysFromNow);
-  const year = date.getFullYear();
-  const month = String(date.getMonth() + 1).padStart(2, "0");
-  const day = String(date.getDate()).padStart(2, "0");
-  return `${year}-${month}-${day}`;
-}

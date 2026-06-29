@@ -26,6 +26,7 @@ export function useDynamicTemplateSession({
   onSaved?: (
     saved: DynamicTemplateSession,
     previousSession: DynamicTemplateSession,
+    hasNewerLocalEdits: boolean,
   ) => void;
   saveSession: (payload: TemplateSavePayload) => Promise<DynamicTemplateSession>;
 }) {
@@ -35,8 +36,10 @@ export function useDynamicTemplateSession({
   const [isCompleting, startCompleteTransition] = useTransition();
   const didMount = useRef(false);
   const editVersion = useRef(0);
+  const sessionRef = useRef(initialSession);
   const initialSessionKey = `${initialSession.id || "new"}:${initialSession.resourceId}:${initialSession.lastSavedAt}`;
   const previousInitialSessionKey = useRef(initialSessionKey);
+  sessionRef.current = session;
 
   const validationErrors = useMemo(
     () => validateTemplateData(session.schemaSnapshot, session.formData),
@@ -50,16 +53,47 @@ export function useDynamicTemplateSession({
   useEffect(() => {
     if (previousInitialSessionKey.current === initialSessionKey) return;
     previousInitialSessionKey.current = initialSessionKey;
+    const currentSession = sessionRef.current;
+    const isSameSavedSession =
+      Boolean(currentSession.id) && currentSession.id === initialSession.id;
+    const isSameDraftSession =
+      !currentSession.id &&
+      !initialSession.id &&
+      currentSession.resourceId === initialSession.resourceId;
+
+    if ((isSameSavedSession || isSameDraftSession) && saveState !== "saved") {
+      return;
+    }
+
+    sessionRef.current = initialSession;
     setSession(initialSession);
     setSaveError("");
     setSaveState("saved");
-  }, [initialSession, initialSessionKey]);
+  }, [initialSession, initialSessionKey, saveState]);
 
   const updateValue = (path: FieldPath, value: TemplateValue) => {
     editVersion.current += 1;
     setSession((current) => {
       const formData = setValue(current.formData, path, value);
 
+      return {
+        ...current,
+        completionPercent: calculateCompletionPercent(
+          current.schemaSnapshot,
+          formData,
+        ),
+        formData,
+      };
+    });
+    setSaveState("unsaved");
+  };
+
+  const updateData = (
+    updater: (currentData: TemplateFormData) => TemplateFormData,
+  ) => {
+    editVersion.current += 1;
+    setSession((current) => {
+      const formData = updater(current.formData);
       return {
         ...current,
         completionPercent: calculateCompletionPercent(
@@ -82,7 +116,7 @@ export function useDynamicTemplateSession({
   };
 
   const persist = async (status: "draft" | "completed" = "draft") => {
-    const sessionSnapshot = session;
+    const sessionSnapshot = sessionRef.current;
     const savedEditVersion = editVersion.current;
     const payload = toSavePayload({
       ...sessionSnapshot,
@@ -104,7 +138,7 @@ export function useDynamicTemplateSession({
       setSession((current) =>
         mergeSavedSession(current, saved, hasNewerLocalEdits),
       );
-      onSaved?.(saved, sessionSnapshot);
+      onSaved?.(saved, sessionSnapshot, hasNewerLocalEdits);
       setSaveError("");
       setSaveState(hasNewerLocalEdits ? "unsaved" : "saved");
       return saved;
@@ -148,6 +182,7 @@ export function useDynamicTemplateSession({
     session,
     updateTitle,
     updateValue,
+    updateData,
     saveState,
     saveError,
     validationErrors,

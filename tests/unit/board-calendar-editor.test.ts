@@ -6,7 +6,9 @@ import {
   deleteBoardCalendarEntry,
   getBoardCalendarEntryInput,
   updateBoardCalendarEntry,
+  upsertBoardCalendarCategoryColor,
 } from "@/lib/template-renderer/board-calendar-editor";
+import { buildCalendarEvents } from "@/lib/template-renderer/calendar-view";
 import type { TemplateFormData } from "@/lib/template-renderer/types";
 
 describe("board calendar editor helpers", () => {
@@ -48,6 +50,48 @@ describe("board calendar editor helpers", () => {
         lead_contact: "Administrator",
         notes: "Budget package review",
         confirmed: "TBC",
+      },
+    ]);
+  });
+
+  it("keeps duplicate same-date and same-time meetings as separate calendar events", () => {
+    const firstMutation = appendBoardCalendarEntry(
+      {},
+      {
+        type: "meeting",
+        dateKey: "2026-06-27",
+        title: "Board Budget Review",
+        category: "Board Meeting",
+        time: "13:30",
+        location: "Boardroom A",
+      },
+    );
+    const secondMutation = appendBoardCalendarEntry(
+      { meetings: firstMutation.value },
+      {
+        type: "meeting",
+        dateKey: "2026-06-27",
+        title: "Parallel Finance Committee",
+        category: "Committee Meeting",
+        time: "13:30",
+        location: "Zoom",
+      },
+    );
+
+    const events = buildCalendarEvents({
+      meetings: secondMutation.value,
+    });
+
+    expect(events).toMatchObject([
+      {
+        title: "Committee Meeting - Parallel Finance Committee",
+        dateKey: "2026-06-27",
+        time: "1:30 PM",
+      },
+      {
+        title: "Board Meeting - Board Budget Review",
+        dateKey: "2026-06-27",
+        time: "1:30 PM",
       },
     ]);
   });
@@ -219,6 +263,56 @@ describe("board calendar editor helpers", () => {
         },
       ],
     });
+  });
+
+  it("adds and updates category colors from the calendar entry form", () => {
+    const added = upsertBoardCalendarCategoryColor(
+      {},
+      "Board Meeting",
+      "#2563eb",
+    );
+
+    expect(added).toEqual({
+      path: ["event_categories"],
+      value: [
+        {
+          category: "Board Meeting",
+          hex_code: "#2563EB",
+          used_for: "Set from calendar entry form",
+        },
+      ],
+    });
+
+    const updated = upsertBoardCalendarCategoryColor(
+      {
+        event_categories: [
+          {
+            category: "Board Meeting",
+            hex_code: "#2563EB",
+            used_for: "Full board meetings",
+          },
+        ],
+      },
+      "Board Meeting",
+      "#0f766e",
+    );
+
+    expect(updated).toEqual({
+      path: ["event_categories"],
+      value: [
+        {
+          category: "Board Meeting",
+          hex_code: "#0F766E",
+          used_for: "Full board meetings",
+        },
+      ],
+    });
+  });
+
+  it("ignores invalid category color updates", () => {
+    expect(
+      upsertBoardCalendarCategoryColor({}, "Board Meeting", "not-a-color"),
+    ).toBeNull();
   });
 
   it("reads and updates all staff task fields", () => {

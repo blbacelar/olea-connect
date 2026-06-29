@@ -72,8 +72,18 @@ calendar-backed workbook:
 - Past dates are displayed as disabled for new entries.
 - Clicking an existing event opens edit mode.
 - Deleting an entry requires a custom confirmation dialog.
+- Event/category colors are managed inline while adding or editing an entry.
+  The separate `colour_key` template data still exists as the backing store,
+  but users should not have to manage it as a separate workbook tab.
 - Monthly, annual, and operational views are generated from the same normalized
   event data.
+- Rapid CRUD is protected by the dynamic-template session hook. It applies
+  calendar mutations against the latest parent form data and avoids replacing
+  local unsaved changes with refreshed server props for the same workbook.
+- E2E coverage for this workflow lives in
+  `tests/e2e/board-calendar-workflow.spec.ts` and covers validation, create,
+  duplicate same-date/same-time events, edit, delete confirmation, ordering,
+  and reload persistence.
 
 ### Team Seats
 

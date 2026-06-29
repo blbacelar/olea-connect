@@ -29,11 +29,15 @@ export const weekdayNames = [
   "Saturday",
 ] as const;
 
-const fallbackCategoryColors: Record<string, string> = {
+export const boardCalendarCategoryColorDefaults: Record<string, string> = {
   "Board Meeting": "#1A6B6B",
   "Committee Meeting": "#4A3580",
   "AGM / Annual Meeting": "#C47D00",
   "Key Deadline": "#C0392B",
+  Governance: "#0F766E",
+  Event: "#7C3AED",
+  Finance: "#2563EB",
+  Compliance: "#B45309",
   "Other / General": "#5F5E5A",
   Complete: "#3F8054",
   "In Progress": "#C47D00",
@@ -137,7 +141,7 @@ export function getTemplateMonthIndex(data: TemplateFormData) {
 
 export function buildCategoryColors(data: TemplateFormData) {
   const categoryColors = new Map<string, string>(
-    Object.entries(fallbackCategoryColors),
+    Object.entries(boardCalendarCategoryColorDefaults),
   );
 
   getRecordArray(data, "event_categories").forEach((record) => {
@@ -157,8 +161,8 @@ function colorForCategory(
 ) {
   return (
     categoryColors.get(category) ??
-    fallbackCategoryColors[category] ??
-    fallbackCategoryColors["Other / General"]
+    boardCalendarCategoryColorDefaults[category] ??
+    boardCalendarCategoryColorDefaults["Other / General"]
   );
 }
 

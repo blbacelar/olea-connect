@@ -57,6 +57,7 @@ export function DynamicTemplateEditor({
     session,
     updateTitle,
     updateValue,
+    updateData,
     saveState,
     saveError,
     validationErrors,
@@ -68,9 +69,9 @@ export function DynamicTemplateEditor({
     initialSession: data.session,
     onSaved: (saved, previousSession) => {
       if (!previousSession.id && saved.id) {
-        router.replace(`/templates/${data.template.slug}?session=${saved.id}`, {
-          scroll: false,
-        });
+        const savedSessionUrl = `/templates/${data.template.slug}?session=${saved.id}`;
+
+        window.history.replaceState(null, "", savedSessionUrl);
       }
     },
     saveSession,
@@ -88,6 +89,18 @@ export function DynamicTemplateEditor({
   const defaultTabValue = calendarEnabled
     ? "calendar"
     : session.schemaSnapshot.sections[0]?.id;
+  const savedSessionOptions =
+    session.id && !data.sessions.some((savedSession) => savedSession.id === session.id)
+      ? [
+          {
+            id: session.id,
+            title: session.title,
+            status: session.status,
+            updatedAt: session.lastSavedAt,
+          },
+          ...data.sessions,
+        ]
+      : data.sessions;
 
   return (
     <div className="space-y-6">
@@ -147,7 +160,7 @@ export function DynamicTemplateEditor({
                 {!session.id ? (
                   <SelectItem value="new">Unsaved new workbook</SelectItem>
                 ) : null}
-                {data.sessions.map((savedSession) => (
+                {savedSessionOptions.map((savedSession) => (
                   <SelectItem key={savedSession.id} value={savedSession.id}>
                     {savedSession.title}
                   </SelectItem>
@@ -235,6 +248,7 @@ export function DynamicTemplateEditor({
             organizationName={session.brandingSnapshot.organizationName}
             sections={session.schemaSnapshot.sections}
             onChange={updateValue}
+            onDataChange={updateData}
           />
         ) : renderSectionsAsTabs ? (
           <Tabs

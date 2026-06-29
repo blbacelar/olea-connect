@@ -12,17 +12,17 @@ export function Logo({
     <Link
       href={href}
       aria-label="Olea Connects dashboard"
-      className="inline-flex items-center gap-3"
+      className="inline-flex shrink-0 items-center gap-3"
     >
       <Image
         src="/olea-tree.png"
         alt=""
         width={34}
         height={34}
-        className="size-[34px] object-contain"
+        className="size-[34px] shrink-0 object-contain"
         priority
       />
-      <span className={compact ? "hidden sm:block" : undefined}>
+      <span className={compact ? "sr-only" : undefined}>
         <span className="block text-[15px] font-bold leading-tight text-olea-ink">
           Olea Connects
         </span>

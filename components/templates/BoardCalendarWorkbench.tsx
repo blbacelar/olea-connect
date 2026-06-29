@@ -31,10 +31,13 @@ import {
   getBoardCalendarEntryInput,
   type BoardCalendarEntryType,
   updateBoardCalendarEntry,
+  upsertBoardCalendarCategoryColor,
 } from "@/lib/template-renderer/board-calendar-editor";
 import {
   addDays,
+  boardCalendarCategoryColorDefaults,
   buildCalendarEvents,
+  buildCategoryColors,
   buildMonthGrid,
   getTemplateMonthIndex,
   getTemplateYear,
@@ -51,6 +54,7 @@ import type {
   TemplateSection,
   TemplateValue,
 } from "@/lib/template-renderer/types";
+import { setValue } from "@/lib/template-renderer/schema";
 import { cn } from "@/lib/utils";
 
 import { TemplateFields } from "./TemplateFields";
@@ -65,8 +69,7 @@ type WorkspaceMode =
   | "annual_calendar"
   | "monthly_calendar"
   | "staff_tasks"
-  | "agm_timeline"
-  | "colour_key";
+  | "agm_timeline";
 
 const viewOptions: Array<{ label: string; value: CalendarMode }> = [
   { label: "Month", value: "month" },
@@ -84,7 +87,6 @@ const workspaceOptions: Array<{ label: string; value: WorkspaceMode }> = [
   { label: "Monthly calendar", value: "monthly_calendar" },
   { label: "Governance task list", value: "staff_tasks" },
   { label: "AGM planning timeline", value: "agm_timeline" },
-  { label: "Colour key", value: "colour_key" },
 ];
 
 const entryTypes: Array<{
@@ -108,6 +110,27 @@ const entryTypes: Array<{
 
 const confirmedOptions = ["Yes", "TBC", "No"];
 const statusOptions = ["Not Started", "In Progress", "Complete"];
+const meetingCategoryOptions = [
+  "Board Meeting",
+  "Committee Meeting",
+  "AGM / Annual Meeting",
+  "Key Deadline",
+  "Other / General",
+];
+const annualHighlightCategoryOptions = [
+  "Key Deadline",
+  "Board Meeting",
+  "Committee Meeting",
+  "AGM / Annual Meeting",
+  "Other / General",
+];
+const agmTrackOptions = [
+  "Governance",
+  "Event",
+  "Finance",
+  "Compliance",
+  "Other / General",
+];
 
 export function BoardCalendarWorkbench({
   data,
@@ -115,14 +138,19 @@ export function BoardCalendarWorkbench({
   organizationName,
   sections,
   onChange,
+  onDataChange,
 }: {
   data: TemplateFormData;
   errorsByPath: Map<string, string>;
   organizationName: string;
   sections: TemplateSection[];
   onChange: (path: FieldPath, value: TemplateValue) => void;
+  onDataChange: (
+    updater: (currentData: TemplateFormData) => TemplateFormData,
+  ) => void;
 }) {
   const events = useMemo(() => buildCalendarEvents(data), [data]);
+  const categoryColors = useMemo(() => buildCategoryColors(data), [data]);
   const eventsByDate = useMemo(() => groupEventsByDate(events), [events]);
   const configuredYear = getTemplateYear(data);
   const configuredMonth = getTemplateMonthIndex(data);
@@ -141,6 +169,9 @@ export function BoardCalendarWorkbench({
   const [entryType, setEntryType] = useState<BoardCalendarEntryType>("meeting");
   const [entryTitle, setEntryTitle] = useState("");
   const [entryCategory, setEntryCategory] = useState("Board Meeting");
+  const [entryColor, setEntryColor] = useState(
+    boardCalendarCategoryColorDefaults["Board Meeting"],
+  );
   const [entryTime, setEntryTime] = useState("");
   const [entryLocation, setEntryLocation] = useState("");
   const [entryNotes, setEntryNotes] = useState("");
@@ -211,6 +242,7 @@ export function BoardCalendarWorkbench({
 
     setEntryType(value);
     setEntryCategory(defaultCategory);
+    setEntryColor(resolveEntryColor(defaultCategory));
     setEntryTime("");
     setEntryLocation("");
     setEntryVirtualLink("");
@@ -244,19 +276,36 @@ export function BoardCalendarWorkbench({
       weeksBefore: Number.parseInt(entryWeeksBefore, 10) || 0,
       notes: entryNotes,
     };
-    const mutation = editingEventId
-      ? updateBoardCalendarEntry(data, editingEventId, input)
-      : appendBoardCalendarEntry(data, input);
+    onDataChange((currentData) => {
+      const mutation = editingEventId
+        ? updateBoardCalendarEntry(currentData, editingEventId, input)
+        : appendBoardCalendarEntry(currentData, input);
 
-    if (!mutation) return;
+      if (!mutation) return currentData;
 
-    onChange(mutation.path, mutation.value);
+      const nextData = setValue(currentData, mutation.path, mutation.value);
+      const colorMutation = upsertBoardCalendarCategoryColor(
+        nextData,
+        getColorCategoryForInput(input),
+        entryColor,
+      );
+
+      return colorMutation
+        ? setValue(nextData, colorMutation.path, colorMutation.value)
+        : nextData;
+    });
     clearEntryForm();
   }
 
   function clearEntryForm() {
+    const defaultCategory =
+      entryTypes.find((option) => option.value === entryType)?.defaultCategory ??
+      "Board Meeting";
+
     setEditingEventId(null);
+    setEntryCategory(defaultCategory);
     setEntryTitle("");
+    setEntryColor(resolveEntryColor(defaultCategory));
     setEntryTime("");
     setEntryLocation("");
     setEntryNotes("");
@@ -265,7 +314,7 @@ export function BoardCalendarWorkbench({
     setEntryConfirmed("TBC");
     setEntryRelatedMeeting("");
     setEntryResponsible("");
-    setEntryStatus("Not Started");
+    setEntryStatus(entryType === "staff_task" ? defaultCategory : "Not Started");
     setEntryDone(false);
     setEntryWeeksBefore("0");
   }
@@ -278,6 +327,7 @@ export function BoardCalendarWorkbench({
     setSelectedDateKey(input.dateKey || event.dateKey || selectedDateKey);
     setEntryType(input.type);
     setEntryCategory(input.category);
+    setEntryColor(event.color);
     setEntryTitle(input.title);
     setEntryTime(input.time ?? "");
     setEntryLocation(input.location ?? "");
@@ -303,8 +353,36 @@ export function BoardCalendarWorkbench({
     clearEntryForm();
   }
 
+  function getColorCategoryForInput(input: {
+    category: string;
+    status: string;
+    type: BoardCalendarEntryType;
+  }) {
+    return input.type === "staff_task" ? input.status : input.category;
+  }
+
+  function resolveEntryColor(category: string) {
+    return (
+      categoryColors.get(category) ??
+      boardCalendarCategoryColorDefaults[category] ??
+      boardCalendarCategoryColorDefaults["Other / General"]
+    );
+  }
+
+  function updateEntryCategory(value: string) {
+    setEntryCategory(value);
+    setEntryColor(resolveEntryColor(value));
+  }
+
+  function updateEntryStatus(value: string) {
+    setEntryStatus(value);
+    if (entryType === "staff_task") {
+      setEntryColor(resolveEntryColor(value));
+    }
+  }
+
   return (
-    <section className="space-y-5 rounded-xl border bg-white p-6 shadow-soft">
+    <section className="space-y-4 rounded-xl border bg-white p-4 shadow-soft sm:space-y-5 sm:p-6">
       <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
         <div>
           <div className="inline-flex items-center gap-2 rounded-full bg-olea-light px-3 py-1 text-xs font-semibold uppercase tracking-[0.08em] text-olea-dark">
@@ -321,8 +399,8 @@ export function BoardCalendarWorkbench({
           </p>
         </div>
 
-        <div className="flex flex-wrap items-center gap-2 lg:justify-end">
-          <div className="min-w-[260px]">
+        <div className="flex w-full flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-center lg:w-auto lg:justify-end">
+          <div className="w-full sm:min-w-[260px] sm:flex-1 lg:flex-none">
             <Select
               value={workspaceMode}
               onValueChange={(value) => setWorkspaceMode(value as WorkspaceMode)}
@@ -339,7 +417,7 @@ export function BoardCalendarWorkbench({
               </SelectContent>
             </Select>
           </div>
-          <div className="inline-flex rounded-lg border bg-white p-1 shadow-sm">
+          <div className="grid w-full grid-cols-3 rounded-lg border bg-white p-1 shadow-sm sm:inline-flex sm:w-auto">
             {viewOptions.map((option) => (
               <Button
                 key={option.value}
@@ -347,12 +425,13 @@ export function BoardCalendarWorkbench({
                 variant={mode === option.value ? "default" : "ghost"}
                 size="sm"
                 onClick={() => setMode(option.value)}
+                className="w-full sm:w-auto"
               >
                 {option.label}
               </Button>
             ))}
           </div>
-          <div className="inline-flex rounded-lg border bg-white shadow-sm">
+          <div className="grid w-full grid-cols-[auto_1fr_auto] rounded-lg border bg-white shadow-sm sm:inline-flex sm:w-auto">
             <Button
               type="button"
               variant="ghost"
@@ -362,7 +441,12 @@ export function BoardCalendarWorkbench({
             >
               <ChevronLeft className="size-4" />
             </Button>
-            <Button type="button" variant="ghost" onClick={goToConfiguredYear}>
+            <Button
+              type="button"
+              variant="ghost"
+              className="min-w-0 px-2 text-sm sm:px-4"
+              onClick={goToConfiguredYear}
+            >
               {mode === "year" ? year : `${monthNames[monthIndex]} ${year}`}
             </Button>
             <Button
@@ -448,6 +532,7 @@ export function BoardCalendarWorkbench({
 
           <CalendarEntryComposer
             entryCategory={entryCategory}
+            entryColor={entryColor}
             entryLocation={entryLocation}
             entryNotes={entryNotes}
             entryTime={entryTime}
@@ -456,7 +541,6 @@ export function BoardCalendarWorkbench({
             selectedDateEvents={selectedDateEvents}
             selectedDateKey={selectedDateKey}
             onAdd={addCalendarEntry}
-            onCategoryChange={setEntryCategory}
             onCancelEdit={clearEntryForm}
             onEditEvent={editCalendarEntry}
             onEntryTypeChange={updateEntryType}
@@ -470,7 +554,9 @@ export function BoardCalendarWorkbench({
             onConfirmedChange={setEntryConfirmed}
             onRelatedMeetingChange={setEntryRelatedMeeting}
             onResponsibleChange={setEntryResponsible}
-            onStatusChange={setEntryStatus}
+            onCategoryChange={updateEntryCategory}
+            onColorChange={setEntryColor}
+            onStatusChange={updateEntryStatus}
             onDoneChange={setEntryDone}
             onDeleteEntry={deleteCalendarEntry}
             onSelectedDateChange={selectDate}
@@ -571,9 +657,12 @@ function MonthCalendar({
   const days = buildMonthGrid(year, monthIndex);
 
   return (
-    <div className="overflow-hidden rounded-xl border">
+    <div
+      className="overflow-hidden rounded-xl border bg-white"
+      data-testid="board-calendar-month-grid"
+    >
       <CalendarWeekHeader />
-      <div className="grid grid-cols-1 md:grid-cols-7">
+      <div className="grid grid-cols-7">
         {days.map((day) => (
           <DayCell
             key={day.dateKey}
@@ -725,13 +814,14 @@ function YearCalendar({
 
 function CalendarWeekHeader() {
   return (
-    <div className="hidden grid-cols-7 border-b bg-olea-dark text-center text-xs font-semibold uppercase tracking-[0.08em] text-white md:grid">
+    <div className="grid grid-cols-7 border-b bg-olea-dark text-center text-[10px] font-semibold uppercase tracking-[0.08em] text-white sm:text-xs">
       {weekdayNames.map((day) => (
         <div
           key={day}
-          className="border-r border-white/10 px-2 py-3 last:border-r-0"
+          className="border-r border-white/10 px-1 py-2 last:border-r-0 sm:px-2 sm:py-3"
         >
-          {day.slice(0, 3)}
+          <span className="sm:hidden">{day.slice(0, 1)}</span>
+          <span className="hidden sm:inline">{day.slice(0, 3)}</span>
         </div>
       ))}
     </div>
@@ -759,7 +849,7 @@ function DayCell({
     <div
       aria-disabled={disabled}
       className={cn(
-        "min-h-[150px] border-b border-r bg-white p-3 text-left transition last:border-r-0",
+        "min-h-[74px] border-b border-r bg-white p-1.5 text-left transition last:border-r-0 sm:min-h-[96px] sm:p-2 md:min-h-[150px] md:p-3 [&:nth-child(7n)]:border-r-0",
         muted && "bg-slate-50 text-slate-400",
         disabled &&
           "bg-slate-100 text-slate-400 opacity-70",
@@ -769,12 +859,12 @@ function DayCell({
       <button
         type="button"
         disabled={disabled}
-        className="flex w-full items-center justify-between gap-2 rounded-lg text-left disabled:cursor-not-allowed"
+        className="flex w-full items-center justify-between gap-1 rounded-lg text-left disabled:cursor-not-allowed sm:gap-2"
         onClick={onSelect}
       >
         <span
           className={cn(
-            "flex size-7 items-center justify-center rounded-full text-sm font-semibold",
+            "flex size-6 items-center justify-center rounded-full text-xs font-semibold sm:size-7 sm:text-sm",
             disabled
               ? "bg-slate-200 text-slate-400"
               : muted
@@ -785,17 +875,32 @@ function DayCell({
           {dayNumber}
         </span>
         {disabled ? (
-          <span className="text-[11px] font-medium uppercase tracking-[0.08em] text-slate-400">
+          <span className="hidden text-[11px] font-medium uppercase tracking-[0.08em] text-slate-400 md:inline">
             Past
           </span>
         ) : null}
         {events.length > 3 ? (
-          <span className="text-xs font-medium text-slate-400">
+          <span className="text-[10px] font-medium text-slate-400 sm:text-xs">
             +{events.length - 3}
           </span>
         ) : null}
       </button>
-      <div className="mt-3 space-y-1.5">
+      <div className="mt-1 flex flex-wrap gap-1 md:hidden">
+        {events.slice(0, 4).map((event) => (
+          <span
+            key={event.id}
+            aria-label={event.title}
+            className="size-1.5 rounded-full sm:size-2"
+            style={{ backgroundColor: event.color }}
+          />
+        ))}
+        {events.length > 4 ? (
+          <span className="text-[10px] font-semibold text-slate-500">
+            +{events.length - 4}
+          </span>
+        ) : null}
+      </div>
+      <div className="mt-3 hidden space-y-1.5 md:block">
         {events.slice(0, 3).map((event) => (
           <CalendarEventPill
             key={event.id}
@@ -812,6 +917,7 @@ function DayCell({
 function CalendarEntryComposer({
   editingEventId,
   entryCategory,
+  entryColor,
   entryConfirmed,
   entryDone,
   entryLeadContact,
@@ -833,6 +939,7 @@ function CalendarEntryComposer({
   onAdd,
   onCategoryChange,
   onCancelEdit,
+  onColorChange,
   onConfirmedChange,
   onDeleteEntry,
   onDoneChange,
@@ -852,6 +959,7 @@ function CalendarEntryComposer({
 }: {
   editingEventId: string | null;
   entryCategory: string;
+  entryColor: string;
   entryConfirmed: string;
   entryDone: boolean;
   entryLeadContact: string;
@@ -873,6 +981,7 @@ function CalendarEntryComposer({
   onAdd: () => void;
   onCategoryChange: (value: string) => void;
   onCancelEdit: () => void;
+  onColorChange: (value: string) => void;
   onConfirmedChange: (value: string) => void;
   onDeleteEntry: (eventId: string) => void;
   onDoneChange: (value: boolean) => void;
@@ -894,6 +1003,11 @@ function CalendarEntryComposer({
   const isAnnualHighlight = entryType === "annual_highlight";
   const isStaffTask = entryType === "staff_task";
   const isAgmMilestone = entryType === "agm_milestone";
+  const categoryOptions = isAgmMilestone
+    ? agmTrackOptions
+    : isAnnualHighlight
+      ? annualHighlightCategoryOptions
+      : meetingCategoryOptions;
   const [entryPendingDelete, setEntryPendingDelete] =
     useState<CalendarViewEvent | null>(null);
 
@@ -905,8 +1019,11 @@ function CalendarEntryComposer({
   }
 
   return (
-    <div className="grid gap-5 rounded-xl border bg-slate-50 p-4 lg:grid-cols-[0.9fr_1.1fr]">
-      <div className="rounded-xl bg-white p-4 shadow-sm">
+    <div className="grid gap-4 rounded-xl border bg-slate-50 p-3 sm:p-4 lg:grid-cols-[0.9fr_1.1fr] lg:gap-5">
+      <div
+        className="rounded-xl bg-white p-3 shadow-sm sm:p-4"
+        data-testid="board-calendar-selected-date-panel"
+      >
         <p className="text-xs font-semibold uppercase tracking-[0.08em] text-slate-400">
           Selected date
         </p>
@@ -924,12 +1041,12 @@ function CalendarEntryComposer({
                 )}
               >
                 <CalendarEventPill event={event} />
-                <div className="mt-2 flex flex-wrap gap-2">
+                <div className="mt-2 grid gap-2 sm:flex sm:flex-wrap">
                   <Button
                     type="button"
                     size="sm"
                     variant="ghost"
-                    className="h-8 px-2 text-xs"
+                    className="h-8 justify-start px-2 text-xs sm:justify-center"
                     onClick={() => onEditEvent(event)}
                   >
                     <Pencil className="size-3.5" />
@@ -939,7 +1056,7 @@ function CalendarEntryComposer({
                     type="button"
                     size="sm"
                     variant="ghost"
-                    className="h-8 px-2 text-xs text-red-700 hover:bg-red-50 hover:text-red-800"
+                    className="h-8 justify-start px-2 text-xs text-red-700 hover:bg-red-50 hover:text-red-800 sm:justify-center"
                     onClick={() => setEntryPendingDelete(event)}
                   >
                     <Trash2 className="size-3.5" />
@@ -957,7 +1074,10 @@ function CalendarEntryComposer({
         </div>
       </div>
 
-      <div className="rounded-xl bg-white p-4 shadow-sm">
+      <div
+        className="rounded-xl bg-white p-3 shadow-sm sm:p-4"
+        data-testid="board-calendar-entry-form"
+      >
         <div className="flex items-center gap-2">
           <div className="rounded-lg bg-olea-light p-2 text-olea-dark">
             <Plus className="size-4" />
@@ -1028,11 +1148,18 @@ function CalendarEntryComposer({
               <Label htmlFor="calendar-entry-category">
                 {isAgmMilestone ? "Track" : "Category"}
               </Label>
-              <Input
-                id="calendar-entry-category"
-                value={entryCategory}
-                onChange={(event) => onCategoryChange(event.target.value)}
-              />
+              <Select value={entryCategory} onValueChange={onCategoryChange}>
+                <SelectTrigger id="calendar-entry-category">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {categoryOptions.map((category) => (
+                    <SelectItem key={category} value={category}>
+                      {category}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
           ) : null}
           {isStaffTask || isAgmMilestone ? (
@@ -1052,6 +1179,27 @@ function CalendarEntryComposer({
               </Select>
             </div>
           ) : null}
+          <div className="space-y-2">
+            <Label htmlFor="calendar-entry-color">Calendar color</Label>
+            <div className="flex items-center gap-2 rounded-md border border-input bg-white px-3 py-2">
+              <Input
+                id="calendar-entry-color"
+                type="color"
+                value={entryColor}
+                onChange={(event) => onColorChange(event.target.value)}
+                className="h-7 w-10 cursor-pointer border-0 bg-transparent p-0"
+              />
+              <Input
+                aria-label="Calendar color hex code"
+                value={entryColor}
+                readOnly
+                className="h-7 border-0 px-0 font-mono uppercase shadow-none focus-visible:ring-0"
+              />
+            </div>
+            <p className="text-xs text-slate-500">
+              This color is reused for matching calendar entries.
+            </p>
+          </div>
           <div className="space-y-2 md:col-span-2">
             <Label htmlFor="calendar-entry-title">Title</Label>
             <Input
@@ -1189,37 +1337,39 @@ function CalendarEntryComposer({
             />
           </div>
         </div>
-        <Button
-          type="button"
-          className="mt-4"
-          disabled={!entryTitle.trim() || (!editingEventId && isSelectedDateInPast)}
-          onClick={onAdd}
-        >
-          {editingEventId ? <Pencil className="size-4" /> : <Plus className="size-4" />}
-          {editingEventId ? "Update entry" : "Add to calendar"}
-        </Button>
-        {editingEventId ? (
+        <div className="mt-4 grid gap-2 sm:flex sm:flex-wrap">
           <Button
             type="button"
-            className="ml-2 mt-4"
-            variant="outline"
-            onClick={onCancelEdit}
+            className="w-full sm:w-auto"
+            disabled={!entryTitle.trim() || (!editingEventId && isSelectedDateInPast)}
+            onClick={onAdd}
           >
-            <X className="size-4" />
-            Cancel edit
+            {editingEventId ? <Pencil className="size-4" /> : <Plus className="size-4" />}
+            {editingEventId ? "Update entry" : "Add to calendar"}
           </Button>
-        ) : null}
-        {editingEventId ? (
-          <Button
-            type="button"
-            className="ml-2 mt-4"
-            variant="destructive"
-            onClick={() => setEntryPendingDelete(editingEvent)}
-          >
-            <Trash2 className="size-4" />
-            Delete entry
-          </Button>
-        ) : null}
+          {editingEventId ? (
+            <Button
+              type="button"
+              className="w-full sm:w-auto"
+              variant="outline"
+              onClick={onCancelEdit}
+            >
+              <X className="size-4" />
+              Cancel edit
+            </Button>
+          ) : null}
+          {editingEventId ? (
+            <Button
+              type="button"
+              className="w-full sm:w-auto"
+              variant="destructive"
+              onClick={() => setEntryPendingDelete(editingEvent)}
+            >
+              <Trash2 className="size-4" />
+              Delete entry
+            </Button>
+          ) : null}
+        </div>
       </div>
       <DeleteEntryDialog
         event={entryPendingDelete}

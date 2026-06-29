@@ -54,12 +54,12 @@ export function Header() {
     .toUpperCase();
 
   return (
-    <header className="relative z-30 flex h-16 shrink-0 items-center gap-4 border-b bg-white px-4 md:px-6">
+    <header className="relative z-30 flex h-16 shrink-0 items-center gap-3 border-b bg-white px-4 md:gap-4 md:px-6">
       <div className="lg:hidden">
         <Logo compact />
       </div>
 
-      <div className="relative hidden w-full max-w-[420px] sm:block">
+      <div className="relative hidden w-full max-w-[360px] md:block xl:max-w-[420px]">
         <Search className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-slate-400" />
         <input
           aria-label="Global search"
@@ -89,7 +89,7 @@ export function Header() {
           </span>
         </Button>
         {notificationsOpen ? (
-          <div className="absolute right-0 top-12 w-[340px] overflow-hidden rounded-xl border bg-white shadow-elevated">
+          <div className="absolute right-0 top-12 w-[calc(100vw-2rem)] max-w-[340px] overflow-hidden rounded-xl border bg-white shadow-elevated">
             <div className="flex items-center justify-between border-b px-4 py-3.5">
               <span className="font-semibold">Notifications</span>
               <button className="text-xs font-semibold text-olea-green">

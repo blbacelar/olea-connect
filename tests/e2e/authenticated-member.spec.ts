@@ -5,6 +5,29 @@ import {
 } from "../fixtures/authenticated.fixture";
 
 test.describe("@critical @member authenticated access", () => {
+  test("keeps the app header brand compact on small screens", async ({
+    page,
+  }) => {
+    await page.setViewportSize({ width: 640, height: 844 });
+    await page.goto("/dashboard");
+
+    const compactLogo = page.getByRole("link", {
+      name: "Olea Connects dashboard",
+    });
+    await expect(compactLogo).toBeVisible();
+    await expect(page.getByLabel("Open navigation")).toBeVisible();
+
+    const logoWidth = await compactLogo.evaluate(
+      (element) => element.getBoundingClientRect().width,
+    );
+    const hasHorizontalOverflow = await page.evaluate(
+      () => document.documentElement.scrollWidth > window.innerWidth,
+    );
+
+    expect(logoWidth).toBeLessThan(60);
+    expect(hasHorizontalOverflow).toBe(false);
+  });
+
   test("opens protected pages with an API-created session", async ({
     page,
     authenticatedMember,

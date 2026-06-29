@@ -150,6 +150,13 @@ Important files:
 - `lib/template-renderer/pdf-export.ts`
 - `lib/template-renderer/docx-export.ts`
 
+Template detail pages should load one template directly. Avoid calling the full
+template library path from `getDynamicTemplateEditorData()` because it repeats
+member-context work and slows dashboard-to-template navigation. Use the
+single-resource access check in `lib/data/templates.ts` for template editor
+loads, and keep `app/templates/[slug]/loading.tsx` available for immediate
+navigation feedback.
+
 Database concepts:
 
 - `template_definitions.field_schema` stores the schema.
@@ -170,6 +177,23 @@ logic:
 
 It maps a workbook-style template into calendar events and derived annual,
 monthly, operational, task, and AGM views.
+
+Category colors are still stored in the template data under
+`event_categories`, but the product UI manages them inline from the calendar
+entry form. Avoid reintroducing a separate user-facing "Colour key" workflow
+unless there is a clear bulk-edit use case.
+
+Calendar entry creates/updates use `updateData()` from
+`hooks/use-dynamic-template-session.ts` so mutations are applied against the
+latest parent `formData` in one functional state update. This matters for rapid
+CRUD: a user can add multiple entries with the same date and time without a
+stale render dropping the second row.
+
+New unsaved workbooks receive their database id after the first save. The editor
+updates the browser URL with `history.replaceState` instead of forcing a route
+refresh, and the session hook ignores refreshed server props for the same
+workbook while local edits are unsaved or saving. This prevents autosave or RSC
+refreshes from overwriting newer calendar edits.
 
 ## Billing Architecture
 

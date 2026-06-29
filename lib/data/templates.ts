@@ -214,10 +214,6 @@ export async function getDynamicTemplateEditorData(
   sessionId?: string,
 ): Promise<DynamicTemplateEditorData | null> {
   const { member, organization } = await requireMemberContext();
-  const templateSummary = await getTemplateBySlug(slug);
-
-  if (!templateSummary?.available) return null;
-
   const supabase = await createClient();
   const { data: resource, error: resourceError } = await supabase
     .from("resources")
@@ -232,6 +228,31 @@ export async function getDynamicTemplateEditorData(
   if (resourceError) throw resourceError;
   if (!resource) return null;
 
+  const [
+    { data: planAccess, error: planAccessError },
+    { data: directAccess, error: directAccessError },
+  ] = await Promise.all([
+    supabase
+      .from("resource_plan_access")
+      .select("plan_id")
+      .eq("resource_id", resource.id),
+    supabase
+      .from("organization_resource_access")
+      .select("resource_id")
+      .eq("organization_id", organization.id)
+      .eq("resource_id", resource.id)
+      .lte("starts_at", new Date().toISOString())
+      .maybeSingle(),
+  ]);
+
+  if (planAccessError) throw planAccessError;
+  if (directAccessError) throw directAccessError;
+
+  const hasPlanAccess = (planAccess ?? []).some(
+    (access) => access.plan_id === organization.tier,
+  );
+  if (!directAccess && !hasPlanAccess) return null;
+
   const definition = Array.isArray(resource.template_definitions)
     ? resource.template_definitions[0]
     : resource.template_definitions;
@@ -242,7 +263,7 @@ export async function getDynamicTemplateEditorData(
   const { data: instances, error: instancesError } = await supabase
     .from("template_instances")
     .select(
-      "id, title, status, form_data, branding_snapshot, definition_version, schema_snapshot, completion_percent, last_saved_at, updated_at",
+      "id, title, status, completion_percent, last_saved_at, updated_at",
     )
     .eq("organization_id", organization.id)
     .eq("resource_id", resource.id)
@@ -251,12 +272,26 @@ export async function getDynamicTemplateEditorData(
 
   if (instancesError) throw instancesError;
 
-  const existing =
+  const selectedSessionId =
     sessionId === "new"
       ? null
       : sessionId
-        ? (instances ?? []).find((instance) => instance.id === sessionId) ?? null
-        : (instances ?? [])[0] ?? null;
+        ? sessionId
+        : (instances ?? [])[0]?.id ?? null;
+
+  const { data: existing, error: existingError } = selectedSessionId
+    ? await supabase
+        .from("template_instances")
+        .select(
+          "id, title, status, form_data, branding_snapshot, definition_version, schema_snapshot, completion_percent, last_saved_at, updated_at",
+        )
+        .eq("id", selectedSessionId)
+        .eq("organization_id", organization.id)
+        .eq("resource_id", resource.id)
+        .maybeSingle()
+    : { data: null, error: null };
+
+  if (existingError) throw existingError;
 
   const defaultValues = (definition.default_values ?? {}) as TemplateFormData;
   const formData = {

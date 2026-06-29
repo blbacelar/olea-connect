@@ -1,4 +1,5 @@
 import {
+  isHexColor,
   monthNames,
   parseDateKey,
 } from "@/lib/template-renderer/calendar-view";
@@ -132,6 +133,53 @@ export function appendBoardCalendarEntry(
   return {
     path: [fieldKey],
     value: [...getRows(data, fieldKey), createBoardCalendarEntryRow(input)],
+  };
+}
+
+export function upsertBoardCalendarCategoryColor(
+  data: TemplateFormData,
+  category: string,
+  hexCode: string,
+): BoardCalendarEntryMutation | null {
+  const normalizedCategory = category.trim();
+  const normalizedHexCode = hexCode.trim().toUpperCase();
+
+  if (!normalizedCategory || !isHexColor(normalizedHexCode)) return null;
+
+  const existingRows = getRows(data, "event_categories");
+  const existingIndex = existingRows.findIndex(
+    (row) => getString(row, "category").trim() === normalizedCategory,
+  );
+
+  if (
+    existingIndex >= 0 &&
+    getString(existingRows[existingIndex], "hex_code").toUpperCase() ===
+      normalizedHexCode
+  ) {
+    return null;
+  }
+
+  if (existingIndex >= 0) {
+    return {
+      path: ["event_categories"],
+      value: existingRows.map((row, index) =>
+        index === existingIndex
+          ? { ...row, category: normalizedCategory, hex_code: normalizedHexCode }
+          : row,
+      ),
+    };
+  }
+
+  return {
+    path: ["event_categories"],
+    value: [
+      ...existingRows,
+      {
+        category: normalizedCategory,
+        hex_code: normalizedHexCode,
+        used_for: "Set from calendar entry form",
+      },
+    ],
   };
 }
 
