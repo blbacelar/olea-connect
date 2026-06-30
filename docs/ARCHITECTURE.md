@@ -14,6 +14,8 @@ Browser
   -> Stripe API and webhooks
   -> Resend API and webhooks
   -> Attio / QuickBooks workers
+  -> Native community tables
+  -> Deferred Circle API / SSO scaffolding
 ```
 
 ## Next.js Layers

@@ -233,6 +233,7 @@ Recommended jobs:
 - QuickBooks customer/reference processor:
   - URL: `https://<domain>/api/v1/quickbooks/process`
   - Same auth header.
+  - Deferred while native community is the MVP path.
 
 - Provisioning reconciliation:
   - URL: `https://<domain>/api/v1/provisioning/reconcile`
