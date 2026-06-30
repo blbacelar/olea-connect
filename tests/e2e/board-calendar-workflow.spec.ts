@@ -2,9 +2,12 @@ import { expect, test } from "../fixtures/authenticated.fixture";
 import {
   BoardCalendarPage,
   getFutureDateKey,
+  getRelativeDateKey,
 } from "../pages/board-calendar.page";
 
 test.describe("@critical Board Calendar & Operational Workflow", () => {
+  test.setTimeout(60_000);
+
   test("renders a usable compact month calendar on mobile", async ({ page }) => {
     const boardCalendar = new BoardCalendarPage(page);
     const eventDate = getFutureDateKey(1);
@@ -25,6 +28,7 @@ test.describe("@critical Board Calendar & Operational Workflow", () => {
     const annualNoteDate = getFutureDateKey(2);
     const taskDate = getFutureDateKey(3);
     const agmDate = getFutureDateKey(4);
+    const expectedAgmMilestoneDate = getRelativeDateKey(agmDate, -30);
 
     await test.step("open a new isolated board calendar workbook", async () => {
       await boardCalendar.openNewWorkbook();
@@ -34,7 +38,29 @@ test.describe("@critical Board Calendar & Operational Workflow", () => {
       await boardCalendar.waitForSaved();
     });
 
+    await test.step("configure setup, committees, and generated task rules", async () => {
+      await boardCalendar.fillSetupBasics({
+        organizationName: "E2E Governance Lab",
+        fiscalYear: "2026",
+        administrator: "Bruno QA",
+        administratorEmail: "bruno.qa@example.com",
+        executiveDirector: "Executive Tester",
+        boardChair: "Chair Tester",
+      });
+      await boardCalendar.addCommittee("Finance Committee", "Treasurer");
+      await boardCalendar.addTaskRule({
+        label: "Prepare board briefing",
+        days: "10",
+        timing: "Before",
+        appliesTo: "Board Meeting",
+        responsible: "Administrator",
+      });
+      await boardCalendar.saveNowAndWaitForPost();
+      await boardCalendar.waitForSaved();
+    });
+
     await test.step("block invalid new entries for past dates and empty titles", async () => {
+      await boardCalendar.chooseWorkspaceView("Calendar workspace");
       await boardCalendar.expectPastDatesDisabled();
       await boardCalendar.selectCalendarDate(eventDate);
       await boardCalendar.fillTitle("");
@@ -64,7 +90,39 @@ test.describe("@critical Board Calendar & Operational Workflow", () => {
       await boardCalendar.waitForSaved();
     });
 
+    await test.step("generate and update staff tasks from setup rules and meeting dates", async () => {
+      await boardCalendar.expectGeneratedStaffTask("Prepare board briefing");
+      await boardCalendar.updateGeneratedStaffTask(
+        1,
+        "In Progress",
+        "Briefing packet drafted.",
+      );
+      await boardCalendar.expectGeneratedStaffTaskDetails(
+        1,
+        "In Progress",
+        "Briefing packet drafted.",
+      );
+      await boardCalendar.saveNowAndWaitForPost();
+      await boardCalendar.waitForSaved();
+    });
+
+    await test.step("calculate AGM planning target dates from days before AGM", async () => {
+      await boardCalendar.addAgmTimelineMilestone({
+        agmDate,
+        daysBefore: "30",
+        task: "Send formal AGM notice",
+      });
+      await boardCalendar.expectAgmMilestoneTargetDate(
+        1,
+        expectedAgmMilestoneDate,
+      );
+      await boardCalendar.saveNowAndWaitForPost();
+      await boardCalendar.waitForSaved();
+    });
+
     await test.step("allow a second meeting at the same date and time", async () => {
+      await boardCalendar.chooseWorkspaceView("Calendar workspace");
+      await boardCalendar.selectCalendarDate(eventDate);
       await boardCalendar.fillMeeting({
         title: "Parallel Finance Committee",
         category: "Committee Meeting",
@@ -75,13 +133,9 @@ test.describe("@critical Board Calendar & Operational Workflow", () => {
         notes: "Same slot as board review.",
       });
 
-      await expect(boardCalendar.field("Title")).toHaveValue(
-        "Parallel Finance Committee",
-      );
-      await expect(boardCalendar.field("Category")).toContainText(
-        "Committee Meeting",
-      );
-      await expect(boardCalendar.field("Time")).toHaveValue("13:30");
+      await boardCalendar.expectFieldValue("Title", "Parallel Finance Committee");
+      await boardCalendar.expectFieldContainsText("Category", "Committee Meeting");
+      await boardCalendar.expectFieldValue("Time", "13:30");
       await boardCalendar.addToCalendar();
 
       await boardCalendar.expectSelectedDateText(
@@ -116,24 +170,27 @@ test.describe("@critical Board Calendar & Operational Workflow", () => {
         title: "Confirm AGM venue",
         track: "Governance",
         status: "Not Started",
-        weeksBeforeAgm: "12",
+        daysBeforeAgm: "84",
         responsible: "Board Chair",
         notes: "Book venue if in person.",
       });
       await boardCalendar.expectTextVisible("Confirm AGM venue");
+      await boardCalendar.saveNowAndWaitForPost();
+      await boardCalendar.waitForSaved();
     });
 
     await test.step("edit an existing event without losing time or details", async () => {
       await boardCalendar.selectCalendarDate(eventDate);
       await boardCalendar.editEntry(/Edit Board Meeting - Board Budget Review/);
-      await expect(boardCalendar.field("Time")).toHaveValue("13:30");
-      await expect(boardCalendar.field("Virtual link")).toHaveValue(
+      await boardCalendar.expectFieldValue("Time", "13:30");
+      await boardCalendar.expectFieldValue(
+        "Virtual link",
         "https://example.com/board-budget-review",
       );
 
       await boardCalendar.fillTitle("Board Budget Review Updated");
-      await boardCalendar.field("Time").fill("09:00");
-      await boardCalendar.field("Location / platform").fill("Hybrid");
+      await boardCalendar.fillField("Time", "09:00");
+      await boardCalendar.fillField("Location / platform", "Hybrid");
       await boardCalendar.updateEntry();
 
       await boardCalendar.expectSelectedDateText(
@@ -184,9 +241,17 @@ test.describe("@critical Board Calendar & Operational Workflow", () => {
 
     await test.step("persist created and edited data after reload", async () => {
       await boardCalendar.reload();
+      await boardCalendar.chooseWorkspaceView("Calendar workspace");
+      await boardCalendar.selectCalendarDate(eventDate);
       await boardCalendar.expectTextVisible("Board Budget Review Updated");
+
+      await boardCalendar.selectCalendarDate(annualNoteDate);
       await boardCalendar.expectTextVisible("Grant filing deadline");
+
+      await boardCalendar.selectCalendarDate(taskDate);
       await boardCalendar.expectTextVisible("Send board package");
+
+      await boardCalendar.selectCalendarDate(agmDate);
       await boardCalendar.expectTextVisible("Confirm AGM venue");
       await boardCalendar.expectTextCount(
         "Committee Meeting - Parallel Finance Committee",

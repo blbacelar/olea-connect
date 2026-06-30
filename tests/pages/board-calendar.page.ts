@@ -41,7 +41,7 @@ export type AgmMilestoneEntry = {
   title: string;
   track?: string;
   status?: string;
-  weeksBeforeAgm?: string;
+  daysBeforeAgm?: string;
   responsible?: string;
   notes?: string;
 };
@@ -59,6 +59,18 @@ export class BoardCalendarPage {
 
   get monthGrid() {
     return this.page.getByTestId("board-calendar-month-grid");
+  }
+
+  get setupPanel() {
+    return this.page.getByTestId("board-calendar-setup-panel");
+  }
+
+  get staffTaskListPanel() {
+    return this.page.getByTestId("board-calendar-staff-task-list-panel");
+  }
+
+  get agmTimelinePanel() {
+    return this.page.getByTestId("board-calendar-agm-timeline-panel");
   }
 
   async openNewWorkbook() {
@@ -86,10 +98,141 @@ export class BoardCalendarPage {
     await this.page.keyboard.press("Escape");
   }
 
-  async expectPastDatesDisabled() {
+  async chooseWorkspaceView(option: string) {
+    await this.chooseSelectOption("Choose calendar workspace view", option);
+  }
+
+  async fillSetupBasics({
+    administrator,
+    administratorEmail,
+    boardChair,
+    executiveDirector,
+    fiscalYear,
+    organizationName,
+  }: {
+    administrator: string;
+    administratorEmail: string;
+    boardChair: string;
+    executiveDirector: string;
+    fiscalYear: string;
+    organizationName: string;
+  }) {
+    await this.chooseWorkspaceView("Setup");
+    await this.setupPanel.getByLabel("Organization name").fill(organizationName);
+    await this.setupPanel.getByLabel("Fiscal year").fill(fiscalYear);
+    await this.setupPanel
+      .getByLabel("Administrator", { exact: true })
+      .fill(administrator);
+    await this.setupPanel.getByLabel("Administrator email").fill(administratorEmail);
+    await this.setupPanel.getByLabel("Executive Director").fill(executiveDirector);
+    await this.setupPanel.getByLabel("Board Chair").fill(boardChair);
+  }
+
+  async addCommittee(name: string, chair: string) {
+    await this.setupPanel.getByRole("button", { name: "Add committee" }).click();
+    const committeeCount = await this.setupPanel
+      .getByLabel(/Committee \d+ name/)
+      .count();
+    await this.setupPanel.getByLabel(`Committee ${committeeCount} name`).fill(name);
+    await this.setupPanel
+      .getByLabel(`Committee ${committeeCount} chair`)
+      .fill(chair);
+  }
+
+  async addTaskRule({
+    appliesTo = "Any meeting",
+    days = "14",
+    label,
+    responsible = "Administrator",
+    timing = "Before",
+  }: {
+    appliesTo?: string;
+    days?: string;
+    label: string;
+    responsible?: string;
+    timing?: "After" | "Before";
+  }) {
+    await this.setupPanel.getByRole("button", { name: "Add task rule" }).click();
+    const ruleCount = await this.setupPanel
+      .getByLabel(/Task rule \d+ label/)
+      .count();
+    await this.setupPanel.getByLabel(`Task rule ${ruleCount} label`).fill(label);
+    await this.setupPanel.getByLabel(`Task rule ${ruleCount} days`).fill(days);
+    await this.chooseSelectOption(
+      `Task rule ${ruleCount} timing`,
+      timing,
+      this.setupPanel,
+    );
+    await this.chooseSelectOption(
+      `Task rule ${ruleCount} applies to`,
+      appliesTo,
+      this.setupPanel,
+    );
+    await this.chooseSelectOption(
+      `Task rule ${ruleCount} responsible`,
+      responsible,
+      this.setupPanel,
+    );
+  }
+
+  async expectGeneratedStaffTask(taskName: string) {
+    await this.chooseWorkspaceView("Staff task list");
     await expect(
-      this.page.getByRole("button", { name: /Past/ }).first(),
-    ).toBeDisabled();
+      this.staffTaskListPanel.getByText(taskName, { exact: true }),
+    ).toBeVisible();
+  }
+
+  async updateGeneratedStaffTask(index: number, status: string, notes: string) {
+    await this.chooseSelectOption(`Task ${index} status`, status, this.staffTaskListPanel);
+    await this.staffTaskListPanel.getByLabel(`Task ${index} notes`).fill(notes);
+  }
+
+  async expectGeneratedStaffTaskDetails(
+    index: number,
+    status: string,
+    notes: string,
+  ) {
+    await expect(
+      this.staffTaskListPanel.getByLabel(`Task ${index} status`),
+    ).toContainText(status);
+    await expect(
+      this.staffTaskListPanel.getByLabel(`Task ${index} notes`),
+    ).toHaveValue(notes);
+  }
+
+  async addAgmTimelineMilestone({
+    agmDate,
+    daysBefore,
+    task,
+  }: {
+    agmDate: string;
+    daysBefore: string;
+    task: string;
+  }) {
+    await this.chooseWorkspaceView("AGM planning timeline");
+    await this.agmTimelinePanel.getByLabel("Confirmed AGM date").fill(agmDate);
+    await this.agmTimelinePanel
+      .getByRole("button", { name: "Add milestone" })
+      .click();
+    const milestoneCount = await this.agmTimelinePanel
+      .getByLabel(/AGM milestone \d+ task/)
+      .count();
+    await this.agmTimelinePanel
+      .getByLabel(`AGM milestone ${milestoneCount} task`)
+      .fill(task);
+    await this.agmTimelinePanel
+      .getByLabel(`AGM milestone ${milestoneCount} days before AGM`)
+      .fill(daysBefore);
+  }
+
+  async expectAgmMilestoneTargetDate(index: number, targetDate: string) {
+    await expect(
+      this.agmTimelinePanel.getByLabel(`AGM milestone ${index} target date`),
+    ).toHaveValue(targetDate);
+  }
+
+  async expectPastDatesDisabled() {
+    await expect(this.monthGrid.locator("button:disabled").first()).toBeVisible();
   }
 
   async expectMonthGridFitsViewport() {
@@ -109,22 +252,23 @@ export class BoardCalendarPage {
   }
 
   async selectCalendarDate(dateKey: string) {
-    const day = Number(dateKey.slice(-2));
-
-    await this.page
-      .getByRole("button", { name: String(day), exact: true })
+    await this.goToMonthContaining(dateKey);
+    await this.monthGrid
+      .getByRole("button", { name: `Select ${dateKey}`, exact: true })
       .click();
     await expect(this.page.getByRole("heading", { name: dateKey })).toBeVisible();
     await expect(this.page.getByLabel("Entry date")).toHaveValue(dateKey);
   }
 
   async setEntryType(option: BoardCalendarEntryType) {
-    await this.chooseSelectOption("Entry type", option);
+    await this.chooseSelectOption("Entry type", option, this.entryForm);
   }
 
   async fillMeeting(entry: MeetingEntry) {
     await this.fillTitle(entry.title);
-    if (entry.category) await this.chooseSelectOption("Category", entry.category);
+    if (entry.category) {
+      await this.chooseSelectOption("Category", entry.category, this.entryForm);
+    }
     if (entry.color) await this.setCalendarColor(entry.color);
     if (entry.time) await this.page.getByLabel("Time").fill(entry.time);
     if (entry.location) {
@@ -137,7 +281,7 @@ export class BoardCalendarPage {
       await this.page.getByLabel("Lead contact").fill(entry.leadContact);
     }
     if (entry.confirmed) {
-      await this.chooseSelectOption("Confirmed?", entry.confirmed);
+      await this.chooseSelectOption("Confirmed?", entry.confirmed, this.entryForm);
     }
     if (entry.notes) await this.page.getByLabel("Notes").fill(entry.notes);
   }
@@ -151,7 +295,9 @@ export class BoardCalendarPage {
     await this.setEntryType("Annual calendar note");
     await this.selectCalendarDate(dateKey);
     await this.fillTitle(entry.title);
-    if (entry.category) await this.chooseSelectOption("Category", entry.category);
+    if (entry.category) {
+      await this.chooseSelectOption("Category", entry.category, this.entryForm);
+    }
     if (entry.color) await this.setCalendarColor(entry.color);
     if (entry.notes) await this.page.getByLabel("Notes").fill(entry.notes);
     await this.addToCalendar();
@@ -162,7 +308,7 @@ export class BoardCalendarPage {
     await this.selectCalendarDate(dateKey);
     await this.fillTitle(entry.title);
     if (entry.status) {
-      await this.chooseSelectOption("Workflow status", entry.status);
+      await this.chooseSelectOption("Workflow status", entry.status, this.entryForm);
     }
     if (entry.relatedMeeting) {
       await this.page.getByLabel("Related meeting").fill(entry.relatedMeeting);
@@ -179,12 +325,12 @@ export class BoardCalendarPage {
     await this.setEntryType("AGM milestone");
     await this.selectCalendarDate(dateKey);
     await this.fillTitle(entry.title);
-    if (entry.track) await this.chooseSelectOption("Track", entry.track);
+    if (entry.track) await this.chooseSelectOption("Track", entry.track, this.entryForm);
     if (entry.status) {
-      await this.chooseSelectOption("Workflow status", entry.status);
+      await this.chooseSelectOption("Workflow status", entry.status, this.entryForm);
     }
-    if (entry.weeksBeforeAgm) {
-      await this.page.getByLabel("Weeks before AGM").fill(entry.weeksBeforeAgm);
+    if (entry.daysBeforeAgm) {
+      await this.page.getByLabel("Days before AGM").fill(entry.daysBeforeAgm);
     }
     if (entry.responsible) {
       await this.page.getByLabel("Responsible").fill(entry.responsible);
@@ -204,6 +350,15 @@ export class BoardCalendarPage {
     );
   }
 
+  async expectDefaultCalendarColor(color: string) {
+    await expect(
+      this.entryForm.getByLabel("Calendar color", { exact: true }),
+    ).toBeVisible();
+    await expect(
+      this.entryForm.getByLabel("Calendar color hex code"),
+    ).toHaveValue(color);
+  }
+
   async expectAddDisabled() {
     await expect(
       this.page.getByRole("button", { name: "Add to calendar" }),
@@ -221,6 +376,10 @@ export class BoardCalendarPage {
     await this.page.getByRole("button", { name: "Add to calendar" }).click();
     await expect(this.field("Title")).toHaveValue("");
     await this.waitForSaved();
+  }
+
+  async expectBlankEntryForm() {
+    await expect(this.field("Title")).toHaveValue("");
   }
 
   async editEntry(entryAccessibleName: RegExp | string) {
@@ -286,6 +445,14 @@ export class BoardCalendarPage {
       .toBe("new");
   }
 
+  async expectNoEntryText(text: string) {
+    await expect(this.page.getByText(text)).toHaveCount(0);
+  }
+
+  async expectEmptySchedule() {
+    await expect(this.page.getByText("Nothing scheduled yet.")).toBeVisible();
+  }
+
   async reload() {
     await this.page.reload();
     await this.expectLoaded();
@@ -323,6 +490,18 @@ export class BoardCalendarPage {
     return this.page.getByLabel(label, { exact: true });
   }
 
+  async expectFieldValue(label: string, value: string) {
+    await expect(this.field(label)).toHaveValue(value);
+  }
+
+  async expectFieldContainsText(label: string, text: string) {
+    await expect(this.field(label)).toContainText(text);
+  }
+
+  async fillField(label: string, value: string) {
+    await this.field(label).fill(value);
+  }
+
   get pageUrl() {
     return this.page.url();
   }
@@ -333,8 +512,47 @@ export class BoardCalendarPage {
     });
   }
 
-  private async chooseSelectOption(label: string, option: string) {
-    await this.page.getByLabel(label, { exact: true }).click();
+  private async goToMonthContaining(dateKey: string) {
+    const [year, month] = dateKey.split("-").map(Number);
+    const targetDate = new Date(year, month - 1, 1);
+    const formatter = new Intl.DateTimeFormat("en-US", {
+      month: "long",
+      year: "numeric",
+    });
+    const targetLabel = formatter.format(targetDate);
+
+    for (let attempt = 0; attempt < 24; attempt += 1) {
+      if (
+        (await this.page
+          .getByRole("button", { name: targetLabel, exact: true })
+          .count()) > 0
+      ) {
+        return;
+      }
+
+      const currentPeriod = await this.page
+        .getByRole("button", { name: /^[A-Z][a-z]+ \d{4}$/ })
+        .textContent();
+      const currentDate = currentPeriod
+        ? new Date(`${currentPeriod} 1`)
+        : targetDate;
+      const direction =
+        currentDate.getTime() < targetDate.getTime()
+          ? "Next calendar period"
+          : "Previous calendar period";
+
+      await this.page.getByRole("button", { name: direction }).click();
+    }
+
+    throw new Error(`Could not navigate calendar to ${targetLabel}`);
+  }
+
+  private async chooseSelectOption(
+    label: string,
+    option: string,
+    scope: Locator | Page = this.page,
+  ) {
+    await scope.getByLabel(label, { exact: true }).click();
     await this.page.getByRole("option", { name: option, exact: true }).click();
   }
 }
@@ -346,4 +564,14 @@ export function getFutureDateKey(daysFromNow: number) {
   const month = String(date.getMonth() + 1).padStart(2, "0");
   const day = String(date.getDate()).padStart(2, "0");
   return `${year}-${month}-${day}`;
+}
+
+export function getRelativeDateKey(dateKey: string, daysFromDate: number) {
+  const [year, month, day] = dateKey.split("-").map(Number);
+  const date = new Date(year, month - 1, day);
+  date.setDate(date.getDate() + daysFromDate);
+  const nextYear = date.getFullYear();
+  const nextMonth = String(date.getMonth() + 1).padStart(2, "0");
+  const nextDay = String(date.getDate()).padStart(2, "0");
+  return `${nextYear}-${nextMonth}-${nextDay}`;
 }

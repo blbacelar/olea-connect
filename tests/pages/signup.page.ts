@@ -30,6 +30,58 @@ export class SignupPage {
       .check();
   }
 
+  async enterOrganizationName(organization: string) {
+    await this.page.getByLabel("Organization name *").fill(organization);
+  }
+
+  async enterPassword(password: string) {
+    await this.page.getByLabel("Password *").fill(password);
+  }
+
+  async expectOrganizationName(organization: string) {
+    await expect(this.page.getByLabel("Organization name *")).toHaveValue(
+      organization,
+    );
+  }
+
+  async expectPasswordCleared() {
+    await expect(this.page.getByLabel("Password *")).toHaveValue("");
+  }
+
+  async continueToPaymentStep() {
+    await this.continueToPayment.click();
+  }
+
+  async expectPaymentStep({
+    planHeading,
+    price,
+  }: {
+    planHeading: string;
+    price: string;
+  }) {
+    await expect(this.page).toHaveURL("/signup/payment");
+    await expect(
+      this.page.getByRole("heading", { name: "Activate your membership" }),
+    ).toBeVisible();
+    await expect(
+      this.page.getByRole("heading", { name: planHeading }),
+    ).toBeVisible();
+    await expect(this.page.getByText(price)).toBeVisible();
+  }
+
+  async goBackToPlans() {
+    await this.page.getByRole("button", { name: "← Back to plan" }).click();
+  }
+
+  async expectLandingPlansVisible() {
+    await expect(this.page).toHaveURL("/#plans");
+    await expect(
+      this.page.getByRole("heading", {
+        name: "Choose the support that fits today.",
+      }),
+    ).toBeVisible();
+  }
+
   get continueToPayment() {
     return this.page.getByRole("button", { name: "Continue to payment →" });
   }

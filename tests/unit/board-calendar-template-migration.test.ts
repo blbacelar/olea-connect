@@ -21,9 +21,14 @@ const snapshotSyncMigrationPath = join(
   process.cwd(),
   "supabase/migrations/20260623012421_sync_board_calendar_instance_snapshots.sql",
 );
+const refactorMigrationPath = join(
+  process.cwd(),
+  "supabase/migrations/20260629222141_refactor_board_calendar_setup_workflow.sql",
+);
 const migrationSql = readFileSync(migrationPath, "utf8");
 const presentationMigrationSql = readFileSync(presentationMigrationPath, "utf8");
 const snapshotSyncMigrationSql = readFileSync(snapshotSyncMigrationPath, "utf8");
+const refactorMigrationSql = readFileSync(refactorMigrationPath, "utf8");
 
 function extractJsonBlock(label: string) {
   const match = migrationSql.match(
@@ -141,6 +146,19 @@ describe("board calendar workflow template migration", () => {
       min: -12,
       max: 52,
     });
+  });
+
+  it("refactors setup defaults and AGM timeline toward days-before generation", () => {
+    expect(refactorMigrationSql).toContain("'title', 'Setup'");
+    expect(refactorMigrationSql).toContain("'{committees}'");
+    expect(refactorMigrationSql).toContain("'{agm_milestones}'");
+    expect(refactorMigrationSql).toContain("'{operational_task_rules}'");
+    expect(refactorMigrationSql).toContain("'label', 'Send save-the-date'");
+    expect(refactorMigrationSql).toContain("'days_before', 42");
+    expect(refactorMigrationSql).toContain("'days_after', 1");
+    expect(refactorMigrationSql).toContain("'id', 'days_before'");
+    expect(refactorMigrationSql).toContain("'label', 'Days before AGM'");
+    expect(refactorMigrationSql).toContain("milestone.value - 'weeks_before'");
   });
 
   it("uses color picker fields for calendar colour keys", () => {

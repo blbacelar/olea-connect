@@ -10,11 +10,13 @@ import {
   Users,
 } from "lucide-react";
 
+import { apiRoutes } from "@/lib/api-routes";
+
 export const navigationGroups = [
   [
     { label: "Dashboard", href: "/dashboard", icon: Home },
     { label: "Templates", href: "/templates", icon: FileText, dot: true },
-    { label: "Community", href: "/api/circle-sso", icon: Users },
+    { label: "Community", href: apiRoutes.circleSso, icon: Users },
     { label: "Grants", href: "/grants", icon: Gift },
     { label: "Webinars", href: "/webinars", icon: CalendarDays },
   ],

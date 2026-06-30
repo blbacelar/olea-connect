@@ -1,82 +1,65 @@
-import {
-  createAuthenticatedStorageState,
-  expect,
-  test,
-} from "../fixtures/authenticated.fixture";
+import { test } from "../fixtures/authenticated.fixture";
+import { AppShellPage } from "../pages/app-shell.page";
+import { SubscriptionPage } from "../pages/subscription.page";
+import { TeamPage } from "../pages/team.page";
+import { TemplatesPage } from "../pages/templates.page";
+import { signInPage } from "../support/auth-session";
 
 test.describe("@critical @member authenticated access", () => {
   test("keeps the app header brand compact on small screens", async ({
     page,
   }) => {
+    const app = new AppShellPage(page);
+
     await page.setViewportSize({ width: 640, height: 844 });
-    await page.goto("/dashboard");
-
-    const compactLogo = page.getByRole("link", {
-      name: "Olea Connects dashboard",
-    });
-    await expect(compactLogo).toBeVisible();
-    await expect(page.getByLabel("Open navigation")).toBeVisible();
-
-    const logoWidth = await compactLogo.evaluate(
-      (element) => element.getBoundingClientRect().width,
-    );
-    const hasHorizontalOverflow = await page.evaluate(
-      () => document.documentElement.scrollWidth > window.innerWidth,
-    );
-
-    expect(logoWidth).toBeLessThan(60);
-    expect(hasHorizontalOverflow).toBe(false);
+    await app.openDashboard();
+    await app.expectCompactHeader();
   });
 
   test("opens protected pages with an API-created session", async ({
     page,
     authenticatedMember,
   }) => {
-    await page.goto("/subscription");
+    const subscription = new SubscriptionPage(page);
 
-    await expect(page).toHaveURL("/subscription");
-    await expect(
-      page.getByRole("heading", { name: "Subscription" }),
-    ).toBeVisible();
-    await expect(
-      page.getByText(`Manage billing for ${authenticatedMember.organizationName}.`),
-    ).toBeVisible();
-    await expect(
-      page.getByText("Your membership is active and platform access is enabled."),
-    ).toBeVisible();
+    await subscription.open();
+    await subscription.expectActiveMembership(
+      authenticatedMember.organizationName,
+    );
   });
 
   test("loads organization-scoped member platform data", async ({
     page,
     authenticatedMember,
   }) => {
-    await page.goto("/dashboard");
-    await expect(
-      page.getByRole("main").getByText(authenticatedMember.organizationName),
-    ).toBeVisible();
-    await expect(
-      page.getByRole("heading", { name: "Board Self-Evaluation" }),
-    ).toBeVisible();
+    const app = new AppShellPage(page);
+    const templates = new TemplatesPage(page);
+    const team = new TeamPage(page);
 
-    await page.goto("/templates");
-    await expect(
-      page.getByRole("heading", { name: "Board Self-Evaluation" }),
-    ).toBeVisible();
+    await app.openDashboard();
+    await app.expectDashboardForOrganization(
+      authenticatedMember.organizationName,
+    );
+    await app.expectDashboardTemplate("Board Self-Evaluation");
 
-    await page.goto("/team");
-    await expect(page.getByText(authenticatedMember.email)).toBeVisible();
+    await templates.open();
+    await templates.expectTemplateVisible("Board Self-Evaluation");
 
-    await page.goto("/grants");
-    await expect(
-      page.getByRole("heading", { name: "Q3 2026 Community Grant" }),
-    ).toBeVisible();
+    await team.open();
+    await team.expectMemberEmail(authenticatedMember.email);
 
-    await page.goto("/webinars");
-    await expect(
-      page.getByRole("heading", {
-        name: "Governance Best Practices for Small Nonprofits",
-      }),
-    ).toBeVisible();
+    await app.openMemberSection("grants");
+    await app.expectSectionHeading("Q3 2026 Community Grant");
+
+    await app.openMemberSection("webinars");
+    await app.expectSectionHeading(
+      "Governance Best Practices for Small Nonprofits",
+    );
+
+    await app.openMemberSection("community");
+    await app.expectSectionHeading("Community");
+    await app.expectText("Native Olea community");
+    await app.expectText("# General");
   });
 
   test("locked template upgrade CTA opens subscription management", async ({
@@ -89,24 +72,10 @@ test.describe("@critical @member authenticated access", () => {
       activeSubscription: true,
       planId: "seedling",
     });
-    const storage = await createAuthenticatedStorageState(
-      seedlingMember.email,
-      seedlingMember.password,
-      baseURL,
-    );
-    await page.context().clearCookies();
-    await page.context().addCookies(storage.cookies);
+    await signInPage(page, baseURL, seedlingMember.email, seedlingMember.password);
+    const templates = new TemplatesPage(page);
 
-    await page.goto("/templates");
-
-    const lockedTemplate = page
-      .locator("article")
-      .filter({ hasText: "canopy & above" })
-      .first();
-    await lockedTemplate.getByRole("link", { name: "Upgrade" }).click();
-
-    await expect(page).toHaveURL(
-      /\/subscription\?upgrade=canopy&resource=conflict-of-interest-policy/,
-    );
+    await templates.open();
+    await templates.upgradeFirstLockedCanopyTemplate();
   });
 });

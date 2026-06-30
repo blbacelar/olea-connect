@@ -199,3 +199,47 @@ export interface Webinar {
   registered: boolean;
   allowedPlanIds: MembershipTier[];
 }
+
+export interface CommunitySpace {
+  id: string;
+  slug: string;
+  name: string;
+  description: string | null;
+  sortOrder: number;
+  allowedPlanIds: MembershipTier[];
+}
+
+export interface CommunityPost {
+  id: string;
+  spaceId: string;
+  kind: "discussion" | "announcement" | "resource";
+  title: string;
+  body: string;
+  resourceUrl: string | null;
+  pinnedAt: string | null;
+  createdAt: string;
+}
+
+export interface CommunityEvent {
+  id: string;
+  spaceId: string | null;
+  title: string;
+  summary: string;
+  startsAt: string;
+  endsAt: string;
+  timezone: string;
+  zoomUrl: string | null;
+  recordingUrl: string | null;
+  status: "scheduled" | "live" | "completed" | "canceled";
+}
+
+export interface CommunityHome {
+  id: string;
+  slug: string;
+  name: string;
+  description: string | null;
+  spaces: CommunitySpace[];
+  posts: CommunityPost[];
+  events: CommunityEvent[];
+  canManage: boolean;
+}

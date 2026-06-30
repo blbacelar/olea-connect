@@ -21,6 +21,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { apiRoutes } from "@/lib/api-routes";
 import { membershipPlans } from "@/lib/plans";
 import type { MembershipTier } from "@/lib/types";
 
@@ -120,7 +121,7 @@ export function PlanUpgradeControls({
       setError("");
       setSuccessMessage("");
       try {
-        const response = await fetch("/api/stripe/portal", {
+        const response = await fetch(apiRoutes.stripePortal, {
           body: JSON.stringify({
             action: "change_plan",
             idempotencyKey: createBillingUpdateIdempotencyKey("plan"),
@@ -257,7 +258,7 @@ export function BillingManagementControls({
     startTransition(async () => {
       setError("");
       try {
-        const response = await fetch("/api/stripe/portal", {
+        const response = await fetch(apiRoutes.stripePortal, {
           body: JSON.stringify({
             action,
             ...(action === "pause" ? { pauseDays: Number(pauseDays) } : {}),
@@ -447,7 +448,7 @@ export function SeatManagementControls({
       setError("");
       setSuccessMessage("");
       try {
-        const response = await fetch("/api/stripe/portal", {
+        const response = await fetch(apiRoutes.stripePortal, {
           body: JSON.stringify({
             action: "add_seat",
             idempotencyKey:

@@ -1,3 +1,4 @@
+import { apiRoutes } from "@/lib/api-routes";
 import type { MembershipTier, RegistrationState } from "@/lib/types";
 import { createClient } from "@/utils/supabase/client";
 
@@ -96,7 +97,7 @@ export async function updatePassword(password: string) {
 export async function startStripeCheckout(
   registration: RegistrationState,
 ) {
-  const response = await fetch("/api/stripe/checkout", {
+  const response = await fetch(apiRoutes.stripeCheckout, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({

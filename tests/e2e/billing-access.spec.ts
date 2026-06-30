@@ -1,8 +1,6 @@
-import {
-  expect,
-  test as testWithData,
-} from "../fixtures/test-data.fixture";
-import { createAuthenticatedStorageState } from "../fixtures/authenticated.fixture";
+import { test as testWithData } from "../fixtures/test-data.fixture";
+import { SubscriptionPage } from "../pages/subscription.page";
+import { createAuthenticatedPage } from "../support/auth-session";
 
 testWithData.describe("@critical billing access states", () => {
   testWithData("shows recovery guidance for a past-due membership", async ({
@@ -15,22 +13,17 @@ testWithData.describe("@critical billing access states", () => {
     const member = await testData.createOrganizationOwner({
       subscriptionStatus: "past_due",
     });
-    const context = await browser.newContext({
-      storageState: await createAuthenticatedStorageState(
-        member.email,
-        member.password,
-        baseURL,
-      ),
-    });
-    const page = await context.newPage();
+    const { context, page } = await createAuthenticatedPage(
+      browser,
+      baseURL,
+      member.email,
+      member.password,
+    );
+    const subscription = new SubscriptionPage(page);
 
     try {
-      await page.goto(`${baseURL}/dashboard`);
-      await expect(page).toHaveURL("/subscription?billing=required");
-      await expect(
-        page.getByText("Your membership needs attention"),
-      ).toBeVisible();
-      await expect(page.getByText("Past due", { exact: true })).toBeVisible();
+      await subscription.openDashboard();
+      await subscription.expectPastDueRecovery();
     } finally {
       await context.close();
     }
@@ -45,28 +38,17 @@ testWithData.describe("@critical billing access states", () => {
 
     const member = await testData.createOrganizationOwner();
     await testData.createWorkspaceProvisioningRequest(member);
-    const context = await browser.newContext({
-      storageState: await createAuthenticatedStorageState(
-        member.email,
-        member.password,
-        baseURL,
-      ),
-    });
-    const page = await context.newPage();
+    const { context, page } = await createAuthenticatedPage(
+      browser,
+      baseURL,
+      member.email,
+      member.password,
+    );
+    const subscription = new SubscriptionPage(page);
 
     try {
-      await page.goto(`${baseURL}/dashboard`);
-      await expect(page).toHaveURL("/subscription?billing=required");
-      await expect(
-        page.getByText("Membership activation is still syncing"),
-      ).toBeVisible();
-      await expect(page.getByText("Do not start a new checkout.")).toBeVisible();
-      await expect(
-        page.getByRole("button", { name: "Retry activation" }),
-      ).toBeVisible();
-      await expect(
-        page.getByRole("link", { name: "Choose a plan" }),
-      ).toHaveCount(0);
+      await subscription.openDashboard();
+      await subscription.expectActivationSyncingRecovery();
     } finally {
       await context.close();
     }
@@ -82,22 +64,17 @@ testWithData.describe("@critical billing access states", () => {
     const member = await testData.createOrganizationOwner({
       activeSubscription: true,
     });
-    const context = await browser.newContext({
-      storageState: await createAuthenticatedStorageState(
-        member.email,
-        member.password,
-        baseURL,
-      ),
-    });
-    const page = await context.newPage();
+    const { context, page } = await createAuthenticatedPage(
+      browser,
+      baseURL,
+      member.email,
+      member.password,
+    );
+    const subscription = new SubscriptionPage(page);
 
     try {
-      await page.goto(`${baseURL}/subscription?seat=added&quantity=3`);
-      await expect(
-        page.getByRole("status").filter({
-          hasText: "3 paid seats added. The billing update is confirmed",
-        }),
-      ).toBeVisible();
+      await subscription.openSeatConfirmation(3);
+      await subscription.expectPaidSeatConfirmation(3);
     } finally {
       await context.close();
     }

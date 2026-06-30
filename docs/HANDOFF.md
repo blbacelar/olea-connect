@@ -19,10 +19,10 @@ The platform also includes:
 - Brand setup and reusable organization identity.
 - Dynamic template sessions with saved workbooks.
 - Board Calendar & Operational Workflow editor.
-- Grants, webinars, and community entry points.
+- Grants, webinars, and native community entry points.
 - Team seats and invitations.
 - Transactional email, webhooks, and background workers.
-- Circle SSO and provisioning integration scaffolding.
+- Native community foundation with deferred Circle SSO/provisioning scaffolding.
 
 ## Business Context
 
@@ -68,6 +68,14 @@ This is the most complex template currently in the app. It behaves like a
 calendar-backed workbook:
 
 - Users can create more than one workbook/session.
+- The Setup view stores workbook-level details: organization name, fiscal year,
+  administrator name/email, executive director, board chair, committees, and
+  operational task rules.
+- Committees are added one at a time, up to 8. The UI should not prefill all 8
+  committee slots.
+- Operational task rules are configured in Setup with a task label, days
+  before/after the related meeting, applies-to meeting type, and default
+  responsible role/person.
 - Entries are added, edited, and deleted through the calendar UI.
 - Past dates are displayed as disabled for new entries.
 - Clicking an existing event opens edit mode.
@@ -75,15 +83,21 @@ calendar-backed workbook:
 - Event/category colors are managed inline while adding or editing an entry.
   The separate `colour_key` template data still exists as the backing store,
   but users should not have to manage it as a separate workbook tab.
-- Monthly, annual, and operational views are generated from the same normalized
-  event data.
+- Monthly, annual, operational workflow, staff task list, and AGM planning views
+  are generated from the same normalized event/setup data.
+- Staff task rows are generated from meeting dates plus Setup task rules.
+  User-editable staff fields, such as responsible, status, notes, and done, are
+  preserved by stable generated task keys when due dates recalculate.
+- AGM planning uses a confirmed AGM date plus milestone rows with days before
+  AGM. Target dates are calculated as `agm_date - days_before`.
 - Rapid CRUD is protected by the dynamic-template session hook. It applies
   calendar mutations against the latest parent form data and avoids replacing
   local unsaved changes with refreshed server props for the same workbook.
 - E2E coverage for this workflow lives in
   `tests/e2e/board-calendar-workflow.spec.ts` and covers validation, create,
-  duplicate same-date/same-time events, edit, delete confirmation, ordering,
-  and reload persistence.
+  Setup, committees, generated task rules, staff task updates, AGM target date
+  calculation, duplicate same-date/same-time events, edit, delete confirmation,
+  ordering, mobile rendering, and reload persistence.
 
 ### Team Seats
 
@@ -186,9 +200,11 @@ For human developers, mirror the same idea:
 - Hosted Supabase Auth rate limits can affect full E2E runs.
 - Production deployment strategy is unusual because the demo branch may be the
   production Vercel branch while `main` continues production development.
-- Circle, Attio, and Klaviyo-style automations are partially represented; Circle
-  has code-level integration, but operational credentials and behavior must be
-  verified per environment.
+- Attio and QuickBooks have code-level outbox workers. Circle SSO/provisioning
+  code exists as deferred scaffolding, but native community is the MVP path to
+  avoid Circle SSO cost. Operational credentials, Supabase Cron jobs, and
+  sandbox behavior must be verified per environment. Klaviyo is intentionally on
+  hold; Zoom is manual-link only until API automation is justified.
 - Language localization has a GitHub ticket but is not implemented yet.
 
 ## Where to Look First
@@ -196,12 +212,14 @@ For human developers, mirror the same idea:
 - Signup/auth: `lib/auth.ts`, `app/signup/*`, `app/login/page.tsx`,
   `utils/supabase/middleware.ts`.
 - Member session: `lib/data/member-context.ts`.
-- Billing: `app/api/stripe/*`, `lib/stripe/*`, `lib/billing/server.ts`.
+- Billing: `app/api/v1/stripe/*`, `lib/stripe/*`, `lib/billing/server.ts`.
 - Team: `app/team/*`, `lib/data/team.ts`, `lib/team/seats.ts`.
+- Community: `app/community/page.tsx`, `lib/data/community.ts`,
+  `supabase/migrations/*native_community_foundation.sql`.
 - Templates: `lib/data/templates.ts`, `components/templates/*`,
   `lib/template-renderer/*`.
 - Board Calendar: `components/templates/BoardCalendarWorkbench.tsx`,
   `lib/template-renderer/board-calendar-editor.ts`,
   `lib/template-renderer/calendar-view.ts`.
-- Email: `lib/email/*`, `app/api/email/*`, `supabase/functions/send-email/*`.
+- Email: `lib/email/*`, `app/api/v1/email/*`, `supabase/functions/send-email/*`.
 - Supabase schema: `supabase/migrations/*`, `supabase/tests/*`.

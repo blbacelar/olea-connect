@@ -1,7 +1,7 @@
 # Operations Runbook
 
 This guide covers local setup, environment variables, Supabase, Stripe, Resend,
-Circle, Vercel, deployment, and common troubleshooting.
+native community, Vercel, deployment, and common troubleshooting.
 
 ## Local Development
 
@@ -82,7 +82,7 @@ CRON_SECRET
 Outside production, set `EMAIL_ENVIRONMENT` to a non-production value and set
 `EMAIL_TEST_RECIPIENT`. This prevents accidental delivery to real users.
 
-### Circle
+### Native Community and Deferred Circle
 
 ```text
 CIRCLE_COMMUNITY_URL
@@ -99,8 +99,36 @@ CIRCLE_SPACE_GROUP_CANOPY_IDS
 CIRCLE_SPACE_GROUP_HARVEST_IDS
 ```
 
-Circle values can be left blank in environments where community provisioning is
-not being tested, but Circle routes will fail if required values are missing.
+Native community is the MVP path and does not require Circle environment
+variables. Default communities and spaces are seeded by migration. Community
+events can store manual Zoom URLs in `community_events.zoom_url`.
+
+Circle values can be left blank in environments where deferred Circle
+provisioning is not being tested. Circle routes will fail if required values are
+missing, and should not be configured as the member-facing community path unless
+the product later decides to pay for the required Circle SSO tier.
+
+### Attio and QuickBooks
+
+```text
+ATTIO_API_TOKEN
+ATTIO_API_BASE_URL
+QUICKBOOKS_ACCESS_TOKEN
+QUICKBOOKS_REALM_ID
+QUICKBOOKS_API_BASE_URL
+```
+
+Attio and QuickBooks are processed asynchronously through
+`integration_events`. Missing provider credentials will fail only the background
+worker for that provider; signup and billing webhooks should continue queuing
+events.
+
+Operators can replay a failed or dead-letter integration event with the service
+role:
+
+```sql
+select public.replay_integration_event('<event-id>'::uuid);
+```
 
 ### Automated Test Data
 
@@ -181,20 +209,33 @@ In Supabase Dashboard:
 
 Cron jobs use `CRON_SECRET` and call app routes over HTTP.
 
+Use `/api/v1/...` for all new external configuration. Legacy `/api/...` routes
+remain available as compatibility aliases while provider dashboards and cron
+jobs are migrated.
+
 Recommended jobs:
 
 - Email outbox processor:
   - Method: `GET`
-  - URL: `https://<domain>/api/email/process`
+  - URL: `https://<domain>/api/v1/email/process`
   - Header: `Authorization: Bearer <CRON_SECRET>`
   - Schedule: every minute or every five minutes, depending on volume.
 
 - Circle provisioning processor:
-  - URL: `https://<domain>/api/circle/process`
+  - URL: `https://<domain>/api/v1/circle/process`
+  - Same auth header.
+  - Deferred while native community is the MVP path.
+
+- Attio member/contact processor:
+  - URL: `https://<domain>/api/v1/attio/process`
+  - Same auth header.
+
+- QuickBooks customer/reference processor:
+  - URL: `https://<domain>/api/v1/quickbooks/process`
   - Same auth header.
 
 - Provisioning reconciliation:
-  - URL: `https://<domain>/api/provisioning/reconcile`
+  - URL: `https://<domain>/api/v1/provisioning/reconcile`
   - Same auth header.
 
 If Supabase says `pg_net` is required, install the extension from the Supabase
@@ -219,7 +260,7 @@ Paid seats are limited in the app to 1-3 seats per add-seat action.
 Endpoint:
 
 ```text
-https://<domain>/api/stripe/webhook
+https://<domain>/api/v1/stripe/webhook
 ```
 
 Subscribe to:
@@ -257,7 +298,7 @@ Review delivered email headers when diagnosing spam/quarantine issues.
 Endpoint:
 
 ```text
-https://<domain>/api/email/webhook
+https://<domain>/api/v1/email/webhook
 ```
 
 Subscribe to:

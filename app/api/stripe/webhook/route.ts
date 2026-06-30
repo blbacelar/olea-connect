@@ -5,6 +5,7 @@ import {
   buildCircleProvisioningPayload,
   enqueueCircleMemberSync,
 } from "@/lib/circle/provisioning";
+import { enqueueSubscriptionIntegrationSyncs } from "@/lib/integrations/subscription-sync";
 import { getStripe, getWebhookSecret } from "@/lib/stripe/server";
 import {
   attemptWorkspaceProvisioning,
@@ -304,6 +305,7 @@ export async function POST(request: Request) {
     }
     await handleLifecycleNotification(event, subscription);
     await enqueueCircleSubscriptionAccessSync(subscription);
+    await enqueueSubscriptionIntegrationSyncs(supabase, subscription);
 
     const { error: processedError } = await supabase
       .from("webhook_events")

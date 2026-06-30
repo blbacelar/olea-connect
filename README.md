@@ -7,8 +7,8 @@ seats, and access grants, webinars, and community features.
 
 This repository is the production application, not just the original demo. It
 uses Next.js App Router, Supabase Auth/Postgres/Storage/Edge Functions, Stripe
-billing, Resend email, Circle SSO/provisioning, and Playwright/Vitest/pgTAP
-tests.
+billing, Resend email, native community tables, deferred Circle
+SSO/provisioning scaffolding, and Playwright/Vitest/pgTAP tests.
 
 ## Start Here
 

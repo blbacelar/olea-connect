@@ -12,8 +12,7 @@ const publicPagePaths = new Set([
 const publicPathPrefixes = [
   "/auth",
   "/signup",
-  "/api/email",
-  "/api/stripe",
+  "/api",
 ];
 
 function isPathOrChild(pathname: string, prefix: string) {

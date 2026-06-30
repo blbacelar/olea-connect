@@ -1,10 +1,6 @@
-import type { Page } from "@playwright/test";
-
-import {
-  createAuthenticatedStorageState,
-  expect,
-  test,
-} from "../fixtures/authenticated.fixture";
+import { expect, test } from "../fixtures/authenticated.fixture";
+import { BrandProfilePage } from "../pages/brand-profile.page";
+import { createAuthenticatedPage, signInPage } from "../support/auth-session";
 
 const svgLogo = Buffer.from(
   '<svg xmlns="http://www.w3.org/2000/svg" width="64" height="64"><rect width="64" height="64" fill="#2f6b4f"/></svg>',
@@ -12,46 +8,6 @@ const svgLogo = Buffer.from(
 const replacementSvgLogo = Buffer.from(
   '<svg xmlns="http://www.w3.org/2000/svg" width="64" height="64"><circle cx="32" cy="32" r="32" fill="#d97757"/></svg>',
 );
-
-async function signInPage(
-  page: Page,
-  baseURL: string,
-  email: string,
-  password: string,
-) {
-  const storage = await createAuthenticatedStorageState(email, password, baseURL);
-  await page.context().clearCookies();
-  await page.context().addCookies(storage.cookies);
-}
-
-async function dropLogoFile(
-  page: Page,
-  file: {
-    buffer: Buffer;
-    mimeType: string;
-    name: string;
-  },
-) {
-  const dataTransfer = await page.evaluateHandle(
-    ({ bytes, mimeType, name }) => {
-      const transfer = new DataTransfer();
-      transfer.items.add(
-        new File([new Uint8Array(bytes)], name, { type: mimeType }),
-      );
-      return transfer;
-    },
-    {
-      bytes: Array.from(file.buffer),
-      mimeType: file.mimeType,
-      name: file.name,
-    },
-  );
-
-  await page
-    .getByRole("button", { name: /Drop your logo here or browse/ })
-    .dispatchEvent("drop", { dataTransfer });
-  await dataTransfer.dispose();
-}
 
 test.describe("@member brand profile", () => {
   test("persists uploaded logo and completed brand settings across sessions", async ({
@@ -65,24 +21,20 @@ test.describe("@member brand profile", () => {
       activeSubscription: true,
     });
     await signInPage(page, baseURL, owner.email, owner.password);
+    const brandProfile = new BrandProfilePage(page);
 
-    await page.goto("/dashboard");
-    await expect(
-      page.getByText("Your brand profile is incomplete."),
-    ).toBeVisible();
+    await brandProfile.openDashboard();
+    await brandProfile.expectIncompletePromptVisible();
 
-    await page.goto("/settings/brand");
-    await page.getByLabel("Organization name").fill("Evergreen Community Trust");
-    await page.getByLabel("Upload organization logo").setInputFiles({
+    await brandProfile.openSettings();
+    await brandProfile.setOrganizationName("Evergreen Community Trust");
+    await brandProfile.uploadLogo({
       name: "evergreen-logo.svg",
       mimeType: "image/svg+xml",
       buffer: svgLogo,
     });
-    await expect(page.getByText("Logo uploaded")).toBeVisible();
-    await page.getByRole("button", { name: "Save changes" }).click();
-    await expect(
-      page.getByRole("button", { name: "Changes saved" }),
-    ).toBeVisible();
+    await brandProfile.expectLogoUploaded();
+    await brandProfile.save();
 
     const savedBrand = await testData.getBrandProfile(owner.organizationId);
     expect(savedBrand.display_name).toBe("Evergreen Community Trust");
@@ -91,43 +43,34 @@ test.describe("@member brand profile", () => {
     );
     expect(savedBrand.brand_completed_at).toBeTruthy();
 
-    await page.goto("/dashboard");
-    await expect(
-      page.getByText("Your brand profile is incomplete."),
-    ).toHaveCount(0);
+    await brandProfile.openDashboard();
+    await brandProfile.expectIncompletePromptHidden();
 
-    const secondStorage = await createAuthenticatedStorageState(
-      owner.email,
-      owner.password,
-      baseURL,
-    );
-    const secondContext = await browser.newContext({
-      storageState: secondStorage,
-    });
-    const secondPage = await secondContext.newPage();
+    const { context: secondContext, page: secondPage } =
+      await createAuthenticatedPage(
+        browser,
+        baseURL,
+        owner.email,
+        owner.password,
+      );
+    const secondBrandProfile = new BrandProfilePage(secondPage);
     try {
-      await secondPage.goto("/settings/brand");
-      await expect(
-        secondPage.getByLabel("Organization name"),
-      ).toBeVisible();
-      await expect(secondPage.getByLabel("Organization name")).toHaveValue(
+      await secondBrandProfile.openSettings();
+      await secondBrandProfile.expectOrganizationName(
         "Evergreen Community Trust",
       );
-      await expect(secondPage.getByText("Logo uploaded")).toBeVisible();
+      await secondBrandProfile.expectLogoUploaded();
     } finally {
       await secondContext.close();
     }
 
-    await page.goto("/settings/brand");
-    await page.getByLabel("Upload organization logo").setInputFiles({
+    await brandProfile.openSettings();
+    await brandProfile.uploadLogo({
       name: "replacement-logo.svg",
       mimeType: "image/svg+xml",
       buffer: replacementSvgLogo,
     });
-    await page.getByRole("button", { name: "Save changes" }).click();
-    await expect(
-      page.getByRole("button", { name: "Changes saved" }),
-    ).toBeVisible();
+    await brandProfile.save();
 
     const replacedBrand = await testData.getBrandProfile(owner.organizationId);
     expect(replacedBrand.logo_path).toMatch(
@@ -135,11 +78,8 @@ test.describe("@member brand profile", () => {
     );
     expect(replacedBrand.logo_path).not.toBe(savedBrand.logo_path);
 
-    await page.getByRole("button", { name: "Remove logo" }).click();
-    await page.getByRole("button", { name: "Save changes" }).click();
-    await expect(
-      page.getByRole("button", { name: "Changes saved" }),
-    ).toBeVisible();
+    await brandProfile.removeLogo();
+    await brandProfile.save();
 
     const removedBrand = await testData.getBrandProfile(owner.organizationId);
     expect(removedBrand.logo_path).toBeNull();
@@ -155,29 +95,22 @@ test.describe("@member brand profile", () => {
       activeSubscription: true,
     });
     await signInPage(page, baseURL, owner.email, owner.password);
+    const brandProfile = new BrandProfilePage(page);
 
-    await page.goto("/settings/brand");
-    await dropLogoFile(page, {
+    await brandProfile.openSettings();
+    await brandProfile.dropLogo({
       name: "not-a-logo.txt",
       mimeType: "text/plain",
       buffer: Buffer.from("not a logo"),
     });
-    await expect(
-      page.getByRole("alert").filter({
-        hasText: "Choose a PNG, JPG, or SVG file.",
-      }),
-    ).toBeVisible();
+    await brandProfile.expectLogoValidation("Choose a PNG, JPG, or SVG file.");
 
-    await page.getByLabel("Upload organization logo").setInputFiles({
+    await brandProfile.uploadLogo({
       name: "too-large.png",
       mimeType: "image/png",
       buffer: Buffer.alloc(2 * 1024 * 1024 + 1),
     });
-    await expect(
-      page.getByRole("alert").filter({
-        hasText: "Logo must be smaller than 2 MB.",
-      }),
-    ).toBeVisible();
+    await brandProfile.expectLogoValidation("Logo must be smaller than 2 MB.");
   });
 
   test("prevents non-admin members from modifying brand settings", async ({
@@ -191,14 +124,9 @@ test.describe("@member brand profile", () => {
     });
     const member = await testData.createOrganizationMember(owner);
     await signInPage(page, baseURL, member.email, member.password);
+    const brandProfile = new BrandProfilePage(page);
 
-    await page.goto("/settings/brand");
-    await expect(
-      page.getByText("Only organization owners and administrators can modify brand settings."),
-    ).toBeVisible();
-    await expect(
-      page.getByRole("button", { name: "Save changes" }),
-    ).toHaveCount(0);
-    await expect(page.getByLabel("Upload organization logo")).toHaveCount(0);
+    await brandProfile.openSettings();
+    await brandProfile.expectReadOnlyForNonAdmin();
   });
 });

@@ -21,30 +21,23 @@ test.describe("@smoke @critical membership signup", () => {
     });
 
     await expect(signup.continueToPayment).toBeEnabled();
-    await signup.continueToPayment.click();
-
-    await expect(page).toHaveURL("/signup/payment");
-    await expect(
-      page.getByRole("heading", { name: "Activate your membership" }),
-    ).toBeVisible();
-    await expect(
-      page.getByRole("heading", { name: "🌱 Seedling" }),
-    ).toBeVisible();
-    await expect(page.getByText("$440/year")).toBeVisible();
+    await signup.continueToPaymentStep();
+    await signup.expectPaymentStep({
+      planHeading: "🌱 Seedling",
+      price: "$440/year",
+    });
   });
 
   test("does not persist the password in browser storage", async ({ page }) => {
     const signup = new SignupPage(page);
     await signup.openAccount();
 
-    await page.getByLabel("Organization name *").fill("Persistent Org");
-    await page.getByLabel("Password *").fill("NeverStoreThis123!");
+    await signup.enterOrganizationName("Persistent Org");
+    await signup.enterPassword("NeverStoreThis123!");
     await page.reload();
 
-    await expect(page.getByLabel("Organization name *")).toHaveValue(
-      "Persistent Org",
-    );
-    await expect(page.getByLabel("Password *")).toHaveValue("");
+    await signup.expectOrganizationName("Persistent Org");
+    await signup.expectPasswordCleared();
   });
 
   test("returns from account creation to landing-page plans", async ({
@@ -53,11 +46,7 @@ test.describe("@smoke @critical membership signup", () => {
     const signup = new SignupPage(page);
     await signup.openAccount();
 
-    await page.getByRole("button", { name: "← Back to plan" }).click();
-
-    await expect(page).toHaveURL("/#plans");
-    await expect(
-      page.getByRole("heading", { name: "Choose the support that fits today." }),
-    ).toBeVisible();
+    await signup.goBackToPlans();
+    await signup.expectLandingPlansVisible();
   });
 });

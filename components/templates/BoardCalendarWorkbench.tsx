@@ -58,6 +58,11 @@ import { setValue } from "@/lib/template-renderer/schema";
 import { cn } from "@/lib/utils";
 
 import { TemplateFields } from "./TemplateFields";
+import {
+  AgmTimelinePanel,
+  BoardCalendarSetupPanel,
+  StaffTaskListPanel,
+} from "./BoardCalendarWorkflowPanels";
 
 type CalendarMode = "month" | "week" | "year";
 type WorkspaceMode =
@@ -79,13 +84,13 @@ const viewOptions: Array<{ label: string; value: CalendarMode }> = [
 
 const workspaceOptions: Array<{ label: string; value: WorkspaceMode }> = [
   { label: "Calendar workspace", value: "calendar" },
-  { label: "Getting started", value: "getting_started" },
+  { label: "Setup", value: "getting_started" },
   { label: "Committees", value: "committees" },
   { label: "Meeting schedule", value: "meeting_schedule" },
-  { label: "Operational workflow", value: "operational_calendar" },
+  { label: "Generated operational workflow", value: "operational_calendar" },
   { label: "Annual calendar", value: "annual_calendar" },
   { label: "Monthly calendar", value: "monthly_calendar" },
-  { label: "Governance task list", value: "staff_tasks" },
+  { label: "Staff task list", value: "staff_tasks" },
   { label: "AGM planning timeline", value: "agm_timeline" },
 ];
 
@@ -273,7 +278,7 @@ export function BoardCalendarWorkbench({
       responsible: entryResponsible,
       status: entryStatus,
       done: entryDone,
-      weeksBefore: Number.parseInt(entryWeeksBefore, 10) || 0,
+      daysBeforeAgm: Number.parseInt(entryWeeksBefore, 10) || 0,
       notes: entryNotes,
     };
     onDataChange((currentData) => {
@@ -339,7 +344,7 @@ export function BoardCalendarWorkbench({
     setEntryResponsible(input.responsible ?? "");
     setEntryStatus(input.status ?? input.category ?? "Not Started");
     setEntryDone(Boolean(input.done));
-    setEntryWeeksBefore(String(input.weeksBefore ?? 0));
+    setEntryWeeksBefore(String(input.daysBeforeAgm ?? input.weeksBefore ?? 0));
     setWorkspaceMode("calendar");
     const date = parseCalendarDateKey(input.dateKey);
     if (date) setAnchorDate(date);
@@ -574,6 +579,12 @@ export function BoardCalendarWorkbench({
             editingEvent={editingEvent}
           />
         </>
+      ) : workspaceMode === "getting_started" ? (
+        <BoardCalendarSetupPanel data={data} onChange={onChange} />
+      ) : workspaceMode === "staff_tasks" ? (
+        <StaffTaskListPanel data={data} onChange={onChange} />
+      ) : workspaceMode === "agm_timeline" ? (
+        <AgmTimelinePanel data={data} onChange={onChange} />
       ) : selectedSection ? (
         <section
           className="rounded-xl border bg-white p-6 shadow-sm"
@@ -666,6 +677,7 @@ function MonthCalendar({
         {days.map((day) => (
           <DayCell
             key={day.dateKey}
+            dateKey={day.dateKey}
             dayNumber={day.date.getDate()}
             disabled={day.dateKey < todayKey}
             events={eventsByDate.get(day.dateKey) ?? []}
@@ -728,11 +740,6 @@ function WeekCalendar({
               <p className="mt-1 text-lg font-semibold text-slate-950">
                 {monthNames[day.getMonth()].slice(0, 3)} {day.getDate()}
               </p>
-              {disabled ? (
-                <p className="mt-1 text-xs font-medium text-slate-400">
-                  Past date
-                </p>
-              ) : null}
             </button>
             <div className="mt-3 space-y-2">
               {events.length ? (
@@ -829,6 +836,7 @@ function CalendarWeekHeader() {
 }
 
 function DayCell({
+  dateKey,
   dayNumber,
   disabled,
   events,
@@ -837,6 +845,7 @@ function DayCell({
   onEditEvent,
   onSelect,
 }: {
+  dateKey: string;
   dayNumber: number;
   disabled: boolean;
   events: CalendarViewEvent[];
@@ -858,6 +867,7 @@ function DayCell({
     >
       <button
         type="button"
+        aria-label={disabled ? `${dateKey} unavailable` : `Select ${dateKey}`}
         disabled={disabled}
         className="flex w-full items-center justify-between gap-1 rounded-lg text-left disabled:cursor-not-allowed sm:gap-2"
         onClick={onSelect}
@@ -874,11 +884,6 @@ function DayCell({
         >
           {dayNumber}
         </span>
-        {disabled ? (
-          <span className="hidden text-[11px] font-medium uppercase tracking-[0.08em] text-slate-400 md:inline">
-            Past
-          </span>
-        ) : null}
         {events.length > 3 ? (
           <span className="text-[10px] font-medium text-slate-400 sm:text-xs">
             +{events.length - 3}
@@ -1291,9 +1296,11 @@ function CalendarEntryComposer({
           {isAgmMilestone ? (
             <>
               <div className="space-y-2">
-                <Label htmlFor="calendar-entry-weeks-before">Weeks before AGM</Label>
+                <Label htmlFor="calendar-entry-days-before-agm">
+                  Days before AGM
+                </Label>
                 <Input
-                  id="calendar-entry-weeks-before"
+                  id="calendar-entry-days-before-agm"
                   type="number"
                   value={entryWeeksBefore}
                   onChange={(event) => onWeeksBeforeChange(event.target.value)}

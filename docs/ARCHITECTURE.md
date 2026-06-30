@@ -13,7 +13,7 @@ Browser
   -> Supabase Auth + Postgres + Storage
   -> Stripe API and webhooks
   -> Resend API and webhooks
-  -> Circle API / SSO
+  -> Attio / QuickBooks workers
 ```
 
 ## Next.js Layers
@@ -27,7 +27,7 @@ Browser
 - Member routes: `/dashboard`, `/templates`, `/team`, `/subscription`,
   `/settings/brand`, `/grants`, `/webinars`, `/community`, `/help`,
   `/whats-new`.
-- API routes: Stripe, email, Circle, and provisioning workers.
+- API routes: Stripe, email, deferred Circle, and provisioning workers.
 
 ### App Shell
 
@@ -128,7 +128,8 @@ Core domains:
 - Brand: logo path, colors, footer contact details.
 - Team: invitations, active members, seat limits.
 - Grants: programs, rounds, applications, reviews, awards.
-- Webinars/events/community: webinars, registrations, Circle events.
+- Webinars/events/community: webinars, registrations, native community spaces,
+  posts, comments, reactions, managers, and Zoom-linked community events.
 - Integrations: webhook events, integration events, audit logs.
 
 Database tests live in `supabase/tests/` and should be updated when migrations
@@ -178,6 +179,31 @@ logic:
 It maps a workbook-style template into calendar events and derived annual,
 monthly, operational, task, and AGM views.
 
+The Board Calendar data model has three source areas:
+
+- Setup fields in `form_data`, including organization name, fiscal year,
+  administrator, administrator email, executive director, board chair,
+  `committees`, and `operational_task_rules`.
+- Meeting/calendar source rows in `meetings`, `annual_highlights`, `tasks`, and
+  `agm_milestones`.
+- Derived views generated in the client from the source rows.
+
+`components/templates/BoardCalendarWorkflowPanels.tsx` owns the specialized
+Setup, Staff Task List, and AGM Timeline panels. `BoardCalendarWorkbench` keeps
+the calendar entry composer as the primary way to add calendar records, while
+the workflow panels manage setup metadata and generated task editing.
+
+Operational staff tasks are generated from `meetings` plus
+`operational_task_rules`. Generated rows use stable keys based on meeting date,
+meeting type, meeting title/committee, and task rule details so user-edited
+fields such as responsible, status, notes, and done remain attached when due
+dates recalculate.
+
+AGM milestones use `days_before` rather than the legacy `weeks_before`. The
+migration keeps backward compatibility by converting existing `weeks_before`
+values to `days_before`, and runtime helpers still read legacy data as a
+fallback.
+
 Category colors are still stored in the template data under
 `event_categories`, but the product UI manages them inline from the calendar
 entry form. Avoid reintroducing a separate user-facing "Colour key" workflow
@@ -199,7 +225,7 @@ refreshes from overwriting newer calendar edits.
 
 ### Signup Checkout
 
-`app/api/stripe/checkout/route.ts` is intentionally public because it creates
+`app/api/v1/stripe/checkout/route.ts` is intentionally public because it creates
 new users during signup. It:
 
 1. Validates plan/account payload.
@@ -213,13 +239,13 @@ variables via `lib/stripe/server.ts`.
 
 ### Stripe Webhook
 
-`app/api/stripe/webhook/route.ts` verifies the raw Stripe signature. It records
+`app/api/v1/stripe/webhook/route.ts` verifies the raw Stripe signature. It records
 each event once, handles replay safety, and syncs subscription state into
 Supabase.
 
 ### Subscription Management
 
-`app/api/stripe/portal/route.ts` handles:
+`app/api/v1/stripe/portal/route.ts` handles:
 
 - Billing portal sessions.
 - Payment method update flow.
@@ -242,7 +268,7 @@ There are two email systems:
 
 1. Supabase Auth transactional emails through `supabase/functions/send-email`.
 2. Application lifecycle emails through `integration_events` and
-   `/api/email/process`.
+   `/api/v1/email/process`.
 
 ### Auth Email Hook
 
@@ -252,26 +278,56 @@ uses Resend and validates `SEND_EMAIL_HOOK_SECRET`.
 ### Application Email Worker
 
 Team invitation and lifecycle emails are queued in `integration_events`.
-Supabase Cron calls `/api/email/process` with `Authorization: Bearer
+Supabase Cron calls `/api/v1/email/process` with `Authorization: Bearer
 <CRON_SECRET>`. The route claims one event transactionally and sends through
 Resend.
 
 ### Resend Webhook
 
-`app/api/email/webhook/route.ts` validates `RESEND_WEBHOOK_SECRET` and records
+`app/api/v1/email/webhook/route.ts` validates `RESEND_WEBHOOK_SECRET` and records
 delivery events for observability.
 
-## Circle Integration
+## Native Community
 
-Circle SSO and provisioning live under:
+Native community is the default MVP path because paid Circle SSO would add cost
+and an external dependency to a core member experience. The foundation lives in:
 
-- `app/api/circle-sso/route.ts`
-- `lib/circle/config.ts`
-- `lib/circle/sso.ts`
-- `lib/circle/provisioning.ts`
-- `app/api/circle/process/route.ts`
+- `app/community/page.tsx`
+- `lib/data/community.ts`
+- `public.communities`
+- `public.community_spaces`
+- `public.community_space_access_rules`
+- `public.community_managers`
+- `public.community_posts`
+- `public.community_comments`
+- `public.community_reactions`
+- `public.community_events`
 
-Circle background processing is protected by `CRON_SECRET`.
+The initial community and starter spaces are seeded by migration. Community
+creation and manager assignment are script/migration-driven for MVP; a future
+`/admin` portal can manage these tables directly. Live calls use manually
+attached Zoom URLs for now. Circle SSO/provisioning code remains deferred
+scaffolding under `lib/circle/*` and `app/api/v1/circle*` in case the product
+later justifies the higher Circle plan.
+
+## Attio and QuickBooks Outbox Workers
+
+Attio and QuickBooks use the same `integration_events` outbox pattern as email
+and Circle/native community:
+
+- Stripe subscription webhooks queue provider work after local subscription
+  state is synced.
+- `/api/v1/attio/process` claims one Attio event with
+  `claim_attio_integration_event`.
+- `/api/v1/quickbooks/process` claims one QuickBooks event with
+  `claim_quickbooks_integration_event`.
+- Workers store external IDs and last sync metadata in
+  `organization_integrations`.
+
+Failures are isolated from member signup and billing. Temporary failures become
+`failed` with a future `available_at`; repeated failures become `dead_letter`
+for operator review. Klaviyo remains intentionally deferred; Zoom is manual-link
+only until API automation is justified.
 
 ## Grants and Webinars
 

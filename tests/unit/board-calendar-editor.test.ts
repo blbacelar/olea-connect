@@ -2,6 +2,9 @@ import { describe, expect, it } from "vitest";
 
 import {
   appendBoardCalendarEntry,
+  buildBoardCalendarSetup,
+  buildGeneratedStaffTasks,
+  calculateAgmMilestoneDate,
   createBoardCalendarEntryRow,
   deleteBoardCalendarEntry,
   getBoardCalendarEntryInput,
@@ -12,6 +15,167 @@ import { buildCalendarEvents } from "@/lib/template-renderer/calendar-view";
 import type { TemplateFormData } from "@/lib/template-renderer/types";
 
 describe("board calendar editor helpers", () => {
+  it("normalizes setup details, committees, responsible options, and task rules", () => {
+    expect(
+      buildBoardCalendarSetup({
+        fiscal_year: "2026",
+        administrator: "Bruno",
+        administrator_email: "bruno@example.com",
+        executive_director: "Alex ED",
+        board_chair: "Sam Chair",
+        committees: [
+          { name: "Finance Committee" },
+          { name: "Governance Committee" },
+          { name: "" },
+          { name: "Extra 1" },
+          { name: "Extra 2" },
+          { name: "Extra 3" },
+          { name: "Extra 4" },
+          { name: "Extra 5" },
+          { name: "Extra 6" },
+        ],
+        operational_task_rules: [
+          {
+            label: "Send save-the-date",
+            days_before: 30,
+            applies_to: "Board Meeting",
+            responsible: "Administrator",
+          },
+          {
+            label: "Draft action items",
+            days_after: 1,
+            applies_to: "Board Meeting",
+            responsible: "Board Chair",
+          },
+          { label: "" },
+        ],
+      }),
+    ).toMatchObject({
+      fiscalYear: "2026",
+      administrator: "Bruno",
+      administratorEmail: "bruno@example.com",
+      executiveDirector: "Alex ED",
+      boardChair: "Sam Chair",
+      committees: [
+        "Finance Committee",
+        "Governance Committee",
+        "Extra 1",
+        "Extra 2",
+        "Extra 3",
+        "Extra 4",
+        "Extra 5",
+        "Extra 6",
+      ],
+      responsibleOptions: expect.arrayContaining([
+        "Administrator",
+        "Executive Director",
+        "Board Chair",
+        "Finance Committee",
+        "Governance Committee",
+      ]),
+      operationalTaskRules: [
+        {
+          label: "Send save-the-date",
+          daysOffset: -30,
+          appliesTo: "Board Meeting",
+          responsible: "Administrator",
+        },
+        {
+          label: "Draft action items",
+          daysOffset: 1,
+          appliesTo: "Board Meeting",
+          responsible: "Board Chair",
+        },
+      ],
+    });
+  });
+
+  it("generates staff tasks from meetings and preserves user-editable task fields", () => {
+    const generated = buildGeneratedStaffTasks({
+      meetings: [
+        {
+          date: "2026-06-17",
+          type: "Board Meeting",
+          committee: "Q2 Board Meeting",
+        },
+        {
+          date: "2026-06-20",
+          type: "Committee Meeting",
+          committee: "Finance Committee",
+        },
+      ],
+      operational_task_rules: [
+        {
+          label: "Send save-the-date",
+          days_before: 30,
+          applies_to: "Board Meeting",
+          responsible: "Administrator",
+        },
+        {
+          label: "Draft action items",
+          days_after: 1,
+          applies_to: "Any meeting",
+          responsible: "Board Chair",
+        },
+      ],
+      tasks: [
+        {
+          generated_key:
+            "meeting:2026-06-17:Board Meeting:Q2 Board Meeting:Send save-the-date:-30:Board Meeting",
+          task: "Send save-the-date",
+          due_date: "2026-05-18",
+          related_meeting: "Board Meeting - Q2 Board Meeting",
+          responsible: "Board Chair",
+          status: "In Progress",
+          notes: "Already drafted.",
+          done: false,
+        },
+      ],
+    });
+
+    expect(generated).toEqual([
+      {
+        generated_key:
+          "meeting:2026-06-17:Board Meeting:Q2 Board Meeting:Send save-the-date:-30:Board Meeting",
+        task: "Send save-the-date",
+        due_date: "2026-05-18",
+        related_meeting: "Board Meeting - Q2 Board Meeting",
+        responsible: "Board Chair",
+        status: "In Progress",
+        notes: "Already drafted.",
+        done: false,
+      },
+      {
+        generated_key:
+          "meeting:2026-06-17:Board Meeting:Q2 Board Meeting:Draft action items:1:Any meeting",
+        task: "Draft action items",
+        due_date: "2026-06-18",
+        related_meeting: "Board Meeting - Q2 Board Meeting",
+        responsible: "Board Chair",
+        status: "Not Started",
+        notes: "",
+        done: false,
+      },
+      {
+        generated_key:
+          "meeting:2026-06-20:Committee Meeting:Finance Committee:Draft action items:1:Any meeting",
+        task: "Draft action items",
+        due_date: "2026-06-21",
+        related_meeting: "Committee Meeting - Finance Committee",
+        responsible: "Board Chair",
+        status: "Not Started",
+        notes: "",
+        done: false,
+      },
+    ]);
+  });
+
+  it("calculates AGM milestone target dates from days before AGM", () => {
+    expect(calculateAgmMilestoneDate("2026-06-17", 30)).toBe("2026-05-18");
+    expect(calculateAgmMilestoneDate("2026-06-17", -7)).toBe("2026-06-24");
+    expect(calculateAgmMilestoneDate("not-a-date", 30)).toBe("");
+  });
+
   it("adds meetings through the calendar into the meeting schedule rows", () => {
     const data: TemplateFormData = {
       meetings: [
@@ -150,6 +314,7 @@ describe("board calendar editor helpers", () => {
           dateKey: "2026-02-25",
           title: "Confirm AGM venue",
           category: "Governance",
+          daysBeforeAgm: 112,
           notes: "Book venue if in person.",
         },
       ),
@@ -159,7 +324,7 @@ describe("board calendar editor helpers", () => {
         {
           track: "Governance",
           task: "Confirm AGM venue",
-          weeks_before: 0,
+          days_before: 112,
           calculated_date: "2026-02-25",
           responsible: "Administrator",
           status: "Not Started",
@@ -376,7 +541,7 @@ describe("board calendar editor helpers", () => {
         {
           track: "Governance",
           task: "Confirm AGM venue",
-          weeks_before: 16,
+          days_before: 112,
           calculated_date: "2026-02-25",
           responsible: "Governance Chair",
           status: "Not Started",
@@ -391,7 +556,7 @@ describe("board calendar editor helpers", () => {
       dateKey: "2026-02-25",
       title: "Confirm AGM venue",
       category: "Governance",
-      weeksBefore: 16,
+      daysBeforeAgm: 112,
       responsible: "Governance Chair",
       status: "Not Started",
       notes: "Book venue if in person.",
@@ -404,7 +569,7 @@ describe("board calendar editor helpers", () => {
         dateKey: "2026-03-01",
         title: "Confirm hybrid AGM venue",
         category: "Operations",
-        weeksBefore: 14,
+        daysBeforeAgm: 98,
         responsible: "Administrator",
         status: "In Progress",
         notes: "Confirm AV.",
@@ -416,7 +581,7 @@ describe("board calendar editor helpers", () => {
         {
           track: "Operations",
           task: "Confirm hybrid AGM venue",
-          weeks_before: 14,
+          days_before: 98,
           calculated_date: "2026-03-01",
           responsible: "Administrator",
           status: "In Progress",
