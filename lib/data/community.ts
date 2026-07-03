@@ -15,6 +15,11 @@ import { requireMemberContext } from "./member-context";
 
 const ACTIVE_SUBSCRIPTION_STATUSES = new Set(["active", "trialing"]);
 
+type DataError = {
+  code?: string;
+  message?: string;
+};
+
 type SpaceAccessRuleRow = {
   plan_id: string;
 };
@@ -37,6 +42,13 @@ function safeHttpsUrl(value: string | null): string | null {
   } catch {
     return null;
   }
+}
+
+function isMissingCommunitySchema(error: DataError | null) {
+  return (
+    error?.code === "PGRST205" ||
+    error?.message?.includes("Could not find the table")
+  );
 }
 
 function mapSpace(row: CommunitySpaceRow): CommunitySpace {
@@ -123,6 +135,12 @@ export async function getCommunityHome(): Promise<CommunityHome | null> {
     .eq("slug", "olea-connects")
     .maybeSingle();
 
+  if (isMissingCommunitySchema(communityError)) {
+    console.warn(
+      "Native community schema is not available; showing community placeholder.",
+    );
+    return null;
+  }
   if (communityError) throw communityError;
   if (!community) return null;
 
@@ -165,6 +183,17 @@ export async function getCommunityHome(): Promise<CommunityHome | null> {
       .eq("user_id", member.id),
   ]);
 
+  if (
+    isMissingCommunitySchema(spacesError) ||
+    isMissingCommunitySchema(postsError) ||
+    isMissingCommunitySchema(eventsError) ||
+    isMissingCommunitySchema(managerError)
+  ) {
+    console.warn(
+      "Native community schema is incomplete; showing community placeholder.",
+    );
+    return null;
+  }
   if (spacesError) throw spacesError;
   if (postsError) throw postsError;
   if (eventsError) throw eventsError;

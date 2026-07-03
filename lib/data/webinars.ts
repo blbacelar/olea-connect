@@ -14,6 +14,12 @@ type EventAccessRow = {
   currency: string;
 };
 
+function logWebinarDataError(label: string, error: unknown) {
+  console.warn(`Unable to load webinar ${label}; showing safe empty state.`, {
+    error,
+  });
+}
+
 export async function getWebinars(): Promise<Webinar[]> {
   const { member, organization } = await requireMemberContext();
   const supabase = await createClient();
@@ -58,10 +64,23 @@ export async function getWebinars(): Promise<Webinar[]> {
       .neq("status", "canceled"),
   ]);
 
-  if (eventsError) throw eventsError;
-  if (accessError) throw accessError;
-  if (registrationsError) throw registrationsError;
-  if (organizationRegistrationsError) throw organizationRegistrationsError;
+  if (eventsError) {
+    logWebinarDataError("events", eventsError);
+    return [];
+  }
+  if (accessError) {
+    logWebinarDataError("plan access", accessError);
+    return [];
+  }
+  if (registrationsError) {
+    logWebinarDataError("member registrations", registrationsError);
+  }
+  if (organizationRegistrationsError) {
+    logWebinarDataError(
+      "organization registrations",
+      organizationRegistrationsError,
+    );
+  }
 
   const registrationsSet = new Set(
     (registrations ?? []).map((registration) => registration.event_id),
