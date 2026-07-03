@@ -8,11 +8,74 @@ import {
   getResend,
 } from "@/lib/email/server";
 import { hasClaimedEmailEvent } from "@/lib/email/config";
-import { teamInvitationEmail } from "@/lib/email/templates";
+import {
+  eventScheduleChangeEmail,
+  teamInvitationEmail,
+  type TransactionalEmail,
+} from "@/lib/email/templates";
 import { createAdminClient } from "@/utils/supabase/admin";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
+
+async function buildEmail(
+  supabase: ReturnType<typeof createAdminClient>,
+  event: {
+    event_type: string;
+    payload: unknown;
+  },
+): Promise<{ email: TransactionalEmail; recipientEmail: string }> {
+  if (event.event_type === "organization.invitation.created") {
+    const payload = event.payload as {
+      email: string;
+      role: string;
+      expires_at: string;
+      accept_path: string;
+      organization_id: string;
+    };
+    const { data: organization, error: organizationError } = await supabase
+      .from("organizations")
+      .select("name")
+      .eq("id", payload.organization_id)
+      .single();
+    if (organizationError) throw organizationError;
+
+    return {
+      recipientEmail: payload.email,
+      email: teamInvitationEmail({
+        organizationName: organization.name,
+        role: payload.role,
+        expiresAt: payload.expires_at,
+        acceptUrl: new URL(payload.accept_path, getAppUrl()).toString(),
+      }),
+    };
+  }
+
+  if (
+    event.event_type === "event.canceled" ||
+    event.event_type === "event.rescheduled"
+  ) {
+    const payload = event.payload as {
+      event_title: string;
+      starts_at: string;
+      timezone: string;
+      recipient_email: string;
+    };
+
+    return {
+      recipientEmail: payload.recipient_email,
+      email: eventScheduleChangeEmail({
+        eventTitle: payload.event_title,
+        startsAt: payload.starts_at,
+        timezone: payload.timezone,
+        type: event.event_type,
+        webinarsUrl: new URL("/webinars", getAppUrl()).toString(),
+      }),
+    };
+  }
+
+  throw new Error(`Unsupported email event: ${event.event_type}`);
+}
 
 function isAuthorized(request: Request) {
   const secret = process.env.CRON_SECRET;
@@ -36,31 +99,8 @@ export async function GET(request: Request) {
   }
 
   try {
-    if (event.event_type !== "organization.invitation.created") {
-      throw new Error(`Unsupported email event: ${event.event_type}`);
-    }
-
-    const payload = event.payload as {
-      email: string;
-      role: string;
-      expires_at: string;
-      accept_path: string;
-      organization_id: string;
-    };
-    const { data: organization, error: organizationError } = await supabase
-      .from("organizations")
-      .select("name")
-      .eq("id", payload.organization_id)
-      .single();
-    if (organizationError) throw organizationError;
-
-    const email = teamInvitationEmail({
-      organizationName: organization.name,
-      role: payload.role,
-      expiresAt: payload.expires_at,
-      acceptUrl: new URL(payload.accept_path, getAppUrl()).toString(),
-    });
-    const recipient = getEmailRecipient(payload.email);
+    const { email, recipientEmail } = await buildEmail(supabase, event);
+    const recipient = getEmailRecipient(recipientEmail);
     const { data, error } = await getResend().emails.send({
       from: getEmailSender(),
       replyTo: getReplyTo(),
@@ -68,9 +108,9 @@ export async function GET(request: Request) {
       subject: email.subject,
       html: email.html,
       text:
-        recipient === payload.email
+        recipient === recipientEmail
           ? email.text
-          : `[Non-production email for ${payload.email}]\n\n${email.text}`,
+          : `[Non-production email for ${recipientEmail}]\n\n${email.text}`,
       tags: [
         { name: "event_type", value: event.event_type.replace(/\./g, "_") },
         { name: "environment", value: process.env.VERCEL_ENV ?? "development" },

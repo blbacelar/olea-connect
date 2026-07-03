@@ -27,6 +27,13 @@ export type CreatedOrganizationMember = {
   password: string;
 };
 
+export type CreatedEvent = {
+  id: string;
+  slug: string;
+  title: string;
+  startsAt: string;
+};
+
 export class TestDataManager {
   private readonly cleanupTasks: CleanupTask[] = [];
   private identitySequence = 0;
@@ -370,6 +377,158 @@ export class TestDataManager {
     });
 
     return requestId;
+  }
+
+  async createEvent(
+    options: {
+      accessPlanIds?: Array<"seedling" | "roots" | "canopy" | "harvest">;
+      capacity?: number | null;
+      complimentaryTicketLimit?: number | null;
+      endsAt?: string;
+      included?: boolean;
+      joinUrl?: string | null;
+      recordingStoragePath?: string | null;
+      recordingUrl?: string | null;
+      startsAt?: string;
+      status?:
+        | "draft"
+        | "scheduled"
+        | "live"
+        | "completed"
+        | "canceled"
+        | "rescheduled";
+      ticketPriceCents?: number | null;
+      title?: string;
+      type?:
+        | "webinar"
+        | "speaker_session"
+        | "funder_ama"
+        | "networking"
+        | "workshop"
+        | "summit";
+    } = {},
+  ): Promise<CreatedEvent> {
+    const identity = createTestIdentity(
+      this.testInfo,
+      ++this.identitySequence,
+    );
+    const startsAt =
+      options.startsAt ?? new Date(Date.now() + 5 * 24 * 60 * 60 * 1000).toISOString();
+    const endsAt =
+      options.endsAt ??
+      new Date(new Date(startsAt).getTime() + 60 * 60 * 1000).toISOString();
+    const slug = `${identity.marker}-event`;
+    const title = options.title ?? `QA Zoom Event ${identity.marker}`;
+
+    const { data: event, error } = await this.supabase
+      .from("events")
+      .insert({
+        type: options.type ?? "webinar",
+        status: options.status ?? "scheduled",
+        slug,
+        title,
+        summary: "QA-created Zoom event for isolated E2E coverage.",
+        starts_at: startsAt,
+        ends_at: endsAt,
+        timezone: "America/Vancouver",
+        capacity: options.capacity ?? 100,
+        registration_opens_at: new Date(Date.now() - 60 * 60 * 1000).toISOString(),
+        registration_closes_at: new Date(
+          new Date(startsAt).getTime() - 15 * 60 * 1000,
+        ).toISOString(),
+        meeting_provider: "zoom",
+        provider_event_id: `zoom-${identity.marker}`,
+        join_url:
+          options.joinUrl ??
+          `https://zoom.us/j/${Date.now().toString().slice(-10)}`,
+        recording_storage_path: options.recordingStoragePath,
+        recording_url: options.recordingUrl,
+      })
+      .select("id")
+      .single();
+
+    if (error) throw error;
+    const eventId = event.id as string;
+
+    this.registerCleanup({
+      label: `event ${eventId}`,
+      run: async () => {
+        const { error: deleteError } = await this.supabase
+          .from("events")
+          .delete()
+          .eq("id", eventId);
+        if (deleteError) throw deleteError;
+      },
+    });
+
+    const accessPlanIds = options.accessPlanIds ?? ["roots", "canopy", "harvest"];
+    if (accessPlanIds.length) {
+      const { error: accessError } = await this.supabase
+        .from("event_plan_access")
+        .insert(
+          accessPlanIds.map((planId) => ({
+            event_id: eventId,
+            plan_id: planId,
+            included: options.included ?? true,
+            complimentary_ticket_limit: options.complimentaryTicketLimit ?? null,
+            ticket_price_cents: options.ticketPriceCents ?? null,
+          })),
+        );
+      if (accessError) throw accessError;
+    }
+
+    return { id: eventId, slug, title, startsAt };
+  }
+
+  async getEventRegistration(eventId: string, userId: string) {
+    const { data, error } = await this.supabase
+      .from("event_registrations")
+      .select(
+        "id, status, provider_registration_id, provider_attendance_id, watch_duration_seconds",
+      )
+      .eq("event_id", eventId)
+      .eq("user_id", userId)
+      .maybeSingle();
+    if (error) throw error;
+    return data;
+  }
+
+  async createEventRegistration(
+    event: CreatedEvent,
+    attendee: CreatedOrganizationOwner | CreatedOrganizationMember,
+    options: {
+      status?: "registered" | "waitlisted" | "attended" | "no_show";
+    } = {},
+  ) {
+    const { data, error } = await this.supabase
+      .from("event_registrations")
+      .insert({
+        event_id: event.id,
+        organization_id: attendee.organizationId,
+        user_id: attendee.userId,
+        status: options.status ?? "registered",
+        guest_name: "QA Event Attendee",
+        guest_email: attendee.email,
+        registration_source: "e2e",
+      })
+      .select("id")
+      .single();
+
+    if (error) throw error;
+    const registrationId = data.id as string;
+
+    this.registerCleanup({
+      label: `event registration ${registrationId}`,
+      run: async () => {
+        const { error: deleteError } = await this.supabase
+          .from("event_registrations")
+          .delete()
+          .eq("id", registrationId);
+        if (deleteError) throw deleteError;
+      },
+    });
+
+    return registrationId;
   }
 
   async purge() {
