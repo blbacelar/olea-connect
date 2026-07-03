@@ -2,6 +2,8 @@ import { defineConfig, devices } from "@playwright/test";
 
 const localBaseUrl = "http://127.0.0.1:3011";
 const baseURL = process.env.PLAYWRIGHT_BASE_URL ?? localBaseUrl;
+const videoMode = process.env.PLAYWRIGHT_VIDEO === "on" ? "on" : "retain-on-failure";
+const slowMo = Number.parseInt(process.env.PLAYWRIGHT_SLOWMO_MS ?? "0", 10);
 
 export default defineConfig({
   testDir: "./tests",
@@ -22,9 +24,10 @@ export default defineConfig({
   ],
   use: {
     baseURL,
+    launchOptions: Number.isFinite(slowMo) && slowMo > 0 ? { slowMo } : undefined,
     trace: "on-first-retry",
     screenshot: "only-on-failure",
-    video: "retain-on-failure",
+    video: videoMode,
   },
   webServer:
     baseURL === localBaseUrl &&

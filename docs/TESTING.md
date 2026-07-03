@@ -42,6 +42,18 @@ Database tests live in `supabase/tests/` and cover:
 
 ### Playwright E2E
 
+Platform UI smoke:
+
+```bash
+npm run test:e2e:platform
+```
+
+Local Supabase platform UI smoke:
+
+```bash
+npm run test:e2e:platform:local
+```
+
 Smoke:
 
 ```bash
@@ -121,6 +133,25 @@ PLAYWRIGHT_TEST_ENV=local|staging
 
 Never point test-data variables at production.
 
+## Feature Completion Gate
+
+New features and bug fixes are not considered done until the relevant automated
+coverage has been added or updated and the focused suite passes. Use
+[E2E_COVERAGE.md](./E2E_COVERAGE.md) as the platform checklist.
+
+Before changing application code to satisfy a failing E2E test, classify the
+failure:
+
+- Product/code defect.
+- Test defect.
+- Environment or external dependency issue.
+- Test data collision or cleanup failure.
+- Known provider/rate-limit instability.
+
+Only update application code for a real product defect. Only update test code
+for brittle setup, wrong assertions, or incorrect synchronization. Do not weaken
+assertions or bend product behavior just to make a flawed test pass.
+
 ## Auth Setup in Tests
 
 Protected-page tests should not log in through the UI. They should:
@@ -186,6 +217,18 @@ Brand profile:
 npx playwright test tests/e2e/brand-profile.spec.ts \
   --project=chromium \
   --workers=1
+```
+
+Platform UI coverage:
+
+```bash
+npm run test:e2e:platform
+```
+
+Native community:
+
+```bash
+npm run test:e2e:community:local
 ```
 
 Member journeys in WebKit:

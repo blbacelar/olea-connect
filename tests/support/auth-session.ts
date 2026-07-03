@@ -2,6 +2,11 @@ import type { Browser, Page } from "@playwright/test";
 
 import { createAuthenticatedStorageState } from "../fixtures/authenticated.fixture";
 
+const authenticatedVideoDir =
+  process.env.PLAYWRIGHT_VIDEO === "on"
+    ? (process.env.PLAYWRIGHT_AUTH_VIDEO_DIR ?? "test-results/authenticated-videos")
+    : undefined;
+
 export async function signInPage(
   page: Page,
   baseURL: string,
@@ -20,6 +25,12 @@ export async function createAuthenticatedPage(
   password: string,
 ) {
   const context = await browser.newContext({
+    recordVideo: authenticatedVideoDir
+      ? {
+          dir: authenticatedVideoDir,
+          size: { width: 1280, height: 720 },
+        }
+      : undefined,
     storageState: await createAuthenticatedStorageState(email, password, baseURL),
   });
   const page = await context.newPage();

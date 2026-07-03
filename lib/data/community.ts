@@ -1,5 +1,7 @@
 import "server-only";
 
+import { redirect } from "next/navigation";
+
 import type {
   CommunityEvent,
   CommunityHome,
@@ -10,6 +12,8 @@ import type {
 import { createClient } from "@/utils/supabase/server";
 
 import { requireMemberContext } from "./member-context";
+
+const ACTIVE_SUBSCRIPTION_STATUSES = new Set(["active", "trialing"]);
 
 type SpaceAccessRuleRow = {
   plan_id: string;
@@ -97,8 +101,21 @@ function mapEvent(row: {
 }
 
 export async function getCommunityHome(): Promise<CommunityHome | null> {
-  const { member } = await requireMemberContext();
+  const { member, organization } = await requireMemberContext();
   const supabase = await createClient();
+
+  const { data: subscription, error: subscriptionError } = await supabase
+    .from("subscriptions")
+    .select("status")
+    .eq("organization_id", organization.id)
+    .order("created_at", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+
+  if (subscriptionError) throw subscriptionError;
+  if (!ACTIVE_SUBSCRIPTION_STATUSES.has(subscription?.status ?? "")) {
+    redirect("/subscription?billing=required");
+  }
 
   const { data: community, error: communityError } = await supabase
     .from("communities")
