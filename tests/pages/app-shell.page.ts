@@ -3,6 +3,10 @@ import { expect, type Page } from "@playwright/test";
 export class AppShellPage {
   constructor(private readonly page: Page) {}
 
+  async open(path: string) {
+    await this.page.goto(path);
+  }
+
   async openDashboard() {
     await this.page.goto("/dashboard");
   }
@@ -39,6 +43,17 @@ export class AppShellPage {
     ).toBeVisible();
   }
 
+  async expectPageHeading(path: string, heading: string | RegExp) {
+    await this.open(path);
+    await expect(
+      this.page.getByRole("heading", {
+        exact: typeof heading === "string",
+        level: 1,
+        name: heading,
+      }),
+    ).toBeVisible();
+  }
+
   async openMemberSection(path: string) {
     await this.page.goto(path.startsWith("/") ? path : `/${path}`);
   }
@@ -54,5 +69,13 @@ export class AppShellPage {
 
   async expectText(text: string | RegExp) {
     await expect(this.page.getByText(text)).toBeVisible();
+  }
+
+  async expectNoServerError() {
+    await expect(
+      this.page.getByText(
+        /An error occurred in the Server Components render|Application error|Internal Server Error/i,
+      ),
+    ).toHaveCount(0);
   }
 }
