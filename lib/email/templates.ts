@@ -94,4 +94,42 @@ export function teamInvitationEmail(input: {
   };
 }
 
+export function eventScheduleChangeEmail(input: {
+  eventTitle: string;
+  startsAt: string;
+  timezone: string;
+  type: "event.canceled" | "event.rescheduled";
+  webinarsUrl: string;
+}): TransactionalEmail {
+  const eventTitle = escapeHtml(input.eventTitle);
+  const eventTime = new Intl.DateTimeFormat("en-CA", {
+    dateStyle: "long",
+    timeStyle: "short",
+    timeZone: input.timezone,
+  }).format(new Date(input.startsAt));
+  const canceled = input.type === "event.canceled";
+  const subject = canceled
+    ? `${input.eventTitle} has been canceled`
+    : `${input.eventTitle} has been rescheduled`;
+  const text = canceled
+    ? `${input.eventTitle} has been canceled. View your Olea Connects events: ${input.webinarsUrl}`
+    : `${input.eventTitle} is now scheduled for ${eventTime}. View your Olea Connects events: ${input.webinarsUrl}`;
+
+  return {
+    subject,
+    text,
+    html: layout({
+      preheader: subject,
+      title: canceled ? "Event canceled" : "Event rescheduled",
+      body: canceled
+        ? `<p><strong>${eventTitle}</strong> has been canceled.</p><p>You can find your latest live sessions and recordings in Olea Connects.</p>`
+        : `<p><strong>${eventTitle}</strong> has been rescheduled.</p><p>The new time is <strong>${eventTime}</strong>.</p>`,
+      actionLabel: "View events",
+      actionUrl: input.webinarsUrl,
+      footer:
+        "You received this because you registered for this Olea Connects event.",
+    }),
+  };
+}
+
 export const emailBrand = brand;

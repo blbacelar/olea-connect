@@ -187,16 +187,38 @@ export interface GrantApplicationSummary {
 export interface Webinar {
   id: string;
   slug: string;
+  type:
+    | "webinar"
+    | "speaker_session"
+    | "funder_ama"
+    | "networking"
+    | "workshop"
+    | "summit";
   title: string;
   summary: string;
-  status: "scheduled" | "live" | "completed" | "canceled";
+  status: "scheduled" | "live" | "completed" | "canceled" | "rescheduled";
   startsAt: string;
   endsAt: string;
   timezone: string;
   capacity: number | null;
-  recordingUrl: string | null;
+  joinUrl: string | null;
+  meetingProvider: string | null;
+  providerEventId: string | null;
+  recordingAvailable: boolean;
   available: boolean;
   registered: boolean;
+  registrationStatus:
+    | "registered"
+    | "waitlisted"
+    | "canceled"
+    | "attended"
+    | "no_show"
+    | null;
+  included: boolean;
+  complimentaryTicketLimit: number | null;
+  complimentaryTicketsUsed: number;
+  ticketPriceCents: number | null;
+  currency: string;
   allowedPlanIds: MembershipTier[];
 }
 

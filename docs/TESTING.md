@@ -34,6 +34,7 @@ Database tests live in `supabase/tests/` and cover:
 - Security contracts.
 - Workspace provisioning.
 - Email delivery.
+- Event operations, registration uniqueness, attendance imports, and event change notification outbox rows.
 - Stripe billing.
 - Seedling template selection.
 - Provisioning and entitlements.
@@ -52,6 +53,12 @@ Critical Chromium suite:
 
 ```bash
 npm run test:e2e:critical
+```
+
+Webinars and event registration:
+
+```bash
+npm run test:e2e:webinars:local
 ```
 
 Full cross-browser suite:
