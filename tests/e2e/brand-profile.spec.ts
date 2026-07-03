@@ -20,6 +20,7 @@ test.describe("@member brand profile", () => {
     const owner = await testData.createOrganizationOwner({
       activeSubscription: true,
     });
+    const displayName = `${owner.organizationName} Brand Profile`;
     await signInPage(page, baseURL, owner.email, owner.password);
     const brandProfile = new BrandProfilePage(page);
 
@@ -27,7 +28,7 @@ test.describe("@member brand profile", () => {
     await brandProfile.expectIncompletePromptVisible();
 
     await brandProfile.openSettings();
-    await brandProfile.setOrganizationName("Evergreen Community Trust");
+    await brandProfile.setOrganizationName(displayName);
     await brandProfile.uploadLogo({
       name: "evergreen-logo.svg",
       mimeType: "image/svg+xml",
@@ -37,7 +38,7 @@ test.describe("@member brand profile", () => {
     await brandProfile.save();
 
     const savedBrand = await testData.getBrandProfile(owner.organizationId);
-    expect(savedBrand.display_name).toBe("Evergreen Community Trust");
+    expect(savedBrand.display_name).toBe(displayName);
     expect(savedBrand.logo_path).toMatch(
       new RegExp(`^${owner.organizationId}/.+\\.svg$`),
     );
@@ -56,9 +57,7 @@ test.describe("@member brand profile", () => {
     const secondBrandProfile = new BrandProfilePage(secondPage);
     try {
       await secondBrandProfile.openSettings();
-      await secondBrandProfile.expectOrganizationName(
-        "Evergreen Community Trust",
-      );
+      await secondBrandProfile.expectOrganizationName(displayName);
       await secondBrandProfile.expectLogoUploaded();
     } finally {
       await secondContext.close();

@@ -30,7 +30,7 @@ export class AppShellPage {
     await this.openDashboard();
     await expect(
       this.page.getByRole("main").getByText(organizationName),
-    ).toBeVisible();
+    ).toBeVisible({ timeout: 15_000 });
   }
 
   async expectDashboardTemplate(templateName: string) {

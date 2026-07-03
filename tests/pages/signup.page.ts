@@ -48,6 +48,13 @@ export class SignupPage {
     await expect(this.page.getByLabel("Password *")).toHaveValue("");
   }
 
+  async reloadAccountStep() {
+    await this.page.reload();
+    await expect(
+      this.page.getByRole("heading", { name: "Create your account" }),
+    ).toBeVisible();
+  }
+
   async continueToPaymentStep() {
     await this.continueToPayment.click();
   }

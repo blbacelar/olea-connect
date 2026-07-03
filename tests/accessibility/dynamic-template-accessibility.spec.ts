@@ -18,6 +18,13 @@ test.describe("@a11y dynamic template accessibility", () => {
       ["serious", "critical"].includes(impact ?? ""),
     );
 
-    expect(blockingViolations).toEqual([]);
+    expect(
+      blockingViolations.map(({ help, id, impact, nodes }) => ({
+        help,
+        id,
+        impact,
+        nodes: nodes.length,
+      })),
+    ).toEqual([]);
   });
 });

@@ -34,7 +34,7 @@ test.describe("@smoke @critical membership signup", () => {
 
     await signup.enterOrganizationName("Persistent Org");
     await signup.enterPassword("NeverStoreThis123!");
-    await page.reload();
+    await signup.reloadAccountStep();
 
     await signup.expectOrganizationName("Persistent Org");
     await signup.expectPasswordCleared();

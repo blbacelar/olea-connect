@@ -1,4 +1,5 @@
-import { expect, test } from "../fixtures/test-data.fixture";
+import { test } from "../fixtures/test-data.fixture";
+import { PasswordRecoveryPage } from "../pages/password-recovery.page";
 
 test.describe("@critical authentication recovery", () => {
   test("requests a password reset without authenticating through the UI", async ({
@@ -6,14 +7,10 @@ test.describe("@critical authentication recovery", () => {
     testData,
   }) => {
     const member = await testData.createOrganizationOwner();
+    const passwordRecovery = new PasswordRecoveryPage(page);
 
-    await page.goto("/reset-password");
-    await page.getByLabel("Email address").fill(member.email);
-    await page.getByRole("button", { name: "Send reset link" }).click();
-
-    await expect(
-      page.getByRole("heading", { name: "Check your email" }),
-    ).toBeVisible();
-    await expect(page.getByText(member.email)).toBeVisible();
+    await passwordRecovery.open();
+    await passwordRecovery.requestReset(member.email);
+    await passwordRecovery.expectResetEmailSent(member.email);
   });
 });
