@@ -238,6 +238,11 @@ Native community:
 npm run test:e2e:community:local
 ```
 
+This covers authenticated access boundaries, tier-scoped spaces, seeded posts,
+Zoom-linked events, community manager affordances, member-created posts, and the
+post moderation block path. Keep post-creation tests isolated with the test-data
+fixture so each run creates and purges its own organization and community data.
+
 Member journeys in WebKit:
 
 ```bash

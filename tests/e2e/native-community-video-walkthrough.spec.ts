@@ -92,7 +92,7 @@ testWithData.describe("native community authenticated visual walkthrough", () =>
 
       await page.mouse.wheel(0, 700);
       await expect(page.getByText("Community manager", { exact: true })).toBeVisible();
-      await expect(page.getByRole("button", { name: "Create post" })).toBeDisabled();
+      await expect(page.getByRole("button", { name: "Create post" })).toBeEnabled();
       await pauseForReview();
     } finally {
       await context.close();

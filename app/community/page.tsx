@@ -13,6 +13,8 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { getCommunityHome } from "@/lib/data/community";
 
+import { CommunityPostComposer } from "./community-post-composer";
+
 function formatEventDate(value: string) {
   return new Intl.DateTimeFormat("en-CA", {
     dateStyle: "medium",
@@ -39,7 +41,7 @@ export default async function CommunityPage() {
     );
   }
 
-  const featuredPosts = community.posts.slice(0, 3);
+  const featuredPosts = community.posts.slice(0, 6);
 
   return (
     <div>
@@ -98,15 +100,10 @@ export default async function CommunityPage() {
           </aside>
 
           <div className="p-5 md:p-6">
-            <SectionHeading
-              action={
-                <Button disabled variant="outline" size="sm">
-                  Create post
-                </Button>
-              }
-            >
-              Featured conversations
-            </SectionHeading>
+            <div className="mb-5 space-y-4">
+              <SectionHeading>Featured conversations</SectionHeading>
+              <CommunityPostComposer spaces={community.spaces} />
+            </div>
 
             {featuredPosts.length ? (
               <div className="space-y-3">

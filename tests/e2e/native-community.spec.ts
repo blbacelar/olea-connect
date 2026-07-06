@@ -128,6 +128,77 @@ testWithData.describe("@critical native community member experience", () => {
     }
   });
 
+  testWithData("allows members to publish respectful community posts", async ({
+    baseURL,
+    browser,
+    testData,
+  }) => {
+    if (!baseURL) throw new Error("Playwright baseURL is required.");
+
+    const member = await testData.createOrganizationOwner({
+      activeSubscription: true,
+      planId: "roots",
+    });
+    const { context, page } = await createAuthenticatedPage(
+      browser,
+      baseURL,
+      member.email,
+      member.password,
+    );
+    const community = new CommunityPage(page);
+
+    try {
+      await community.open();
+      await community.createPost({
+        title: "Board package workflow ideas",
+        body: "We are looking for kind, practical ways to prepare board packages faster.",
+        kind: "discussion",
+        spaceName: "General",
+      });
+      await community.expectPostPublished();
+      await community.expectPost(
+        "Board package workflow ideas",
+        "We are looking for kind, practical ways to prepare board packages faster.",
+      );
+    } finally {
+      await context.close();
+    }
+  });
+
+  testWithData("blocks disrespectful community posts before they are published", async ({
+    baseURL,
+    browser,
+    testData,
+  }) => {
+    if (!baseURL) throw new Error("Playwright baseURL is required.");
+
+    const member = await testData.createOrganizationOwner({
+      activeSubscription: true,
+      planId: "roots",
+    });
+    const { context, page } = await createAuthenticatedPage(
+      browser,
+      baseURL,
+      member.email,
+      member.password,
+    );
+    const community = new CommunityPage(page);
+
+    try {
+      await community.open();
+      await community.createPost({
+        title: "A post that should not publish",
+        body: "This is stupid and does not belong in a respectful community.",
+        kind: "discussion",
+        spaceName: "General",
+      });
+      await community.expectModerationBlocked();
+      await community.expectPostHidden("A post that should not publish");
+    } finally {
+      await context.close();
+    }
+  });
+
   testWithData("redirects canceled members to subscription recovery instead of community content", async ({
     baseURL,
     browser,

@@ -295,6 +295,9 @@ Native community is the default MVP path because paid Circle SSO would add cost
 and an external dependency to a core member experience. The foundation lives in:
 
 - `app/community/page.tsx`
+- `app/community/actions.ts`
+- `app/community/community-post-composer.tsx`
+- `lib/community/moderation.ts`
 - `lib/data/community.ts`
 - `public.communities`
 - `public.community_spaces`
@@ -307,10 +310,16 @@ and an external dependency to a core member experience. The foundation lives in:
 
 The initial community and starter spaces are seeded by migration. Community
 creation and manager assignment are script/migration-driven for MVP; a future
-`/admin` portal can manage these tables directly. Live calls use manually
-attached Zoom URLs for now. Circle SSO/provisioning code remains deferred
-scaffolding under `lib/circle/*` and `app/api/v1/circle*` in case the product
-later justifies the higher Circle plan.
+`/admin` portal can manage these tables directly. Members can create posts in
+spaces they can access. The post action validates the target space with RLS,
+runs a local language guard, and then uses OpenRouter chat completions with
+`z-ai/glm-5.2` when `OPENROUTER_API_KEY` is configured. Moderation failures are
+fail-closed so unsafe or unchecked posts are not inserted into
+`community_posts`.
+
+Live calls use manually attached Zoom URLs for now. Circle SSO/provisioning code
+remains deferred scaffolding under `lib/circle/*` and `app/api/v1/circle*` in
+case the product later justifies the higher Circle plan.
 
 ## Attio and QuickBooks Outbox Workers
 
