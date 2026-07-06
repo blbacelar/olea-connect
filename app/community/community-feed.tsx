@@ -24,6 +24,7 @@ import type {
   CommunityPostComment,
 } from "@/lib/types";
 import { cn } from "@/lib/utils";
+import { createClient } from "@/utils/supabase/client";
 
 import {
   createCommunityComment,
@@ -42,6 +43,27 @@ const initialActionState: CommunityActionState = {
 };
 
 const selectedSpaceStorageKey = "olea-community-selected-space";
+const communityRealtimeRefreshDelayMs = 250;
+const communityFeedBroadcastEvent = "community-feed-changed";
+
+function getCommunityFeedChannelName(communityId: string) {
+  return `community-feed:${communityId}`;
+}
+
+async function broadcastCommunityFeedChange(communityId: string) {
+  const supabase = createClient();
+  const channel = supabase.channel(getCommunityFeedChannelName(communityId));
+
+  try {
+    await channel.send({
+      event: communityFeedBroadcastEvent,
+      payload: { communityId },
+      type: "broadcast",
+    });
+  } finally {
+    await supabase.removeChannel(channel);
+  }
+}
 
 function formatRelativeDate(value: string) {
   return new Intl.DateTimeFormat("en-CA", {
@@ -78,6 +100,102 @@ function ActionMessage({ state }: { state: CommunityActionState }) {
       {state.message}
     </p>
   );
+}
+
+function useCommunityRealtimeRefresh({
+  communityId,
+  postIds,
+}: {
+  communityId: string;
+  postIds: string[];
+}) {
+  const router = useRouter();
+  const postIdsKey = useMemo(() => postIds.join(","), [postIds]);
+  const refreshTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const [isConnected, setIsConnected] = useState(false);
+
+  useEffect(() => {
+    const supabase = createClient();
+    const subscribedPostIds = postIdsKey ? postIdsKey.split(",") : [];
+    let isMounted = true;
+
+    setIsConnected(false);
+
+    function scheduleRefresh() {
+      if (refreshTimeoutRef.current) {
+        clearTimeout(refreshTimeoutRef.current);
+      }
+
+      refreshTimeoutRef.current = setTimeout(() => {
+        router.refresh();
+      }, communityRealtimeRefreshDelayMs);
+    }
+
+    const channel = supabase
+      .channel(getCommunityFeedChannelName(communityId))
+      .on("broadcast", { event: communityFeedBroadcastEvent }, scheduleRefresh)
+      .on(
+        "postgres_changes",
+        {
+          event: "*",
+          filter: `community_id=eq.${communityId}`,
+          schema: "public",
+          table: "community_posts",
+        },
+        scheduleRefresh,
+      );
+
+    for (const postId of subscribedPostIds) {
+      channel
+        .on(
+          "postgres_changes",
+          {
+            event: "*",
+            filter: `post_id=eq.${postId}`,
+            schema: "public",
+            table: "community_comments",
+          },
+          scheduleRefresh,
+        )
+        .on(
+          "postgres_changes",
+          {
+            event: "*",
+            filter: `post_id=eq.${postId}`,
+            schema: "public",
+            table: "community_reactions",
+          },
+          scheduleRefresh,
+        );
+    }
+
+    async function subscribeToCommunityChanges() {
+      const { data } = await supabase.auth.getSession();
+
+      if (data.session?.access_token) {
+        supabase.realtime.setAuth(data.session.access_token);
+      }
+
+      channel.subscribe((status) => {
+        if (!isMounted) return;
+        setIsConnected(status === "SUBSCRIBED");
+      });
+    }
+
+    void subscribeToCommunityChanges();
+
+    return () => {
+      isMounted = false;
+
+      if (refreshTimeoutRef.current) {
+        clearTimeout(refreshTimeoutRef.current);
+      }
+
+      void supabase.removeChannel(channel);
+    };
+  }, [communityId, postIdsKey, router]);
+
+  return isConnected;
 }
 
 function SaveButton({ label = "Save changes" }: { label?: string }) {
@@ -171,7 +289,13 @@ function LikeButton({ post }: { post: CommunityPost }) {
   );
 }
 
-function DeletePostButton({ postId }: { postId: string }) {
+function DeletePostButton({
+  communityId,
+  postId,
+}: {
+  communityId: string;
+  postId: string;
+}) {
   const router = useRouter();
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [state, formAction] = useFormState(
@@ -182,8 +306,11 @@ function DeletePostButton({ postId }: { postId: string }) {
   useEffect(() => {
     if (state.status !== "success") return;
     setIsDialogOpen(false);
-    router.refresh();
-  }, [router, state]);
+
+    void broadcastCommunityFeedChange(communityId).finally(() => {
+      router.refresh();
+    });
+  }, [communityId, router, state]);
 
   return (
     <>
@@ -212,7 +339,13 @@ function DeletePostButton({ postId }: { postId: string }) {
   );
 }
 
-function DeleteCommentButton({ commentId }: { commentId: string }) {
+function DeleteCommentButton({
+  commentId,
+  communityId,
+}: {
+  commentId: string;
+  communityId: string;
+}) {
   const router = useRouter();
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [state, formAction] = useFormState(
@@ -223,8 +356,11 @@ function DeleteCommentButton({ commentId }: { commentId: string }) {
   useEffect(() => {
     if (state.status !== "success") return;
     setIsDialogOpen(false);
-    router.refresh();
-  }, [router, state]);
+
+    void broadcastCommunityFeedChange(communityId).finally(() => {
+      router.refresh();
+    });
+  }, [communityId, router, state]);
 
   return (
     <>
@@ -514,9 +650,11 @@ function CommentEditor({
 
 function CommentItem({
   comment,
+  communityId,
   currentUserId,
 }: {
   comment: CommunityPostComment;
+  communityId: string;
   currentUserId: string;
 }) {
   const [isEditing, setIsEditing] = useState(false);
@@ -562,7 +700,10 @@ function CommentItem({
                 <Pencil className="size-4" />
                 Edit comment
               </Button>
-              <DeleteCommentButton commentId={comment.id} />
+              <DeleteCommentButton
+                commentId={comment.id}
+                communityId={communityId}
+              />
             </div>
           ) : null}
         </>
@@ -572,9 +713,11 @@ function CommentItem({
 }
 
 function PostCard({
+  communityId,
   currentUserId,
   post,
 }: {
+  communityId: string;
   currentUserId: string;
   post: CommunityPost;
 }) {
@@ -640,7 +783,7 @@ function PostCard({
                 <Pencil className="size-4" />
                 Edit post
               </Button>
-              <DeletePostButton postId={post.id} />
+              <DeletePostButton communityId={communityId} postId={post.id} />
             </div>
           ) : null}
         </>
@@ -662,6 +805,7 @@ function PostCard({
             <CommentItem
               key={comment.id}
               comment={comment}
+              communityId={communityId}
               currentUserId={currentUserId}
             />
           ))}
@@ -677,6 +821,10 @@ export function CommunityFeed({ community }: { community: CommunityHome }) {
   const [selectedSpaceId, setSelectedSpaceId] = useState(
     community.spaces[0]?.id ?? "",
   );
+  const postIds = useMemo(
+    () => community.posts.map((post) => post.id),
+    [community.posts],
+  );
   const selectedSpace = community.spaces.find(
     (space) => space.id === selectedSpaceId,
   );
@@ -684,6 +832,11 @@ export function CommunityFeed({ community }: { community: CommunityHome }) {
     () => community.posts.filter((post) => post.spaceId === selectedSpaceId),
     [community.posts, selectedSpaceId],
   );
+
+  const isRealtimeConnected = useCommunityRealtimeRefresh({
+    communityId: community.id,
+    postIds,
+  });
 
   useEffect(() => {
     const savedSpaceId = window.sessionStorage.getItem(selectedSpaceStorageKey);
@@ -730,6 +883,11 @@ export function CommunityFeed({ community }: { community: CommunityHome }) {
       </aside>
 
       <div className="p-5 md:p-6">
+        <span className="sr-only" aria-live="polite">
+          {isRealtimeConnected
+            ? "Community live updates connected"
+            : "Connecting community live updates"}
+        </span>
         <div className="mb-5 space-y-4">
           <SectionHeading>
             {selectedSpace ? `# ${selectedSpace.name}` : "Featured conversations"}
@@ -745,6 +903,7 @@ export function CommunityFeed({ community }: { community: CommunityHome }) {
             {posts.map((post) => (
               <PostCard
                 key={post.id}
+                communityId={community.id}
                 currentUserId={community.currentUserId}
                 post={post}
               />

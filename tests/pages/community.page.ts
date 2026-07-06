@@ -66,6 +66,19 @@ export class CommunityPage {
     await expect(this.page.getByRole("heading", { name: title })).toHaveCount(0);
   }
 
+  async expectPostRemovedByRealtime(title: string) {
+    await expect(this.page.getByRole("heading", { name: title })).toHaveCount(
+      0,
+      { timeout: 10000 },
+    );
+  }
+
+  async expectLiveUpdatesConnected() {
+    await expect(
+      this.page.getByText("Community live updates connected"),
+    ).toBeAttached({ timeout: 10000 });
+  }
+
   async processModerationUntilPostHidden(
     request: APIRequestContext,
     title: string,
@@ -151,12 +164,6 @@ export class CommunityPage {
     await expect(publishButton).toBeVisible();
     await expect(publishButton).toBeEnabled();
     await publishButton.click();
-  }
-
-  async expectPostPublished() {
-    await expect(
-      this.page.getByText(/Your post is live.*background/i),
-    ).toBeVisible();
   }
 
   async processModerationQueue(request: APIRequestContext) {

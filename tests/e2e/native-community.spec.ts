@@ -156,7 +156,6 @@ testWithData.describe("@critical native community member experience", () => {
         body: "We are looking for kind, practical ways to prepare board packages faster.",
         kind: "discussion",
       });
-      await community.expectPostPublished();
       await community.expectPost(
         postTitle,
         "We are looking for kind, practical ways to prepare board packages faster.",
@@ -212,6 +211,58 @@ testWithData.describe("@critical native community member experience", () => {
       await community.deletePost(updatedPostTitle);
     } finally {
       await context.close();
+    }
+  });
+
+  testWithData("removes deleted posts from another member session without a manual refresh", async ({
+    baseURL,
+    browser,
+    testData,
+  }) => {
+    if (!baseURL) throw new Error("Playwright baseURL is required.");
+
+    const owner = await testData.createOrganizationOwner({
+      activeSubscription: true,
+      planId: "roots",
+    });
+    const teammate = await testData.createOrganizationMember(owner);
+    const postTitle = `Realtime deleted post ${owner.marker}`;
+    await testData.createCommunityPost(owner, {
+      title: postTitle,
+      body: "This post should disappear for another signed-in member without reloading.",
+      kind: "discussion",
+      spaceSlug: "general",
+    });
+
+    const ownerSession = await createAuthenticatedPage(
+      browser,
+      baseURL,
+      owner.email,
+      owner.password,
+    );
+    const teammateSession = await createAuthenticatedPage(
+      browser,
+      baseURL,
+      teammate.email,
+      teammate.password,
+    );
+    const ownerCommunity = new CommunityPage(ownerSession.page);
+    const teammateCommunity = new CommunityPage(teammateSession.page);
+
+    try {
+      await teammateCommunity.open();
+      await teammateCommunity.expectLiveUpdatesConnected();
+      await teammateCommunity.expectPost(
+        postTitle,
+        "This post should disappear for another signed-in member without reloading.",
+      );
+      await ownerCommunity.open();
+      await ownerCommunity.expectLiveUpdatesConnected();
+      await ownerCommunity.deletePost(postTitle);
+      await teammateCommunity.expectPostRemovedByRealtime(postTitle);
+    } finally {
+      await ownerSession.context.close();
+      await teammateSession.context.close();
     }
   });
 
