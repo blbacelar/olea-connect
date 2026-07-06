@@ -42,11 +42,13 @@ function SubmitButton() {
 }
 
 export function CommunityPostComposer({
+  selectedSpaceId,
   spaces,
 }: {
+  selectedSpaceId: string;
   spaces: CommunitySpace[];
 }) {
-  const defaultSpaceId = spaces[0]?.id ?? "";
+  const defaultSpaceId = selectedSpaceId || spaces[0]?.id || "";
   const router = useRouter();
   const [feedback, setFeedback] = useState(initialState);
   const [isOpen, setIsOpen] = useState(false);
@@ -83,6 +85,10 @@ export function CommunityPostComposer({
       router.refresh();
     }
   }, [defaultSpaceId, router, state]);
+
+  useEffect(() => {
+    setSpaceId(defaultSpaceId);
+  }, [defaultSpaceId]);
 
   if (!spaces.length) {
     return (

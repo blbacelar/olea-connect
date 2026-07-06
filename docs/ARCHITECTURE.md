@@ -310,12 +310,15 @@ and an external dependency to a core member experience. The foundation lives in:
 
 The initial community and starter spaces are seeded by migration. Community
 creation and manager assignment are script/migration-driven for MVP; a future
-`/admin` portal can manage these tables directly. Members can create posts in
-spaces they can access. The post action validates the target space with RLS,
-runs a local language guard, and then uses OpenRouter chat completions with
-`z-ai/glm-5.2` when `OPENROUTER_API_KEY` is configured. Moderation failures are
-fail-closed so unsafe or unchecked posts are not inserted into
-`community_posts`.
+`/admin` portal can manage these tables directly. Members can select a space,
+create posts in spaces they can access, like posts, and add comments. Post,
+comment, and reaction writes go through Supabase RLS so access remains scoped to
+the member's eligible spaces. The post and comment actions run a local language
+guard and then use OpenRouter chat completions with `z-ai/glm-5.2` when
+`OPENROUTER_API_KEY` is configured. Resource links are checked locally for
+suspicious download/script patterns, URL shorteners, IP hosts, punycode hosts,
+and embedded credentials before the LLM pass. Moderation failures are
+fail-closed so unsafe or unchecked posts/comments are not inserted.
 
 Live calls use manually attached Zoom URLs for now. Circle SSO/provisioning code
 remains deferred scaffolding under `lib/circle/*` and `app/api/v1/circle*` in

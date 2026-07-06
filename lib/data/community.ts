@@ -6,6 +6,7 @@ import type {
   CommunityEvent,
   CommunityHome,
   CommunityPost,
+  CommunityPostComment,
   CommunitySpace,
   MembershipTier,
 } from "@/lib/types";
@@ -64,25 +65,56 @@ function mapSpace(row: CommunitySpaceRow): CommunitySpace {
   };
 }
 
-function mapPost(row: {
-  id: string;
-  space_id: string;
-  kind: CommunityPost["kind"];
-  title: string;
-  body: string;
-  resource_url: string | null;
-  pinned_at: string | null;
-  created_at: string;
-}): CommunityPost {
+function mapPost(
+  row: {
+    id: string;
+    space_id: string;
+    author_user_id: string;
+    kind: CommunityPost["kind"];
+    title: string;
+    body: string;
+    resource_url: string | null;
+    pinned_at: string | null;
+    created_at: string;
+    updated_at: string;
+  },
+  comments: CommunityPostComment[],
+  reactions: Array<{ kind: string; user_id: string }>,
+  currentUserId: string,
+): CommunityPost {
   return {
     id: row.id,
     spaceId: row.space_id,
+    authorUserId: row.author_user_id,
     kind: row.kind,
     title: row.title,
     body: row.body,
     resourceUrl: safeHttpsUrl(row.resource_url),
     pinnedAt: row.pinned_at,
     createdAt: row.created_at,
+    updatedAt: row.updated_at,
+    comments,
+    likeCount: reactions.filter((reaction) => reaction.kind === "helpful").length,
+    likedByCurrentUser: reactions.some(
+      (reaction) =>
+        reaction.kind === "helpful" && reaction.user_id === currentUserId,
+    ),
+  };
+}
+
+function mapComment(row: {
+  id: string;
+  author_user_id: string;
+  body: string;
+  created_at: string;
+  updated_at: string;
+}): CommunityPostComment {
+  return {
+    id: row.id,
+    authorUserId: row.author_user_id,
+    body: row.body,
+    createdAt: row.created_at,
+    updatedAt: row.updated_at,
   };
 }
 
@@ -160,13 +192,12 @@ export async function getCommunityHome(): Promise<CommunityHome | null> {
     supabase
       .from("community_posts")
       .select(
-        "id, space_id, kind, title, body, resource_url, pinned_at, created_at",
+        "id, space_id, author_user_id, kind, title, body, resource_url, pinned_at, created_at, updated_at",
       )
       .eq("community_id", community.id)
       .eq("status", "published")
       .order("pinned_at", { ascending: false, nullsFirst: false })
-      .order("created_at", { ascending: false })
-      .limit(6),
+      .order("created_at", { ascending: false }),
     supabase
       .from("community_events")
       .select(
@@ -199,14 +230,65 @@ export async function getCommunityHome(): Promise<CommunityHome | null> {
   if (eventsError) throw eventsError;
   if (managerError) throw managerError;
 
+  const postRows = posts ?? [];
+  const postIds = postRows.map((post) => post.id);
+  const [commentsResult, reactionsResult] = postIds.length
+    ? await Promise.all([
+        supabase
+          .from("community_comments")
+          .select("id, post_id, author_user_id, body, created_at, updated_at")
+          .in("post_id", postIds)
+          .is("hidden_at", null)
+          .order("created_at", { ascending: true }),
+        supabase
+          .from("community_reactions")
+          .select("post_id, user_id, kind")
+          .in("post_id", postIds),
+      ])
+    : [
+        { data: [], error: null },
+        { data: [], error: null },
+      ];
+
+  if (commentsResult.error) throw commentsResult.error;
+  if (reactionsResult.error) throw reactionsResult.error;
+
+  const commentsByPostId = new Map<string, CommunityPostComment[]>();
+  for (const comment of commentsResult.data ?? []) {
+    const postComments = commentsByPostId.get(comment.post_id) ?? [];
+    postComments.push(mapComment(comment));
+    commentsByPostId.set(comment.post_id, postComments);
+  }
+
+  const reactionsByPostId = new Map<
+    string,
+    Array<{ kind: string; user_id: string }>
+  >();
+  for (const reaction of reactionsResult.data ?? []) {
+    const postReactions = reactionsByPostId.get(reaction.post_id) ?? [];
+    postReactions.push({
+      kind: reaction.kind,
+      user_id: reaction.user_id,
+    });
+    reactionsByPostId.set(reaction.post_id, postReactions);
+  }
+
   return {
     id: community.id,
     slug: community.slug,
     name: community.name,
     description: community.description,
     spaces: ((spaces ?? []) as CommunitySpaceRow[]).map(mapSpace),
-    posts: (posts ?? []).map(mapPost),
+    posts: postRows.map((post) =>
+      mapPost(
+        post,
+        commentsByPostId.get(post.id) ?? [],
+        reactionsByPostId.get(post.id) ?? [],
+        member.id,
+      ),
+    ),
     events: (events ?? []).map(mapEvent),
     canManage: Boolean(managerRows?.length),
+    currentUserId: member.id,
   };
 }

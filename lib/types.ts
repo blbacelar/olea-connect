@@ -234,12 +234,25 @@ export interface CommunitySpace {
 export interface CommunityPost {
   id: string;
   spaceId: string;
+  authorUserId: string;
   kind: "discussion" | "announcement" | "resource";
   title: string;
   body: string;
   resourceUrl: string | null;
   pinnedAt: string | null;
   createdAt: string;
+  updatedAt: string;
+  comments: CommunityPostComment[];
+  likedByCurrentUser: boolean;
+  likeCount: number;
+}
+
+export interface CommunityPostComment {
+  id: string;
+  authorUserId: string;
+  body: string;
+  createdAt: string;
+  updatedAt: string;
 }
 
 export interface CommunityEvent {
@@ -264,4 +277,5 @@ export interface CommunityHome {
   posts: CommunityPost[];
   events: CommunityEvent[];
   canManage: boolean;
+  currentUserId: string;
 }

@@ -1,5 +1,4 @@
 import {
-  ArrowRight,
   CalendarDays,
   MessageSquareText,
   ShieldCheck,
@@ -13,7 +12,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { getCommunityHome } from "@/lib/data/community";
 
-import { CommunityPostComposer } from "./community-post-composer";
+import { CommunityFeed } from "./community-feed";
 
 function formatEventDate(value: string) {
   return new Intl.DateTimeFormat("en-CA", {
@@ -40,8 +39,6 @@ export default async function CommunityPage() {
       </div>
     );
   }
-
-  const featuredPosts = community.posts.slice(0, 6);
 
   return (
     <div>
@@ -77,80 +74,7 @@ export default async function CommunityPage() {
           </span>
         </div>
 
-        <div className="grid gap-0 lg:grid-cols-[280px_1fr]">
-          <aside className="border-b bg-slate-50/70 p-4 lg:border-b-0 lg:border-r">
-            <p className="px-2.5 pb-2 text-[11px] font-semibold uppercase tracking-[0.05em] text-slate-400">
-              Spaces
-            </p>
-            <div className="space-y-1">
-              {community.spaces.map((space) => (
-                <div
-                  key={space.id}
-                  className="rounded-lg px-3 py-2.5 text-sm text-slate-700"
-                >
-                  <span className="font-semibold"># {space.name}</span>
-                  {space.description ? (
-                    <p className="mt-1 line-clamp-2 text-xs leading-5 text-slate-500">
-                      {space.description}
-                    </p>
-                  ) : null}
-                </div>
-              ))}
-            </div>
-          </aside>
-
-          <div className="p-5 md:p-6">
-            <div className="mb-5 space-y-4">
-              <SectionHeading>Featured conversations</SectionHeading>
-              <CommunityPostComposer spaces={community.spaces} />
-            </div>
-
-            {featuredPosts.length ? (
-              <div className="space-y-3">
-                {featuredPosts.map((post) => (
-                  <article
-                    key={post.id}
-                    className="rounded-xl border border-slate-100 bg-white p-4"
-                  >
-                    <div className="flex flex-wrap items-center gap-2">
-                      <Badge variant="outline" className="capitalize">
-                        {post.kind}
-                      </Badge>
-                      {post.pinnedAt ? (
-                        <Badge className="bg-olea-light text-olea-green hover:bg-olea-light">
-                          Pinned
-                        </Badge>
-                      ) : null}
-                    </div>
-                    <h3 className="mt-3 text-base font-semibold text-slate-900">
-                      {post.title}
-                    </h3>
-                    <p className="mt-2 line-clamp-3 text-sm leading-6 text-slate-600">
-                      {post.body}
-                    </p>
-                    {post.resourceUrl ? (
-                      <a
-                        href={post.resourceUrl}
-                        target="_blank"
-                        rel="noreferrer"
-                        className="mt-3 inline-flex items-center gap-1 text-sm font-semibold text-olea-green"
-                      >
-                        Open resource
-                        <ArrowRight className="size-3.5" />
-                      </a>
-                    ) : null}
-                  </article>
-                ))}
-              </div>
-            ) : (
-              <EmptyPanel
-                title="Conversations are coming soon"
-                description="Community managers will be able to create announcements, resources, and discussion posts here."
-                icon={<MessageSquareText className="size-5" />}
-              />
-            )}
-          </div>
-        </div>
+        <CommunityFeed community={community} />
       </section>
 
       <section>

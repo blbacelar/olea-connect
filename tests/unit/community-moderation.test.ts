@@ -38,6 +38,21 @@ describe("community post moderation", () => {
     });
   });
 
+  it("blocks suspicious executable resource links locally", async () => {
+    vi.stubEnv("OPENROUTER_API_KEY", "");
+
+    await expect(
+      moderateCommunityPost({
+        title: "Useful resource",
+        body: "Sharing this link for the community.",
+        resourceUrl: "https://example.org/downloads/community-tool.exe",
+      }),
+    ).resolves.toMatchObject({
+      approved: false,
+      source: "local",
+    });
+  });
+
   it("uses OpenRouter moderation when configured", async () => {
     vi.stubEnv("OPENROUTER_API_KEY", "openrouter-test-key");
     vi.stubEnv("NEXT_PUBLIC_APP_URL", "https://staging.oleaconnects.com");

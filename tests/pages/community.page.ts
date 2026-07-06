@@ -24,22 +24,65 @@ export class CommunityPage {
   }
 
   async expectSpaceVisible(name: string) {
-    await expect(this.page.getByText(`# ${name}`, { exact: true })).toBeVisible();
+    await expect(
+      this.page.getByRole("button", { name: new RegExp(`# ${name}`) }),
+    ).toBeVisible();
   }
 
   async expectSpaceHidden(name: string) {
-    await expect(this.page.getByText(`# ${name}`, { exact: true })).toHaveCount(
-      0,
-    );
+    await expect(
+      this.page.getByRole("button", { name: new RegExp(`# ${name}`) }),
+    ).toHaveCount(0);
+  }
+
+  async selectSpace(name: string) {
+    await this.page.getByRole("button", { name: new RegExp(`# ${name}`) }).click();
+    await expect(this.page.getByRole("heading", { name: `# ${name}` })).toBeVisible();
+  }
+
+  private postArticle(title: string) {
+    return this.page.getByRole("article", { name: `Post: ${title}` });
   }
 
   async expectPost(title: string, body: string) {
-    await expect(this.page.getByRole("heading", { name: title })).toBeVisible();
-    await expect(this.page.getByText(body)).toBeVisible();
+    const post = this.postArticle(title);
+    await expect(post).toBeVisible();
+    await expect(post.getByText(body)).toBeVisible();
   }
 
   async expectPostHidden(title: string) {
     await expect(this.page.getByRole("heading", { name: title })).toHaveCount(0);
+  }
+
+  async editPost({
+    currentTitle,
+    nextBody,
+    nextTitle,
+    resourceUrl,
+  }: {
+    currentTitle: string;
+    nextBody: string;
+    nextTitle: string;
+    resourceUrl?: string;
+  }) {
+    const post = this.postArticle(currentTitle);
+    await post.getByRole("button", { name: "Edit post" }).click();
+    await post.getByLabel("Edit post title").fill(nextTitle);
+    await post.getByLabel("Edit post body").fill(nextBody);
+    await post.getByLabel("Edit resource link").fill(resourceUrl ?? "");
+    await post.getByRole("button", { name: "Save changes" }).click();
+
+    const updatedPost = this.postArticle(nextTitle);
+    await expect(updatedPost).toBeVisible();
+    await expect(updatedPost.getByText(nextBody)).toBeVisible();
+    await expect(updatedPost.getByText("Edited", { exact: true })).toBeVisible();
+  }
+
+  async deletePost(title: string) {
+    const post = this.postArticle(title);
+    this.page.once("dialog", (dialog) => dialog.accept());
+    await post.getByRole("button", { name: "Delete post" }).click();
+    await this.expectPostHidden(title);
   }
 
   async createPost({
@@ -88,10 +131,71 @@ export class CommunityPage {
     ).toBeVisible();
   }
 
+  async likePost(title: string) {
+    const post = this.postArticle(title);
+    await expect(post.getByLabel("0 likes")).toBeVisible();
+    await post.getByRole("button", { name: "Like post" }).click();
+    await expect(post.getByRole("button", { name: "Unlike post" })).toBeVisible();
+    await expect(post.getByLabel("1 likes")).toBeVisible();
+  }
+
+  async unlikePost(title: string) {
+    const post = this.postArticle(title);
+    await post.getByRole("button", { name: "Unlike post" }).click();
+    await expect(post.getByRole("button", { name: "Like post" })).toBeVisible();
+    await expect(post.getByLabel("0 likes")).toBeVisible();
+  }
+
+  async addComment(title: string, comment: string) {
+    const post = this.postArticle(title);
+    await post.getByPlaceholder("Add a respectful reply...").fill(comment);
+    await post.getByRole("button", { name: "Reply" }).click();
+    await expect(post.getByLabel("1 comments")).toBeVisible();
+    await expect(post.getByText(comment)).toBeVisible();
+  }
+
+  async editComment(title: string, currentComment: string, nextComment: string) {
+    const post = this.postArticle(title);
+    const commentGroup = post.getByRole("group", {
+      name: `Comment: ${currentComment}`,
+    });
+    await commentGroup
+      .getByRole("button", { name: "Edit comment" })
+      .click();
+    await commentGroup.getByLabel("Edit comment").fill(nextComment);
+    await commentGroup.getByRole("button", { name: "Save comment" }).click();
+    const updatedComment = post.getByRole("group", {
+      name: `Comment: ${nextComment}`,
+    });
+    await expect(updatedComment.getByText(nextComment)).toBeVisible();
+    await expect(
+      updatedComment.getByText("Edited", { exact: true }),
+    ).toBeVisible();
+  }
+
+  async deleteComment(title: string, comment: string) {
+    const post = this.postArticle(title);
+    const commentGroup = post.getByRole("group", {
+      name: `Comment: ${comment}`,
+    });
+    this.page.once("dialog", (dialog) => dialog.accept());
+    await commentGroup.getByRole("button", { name: "Delete comment" }).click();
+    await expect(post.getByText(comment)).toHaveCount(0);
+    await expect(post.getByLabel("0 comments")).toBeVisible();
+  }
+
   async expectModerationBlocked() {
     await expect(
       this.page.getByRole("alert").filter({
         hasText: /community guidelines|respectful tone|friendly/i,
+      }),
+    ).toBeVisible();
+  }
+
+  async expectSuspiciousLinkBlocked() {
+    await expect(
+      this.page.getByRole("alert").filter({
+        hasText: /downloadable program|suspicious|shortened links/i,
       }),
     ).toBeVisible();
   }

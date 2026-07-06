@@ -146,20 +146,153 @@ testWithData.describe("@critical native community member experience", () => {
       member.password,
     );
     const community = new CommunityPage(page);
+    const postTitle = `Board package workflow ideas ${member.marker}`;
+
+    try {
+      await community.open();
+      await community.selectSpace("Governance");
+      await community.createPost({
+        title: postTitle,
+        body: "We are looking for kind, practical ways to prepare board packages faster.",
+        kind: "discussion",
+        spaceName: "Governance",
+      });
+      await community.expectPostPublished();
+      await community.expectPost(
+        postTitle,
+        "We are looking for kind, practical ways to prepare board packages faster.",
+      );
+      await community.likePost(postTitle);
+      await community.unlikePost(postTitle);
+      await community.likePost(postTitle);
+      await community.addComment(
+        postTitle,
+        "We use a shared checklist before every board meeting.",
+      );
+    } finally {
+      await context.close();
+    }
+  });
+
+  testWithData("allows authors to edit and delete community posts", async ({
+    baseURL,
+    browser,
+    testData,
+  }) => {
+    if (!baseURL) throw new Error("Playwright baseURL is required.");
+
+    const member = await testData.createOrganizationOwner({
+      activeSubscription: true,
+      planId: "roots",
+    });
+    const postTitle = `Editable community post ${member.marker}`;
+    const updatedPostTitle = `Updated editable community post ${member.marker}`;
+    await testData.createCommunityPost(member, {
+      title: postTitle,
+      body: "This post should support author edits and deletion.",
+      kind: "discussion",
+      spaceSlug: "general",
+    });
+
+    const { context, page } = await createAuthenticatedPage(
+      browser,
+      baseURL,
+      member.email,
+      member.password,
+    );
+    const community = new CommunityPage(page);
+
+    try {
+      await community.open();
+      await community.editPost({
+        currentTitle: postTitle,
+        nextTitle: updatedPostTitle,
+        nextBody:
+          "This post now shows the edited state before the author deletes it.",
+      });
+      await community.deletePost(updatedPostTitle);
+    } finally {
+      await context.close();
+    }
+  });
+
+  testWithData("allows authors to edit and delete their comments", async ({
+    baseURL,
+    browser,
+    testData,
+  }) => {
+    if (!baseURL) throw new Error("Playwright baseURL is required.");
+
+    const member = await testData.createOrganizationOwner({
+      activeSubscription: true,
+      planId: "roots",
+    });
+    const postTitle = `Commentable community post ${member.marker}`;
+    await testData.createCommunityPost(member, {
+      title: postTitle,
+      body: "This post should support comment editing and deletion.",
+      kind: "discussion",
+      spaceSlug: "general",
+    });
+
+    const { context, page } = await createAuthenticatedPage(
+      browser,
+      baseURL,
+      member.email,
+      member.password,
+    );
+    const community = new CommunityPage(page);
+
+    try {
+      await community.open();
+      await community.addComment(
+        postTitle,
+        "We use a shared checklist before every board meeting.",
+      );
+      await community.editComment(
+        postTitle,
+        "We use a shared checklist before every board meeting.",
+        "We use a shared checklist and assign one owner before every board meeting.",
+      );
+      await community.deleteComment(
+        postTitle,
+        "We use a shared checklist and assign one owner before every board meeting.",
+      );
+    } finally {
+      await context.close();
+    }
+  });
+
+  testWithData("blocks suspicious resource links before publishing", async ({
+    baseURL,
+    browser,
+    testData,
+  }) => {
+    if (!baseURL) throw new Error("Playwright baseURL is required.");
+
+    const member = await testData.createOrganizationOwner({
+      activeSubscription: true,
+      planId: "roots",
+    });
+    const { context, page } = await createAuthenticatedPage(
+      browser,
+      baseURL,
+      member.email,
+      member.password,
+    );
+    const community = new CommunityPage(page);
 
     try {
       await community.open();
       await community.createPost({
-        title: "Board package workflow ideas",
-        body: "We are looking for kind, practical ways to prepare board packages faster.",
-        kind: "discussion",
+        title: "Suspicious download",
+        body: "Please review this resource before opening it.",
+        kind: "resource",
+        resourceUrl: "https://example.org/downloads/tool.exe",
         spaceName: "General",
       });
-      await community.expectPostPublished();
-      await community.expectPost(
-        "Board package workflow ideas",
-        "We are looking for kind, practical ways to prepare board packages faster.",
-      );
+      await community.expectSuspiciousLinkBlocked();
+      await community.expectPostHidden("Suspicious download");
     } finally {
       await context.close();
     }
