@@ -417,6 +417,60 @@ testWithData.describe("@critical native community member experience", () => {
     }
   });
 
+  testWithData("syncs post likes and unlikes in another member session without a manual refresh", async ({
+    baseURL,
+    browser,
+    testData,
+  }) => {
+    if (!baseURL) throw new Error("Playwright baseURL is required.");
+
+    const owner = await testData.createOrganizationOwner({
+      activeSubscription: true,
+      planId: "roots",
+    });
+    const teammate = await testData.createOrganizationMember(owner);
+    const postTitle = `Realtime post like toggle ${owner.marker}`;
+    const postBody =
+      "This post should sync like and unlike counts across open sessions.";
+    await testData.createCommunityPost(owner, {
+      title: postTitle,
+      body: postBody,
+      kind: "discussion",
+      spaceSlug: "general",
+    });
+
+    const ownerSession = await createAuthenticatedPage(
+      browser,
+      baseURL,
+      owner.email,
+      owner.password,
+    );
+    const teammateSession = await createAuthenticatedPage(
+      browser,
+      baseURL,
+      teammate.email,
+      teammate.password,
+    );
+    const ownerCommunity = new CommunityPage(ownerSession.page);
+    const teammateCommunity = new CommunityPage(teammateSession.page);
+
+    try {
+      await teammateCommunity.open();
+      await teammateCommunity.expectLiveUpdatesConnected();
+      await teammateCommunity.expectPost(postTitle, postBody);
+      await teammateCommunity.expectPostLikes(postTitle, 0);
+      await ownerCommunity.open();
+      await ownerCommunity.expectLiveUpdatesConnected();
+      await ownerCommunity.likePost(postTitle);
+      await teammateCommunity.expectPostLikes(postTitle, 1);
+      await ownerCommunity.unlikePost(postTitle);
+      await teammateCommunity.expectPostLikes(postTitle, 0);
+    } finally {
+      await ownerSession.context.close();
+      await teammateSession.context.close();
+    }
+  });
+
   testWithData("syncs comment create edit and delete operations without a manual refresh", async ({
     baseURL,
     browser,

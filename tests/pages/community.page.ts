@@ -225,6 +225,12 @@ export class CommunityPage {
     await expect(post.getByLabel("0 likes")).toBeVisible();
   }
 
+  async expectPostLikes(title: string, count: number) {
+    await expect(
+      this.postArticle(title).getByLabel(`${count} likes`),
+    ).toBeVisible({ timeout: 10000 });
+  }
+
   async addComment(title: string, comment: string) {
     const post = this.postArticle(title);
     await post.getByPlaceholder("Add a reply...").fill(comment);

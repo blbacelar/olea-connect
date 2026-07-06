@@ -210,7 +210,6 @@ function LikeButton({
 }) {
   const router = useRouter();
   const [isSaving, setIsSaving] = useState(false);
-  const renderedPostId = useRef(post.id);
   const [optimisticLike, setOptimisticLike] = useState({
     count: post.likeCount,
     liked: post.likedByCurrentUser,
@@ -218,9 +217,6 @@ function LikeButton({
   const [errorMessage, setErrorMessage] = useState("");
 
   useEffect(() => {
-    if (renderedPostId.current === post.id) return;
-
-    renderedPostId.current = post.id;
     setOptimisticLike({
       count: post.likeCount,
       liked: post.likedByCurrentUser,
@@ -673,7 +669,6 @@ function CommentLikeButton({
 }) {
   const router = useRouter();
   const [isSaving, setIsSaving] = useState(false);
-  const renderedCommentId = useRef(comment.id);
   const [optimisticLike, setOptimisticLike] = useState({
     count: comment.likeCount,
     liked: comment.likedByCurrentUser,
@@ -681,9 +676,6 @@ function CommentLikeButton({
   const [errorMessage, setErrorMessage] = useState("");
 
   useEffect(() => {
-    if (renderedCommentId.current === comment.id) return;
-
-    renderedCommentId.current = comment.id;
     setOptimisticLike({
       count: comment.likeCount,
       liked: comment.likedByCurrentUser,
