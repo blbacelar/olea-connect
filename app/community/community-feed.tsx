@@ -17,6 +17,13 @@ import { SectionHeading } from "@/components/SectionHeading";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import type {
   CommunityHome,
@@ -36,6 +43,12 @@ import {
   updateCommunityPost,
 } from "./actions";
 import { CommunityPostComposer } from "./community-post-composer";
+import {
+  broadcastCommunityFeedChange,
+  communityFeedBroadcastEvent,
+  communityRealtimeRefreshDelayMs,
+  getCommunityFeedChannelName,
+} from "./realtime";
 
 const initialActionState: CommunityActionState = {
   message: "",
@@ -43,27 +56,6 @@ const initialActionState: CommunityActionState = {
 };
 
 const selectedSpaceStorageKey = "olea-community-selected-space";
-const communityRealtimeRefreshDelayMs = 250;
-const communityFeedBroadcastEvent = "community-feed-changed";
-
-function getCommunityFeedChannelName(communityId: string) {
-  return `community-feed:${communityId}`;
-}
-
-async function broadcastCommunityFeedChange(communityId: string) {
-  const supabase = createClient();
-  const channel = supabase.channel(getCommunityFeedChannelName(communityId));
-
-  try {
-    await channel.send({
-      event: communityFeedBroadcastEvent,
-      payload: { communityId },
-      type: "broadcast",
-    });
-  } finally {
-    await supabase.removeChannel(channel);
-  }
-}
 
 function formatRelativeDate(value: string) {
   return new Intl.DateTimeFormat("en-CA", {
@@ -859,7 +851,26 @@ export function CommunityFeed({ community }: { community: CommunityHome }) {
         <p className="px-2.5 pb-2 text-[11px] font-semibold uppercase tracking-[0.05em] text-slate-400">
           Spaces
         </p>
-        <div className="space-y-1">
+        <div className="lg:hidden">
+          <Select value={selectedSpaceId} onValueChange={handleSelectSpace}>
+            <SelectTrigger aria-label="Choose community space" className="h-11">
+              <SelectValue placeholder="Choose a space" />
+            </SelectTrigger>
+            <SelectContent>
+              {community.spaces.map((space) => (
+                <SelectItem key={space.id} value={space.id}>
+                  # {space.name}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          {selectedSpace?.description ? (
+            <p className="mt-2 px-1 text-xs leading-5 text-slate-500">
+              {selectedSpace.description}
+            </p>
+          ) : null}
+        </div>
+        <div className="hidden space-y-1 lg:block">
           {community.spaces.map((space) => (
             <button
               key={space.id}
@@ -893,6 +904,7 @@ export function CommunityFeed({ community }: { community: CommunityHome }) {
             {selectedSpace ? `# ${selectedSpace.name}` : "Featured conversations"}
           </SectionHeading>
           <CommunityPostComposer
+            communityId={community.id}
             selectedSpaceId={selectedSpaceId}
             selectedSpaceName={selectedSpace?.name ?? "Community"}
           />

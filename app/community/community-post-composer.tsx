@@ -22,6 +22,7 @@ import {
   createCommunityPost,
   type CreateCommunityPostState,
 } from "./actions";
+import { broadcastCommunityFeedChange } from "./realtime";
 
 const initialState: CreateCommunityPostState = {
   message: "",
@@ -41,9 +42,11 @@ function SubmitButton() {
 }
 
 export function CommunityPostComposer({
+  communityId,
   selectedSpaceId,
   selectedSpaceName,
 }: {
+  communityId: string;
   selectedSpaceId: string;
   selectedSpaceName: string;
 }) {
@@ -78,9 +81,11 @@ export function CommunityPostComposer({
       formRef.current?.reset();
       setKind("discussion");
       setIsOpen(false);
-      router.refresh();
+      void broadcastCommunityFeedChange(communityId).finally(() => {
+        router.refresh();
+      });
     }
-  }, [router, state]);
+  }, [communityId, router, state]);
 
   if (!selectedSpaceId) {
     return (

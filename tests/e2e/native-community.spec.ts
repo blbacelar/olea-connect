@@ -99,6 +99,35 @@ testWithData.describe("@critical native community member experience", () => {
     }
   });
 
+  testWithData("uses a compact space selector on mobile", async ({
+    baseURL,
+    browser,
+    testData,
+  }) => {
+    if (!baseURL) throw new Error("Playwright baseURL is required.");
+
+    const member = await testData.createOrganizationOwner({
+      activeSubscription: true,
+      planId: "roots",
+    });
+    const { context, page } = await createAuthenticatedPage(
+      browser,
+      baseURL,
+      member.email,
+      member.password,
+    );
+    const community = new CommunityPage(page);
+
+    try {
+      await page.setViewportSize({ height: 844, width: 390 });
+      await community.open();
+      await community.expectMobileSpaceSelector();
+      await community.selectMobileSpace("Governance");
+    } finally {
+      await context.close();
+    }
+  });
+
   testWithData("shows manager affordances when a member has a community manager assignment", async ({
     baseURL,
     browser,
@@ -211,6 +240,54 @@ testWithData.describe("@critical native community member experience", () => {
       await community.deletePost(updatedPostTitle);
     } finally {
       await context.close();
+    }
+  });
+
+  testWithData("shows newly created posts in another member session without a manual refresh", async ({
+    baseURL,
+    browser,
+    testData,
+  }) => {
+    if (!baseURL) throw new Error("Playwright baseURL is required.");
+
+    const owner = await testData.createOrganizationOwner({
+      activeSubscription: true,
+      planId: "roots",
+    });
+    const teammate = await testData.createOrganizationMember(owner);
+    const postTitle = `Realtime created post ${owner.marker}`;
+    const postBody =
+      "This new post should appear for another signed-in member without reloading.";
+
+    const ownerSession = await createAuthenticatedPage(
+      browser,
+      baseURL,
+      owner.email,
+      owner.password,
+    );
+    const teammateSession = await createAuthenticatedPage(
+      browser,
+      baseURL,
+      teammate.email,
+      teammate.password,
+    );
+    const ownerCommunity = new CommunityPage(ownerSession.page);
+    const teammateCommunity = new CommunityPage(teammateSession.page);
+
+    try {
+      await teammateCommunity.open();
+      await teammateCommunity.expectLiveUpdatesConnected();
+      await ownerCommunity.open();
+      await ownerCommunity.expectLiveUpdatesConnected();
+      await ownerCommunity.createPost({
+        title: postTitle,
+        body: postBody,
+        kind: "discussion",
+      });
+      await teammateCommunity.expectPostAppearsByRealtime(postTitle, postBody);
+    } finally {
+      await ownerSession.context.close();
+      await teammateSession.context.close();
     }
   });
 

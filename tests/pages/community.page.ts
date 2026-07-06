@@ -40,6 +40,23 @@ export class CommunityPage {
     await expect(this.page.getByRole("heading", { name: `# ${name}` })).toBeVisible();
   }
 
+  async selectMobileSpace(name: string) {
+    await this.page.getByRole("combobox", { name: "Choose community space" }).click();
+    await this.page.getByRole("option", { name: `# ${name}` }).click();
+    await expect(this.page.getByRole("heading", { name: `# ${name}` })).toBeVisible();
+  }
+
+  async expectMobileSpaceSelector() {
+    await expect(
+      this.page.getByRole("combobox", { name: "Choose community space" }),
+    ).toBeVisible();
+    await expect(
+      this.page.getByRole("button", {
+        name: /# General Introductions, questions/i,
+      }),
+    ).toHaveCount(0);
+  }
+
   private postArticle(title: string) {
     return this.page.getByRole("article", { name: `Post: ${title}` });
   }
@@ -47,6 +64,12 @@ export class CommunityPage {
   async expectPost(title: string, body: string) {
     const post = this.postArticle(title);
     await expect(post).toBeVisible();
+    await expect(post.getByText(body)).toBeVisible();
+  }
+
+  async expectPostAppearsByRealtime(title: string, body: string) {
+    const post = this.postArticle(title);
+    await expect(post).toBeVisible({ timeout: 10000 });
     await expect(post.getByText(body)).toBeVisible();
   }
 
