@@ -173,57 +173,83 @@ function LikeButton({ post }: { post: CommunityPost }) {
 
 function DeletePostButton({ postId }: { postId: string }) {
   const router = useRouter();
+  const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [state, formAction] = useFormState(
     deleteCommunityPost,
     initialActionState,
   );
 
   useEffect(() => {
-    if (state.status === "success") router.refresh();
+    if (state.status !== "success") return;
+    setIsDialogOpen(false);
+    router.refresh();
   }, [router, state]);
 
   return (
-    <form
-      action={formAction}
-      onSubmit={(event) => {
-        if (!window.confirm("Delete this post? This cannot be undone.")) {
-          event.preventDefault();
-        }
-      }}
-      className="inline-flex items-center gap-2"
-    >
-      <input type="hidden" name="postId" value={postId} />
-      <DeleteSubmitButton label="Delete post" />
-      <ActionMessage state={state} />
-    </form>
+    <>
+      <Button
+        type="button"
+        variant="ghost"
+        size="sm"
+        onClick={() => setIsDialogOpen(true)}
+        className="px-2 text-red-600 hover:text-red-700"
+      >
+        <Trash2 className="size-4" />
+        Delete post
+      </Button>
+      <DeleteConfirmationDialog
+        action={formAction}
+        confirmLabel="Yes, delete post"
+        description="This post and its replies will be removed from the community space. This action cannot be undone."
+        hiddenFieldName="postId"
+        hiddenFieldValue={postId}
+        isOpen={isDialogOpen}
+        onCancel={() => setIsDialogOpen(false)}
+        state={state}
+        title="Delete post?"
+      />
+    </>
   );
 }
 
 function DeleteCommentButton({ commentId }: { commentId: string }) {
   const router = useRouter();
+  const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [state, formAction] = useFormState(
     deleteCommunityComment,
     initialActionState,
   );
 
   useEffect(() => {
-    if (state.status === "success") router.refresh();
+    if (state.status !== "success") return;
+    setIsDialogOpen(false);
+    router.refresh();
   }, [router, state]);
 
   return (
-    <form
-      action={formAction}
-      onSubmit={(event) => {
-        if (!window.confirm("Delete this comment? This cannot be undone.")) {
-          event.preventDefault();
-        }
-      }}
-      className="inline-flex items-center gap-2"
-    >
-      <input type="hidden" name="commentId" value={commentId} />
-      <DeleteSubmitButton label="Delete comment" />
-      <ActionMessage state={state} />
-    </form>
+    <>
+      <Button
+        type="button"
+        variant="ghost"
+        size="sm"
+        onClick={() => setIsDialogOpen(true)}
+        className="px-2 text-red-600 hover:text-red-700"
+      >
+        <Trash2 className="size-4" />
+        Delete comment
+      </Button>
+      <DeleteConfirmationDialog
+        action={formAction}
+        confirmLabel="Yes, delete comment"
+        description="This reply will be removed from the conversation. This action cannot be undone."
+        hiddenFieldName="commentId"
+        hiddenFieldValue={commentId}
+        isOpen={isDialogOpen}
+        onCancel={() => setIsDialogOpen(false)}
+        state={state}
+        title="Delete comment?"
+      />
+    </>
   );
 }
 
@@ -233,14 +259,102 @@ function DeleteSubmitButton({ label }: { label: string }) {
   return (
     <Button
       type="submit"
-      variant="ghost"
+      variant="destructive"
       size="sm"
       disabled={pending}
-      className="px-2 text-red-600 hover:text-red-700"
     >
       <Trash2 className="size-4" />
       {pending ? "Deleting..." : label}
     </Button>
+  );
+}
+
+function DeleteConfirmationDialog({
+  action,
+  confirmLabel,
+  description,
+  hiddenFieldName,
+  hiddenFieldValue,
+  isOpen,
+  onCancel,
+  state,
+  title,
+}: {
+  action: (payload: FormData) => void;
+  confirmLabel: string;
+  description: string;
+  hiddenFieldName: string;
+  hiddenFieldValue: string;
+  isOpen: boolean;
+  onCancel: () => void;
+  state: CommunityActionState;
+  title: string;
+}) {
+  const cancelButtonRef = useRef<HTMLButtonElement>(null);
+  const titleId = `delete-confirmation-${hiddenFieldValue}-title`;
+  const descriptionId = `delete-confirmation-${hiddenFieldValue}-description`;
+
+  useEffect(() => {
+    if (!isOpen) return;
+
+    cancelButtonRef.current?.focus();
+
+    function handleKeyDown(event: KeyboardEvent) {
+      if (event.key === "Escape") onCancel();
+    }
+
+    document.addEventListener("keydown", handleKeyDown);
+    return () => document.removeEventListener("keydown", handleKeyDown);
+  }, [isOpen, onCancel]);
+
+  if (!isOpen) return null;
+
+  return (
+    <div
+      aria-describedby={descriptionId}
+      aria-labelledby={titleId}
+      aria-modal="true"
+      className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/50 p-4"
+      role="dialog"
+    >
+      <div className="w-full max-w-md rounded-2xl bg-white p-6 shadow-2xl">
+        <div className="flex items-start gap-3">
+          <div className="rounded-full bg-red-50 p-2 text-red-700">
+            <Trash2 className="size-5" />
+          </div>
+          <div>
+            <h3 id={titleId} className="text-lg font-semibold text-slate-950">
+              {title}
+            </h3>
+            <p
+              id={descriptionId}
+              className="mt-2 text-sm leading-6 text-slate-600"
+            >
+              {description}
+            </p>
+          </div>
+        </div>
+        <form action={action} className="mt-6 space-y-4">
+          <input
+            type="hidden"
+            name={hiddenFieldName}
+            value={hiddenFieldValue}
+          />
+          <ActionMessage state={state} />
+          <div className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
+            <Button
+              ref={cancelButtonRef}
+              type="button"
+              variant="outline"
+              onClick={onCancel}
+            >
+              Cancel
+            </Button>
+            <DeleteSubmitButton label={confirmLabel} />
+          </div>
+        </form>
+      </div>
+    </div>
   );
 }
 

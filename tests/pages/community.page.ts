@@ -109,8 +109,11 @@ export class CommunityPage {
 
   async deletePost(title: string) {
     const post = this.postArticle(title);
-    this.page.once("dialog", (dialog) => dialog.accept());
     await post.getByRole("button", { name: "Delete post" }).click();
+    await expect(
+      this.page.getByRole("dialog", { name: "Delete post?" }),
+    ).toBeVisible();
+    await this.page.getByRole("button", { name: "Yes, delete post" }).click();
     await this.expectPostHidden(title);
   }
 
@@ -247,8 +250,13 @@ export class CommunityPage {
     const commentGroup = post.getByRole("group", {
       name: `Comment: ${comment}`,
     });
-    this.page.once("dialog", (dialog) => dialog.accept());
     await commentGroup.getByRole("button", { name: "Delete comment" }).click();
+    await expect(
+      this.page.getByRole("dialog", { name: "Delete comment?" }),
+    ).toBeVisible();
+    await this.page
+      .getByRole("button", { name: "Yes, delete comment" })
+      .click();
     await expect(post.getByText(comment)).toHaveCount(0);
     await expect(post.getByLabel("0 comments")).toBeVisible();
   }
