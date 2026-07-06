@@ -297,7 +297,9 @@ and an external dependency to a core member experience. The foundation lives in:
 - `app/community/page.tsx`
 - `app/community/actions.ts`
 - `app/community/community-post-composer.tsx`
+- `app/api/v1/community/moderation/process/route.ts`
 - `lib/community/moderation.ts`
+- `lib/community/moderation-worker.ts`
 - `lib/data/community.ts`
 - `public.communities`
 - `public.community_spaces`
@@ -313,12 +315,13 @@ creation and manager assignment are script/migration-driven for MVP; a future
 `/admin` portal can manage these tables directly. Members can select a space,
 create posts in spaces they can access, like posts, and add comments. Post,
 comment, and reaction writes go through Supabase RLS so access remains scoped to
-the member's eligible spaces. The post and comment actions run a local language
-guard and then use OpenRouter chat completions with `z-ai/glm-5.2` when
-`OPENROUTER_API_KEY` is configured. Resource links are checked locally for
-suspicious download/script patterns, URL shorteners, IP hosts, punycode hosts,
-and embedded credentials before the LLM pass. Moderation failures are
-fail-closed so unsafe or unchecked posts/comments are not inserted.
+the member's eligible spaces. Posts and comments are inserted immediately, then
+queued in `integration_events` with provider `community_moderation`. The
+versioned cron endpoint claims queued events, runs local language and
+resource-link checks, and then uses OpenRouter chat completions with
+`z-ai/glm-5.2` when `OPENROUTER_API_KEY` is configured. Rejected posts are
+marked `hidden`, rejected comments receive `hidden_at`, and failed moderation
+events retry through the existing outbox/dead-letter flow.
 
 Live calls use manually attached Zoom URLs for now. Circle SSO/provisioning code
 remains deferred scaffolding under `lib/circle/*` and `app/api/v1/circle*` in

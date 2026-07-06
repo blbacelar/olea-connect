@@ -103,15 +103,15 @@ Native community is the MVP path and does not require Circle environment
 variables. Default communities and spaces are seeded by migration. Community
 events can store manual Zoom URLs in `community_events.zoom_url`.
 
-Member-created posts and comments use `OPENROUTER_API_KEY` with the
-`z-ai/glm-5.2` model for LLM moderation when the key is configured. If the key
-is absent, the app still runs the local disrespectful language guard and local
-resource-link safety checks. If the key is present but the moderation request
-fails, posting/commenting is blocked and the member is asked to try again so
-unchecked content is not published. Local E2E runs set
-`COMMUNITY_MODERATION_DISABLE_AI=true` to keep tests deterministic; do not set
-that flag in staging or production unless the team intentionally wants
-local-only moderation.
+Member-created posts and comments are published immediately, then queued in
+`integration_events` with provider `community_moderation`. The
+`/api/v1/community/moderation/process` cron processor uses `CRON_SECRET`, runs
+local disrespectful-language and resource-link safety checks, and then calls
+OpenRouter with the `z-ai/glm-5.2` model when `OPENROUTER_API_KEY` is
+configured. Rejected posts/comments are hidden after the background check. Local
+E2E runs set `COMMUNITY_MODERATION_DISABLE_AI=true` to keep tests deterministic;
+do not set that flag in staging or production unless the team intentionally
+wants local-only moderation.
 
 Circle values can be left blank in environments where deferred Circle
 provisioning is not being tested. Circle routes will fail if required values are

@@ -76,6 +76,7 @@ test.describe("@smoke @critical security boundaries", () => {
       "/api/v1/circle/process",
       "/api/v1/attio/process",
       "/api/v1/quickbooks/process",
+      "/api/v1/community/moderation/process",
       "/api/v1/provisioning/reconcile",
     ];
 

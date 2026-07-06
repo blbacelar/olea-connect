@@ -262,9 +262,62 @@ testWithData.describe("@critical native community member experience", () => {
     }
   });
 
-  testWithData("blocks suspicious resource links before publishing", async ({
+  testWithData("shows real post and comment author names without granting cross-user edit controls", async ({
     baseURL,
     browser,
+    testData,
+  }) => {
+    if (!baseURL) throw new Error("Playwright baseURL is required.");
+
+    const owner = await testData.createOrganizationOwner({
+      activeSubscription: true,
+      planId: "roots",
+    });
+    const teammate = await testData.createOrganizationMember(owner);
+    const postTitle = `Attribution check ${owner.marker}`;
+    const teammateComment =
+      "This reply should show the teammate name and stay read-only for the owner.";
+    const postId = await testData.createCommunityPost(owner, {
+      title: postTitle,
+      body: "This post verifies community attribution for real users.",
+      kind: "discussion",
+      spaceSlug: "general",
+    });
+    await testData.createCommunityComment(teammate, {
+      postId,
+      body: teammateComment,
+    });
+
+    const { context, page } = await createAuthenticatedPage(
+      browser,
+      baseURL,
+      owner.email,
+      owner.password,
+    );
+    const community = new CommunityPage(page);
+
+    try {
+      await community.open();
+      await community.expectPost(
+        postTitle,
+        "This post verifies community attribution for real users.",
+      );
+      await community.expectPostAuthor(postTitle, owner.fullName);
+      await community.expectCommentAuthor(
+        postTitle,
+        teammateComment,
+        teammate.fullName,
+      );
+      await community.expectCommentReadonly(postTitle, teammateComment);
+    } finally {
+      await context.close();
+    }
+  });
+
+  testWithData("hides suspicious resource links after background moderation", async ({
+    baseURL,
+    browser,
+    request,
     testData,
   }) => {
     if (!baseURL) throw new Error("Playwright baseURL is required.");
@@ -289,16 +342,23 @@ testWithData.describe("@critical native community member experience", () => {
         kind: "resource",
         resourceUrl: "https://example.org/downloads/tool.exe",
       });
-      await community.expectSuspiciousLinkBlocked();
-      await community.expectPostHidden("Suspicious download");
+      await community.expectPost(
+        "Suspicious download",
+        "Please review this resource before opening it.",
+      );
+      await community.processModerationUntilPostHidden(
+        request,
+        "Suspicious download",
+      );
     } finally {
       await context.close();
     }
   });
 
-  testWithData("blocks disrespectful community posts before they are published", async ({
+  testWithData("hides disrespectful community posts after background moderation", async ({
     baseURL,
     browser,
+    request,
     testData,
   }) => {
     if (!baseURL) throw new Error("Playwright baseURL is required.");
@@ -322,8 +382,14 @@ testWithData.describe("@critical native community member experience", () => {
         body: "This is stupid and does not belong in a respectful community.",
         kind: "discussion",
       });
-      await community.expectModerationBlocked();
-      await community.expectPostHidden("A post that should not publish");
+      await community.expectPost(
+        "A post that should not publish",
+        "This is stupid and does not belong in a respectful community.",
+      );
+      await community.processModerationUntilPostHidden(
+        request,
+        "A post that should not publish",
+      );
     } finally {
       await context.close();
     }

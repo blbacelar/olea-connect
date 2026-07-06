@@ -1,4 +1,4 @@
-import { expect, type Page } from "@playwright/test";
+import { expect, type APIRequestContext, type Page } from "@playwright/test";
 
 export class CommunityPage {
   constructor(private readonly page: Page) {}
@@ -50,8 +50,31 @@ export class CommunityPage {
     await expect(post.getByText(body)).toBeVisible();
   }
 
+  async expectPostAuthor(title: string, authorName: string) {
+    await expect(
+      this.postArticle(title).getByLabel(`Post author ${authorName}`),
+    ).toBeVisible();
+  }
+
   async expectPostHidden(title: string) {
     await expect(this.page.getByRole("heading", { name: title })).toHaveCount(0);
+  }
+
+  async processModerationUntilPostHidden(
+    request: APIRequestContext,
+    title: string,
+  ) {
+    for (let attempt = 0; attempt < 20; attempt += 1) {
+      await this.processModerationQueue(request);
+
+      if ((await this.page.getByRole("heading", { name: title }).count()) === 0) {
+        return;
+      }
+
+      await this.page.waitForTimeout(250);
+    }
+
+    await this.expectPostHidden(title);
   }
 
   async editPost({
@@ -123,8 +146,22 @@ export class CommunityPage {
 
   async expectPostPublished() {
     await expect(
-      this.page.getByText("Your post is live in the community."),
+      this.page.getByText(/Your post is live.*background/i),
     ).toBeVisible();
+  }
+
+  async processModerationQueue(request: APIRequestContext) {
+    const secret = process.env.CRON_SECRET;
+    if (!secret) throw new Error("CRON_SECRET is required for moderation tests.");
+
+    const response = await request.get("/api/v1/community/moderation/process", {
+      headers: {
+        authorization: `Bearer ${secret}`,
+      },
+    });
+
+    expect(response.status()).toBe(200);
+    await this.page.reload();
   }
 
   async likePost(title: string) {
@@ -148,6 +185,29 @@ export class CommunityPage {
     await post.getByRole("button", { name: "Reply" }).click();
     await expect(post.getByLabel("1 comments")).toBeVisible();
     await expect(post.getByText(comment)).toBeVisible();
+  }
+
+  async expectCommentAuthor(title: string, comment: string, authorName: string) {
+    const post = this.postArticle(title);
+    const commentGroup = post.getByRole("group", {
+      name: `Comment: ${comment}`,
+    });
+    await expect(
+      commentGroup.getByLabel(`Comment author ${authorName}`),
+    ).toBeVisible();
+  }
+
+  async expectCommentReadonly(title: string, comment: string) {
+    const post = this.postArticle(title);
+    const commentGroup = post.getByRole("group", {
+      name: `Comment: ${comment}`,
+    });
+    await expect(
+      commentGroup.getByRole("button", { name: "Edit comment" }),
+    ).toHaveCount(0);
+    await expect(
+      commentGroup.getByRole("button", { name: "Delete comment" }),
+    ).toHaveCount(0);
   }
 
   async editComment(title: string, currentComment: string, nextComment: string) {

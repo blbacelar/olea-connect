@@ -1,8 +1,8 @@
 "use server";
 
-import { moderateCommunityPost } from "@/lib/community/moderation";
 import { requireMemberContext } from "@/lib/data/member-context";
 import type { CommunityPost } from "@/lib/types";
+import { createAdminClient } from "@/utils/supabase/admin";
 import { createClient } from "@/utils/supabase/server";
 
 export type CreateCommunityPostState = {
@@ -13,6 +13,7 @@ export type CreateCommunityPostState = {
 export type CommunityActionState = CreateCommunityPostState;
 
 const postKinds = ["discussion", "announcement", "resource"] as const;
+const communityModerationProvider = "community_moderation";
 
 function getText(formData: FormData, key: string) {
   return String(formData.get(key) ?? "").trim();
@@ -38,6 +39,66 @@ function validateKind(value: string): CommunityPost["kind"] {
   }
 
   throw new Error("Choose a supported post type.");
+}
+
+async function queueCommunityModeration(
+  target:
+    | {
+        postId: string;
+        targetType: "post";
+      }
+    | {
+        commentId: string;
+        targetType: "comment";
+      },
+) {
+  try {
+    const admin = createAdminClient();
+    const aggregateType =
+      target.targetType === "post" ? "community_post" : "community_comment";
+    const aggregateId =
+      target.targetType === "post" ? target.postId : target.commentId;
+
+    const { error } = await admin.from("integration_events").insert({
+      aggregate_id: aggregateId,
+      aggregate_type: aggregateType,
+      event_type: `community.${target.targetType}.moderation_requested`,
+      payload: target,
+      provider: communityModerationProvider,
+    });
+
+    if (error) {
+      console.error("Unable to queue community moderation", error);
+      return;
+    }
+
+    triggerCommunityModerationWorker();
+  } catch (error) {
+    console.error("Unable to queue community moderation", error);
+  }
+}
+
+function triggerCommunityModerationWorker() {
+  const secret = process.env.CRON_SECRET;
+  const appUrl =
+    process.env.NEXT_PUBLIC_APP_URL ??
+    (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : null);
+
+  if (!secret || !appUrl) return;
+
+  try {
+    void fetch(`${appUrl}/api/v1/community/moderation/process`, {
+      cache: "no-store",
+      headers: {
+        authorization: `Bearer ${secret}`,
+      },
+      method: "GET",
+    }).catch((error) => {
+      console.error("Unable to trigger community moderation worker", error);
+    });
+  } catch (error) {
+    console.error("Unable to trigger community moderation worker", error);
+  }
 }
 
 function normalizeResourceUrl(value: string) {
@@ -95,36 +156,26 @@ export async function createCommunityPost(
 
     if (spaceError) throw spaceError;
 
-    const moderation = await moderateCommunityPost({
-      body: input.body,
-      resourceUrl: input.resourceUrl,
-      title: input.title,
-    });
-
-    if (!moderation.approved) {
-      return {
-        message:
-          moderation.reason ??
-          "Your post could not be shared. Please rewrite it in a respectful tone.",
-        status: "error",
-      };
-    }
-
-    const { error } = await supabase.from("community_posts").insert({
-      author_user_id: member.id,
-      body: input.body,
-      community_id: space.community_id,
-      kind: input.kind,
-      resource_url: input.resourceUrl,
-      space_id: space.id,
-      status: "published",
-      title: input.title,
-    });
+    const { data: post, error } = await supabase
+      .from("community_posts")
+      .insert({
+        author_user_id: member.id,
+        body: input.body,
+        community_id: space.community_id,
+        kind: input.kind,
+        resource_url: input.resourceUrl,
+        space_id: space.id,
+        status: "published",
+        title: input.title,
+      })
+      .select("id")
+      .single();
 
     if (error) throw error;
+    if (post?.id) await queueCommunityModeration({ postId: post.id, targetType: "post" });
 
     return {
-      message: "Your post is live in the community.",
+      message: "Your post is live. Safety checks continue in the background.",
       status: "success",
     };
   } catch (error) {
@@ -196,21 +247,6 @@ export async function updateCommunityPost(
     const input = validateCommunityPostUpdateInput(formData);
     const supabase = await createClient();
 
-    const moderation = await moderateCommunityPost({
-      body: input.body,
-      resourceUrl: input.resourceUrl,
-      title: input.title,
-    });
-
-    if (!moderation.approved) {
-      return {
-        message:
-          moderation.reason ??
-          "Your post could not be updated. Please rewrite it in a respectful tone.",
-        status: "error",
-      };
-    }
-
     const { error } = await supabase
       .from("community_posts")
       .update({
@@ -223,9 +259,10 @@ export async function updateCommunityPost(
       .single();
 
     if (error) throw error;
+    await queueCommunityModeration({ postId: input.postId, targetType: "post" });
 
     return {
-      message: "Post updated.",
+      message: "Post updated. Safety checks continue in the background.",
       status: "success",
     };
   } catch (error) {
@@ -285,30 +322,26 @@ export async function createCommunityComment(
     const input = validateCommentInput(formData);
     const supabase = await createClient();
 
-    const moderation = await moderateCommunityPost({
-      body: input.body,
-      title: "Community comment",
-    });
-
-    if (!moderation.approved) {
-      return {
-        message:
-          moderation.reason ??
-          "Your comment could not be shared. Please rewrite it in a respectful tone.",
-        status: "error",
-      };
-    }
-
-    const { error } = await supabase.from("community_comments").insert({
-      author_user_id: member.id,
-      body: input.body,
-      post_id: input.postId,
-    });
+    const { data: comment, error } = await supabase
+      .from("community_comments")
+      .insert({
+        author_user_id: member.id,
+        body: input.body,
+        post_id: input.postId,
+      })
+      .select("id")
+      .single();
 
     if (error) throw error;
+    if (comment?.id) {
+      await queueCommunityModeration({
+        commentId: comment.id,
+        targetType: "comment",
+      });
+    }
 
     return {
-      message: "Your comment was added.",
+      message: "Your comment was added. Safety checks continue in the background.",
       status: "success",
     };
   } catch (error) {
@@ -330,20 +363,6 @@ export async function updateCommunityComment(
     const input = validateCommentUpdateInput(formData);
     const supabase = await createClient();
 
-    const moderation = await moderateCommunityPost({
-      body: input.body,
-      title: "Community comment",
-    });
-
-    if (!moderation.approved) {
-      return {
-        message:
-          moderation.reason ??
-          "Your comment could not be updated. Please rewrite it in a respectful tone.",
-        status: "error",
-      };
-    }
-
     const { error } = await supabase
       .from("community_comments")
       .update({ body: input.body })
@@ -352,9 +371,13 @@ export async function updateCommunityComment(
       .single();
 
     if (error) throw error;
+    await queueCommunityModeration({
+      commentId: input.commentId,
+      targetType: "comment",
+    });
 
     return {
-      message: "Comment updated.",
+      message: "Comment updated. Safety checks continue in the background.",
       status: "success",
     };
   } catch (error) {

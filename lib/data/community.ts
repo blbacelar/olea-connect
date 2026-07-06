@@ -10,6 +10,7 @@ import type {
   CommunitySpace,
   MembershipTier,
 } from "@/lib/types";
+import { createAdminClient } from "@/utils/supabase/admin";
 import { createClient } from "@/utils/supabase/server";
 
 import { requireMemberContext } from "./member-context";
@@ -81,11 +82,13 @@ function mapPost(
   comments: CommunityPostComment[],
   reactions: Array<{ kind: string; user_id: string }>,
   currentUserId: string,
+  authorNamesByUserId: Map<string, string>,
 ): CommunityPost {
   return {
     id: row.id,
     spaceId: row.space_id,
     authorUserId: row.author_user_id,
+    authorName: authorNamesByUserId.get(row.author_user_id) ?? "Member",
     kind: row.kind,
     title: row.title,
     body: row.body,
@@ -102,16 +105,20 @@ function mapPost(
   };
 }
 
-function mapComment(row: {
-  id: string;
-  author_user_id: string;
-  body: string;
-  created_at: string;
-  updated_at: string;
-}): CommunityPostComment {
+function mapComment(
+  row: {
+    id: string;
+    author_user_id: string;
+    body: string;
+    created_at: string;
+    updated_at: string;
+  },
+  authorNamesByUserId: Map<string, string>,
+): CommunityPostComment {
   return {
     id: row.id,
     authorUserId: row.author_user_id,
+    authorName: authorNamesByUserId.get(row.author_user_id) ?? "Member",
     body: row.body,
     createdAt: row.created_at,
     updatedAt: row.updated_at,
@@ -253,10 +260,32 @@ export async function getCommunityHome(): Promise<CommunityHome | null> {
   if (commentsResult.error) throw commentsResult.error;
   if (reactionsResult.error) throw reactionsResult.error;
 
+  const authorUserIds = new Set<string>();
+  for (const post of postRows) authorUserIds.add(post.author_user_id);
+  for (const comment of commentsResult.data ?? []) {
+    authorUserIds.add(comment.author_user_id);
+  }
+
+  const authorNamesByUserId = new Map<string, string>();
+  if (authorUserIds.size) {
+    const admin = createAdminClient();
+    const { data: profiles, error: profilesError } = await admin
+      .from("profiles")
+      .select("id, full_name")
+      .in("id", Array.from(authorUserIds));
+
+    if (profilesError) throw profilesError;
+
+    for (const profile of profiles ?? []) {
+      const name = profile.full_name?.trim();
+      if (name) authorNamesByUserId.set(profile.id, name);
+    }
+  }
+
   const commentsByPostId = new Map<string, CommunityPostComment[]>();
   for (const comment of commentsResult.data ?? []) {
     const postComments = commentsByPostId.get(comment.post_id) ?? [];
-    postComments.push(mapComment(comment));
+    postComments.push(mapComment(comment, authorNamesByUserId));
     commentsByPostId.set(comment.post_id, postComments);
   }
 
@@ -285,6 +314,7 @@ export async function getCommunityHome(): Promise<CommunityHome | null> {
         commentsByPostId.get(post.id) ?? [],
         reactionsByPostId.get(post.id) ?? [],
         member.id,
+        authorNamesByUserId,
       ),
     ),
     events: (events ?? []).map(mapEvent),

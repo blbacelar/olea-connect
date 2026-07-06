@@ -82,49 +82,82 @@ function SaveButton({ label = "Save changes" }: { label?: string }) {
 
 function LikeButton({ post }: { post: CommunityPost }) {
   const router = useRouter();
-  const [state, formAction] = useFormState(
-    toggleCommunityPostLike,
-    initialActionState,
-  );
+  const [isSaving, setIsSaving] = useState(false);
+  const renderedPostId = useRef(post.id);
+  const [optimisticLike, setOptimisticLike] = useState({
+    count: post.likeCount,
+    liked: post.likedByCurrentUser,
+  });
+  const [errorMessage, setErrorMessage] = useState("");
 
   useEffect(() => {
-    if (state.status === "success") router.refresh();
-  }, [router, state]);
+    if (renderedPostId.current === post.id) return;
+
+    renderedPostId.current = post.id;
+    setOptimisticLike({
+      count: post.likeCount,
+      liked: post.likedByCurrentUser,
+    });
+  }, [post.id, post.likeCount, post.likedByCurrentUser]);
+
+  function handleToggleLike() {
+    if (isSaving) return;
+
+    const previousLike = optimisticLike;
+    const nextLiked = !previousLike.liked;
+
+    setIsSaving(true);
+    setErrorMessage("");
+    setOptimisticLike({
+      count: Math.max(0, previousLike.count + (nextLiked ? 1 : -1)),
+      liked: nextLiked,
+    });
+
+    void (async () => {
+      const formData = new FormData();
+      formData.set("postId", post.id);
+      formData.set("intent", nextLiked ? "like" : "unlike");
+
+      const result = await toggleCommunityPostLike(initialActionState, formData);
+
+      if (result.status === "error") {
+        setOptimisticLike(previousLike);
+        setErrorMessage(result.message);
+        return;
+      }
+
+      router.refresh();
+    })().finally(() => setIsSaving(false));
+  }
 
   return (
-    <form action={formAction}>
-      <input type="hidden" name="postId" value={post.id} />
-      <input
-        type="hidden"
-        name="intent"
-        value={post.likedByCurrentUser ? "unlike" : "like"}
-      />
-      <LikeSubmitButton post={post} />
-    </form>
-  );
-}
-
-function LikeSubmitButton({ post }: { post: CommunityPost }) {
-  const { pending } = useFormStatus();
-
-  return (
-    <Button
-      type="submit"
-      variant="ghost"
-      size="sm"
-      disabled={pending}
-      aria-label={post.likedByCurrentUser ? "Unlike post" : "Like post"}
-      aria-pressed={post.likedByCurrentUser}
-      className={cn(
-        "px-2 text-slate-500 hover:text-olea-green",
-        post.likedByCurrentUser && "text-olea-green",
-      )}
-    >
-      <Heart
-        className={cn("size-4", post.likedByCurrentUser && "fill-current")}
-      />
-      <span aria-label={`${post.likeCount} likes`}>{post.likeCount}</span>
-    </Button>
+    <div aria-busy={isSaving} className="inline-flex items-center gap-2">
+      <Button
+        type="button"
+        variant="ghost"
+        size="sm"
+        disabled={isSaving}
+        aria-label={optimisticLike.liked ? "Unlike post" : "Like post"}
+        aria-pressed={optimisticLike.liked}
+        onClick={handleToggleLike}
+        className={cn(
+          "px-2 text-slate-500 hover:text-olea-green",
+          optimisticLike.liked && "text-olea-green",
+        )}
+      >
+        <Heart
+          className={cn("size-4", optimisticLike.liked && "fill-current")}
+        />
+        <span aria-label={`${optimisticLike.count} likes`}>
+          {optimisticLike.count}
+        </span>
+      </Button>
+      {errorMessage ? (
+        <span role="alert" className="text-xs font-medium text-red-600">
+          {errorMessage}
+        </span>
+      ) : null}
+    </div>
   );
 }
 
@@ -371,8 +404,11 @@ function CommentItem({
       aria-label={`Comment: ${comment.body}`}
       className="text-sm"
     >
-      <p className="font-semibold text-slate-700">
-        {canEdit ? "You" : "Member"}
+      <p
+        aria-label={`Comment author ${comment.authorName}`}
+        className="font-semibold text-slate-700"
+      >
+        {comment.authorName}
         <span className="ml-2 font-normal text-slate-400">
           {formatRelativeDate(comment.createdAt)}
         </span>
@@ -434,9 +470,11 @@ function PostCard({
             Pinned
           </Badge>
         ) : null}
-        <span className="text-xs text-slate-400">
-          {post.authorUserId === currentUserId ? "You" : "Member"} ·{" "}
-          {formatRelativeDate(post.createdAt)}
+        <span
+          aria-label={`Post author ${post.authorName}`}
+          className="text-xs text-slate-400"
+        >
+          {post.authorName} · {formatRelativeDate(post.createdAt)}
         </span>
         {isEdited(post.createdAt, post.updatedAt) ? (
           <Badge variant="outline">Edited</Badge>

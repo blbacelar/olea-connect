@@ -35,7 +35,7 @@ function SubmitButton() {
 
   return (
     <Button type="submit" disabled={pending}>
-      {pending ? "Checking post..." : "Publish post"}
+      {pending ? "Publishing..." : "Publish post"}
     </Button>
   );
 }
@@ -104,7 +104,7 @@ export function CommunityPostComposer({
         </Button>
         <span className="inline-flex items-center gap-1.5 rounded-full bg-olea-light px-3 py-1 text-xs font-semibold text-olea-green">
           <ShieldCheck className="size-3.5" />
-          AI moderated before publishing
+          AI moderated after posting
         </span>
       </div>
 
@@ -188,11 +188,10 @@ export function CommunityPostComposer({
           <div className="mt-5 flex flex-wrap items-center gap-3">
             <SubmitButton />
             <p className="text-xs leading-5 text-slate-500">
-              Posts are checked for harmful or disrespectful content before they
-              appear in the community.
+              Posts appear immediately and are checked in the background for
+              harmful, unsafe, or disrespectful content.
             </p>
           </div>
-
         </form>
       ) : null}
     </div>

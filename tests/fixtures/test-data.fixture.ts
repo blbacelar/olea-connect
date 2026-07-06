@@ -15,6 +15,7 @@ export type CreatedOrganizationOwner = {
   organizationId: string;
   organizationName: string;
   subscriptionId: string | null;
+  fullName: string;
   email: string;
   password: string;
 };
@@ -23,6 +24,7 @@ export type CreatedOrganizationMember = {
   marker: string;
   userId: string;
   organizationId: string;
+  fullName: string;
   email: string;
   password: string;
 };
@@ -75,13 +77,14 @@ export class TestDataManager {
       this.testInfo,
       ++this.identitySequence,
     );
+    const fullName = `${identity.fullName} ${this.identitySequence}`;
     const { data: authData, error: authError } =
       await this.supabase.auth.admin.createUser({
         email: identity.email,
         password: identity.password,
         email_confirm: true,
         user_metadata: {
-          full_name: identity.fullName,
+          full_name: fullName,
           e2e_marker: identity.marker,
         },
       });
@@ -233,6 +236,7 @@ export class TestDataManager {
       organizationId,
       organizationName: identity.organizationName,
       subscriptionId,
+      fullName,
       email: identity.email,
       password: identity.password,
     };
@@ -268,13 +272,14 @@ export class TestDataManager {
       this.testInfo,
       ++this.identitySequence,
     );
+    const fullName = `${identity.fullName} ${this.identitySequence}`;
     const { data: authData, error: authError } =
       await this.supabase.auth.admin.createUser({
         email: identity.email,
         password: identity.password,
         email_confirm: true,
         user_metadata: {
-          full_name: identity.fullName,
+          full_name: fullName,
           e2e_marker: identity.marker,
         },
       });
@@ -317,6 +322,7 @@ export class TestDataManager {
       marker: identity.marker,
       userId,
       organizationId: owner.organizationId,
+      fullName,
       email: identity.email,
       password: identity.password,
     };
@@ -494,6 +500,40 @@ export class TestDataManager {
     });
 
     return postId;
+  }
+
+  async createCommunityComment(
+    author: CreatedOrganizationOwner | CreatedOrganizationMember,
+    options: {
+      body: string;
+      postId: string;
+    },
+  ) {
+    const { data, error } = await this.supabase
+      .from("community_comments")
+      .insert({
+        author_user_id: author.userId,
+        body: options.body,
+        post_id: options.postId,
+      })
+      .select("id")
+      .single();
+
+    if (error) throw error;
+    const commentId = data.id as string;
+
+    this.registerCleanup({
+      label: `community comment ${commentId}`,
+      run: async () => {
+        const { error: deleteError } = await this.supabase
+          .from("community_comments")
+          .delete()
+          .eq("id", commentId);
+        if (deleteError) throw deleteError;
+      },
+    });
+
+    return commentId;
   }
 
   async createCommunityEvent(
