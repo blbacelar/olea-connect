@@ -236,6 +236,7 @@ export interface CommunityPost {
   spaceId: string;
   authorUserId: string;
   authorName: string;
+  authorOrganizationName: string;
   kind: "discussion" | "announcement" | "resource";
   title: string;
   body: string;
@@ -252,6 +253,7 @@ export interface CommunityPostComment {
   id: string;
   authorUserId: string;
   authorName: string;
+  authorOrganizationName: string;
   body: string;
   createdAt: string;
   updatedAt: string;

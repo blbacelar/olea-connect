@@ -54,6 +54,16 @@ function isEdited(createdAt: string, updatedAt: string) {
   return new Date(updatedAt).getTime() !== new Date(createdAt).getTime();
 }
 
+function authorAttribution({
+  authorName,
+  authorOrganizationName,
+}: {
+  authorName: string;
+  authorOrganizationName: string;
+}) {
+  return `${authorName} · ${authorOrganizationName}`;
+}
+
 function ActionMessage({ state }: { state: CommunityActionState }) {
   if (!state.message) return null;
 
@@ -397,6 +407,7 @@ function CommentItem({
 }) {
   const [isEditing, setIsEditing] = useState(false);
   const canEdit = comment.authorUserId === currentUserId;
+  const authorLabel = authorAttribution(comment);
 
   return (
     <div
@@ -405,10 +416,10 @@ function CommentItem({
       className="text-sm"
     >
       <p
-        aria-label={`Comment author ${comment.authorName}`}
+        aria-label={`Comment author ${authorLabel}`}
         className="font-semibold text-slate-700"
       >
-        {comment.authorName}
+        {authorLabel}
         <span className="ml-2 font-normal text-slate-400">
           {formatRelativeDate(comment.createdAt)}
         </span>
@@ -455,6 +466,7 @@ function PostCard({
 }) {
   const [isEditing, setIsEditing] = useState(false);
   const canEdit = post.authorUserId === currentUserId;
+  const authorLabel = authorAttribution(post);
 
   return (
     <article
@@ -471,10 +483,10 @@ function PostCard({
           </Badge>
         ) : null}
         <span
-          aria-label={`Post author ${post.authorName}`}
+          aria-label={`Post author ${authorLabel}`}
           className="text-xs text-slate-400"
         >
-          {post.authorName} · {formatRelativeDate(post.createdAt)}
+          {authorLabel} · {formatRelativeDate(post.createdAt)}
         </span>
         {isEdited(post.createdAt, post.updatedAt) ? (
           <Badge variant="outline">Edited</Badge>

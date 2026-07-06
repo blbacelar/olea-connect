@@ -302,11 +302,16 @@ testWithData.describe("@critical native community member experience", () => {
         postTitle,
         "This post verifies community attribution for real users.",
       );
-      await community.expectPostAuthor(postTitle, owner.fullName);
+      await community.expectPostAuthor(
+        postTitle,
+        owner.fullName,
+        owner.organizationName,
+      );
       await community.expectCommentAuthor(
         postTitle,
         teammateComment,
         teammate.fullName,
+        owner.organizationName,
       );
       await community.expectCommentReadonly(postTitle, teammateComment);
     } finally {

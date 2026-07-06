@@ -50,9 +50,15 @@ export class CommunityPage {
     await expect(post.getByText(body)).toBeVisible();
   }
 
-  async expectPostAuthor(title: string, authorName: string) {
+  async expectPostAuthor(
+    title: string,
+    authorName: string,
+    organizationName: string,
+  ) {
     await expect(
-      this.postArticle(title).getByLabel(`Post author ${authorName}`),
+      this.postArticle(title).getByLabel(
+        `Post author ${authorName} · ${organizationName}`,
+      ),
     ).toBeVisible();
   }
 
@@ -187,13 +193,20 @@ export class CommunityPage {
     await expect(post.getByText(comment)).toBeVisible();
   }
 
-  async expectCommentAuthor(title: string, comment: string, authorName: string) {
+  async expectCommentAuthor(
+    title: string,
+    comment: string,
+    authorName: string,
+    organizationName: string,
+  ) {
     const post = this.postArticle(title);
     const commentGroup = post.getByRole("group", {
       name: `Comment: ${comment}`,
     });
     await expect(
-      commentGroup.getByLabel(`Comment author ${authorName}`),
+      commentGroup.getByLabel(
+        `Comment author ${authorName} · ${organizationName}`,
+      ),
     ).toBeVisible();
   }
 

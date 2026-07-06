@@ -35,6 +35,11 @@ type CommunitySpaceRow = {
   community_space_access_rules: SpaceAccessRuleRow[] | null;
 };
 
+type AuthorAttribution = {
+  name: string;
+  organizationName: string;
+};
+
 function safeHttpsUrl(value: string | null): string | null {
   if (!value) return null;
 
@@ -82,13 +87,16 @@ function mapPost(
   comments: CommunityPostComment[],
   reactions: Array<{ kind: string; user_id: string }>,
   currentUserId: string,
-  authorNamesByUserId: Map<string, string>,
+  authorsByUserId: Map<string, AuthorAttribution>,
 ): CommunityPost {
+  const author = authorsByUserId.get(row.author_user_id);
+
   return {
     id: row.id,
     spaceId: row.space_id,
     authorUserId: row.author_user_id,
-    authorName: authorNamesByUserId.get(row.author_user_id) ?? "Member",
+    authorName: author?.name ?? "Member",
+    authorOrganizationName: author?.organizationName ?? "Member organization",
     kind: row.kind,
     title: row.title,
     body: row.body,
@@ -113,12 +121,15 @@ function mapComment(
     created_at: string;
     updated_at: string;
   },
-  authorNamesByUserId: Map<string, string>,
+  authorsByUserId: Map<string, AuthorAttribution>,
 ): CommunityPostComment {
+  const author = authorsByUserId.get(row.author_user_id);
+
   return {
     id: row.id,
     authorUserId: row.author_user_id,
-    authorName: authorNamesByUserId.get(row.author_user_id) ?? "Member",
+    authorName: author?.name ?? "Member",
+    authorOrganizationName: author?.organizationName ?? "Member organization",
     body: row.body,
     createdAt: row.created_at,
     updatedAt: row.updated_at,
@@ -266,26 +277,53 @@ export async function getCommunityHome(): Promise<CommunityHome | null> {
     authorUserIds.add(comment.author_user_id);
   }
 
-  const authorNamesByUserId = new Map<string, string>();
+  const authorsByUserId = new Map<string, AuthorAttribution>();
   if (authorUserIds.size) {
     const admin = createAdminClient();
-    const { data: profiles, error: profilesError } = await admin
-      .from("profiles")
-      .select("id, full_name")
-      .in("id", Array.from(authorUserIds));
+    const [profilesResult, membershipsResult] = await Promise.all([
+      admin
+        .from("profiles")
+        .select("id, full_name")
+        .in("id", Array.from(authorUserIds)),
+      admin
+        .from("organization_members")
+        .select("user_id, organizations(name)")
+        .in("user_id", Array.from(authorUserIds))
+        .eq("status", "active"),
+    ]);
 
-    if (profilesError) throw profilesError;
+    if (profilesResult.error) throw profilesResult.error;
+    if (membershipsResult.error) throw membershipsResult.error;
 
-    for (const profile of profiles ?? []) {
+    for (const profile of profilesResult.data ?? []) {
       const name = profile.full_name?.trim();
-      if (name) authorNamesByUserId.set(profile.id, name);
+      if (name) {
+        authorsByUserId.set(profile.id, {
+          name,
+          organizationName: "Member organization",
+        });
+      }
+    }
+
+    for (const membership of membershipsResult.data ?? []) {
+      const organization = Array.isArray(membership.organizations)
+        ? membership.organizations[0]
+        : membership.organizations;
+      const organizationName = organization?.name?.trim();
+      if (!organizationName) continue;
+
+      const existing = authorsByUserId.get(membership.user_id);
+      authorsByUserId.set(membership.user_id, {
+        name: existing?.name ?? "Member",
+        organizationName,
+      });
     }
   }
 
   const commentsByPostId = new Map<string, CommunityPostComment[]>();
   for (const comment of commentsResult.data ?? []) {
     const postComments = commentsByPostId.get(comment.post_id) ?? [];
-    postComments.push(mapComment(comment, authorNamesByUserId));
+    postComments.push(mapComment(comment, authorsByUserId));
     commentsByPostId.set(comment.post_id, postComments);
   }
 
@@ -314,7 +352,7 @@ export async function getCommunityHome(): Promise<CommunityHome | null> {
         commentsByPostId.get(post.id) ?? [],
         reactionsByPostId.get(post.id) ?? [],
         member.id,
-        authorNamesByUserId,
+        authorsByUserId,
       ),
     ),
     events: (events ?? []).map(mapEvent),
