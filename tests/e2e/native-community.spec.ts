@@ -155,7 +155,6 @@ testWithData.describe("@critical native community member experience", () => {
         title: postTitle,
         body: "We are looking for kind, practical ways to prepare board packages faster.",
         kind: "discussion",
-        spaceName: "Governance",
       });
       await community.expectPostPublished();
       await community.expectPost(
@@ -289,7 +288,6 @@ testWithData.describe("@critical native community member experience", () => {
         body: "Please review this resource before opening it.",
         kind: "resource",
         resourceUrl: "https://example.org/downloads/tool.exe",
-        spaceName: "General",
       });
       await community.expectSuspiciousLinkBlocked();
       await community.expectPostHidden("Suspicious download");
@@ -323,7 +321,6 @@ testWithData.describe("@critical native community member experience", () => {
         title: "A post that should not publish",
         body: "This is stupid and does not belong in a respectful community.",
         kind: "discussion",
-        spaceName: "General",
       });
       await community.expectModerationBlocked();
       await community.expectPostHidden("A post that should not publish");

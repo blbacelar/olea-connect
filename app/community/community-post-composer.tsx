@@ -16,7 +16,6 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
-import type { CommunitySpace } from "@/lib/types";
 import { cn } from "@/lib/utils";
 
 import {
@@ -43,17 +42,15 @@ function SubmitButton() {
 
 export function CommunityPostComposer({
   selectedSpaceId,
-  spaces,
+  selectedSpaceName,
 }: {
   selectedSpaceId: string;
-  spaces: CommunitySpace[];
+  selectedSpaceName: string;
 }) {
-  const defaultSpaceId = selectedSpaceId || spaces[0]?.id || "";
   const router = useRouter();
   const [feedback, setFeedback] = useState(initialState);
   const [isOpen, setIsOpen] = useState(false);
   const [kind, setKind] = useState("discussion");
-  const [spaceId, setSpaceId] = useState(defaultSpaceId);
   const [state, formAction] = useFormState(createCommunityPost, initialState);
   const formRef = useRef<HTMLFormElement>(null);
 
@@ -80,17 +77,12 @@ export function CommunityPostComposer({
       window.sessionStorage.setItem(feedbackStorageKey, JSON.stringify(state));
       formRef.current?.reset();
       setKind("discussion");
-      setSpaceId(defaultSpaceId);
       setIsOpen(false);
       router.refresh();
     }
-  }, [defaultSpaceId, router, state]);
+  }, [router, state]);
 
-  useEffect(() => {
-    setSpaceId(defaultSpaceId);
-  }, [defaultSpaceId]);
-
-  if (!spaces.length) {
+  if (!selectedSpaceId) {
     return (
       <Button disabled variant="outline" size="sm">
         Create post
@@ -136,41 +128,26 @@ export function CommunityPostComposer({
           action={formAction}
           className="rounded-xl border border-slate-200 bg-slate-50/70 p-4"
         >
-          <div className="grid gap-4 md:grid-cols-2">
-            <div className="space-y-2">
-              <Label htmlFor="community-space">Space</Label>
-              <Select
-                name="spaceId"
-                value={spaceId}
-                onValueChange={setSpaceId}
-                required
-              >
-                <SelectTrigger id="community-space">
-                  <SelectValue placeholder="Choose a space" />
-                </SelectTrigger>
-                <SelectContent>
-                  {spaces.map((space) => (
-                    <SelectItem key={space.id} value={space.id}>
-                      {space.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
+          <input type="hidden" name="spaceId" value={selectedSpaceId} />
+          <p className="mb-4 rounded-lg bg-white px-3 py-2 text-sm text-slate-600">
+            Posting in{" "}
+            <span className="font-semibold text-olea-green">
+              # {selectedSpaceName}
+            </span>
+          </p>
 
-            <div className="space-y-2">
-              <Label htmlFor="community-kind">Post type</Label>
-              <Select name="kind" value={kind} onValueChange={setKind}>
-                <SelectTrigger id="community-kind">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="discussion">Discussion</SelectItem>
-                  <SelectItem value="announcement">Announcement</SelectItem>
-                  <SelectItem value="resource">Resource</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
+          <div className="max-w-sm space-y-2">
+            <Label htmlFor="community-kind">Post type</Label>
+            <Select name="kind" value={kind} onValueChange={setKind}>
+              <SelectTrigger id="community-kind">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="discussion">Discussion</SelectItem>
+                <SelectItem value="announcement">Announcement</SelectItem>
+                <SelectItem value="resource">Resource</SelectItem>
+              </SelectContent>
+            </Select>
           </div>
 
           <div className="mt-4 space-y-2">

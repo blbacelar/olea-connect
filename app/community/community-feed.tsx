@@ -572,7 +572,7 @@ export function CommunityFeed({ community }: { community: CommunityHome }) {
           </SectionHeading>
           <CommunityPostComposer
             selectedSpaceId={selectedSpaceId}
-            spaces={community.spaces}
+            selectedSpaceName={selectedSpace?.name ?? "Community"}
           />
         </div>
 

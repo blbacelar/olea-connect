@@ -89,18 +89,14 @@ export class CommunityPage {
     body,
     kind = "discussion",
     resourceUrl,
-    spaceName = "General",
     title,
   }: {
     body: string;
     kind?: "announcement" | "discussion" | "resource";
     resourceUrl?: string;
-    spaceName?: string;
     title: string;
   }) {
     await this.page.getByRole("button", { name: "Create post" }).click();
-    await this.page.getByLabel("Space").click();
-    await this.page.getByRole("option", { name: spaceName }).click();
     await this.page.getByLabel("Post type").click();
     await this.page
       .getByRole("option", {
