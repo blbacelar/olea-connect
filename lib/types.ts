@@ -257,6 +257,8 @@ export interface CommunityPostComment {
   body: string;
   createdAt: string;
   updatedAt: string;
+  likedByCurrentUser: boolean;
+  likeCount: number;
 }
 
 export interface CommunityEvent {

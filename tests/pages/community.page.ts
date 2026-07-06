@@ -73,6 +73,13 @@ export class CommunityPage {
     await expect(post.getByText(body)).toBeVisible();
   }
 
+  async expectPostUpdatedByRealtime(title: string, body: string) {
+    const post = this.postArticle(title);
+    await expect(post).toBeVisible({ timeout: 10000 });
+    await expect(post.getByText(body)).toBeVisible();
+    await expect(post.getByText("Edited", { exact: true })).toBeVisible();
+  }
+
   async expectPostAuthor(
     title: string,
     authorName: string,
@@ -220,10 +227,67 @@ export class CommunityPage {
 
   async addComment(title: string, comment: string) {
     const post = this.postArticle(title);
-    await post.getByPlaceholder("Add a respectful reply...").fill(comment);
+    await post.getByPlaceholder("Add a reply...").fill(comment);
     await post.getByRole("button", { name: "Reply" }).click();
     await expect(post.getByLabel("1 comments")).toBeVisible();
     await expect(post.getByText(comment)).toBeVisible();
+  }
+
+  async expectCommentAppearsByRealtime(title: string, comment: string) {
+    const post = this.postArticle(title);
+    await expect(
+      post.getByRole("group", { name: `Comment: ${comment}` }),
+    ).toBeVisible({ timeout: 10000 });
+  }
+
+  async expectCommentUpdatedByRealtime(title: string, comment: string) {
+    const post = this.postArticle(title);
+    const commentGroup = post.getByRole("group", {
+      name: `Comment: ${comment}`,
+    });
+    await expect(commentGroup).toBeVisible({ timeout: 10000 });
+    await expect(
+      commentGroup.getByText("Edited", { exact: true }),
+    ).toBeVisible();
+  }
+
+  async expectCommentRemovedByRealtime(title: string, comment: string) {
+    const post = this.postArticle(title);
+    await expect(
+      post.getByRole("group", { name: `Comment: ${comment}` }),
+    ).toHaveCount(0, { timeout: 10000 });
+  }
+
+  async likeComment(title: string, comment: string) {
+    const commentGroup = this.postArticle(title).getByRole("group", {
+      name: `Comment: ${comment}`,
+    });
+    await expect(commentGroup.getByLabel("0 comment likes")).toBeVisible();
+    await commentGroup.getByRole("button", { name: "Like comment" }).click();
+    await expect(
+      commentGroup.getByRole("button", { name: "Unlike comment" }),
+    ).toBeVisible();
+    await expect(commentGroup.getByLabel("1 comment likes")).toBeVisible();
+  }
+
+  async unlikeComment(title: string, comment: string) {
+    const commentGroup = this.postArticle(title).getByRole("group", {
+      name: `Comment: ${comment}`,
+    });
+    await commentGroup.getByRole("button", { name: "Unlike comment" }).click();
+    await expect(
+      commentGroup.getByRole("button", { name: "Like comment" }),
+    ).toBeVisible();
+    await expect(commentGroup.getByLabel("0 comment likes")).toBeVisible();
+  }
+
+  async expectCommentLikes(title: string, comment: string, count: number) {
+    const commentGroup = this.postArticle(title).getByRole("group", {
+      name: `Comment: ${comment}`,
+    });
+    await expect(
+      commentGroup.getByLabel(`${count} comment likes`),
+    ).toBeVisible({ timeout: 10000 });
   }
 
   async expectCommentAuthor(

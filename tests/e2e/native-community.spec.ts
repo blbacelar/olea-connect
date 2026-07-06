@@ -18,6 +18,8 @@ base.describe("@critical native community access boundaries", () => {
 });
 
 testWithData.describe("@critical native community member experience", () => {
+  testWithData.describe.configure({ mode: "serial" });
+
   testWithData("opens the native community from dashboard navigation", async ({
     baseURL,
     browser,
@@ -196,6 +198,16 @@ testWithData.describe("@critical native community member experience", () => {
         postTitle,
         "We use a shared checklist before every board meeting.",
       );
+      await community.likeComment(
+        postTitle,
+        "We use a shared checklist before every board meeting.",
+      );
+      await community.unlikePost(postTitle);
+      await community.expectCommentLikes(
+        postTitle,
+        "We use a shared checklist before every board meeting.",
+        1,
+      );
     } finally {
       await context.close();
     }
@@ -291,6 +303,68 @@ testWithData.describe("@critical native community member experience", () => {
     }
   });
 
+  testWithData("updates edited posts in another member session without a manual refresh", async ({
+    baseURL,
+    browser,
+    testData,
+  }) => {
+    if (!baseURL) throw new Error("Playwright baseURL is required.");
+
+    const owner = await testData.createOrganizationOwner({
+      activeSubscription: true,
+      planId: "roots",
+    });
+    const teammate = await testData.createOrganizationMember(owner);
+    const postTitle = `Realtime edited post ${owner.marker}`;
+    const updatedPostTitle = `Realtime edited post updated ${owner.marker}`;
+    const updatedPostBody =
+      "This edited post should update for another signed-in member without reloading.";
+    await testData.createCommunityPost(owner, {
+      title: postTitle,
+      body: "This post should update for another signed-in member without reloading.",
+      kind: "discussion",
+      spaceSlug: "general",
+    });
+
+    const ownerSession = await createAuthenticatedPage(
+      browser,
+      baseURL,
+      owner.email,
+      owner.password,
+    );
+    const teammateSession = await createAuthenticatedPage(
+      browser,
+      baseURL,
+      teammate.email,
+      teammate.password,
+    );
+    const ownerCommunity = new CommunityPage(ownerSession.page);
+    const teammateCommunity = new CommunityPage(teammateSession.page);
+
+    try {
+      await teammateCommunity.open();
+      await teammateCommunity.expectLiveUpdatesConnected();
+      await teammateCommunity.expectPost(
+        postTitle,
+        "This post should update for another signed-in member without reloading.",
+      );
+      await ownerCommunity.open();
+      await ownerCommunity.expectLiveUpdatesConnected();
+      await ownerCommunity.editPost({
+        currentTitle: postTitle,
+        nextTitle: updatedPostTitle,
+        nextBody: updatedPostBody,
+      });
+      await teammateCommunity.expectPostUpdatedByRealtime(
+        updatedPostTitle,
+        updatedPostBody,
+      );
+    } finally {
+      await ownerSession.context.close();
+      await teammateSession.context.close();
+    }
+  });
+
   testWithData("removes deleted posts from another member session without a manual refresh", async ({
     baseURL,
     browser,
@@ -337,6 +411,134 @@ testWithData.describe("@critical native community member experience", () => {
       await ownerCommunity.expectLiveUpdatesConnected();
       await ownerCommunity.deletePost(postTitle);
       await teammateCommunity.expectPostRemovedByRealtime(postTitle);
+    } finally {
+      await ownerSession.context.close();
+      await teammateSession.context.close();
+    }
+  });
+
+  testWithData("syncs comment create edit and delete operations without a manual refresh", async ({
+    baseURL,
+    browser,
+    testData,
+  }) => {
+    if (!baseURL) throw new Error("Playwright baseURL is required.");
+
+    const owner = await testData.createOrganizationOwner({
+      activeSubscription: true,
+      planId: "roots",
+    });
+    const teammate = await testData.createOrganizationMember(owner);
+    const postTitle = `Realtime comment CRUD post ${owner.marker}`;
+    const firstComment =
+      "This comment should appear for another member without reloading.";
+    const updatedComment =
+      "This edited comment should update for another member without reloading.";
+    await testData.createCommunityPost(owner, {
+      title: postTitle,
+      body: "This post should support realtime comment CRUD operations.",
+      kind: "discussion",
+      spaceSlug: "general",
+    });
+
+    const ownerSession = await createAuthenticatedPage(
+      browser,
+      baseURL,
+      owner.email,
+      owner.password,
+    );
+    const teammateSession = await createAuthenticatedPage(
+      browser,
+      baseURL,
+      teammate.email,
+      teammate.password,
+    );
+    const ownerCommunity = new CommunityPage(ownerSession.page);
+    const teammateCommunity = new CommunityPage(teammateSession.page);
+
+    try {
+      await teammateCommunity.open();
+      await teammateCommunity.expectLiveUpdatesConnected();
+      await teammateCommunity.expectPost(
+        postTitle,
+        "This post should support realtime comment CRUD operations.",
+      );
+      await ownerCommunity.open();
+      await ownerCommunity.expectLiveUpdatesConnected();
+      await ownerCommunity.addComment(postTitle, firstComment);
+      await teammateCommunity.expectCommentAppearsByRealtime(
+        postTitle,
+        firstComment,
+      );
+      await ownerCommunity.editComment(postTitle, firstComment, updatedComment);
+      await teammateCommunity.expectCommentUpdatedByRealtime(
+        postTitle,
+        updatedComment,
+      );
+      await ownerCommunity.deleteComment(postTitle, updatedComment);
+      await teammateCommunity.expectCommentRemovedByRealtime(
+        postTitle,
+        updatedComment,
+      );
+    } finally {
+      await ownerSession.context.close();
+      await teammateSession.context.close();
+    }
+  });
+
+  testWithData("updates comment likes in another member session without a manual refresh", async ({
+    baseURL,
+    browser,
+    testData,
+  }) => {
+    if (!baseURL) throw new Error("Playwright baseURL is required.");
+
+    const owner = await testData.createOrganizationOwner({
+      activeSubscription: true,
+      planId: "roots",
+    });
+    const teammate = await testData.createOrganizationMember(owner);
+    const postTitle = `Realtime comment like post ${owner.marker}`;
+    const commentBody =
+      "This comment should show liked state across open member sessions.";
+    const postId = await testData.createCommunityPost(owner, {
+      title: postTitle,
+      body: "This post should support realtime comment reaction updates.",
+      kind: "discussion",
+      spaceSlug: "general",
+    });
+    await testData.createCommunityComment(owner, {
+      postId,
+      body: commentBody,
+    });
+
+    const ownerSession = await createAuthenticatedPage(
+      browser,
+      baseURL,
+      owner.email,
+      owner.password,
+    );
+    const teammateSession = await createAuthenticatedPage(
+      browser,
+      baseURL,
+      teammate.email,
+      teammate.password,
+    );
+    const ownerCommunity = new CommunityPage(ownerSession.page);
+    const teammateCommunity = new CommunityPage(teammateSession.page);
+
+    try {
+      await teammateCommunity.open();
+      await teammateCommunity.expectLiveUpdatesConnected();
+      await teammateCommunity.expectPost(
+        postTitle,
+        "This post should support realtime comment reaction updates.",
+      );
+      await teammateCommunity.expectCommentLikes(postTitle, commentBody, 0);
+      await ownerCommunity.open();
+      await ownerCommunity.expectLiveUpdatesConnected();
+      await ownerCommunity.likeComment(postTitle, commentBody);
+      await teammateCommunity.expectCommentLikes(postTitle, commentBody, 1);
     } finally {
       await ownerSession.context.close();
       await teammateSession.context.close();

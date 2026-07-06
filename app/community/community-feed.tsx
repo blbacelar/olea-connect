@@ -37,6 +37,7 @@ import {
   createCommunityComment,
   deleteCommunityComment,
   deleteCommunityPost,
+  toggleCommunityCommentLike,
   toggleCommunityPostLike,
   type CommunityActionState,
   updateCommunityComment,
@@ -200,7 +201,13 @@ function SaveButton({ label = "Save changes" }: { label?: string }) {
   );
 }
 
-function LikeButton({ post }: { post: CommunityPost }) {
+function LikeButton({
+  communityId,
+  post,
+}: {
+  communityId: string;
+  post: CommunityPost;
+}) {
   const router = useRouter();
   const [isSaving, setIsSaving] = useState(false);
   const renderedPostId = useRef(post.id);
@@ -246,6 +253,7 @@ function LikeButton({ post }: { post: CommunityPost }) {
         return;
       }
 
+      await broadcastCommunityFeedChange(communityId);
       router.refresh();
     })().finally(() => setIsSaving(false));
   }
@@ -487,9 +495,11 @@ function DeleteConfirmationDialog({
 }
 
 function PostEditForm({
+  communityId,
   onCancel,
   post,
 }: {
+  communityId: string;
   onCancel: () => void;
   post: CommunityPost;
 }) {
@@ -502,8 +512,10 @@ function PostEditForm({
   useEffect(() => {
     if (state.status !== "success") return;
     onCancel();
-    router.refresh();
-  }, [onCancel, router, state]);
+    void broadcastCommunityFeedChange(communityId).finally(() => {
+      router.refresh();
+    });
+  }, [communityId, onCancel, router, state]);
 
   return (
     <form action={formAction} className="mt-4 space-y-3 rounded-lg bg-slate-50 p-3">
@@ -544,7 +556,13 @@ function PostEditForm({
   );
 }
 
-function CommentForm({ postId }: { postId: string }) {
+function CommentForm({
+  communityId,
+  postId,
+}: {
+  communityId: string;
+  postId: string;
+}) {
   const router = useRouter();
   const formRef = useRef<HTMLFormElement>(null);
   const [state, formAction] = useFormState(
@@ -555,8 +573,10 @@ function CommentForm({ postId }: { postId: string }) {
   useEffect(() => {
     if (state.status !== "success") return;
     formRef.current?.reset();
-    router.refresh();
-  }, [router, state]);
+    void broadcastCommunityFeedChange(communityId).finally(() => {
+      router.refresh();
+    });
+  }, [communityId, router, state]);
 
   return (
     <form ref={formRef} action={formAction} className="mt-4 space-y-2">
@@ -566,7 +586,7 @@ function CommentForm({ postId }: { postId: string }) {
         minLength={2}
         maxLength={6000}
         required
-        placeholder="Add a respectful reply..."
+        placeholder="Add a reply..."
         className="min-h-[84px] bg-white"
       />
       <div className="flex flex-wrap items-center gap-3">
@@ -599,9 +619,11 @@ function CommentSubmitButton() {
 
 function CommentEditor({
   comment,
+  communityId,
   onCancel,
 }: {
   comment: CommunityPostComment;
+  communityId: string;
   onCancel: () => void;
 }) {
   const router = useRouter();
@@ -613,8 +635,10 @@ function CommentEditor({
   useEffect(() => {
     if (state.status !== "success") return;
     onCancel();
-    router.refresh();
-  }, [onCancel, router, state]);
+    void broadcastCommunityFeedChange(communityId).finally(() => {
+      router.refresh();
+    });
+  }, [communityId, onCancel, router, state]);
 
   return (
     <form action={formAction} className="mt-2 space-y-2">
@@ -637,6 +661,97 @@ function CommentEditor({
         <ActionMessage state={state} />
       </div>
     </form>
+  );
+}
+
+function CommentLikeButton({
+  comment,
+  communityId,
+}: {
+  comment: CommunityPostComment;
+  communityId: string;
+}) {
+  const router = useRouter();
+  const [isSaving, setIsSaving] = useState(false);
+  const renderedCommentId = useRef(comment.id);
+  const [optimisticLike, setOptimisticLike] = useState({
+    count: comment.likeCount,
+    liked: comment.likedByCurrentUser,
+  });
+  const [errorMessage, setErrorMessage] = useState("");
+
+  useEffect(() => {
+    if (renderedCommentId.current === comment.id) return;
+
+    renderedCommentId.current = comment.id;
+    setOptimisticLike({
+      count: comment.likeCount,
+      liked: comment.likedByCurrentUser,
+    });
+  }, [comment.id, comment.likeCount, comment.likedByCurrentUser]);
+
+  function handleToggleLike() {
+    if (isSaving) return;
+
+    const previousLike = optimisticLike;
+    const nextLiked = !previousLike.liked;
+
+    setIsSaving(true);
+    setErrorMessage("");
+    setOptimisticLike({
+      count: Math.max(0, previousLike.count + (nextLiked ? 1 : -1)),
+      liked: nextLiked,
+    });
+
+    void (async () => {
+      const formData = new FormData();
+      formData.set("commentId", comment.id);
+      formData.set("intent", nextLiked ? "like" : "unlike");
+
+      const result = await toggleCommunityCommentLike(
+        initialActionState,
+        formData,
+      );
+
+      if (result.status === "error") {
+        setOptimisticLike(previousLike);
+        setErrorMessage(result.message);
+        return;
+      }
+
+      await broadcastCommunityFeedChange(communityId);
+      router.refresh();
+    })().finally(() => setIsSaving(false));
+  }
+
+  return (
+    <div aria-busy={isSaving} className="inline-flex items-center gap-2">
+      <Button
+        type="button"
+        variant="ghost"
+        size="sm"
+        disabled={isSaving}
+        aria-label={optimisticLike.liked ? "Unlike comment" : "Like comment"}
+        aria-pressed={optimisticLike.liked}
+        onClick={handleToggleLike}
+        className={cn(
+          "px-2 text-slate-500 hover:text-olea-green",
+          optimisticLike.liked && "text-olea-green",
+        )}
+      >
+        <Heart
+          className={cn("size-4", optimisticLike.liked && "fill-current")}
+        />
+        <span aria-label={`${optimisticLike.count} comment likes`}>
+          {optimisticLike.count}
+        </span>
+      </Button>
+      {errorMessage ? (
+        <span role="alert" className="text-xs font-medium text-red-600">
+          {errorMessage}
+        </span>
+      ) : null}
+    </div>
   );
 }
 
@@ -674,14 +789,20 @@ function CommentItem({
         ) : null}
       </p>
       {isEditing ? (
-        <CommentEditor comment={comment} onCancel={() => setIsEditing(false)} />
+        <CommentEditor
+          comment={comment}
+          communityId={communityId}
+          onCancel={() => setIsEditing(false)}
+        />
       ) : (
         <>
           <p className="mt-1 whitespace-pre-line leading-6 text-slate-600">
             {comment.body}
           </p>
-          {canEdit ? (
-            <div className="mt-2 flex flex-wrap items-center gap-2">
+          <div className="mt-2 flex flex-wrap items-center gap-2">
+            <CommentLikeButton comment={comment} communityId={communityId} />
+            {canEdit ? (
+              <>
               <Button
                 type="button"
                 variant="ghost"
@@ -696,8 +817,9 @@ function CommentItem({
                 commentId={comment.id}
                 communityId={communityId}
               />
-            </div>
-          ) : null}
+              </>
+            ) : null}
+          </div>
         </>
       )}
     </div>
@@ -743,7 +865,11 @@ function PostCard({
       </div>
 
       {isEditing ? (
-        <PostEditForm post={post} onCancel={() => setIsEditing(false)} />
+        <PostEditForm
+          communityId={communityId}
+          post={post}
+          onCancel={() => setIsEditing(false)}
+        />
       ) : (
         <>
           <h3 className="mt-3 text-base font-semibold text-slate-900">
@@ -782,7 +908,7 @@ function PostCard({
       )}
 
       <div className="mt-4 flex items-center gap-2 border-t border-slate-100 pt-3">
-        <LikeButton post={post} />
+        <LikeButton communityId={communityId} post={post} />
         <span className="inline-flex items-center gap-1 px-2 text-sm font-medium text-slate-500">
           <MessageCircle className="size-4" />
           <span aria-label={`${post.comments.length} comments`}>
@@ -804,7 +930,7 @@ function PostCard({
         </div>
       ) : null}
 
-      <CommentForm postId={post.id} />
+      <CommentForm communityId={communityId} postId={post.id} />
     </article>
   );
 }

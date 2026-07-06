@@ -121,6 +121,8 @@ function mapComment(
     created_at: string;
     updated_at: string;
   },
+  reactions: Array<{ kind: string; user_id: string }>,
+  currentUserId: string,
   authorsByUserId: Map<string, AuthorAttribution>,
 ): CommunityPostComment {
   const author = authorsByUserId.get(row.author_user_id);
@@ -133,6 +135,11 @@ function mapComment(
     body: row.body,
     createdAt: row.created_at,
     updatedAt: row.updated_at,
+    likeCount: reactions.filter((reaction) => reaction.kind === "helpful").length,
+    likedByCurrentUser: reactions.some(
+      (reaction) =>
+        reaction.kind === "helpful" && reaction.user_id === currentUserId,
+    ),
   };
 }
 
@@ -260,7 +267,7 @@ export async function getCommunityHome(): Promise<CommunityHome | null> {
           .order("created_at", { ascending: true }),
         supabase
           .from("community_reactions")
-          .select("post_id, user_id, kind")
+          .select("post_id, comment_id, user_id, kind")
           .in("post_id", postIds),
       ])
     : [
@@ -321,23 +328,43 @@ export async function getCommunityHome(): Promise<CommunityHome | null> {
   }
 
   const commentsByPostId = new Map<string, CommunityPostComment[]>();
-  for (const comment of commentsResult.data ?? []) {
-    const postComments = commentsByPostId.get(comment.post_id) ?? [];
-    postComments.push(mapComment(comment, authorsByUserId));
-    commentsByPostId.set(comment.post_id, postComments);
-  }
-
   const reactionsByPostId = new Map<
     string,
     Array<{ kind: string; user_id: string }>
   >();
+  const reactionsByCommentId = new Map<
+    string,
+    Array<{ kind: string; user_id: string }>
+  >();
   for (const reaction of reactionsResult.data ?? []) {
-    const postReactions = reactionsByPostId.get(reaction.post_id) ?? [];
-    postReactions.push({
+    const mappedReaction = {
       kind: reaction.kind,
       user_id: reaction.user_id,
-    });
+    };
+
+    if (reaction.comment_id) {
+      const commentReactions = reactionsByCommentId.get(reaction.comment_id) ?? [];
+      commentReactions.push(mappedReaction);
+      reactionsByCommentId.set(reaction.comment_id, commentReactions);
+      continue;
+    }
+
+    const postReactions = reactionsByPostId.get(reaction.post_id) ?? [];
+    postReactions.push(mappedReaction);
     reactionsByPostId.set(reaction.post_id, postReactions);
+  }
+
+  for (const comment of commentsResult.data ?? []) {
+    const postComments = commentsByPostId.get(comment.post_id) ?? [];
+    postComments.push(
+      mapComment(
+        comment,
+        reactionsByCommentId.get(comment.id) ?? [],
+        member.id,
+        authorsByUserId,
+      ),
+    );
+    commentsByPostId.set(comment.post_id, postComments);
   }
 
   return {
