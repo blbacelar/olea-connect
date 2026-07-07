@@ -100,8 +100,14 @@ async function loadRegistrationContext(eventId: string) {
     throw new Error("An active membership is required to register for events.");
   }
   if (!access) throw new Error("This event is not included with your plan.");
-  if (event.status !== "scheduled" && event.status !== "live") {
-    throw new Error("Registration is only available for scheduled or live events.");
+  if (
+    event.status !== "scheduled" &&
+    event.status !== "live" &&
+    event.status !== "rescheduled"
+  ) {
+    throw new Error(
+      "Registration is only available for scheduled, live, or rescheduled events.",
+    );
   }
 
   const now = Date.now();

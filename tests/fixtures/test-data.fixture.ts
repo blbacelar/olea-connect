@@ -36,6 +36,14 @@ export type CreatedEvent = {
   startsAt: string;
 };
 
+type EventStatus =
+  | "draft"
+  | "scheduled"
+  | "live"
+  | "completed"
+  | "canceled"
+  | "rescheduled";
+
 export type CreatedTemplateInstance = {
   id: string;
   organizationId: string;
@@ -768,13 +776,7 @@ export class TestDataManager {
       recordingStoragePath?: string | null;
       recordingUrl?: string | null;
       startsAt?: string;
-      status?:
-        | "draft"
-        | "scheduled"
-        | "live"
-        | "completed"
-        | "canceled"
-        | "rescheduled";
+      status?: EventStatus;
       ticketPriceCents?: number | null;
       title?: string;
       type?:
@@ -792,9 +794,10 @@ export class TestDataManager {
     );
     const startsAt =
       options.startsAt ?? new Date(Date.now() + 5 * 24 * 60 * 60 * 1000).toISOString();
+    const startsAtTime = new Date(startsAt).getTime();
     const endsAt =
       options.endsAt ??
-      new Date(new Date(startsAt).getTime() + 60 * 60 * 1000).toISOString();
+      new Date(startsAtTime + 60 * 60 * 1000).toISOString();
     const slug = `${identity.marker}-event`;
     const title = options.title ?? `QA Zoom Event ${identity.marker}`;
 
@@ -810,10 +813,10 @@ export class TestDataManager {
         ends_at: endsAt,
         timezone: "America/Vancouver",
         capacity: options.capacity ?? 100,
-        registration_opens_at: new Date(Date.now() - 60 * 60 * 1000).toISOString(),
-        registration_closes_at: new Date(
-          new Date(startsAt).getTime() - 15 * 60 * 1000,
+        registration_opens_at: new Date(
+          startsAtTime - 30 * 24 * 60 * 60 * 1000,
         ).toISOString(),
+        registration_closes_at: new Date(startsAtTime - 15 * 60 * 1000).toISOString(),
         meeting_provider: "zoom",
         provider_event_id: `zoom-${identity.marker}`,
         join_url:
@@ -839,6 +842,18 @@ export class TestDataManager {
       },
     });
 
+    this.registerCleanup({
+      label: `event integration events ${eventId}`,
+      run: async () => {
+        const { error: deleteError } = await this.supabase
+          .from("integration_events")
+          .delete()
+          .eq("aggregate_type", "event")
+          .eq("aggregate_id", eventId);
+        if (deleteError) throw deleteError;
+      },
+    });
+
     const accessPlanIds = options.accessPlanIds ?? ["roots", "canopy", "harvest"];
     if (accessPlanIds.length) {
       const { error: accessError } = await this.supabase
@@ -858,6 +873,28 @@ export class TestDataManager {
     return { id: eventId, slug, title, startsAt };
   }
 
+  async updateEvent(
+    eventId: string,
+    values: {
+      endsAt?: string;
+      startsAt?: string;
+      status?: EventStatus;
+      timezone?: string;
+    },
+  ) {
+    const { error } = await this.supabase
+      .from("events")
+      .update({
+        ...(values.endsAt ? { ends_at: values.endsAt } : {}),
+        ...(values.startsAt ? { starts_at: values.startsAt } : {}),
+        ...(values.status ? { status: values.status } : {}),
+        ...(values.timezone ? { timezone: values.timezone } : {}),
+      })
+      .eq("id", eventId);
+
+    if (error) throw error;
+  }
+
   async getEventRegistration(eventId: string, userId: string) {
     const { data, error } = await this.supabase
       .from("event_registrations")
@@ -869,6 +906,29 @@ export class TestDataManager {
       .maybeSingle();
     if (error) throw error;
     return data;
+  }
+
+  async getEventRegistrationCount(eventId: string, userId: string) {
+    const { count, error } = await this.supabase
+      .from("event_registrations")
+      .select("id", { count: "exact", head: true })
+      .eq("event_id", eventId)
+      .eq("user_id", userId);
+    if (error) throw error;
+    return count ?? 0;
+  }
+
+  async getEventEmailIntegrationEvents(eventId: string) {
+    const { data, error } = await this.supabase
+      .from("integration_events")
+      .select("event_type, aggregate_type, aggregate_id, provider, payload")
+      .eq("aggregate_type", "event")
+      .eq("aggregate_id", eventId)
+      .eq("provider", "email")
+      .order("created_at", { ascending: false });
+
+    if (error) throw error;
+    return data ?? [];
   }
 
   async createEventRegistration(

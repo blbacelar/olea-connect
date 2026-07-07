@@ -73,6 +73,12 @@ Webinars and event registration:
 npm run test:e2e:webinars:local
 ```
 
+This suite covers member-facing Zoom event behavior: tier-aware event visibility,
+single registration per member, complimentary-ticket limits, paid-ticket
+blocking until checkout exists, rescheduled event registration, active
+rescheduled event visibility, recording entitlement checks, and schedule-change
+email outbox creation for canceled or rescheduled registered events.
+
 Full cross-browser suite:
 
 ```bash

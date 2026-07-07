@@ -49,6 +49,17 @@ function formatTicketLabel(webinar: Webinar) {
   return "Included";
 }
 
+function isUpcomingOrActiveEvent(webinar: Webinar, now: number) {
+  if (!["scheduled", "live", "rescheduled"].includes(webinar.status)) {
+    return false;
+  }
+
+  if (new Date(webinar.endsAt).getTime() < now) return false;
+
+  const hasStarted = new Date(webinar.startsAt).getTime() <= now;
+  return !hasStarted || webinar.registered;
+}
+
 function EventAction({ webinar }: { webinar: Webinar }) {
   const canJoin =
     webinar.registered &&
@@ -126,10 +137,8 @@ function EventAction({ webinar }: { webinar: Webinar }) {
 export default async function WebinarsPage() {
   const webinars = await getWebinars();
   const now = Date.now();
-  const upcoming = webinars.filter(
-    (webinar) =>
-      ["scheduled", "live", "rescheduled"].includes(webinar.status) &&
-      new Date(webinar.startsAt).getTime() >= now,
+  const upcoming = webinars.filter((webinar) =>
+    isUpcomingOrActiveEvent(webinar, now),
   );
   const recordings = webinars.filter(
     (webinar) => webinar.status === "completed" && webinar.recordingAvailable,

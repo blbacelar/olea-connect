@@ -49,6 +49,95 @@ testWithData.describe("@critical webinar and event access", () => {
 
     await page.reload();
     await webinars.expectRegistered(event.title);
+    expect(
+      await testData.getEventRegistrationCount(event.id, member.userId),
+    ).toBe(1);
+  });
+
+  testWithData("allows registration for rescheduled Zoom events", async ({
+    baseURL,
+    page,
+    testData,
+  }) => {
+    if (!baseURL) throw new Error("Playwright baseURL is required.");
+
+    const member = await testData.createOrganizationOwner({
+      activeSubscription: true,
+      planId: "roots",
+    });
+    const event = await testData.createEvent({
+      accessPlanIds: ["roots"],
+      status: "rescheduled",
+      title: "Rescheduled Zoom Governance Clinic",
+    });
+    await signInPage(page, baseURL, member.email, member.password);
+    const webinars = new WebinarsPage(page);
+
+    await webinars.open();
+    await webinars.expectEventVisible(event.title);
+    await webinars.registerForEvent(event.title);
+    await webinars.expectRegistered(event.title);
+
+    expect(
+      await testData.getEventRegistrationCount(event.id, member.userId),
+    ).toBe(1);
+  });
+
+  testWithData("keeps registered in-progress rescheduled events visible", async ({
+    baseURL,
+    page,
+    testData,
+  }) => {
+    if (!baseURL) throw new Error("Playwright baseURL is required.");
+
+    const member = await testData.createOrganizationOwner({
+      activeSubscription: true,
+      planId: "roots",
+    });
+    const startsAt = new Date(Date.now() - 60 * 60 * 1000).toISOString();
+    const endsAt = new Date(Date.now() + 60 * 60 * 1000).toISOString();
+    const event = await testData.createEvent({
+      accessPlanIds: ["roots"],
+      endsAt,
+      startsAt,
+      status: "rescheduled",
+      title: "Active Rescheduled Zoom Roundtable",
+    });
+    await testData.createEventRegistration(event, member);
+    await signInPage(page, baseURL, member.email, member.password);
+    const webinars = new WebinarsPage(page);
+
+    await webinars.open();
+    await webinars.expectEventVisible(event.title);
+    await webinars.expectRegistered(event.title);
+  });
+
+  testWithData("does not offer registration for already-started unregistered events", async ({
+    baseURL,
+    page,
+    testData,
+  }) => {
+    if (!baseURL) throw new Error("Playwright baseURL is required.");
+
+    const member = await testData.createOrganizationOwner({
+      activeSubscription: true,
+      planId: "roots",
+    });
+    const startsAt = new Date(Date.now() - 60 * 60 * 1000).toISOString();
+    const endsAt = new Date(Date.now() + 60 * 60 * 1000).toISOString();
+    const event = await testData.createEvent({
+      accessPlanIds: ["roots"],
+      endsAt,
+      startsAt,
+      status: "live",
+      title: "Already Started Unregistered Webinar",
+    });
+    await signInPage(page, baseURL, member.email, member.password);
+    const webinars = new WebinarsPage(page);
+
+    await webinars.open();
+    await expect(webinars.eventCard(event.title)).toHaveCount(0);
+    expect(await testData.getEventRegistration(event.id, member.userId)).toBeNull();
   });
 
   testWithData("shows upgrade messaging instead of registration for excluded plans", async ({
@@ -166,5 +255,71 @@ testWithData.describe("@critical webinar and event access", () => {
     await webinars.open();
     await webinars.expectEventVisible(event.title);
     await webinars.expectRecordingLink(event.title, event.id);
+  });
+
+  testWithData("blocks recording access for members outside the event entitlement", async ({
+    baseURL,
+    page,
+    testData,
+  }) => {
+    if (!baseURL) throw new Error("Playwright baseURL is required.");
+
+    const member = await testData.createOrganizationOwner({
+      activeSubscription: true,
+      planId: "seedling",
+    });
+    const event = await testData.createEvent({
+      accessPlanIds: ["canopy", "harvest"],
+      recordingUrl: "https://example.com/private-zoom-recording",
+      status: "completed",
+      title: "Canopy Recording Only",
+      type: "webinar",
+    });
+
+    await signInPage(page, baseURL, member.email, member.password);
+    const response = await page.goto(`/api/v1/events/${event.id}/recording`);
+
+    expect(response?.status()).toBe(403);
+  });
+
+  testWithData("enqueues email events when registered webinars are rescheduled or canceled", async ({
+    testData,
+  }) => {
+    const member = await testData.createOrganizationOwner({
+      activeSubscription: true,
+      planId: "roots",
+    });
+    const event = await testData.createEvent({
+      accessPlanIds: ["roots"],
+      title: "Notification Coverage Webinar",
+    });
+    await testData.createEventRegistration(event, member);
+
+    const rescheduledStart = new Date(
+      Date.now() + 7 * 24 * 60 * 60 * 1000,
+    ).toISOString();
+    const rescheduledEnd = new Date(
+      new Date(rescheduledStart).getTime() + 60 * 60 * 1000,
+    ).toISOString();
+    await testData.updateEvent(event.id, {
+      endsAt: rescheduledEnd,
+      startsAt: rescheduledStart,
+      status: "rescheduled",
+    });
+    await testData.updateEvent(event.id, { status: "canceled" });
+
+    const integrationEvents =
+      await testData.getEventEmailIntegrationEvents(event.id);
+
+    expect(
+      integrationEvents.map((integrationEvent) => integrationEvent.event_type),
+    ).toEqual(expect.arrayContaining(["event.rescheduled", "event.canceled"]));
+    expect(integrationEvents).toContainEqual(
+      expect.objectContaining({
+        aggregate_id: event.id,
+        aggregate_type: "event",
+        provider: "email",
+      }),
+    );
   });
 });
