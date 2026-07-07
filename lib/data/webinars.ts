@@ -169,7 +169,6 @@ export async function getWebinarCatalog(): Promise<{
         "id, type, slug, title, summary, description, status, starts_at, ends_at, timezone, capacity, meeting_provider, provider_event_id, join_url, recording_storage_path, recording_url",
       )
       .in("type", [...eventTypes])
-      .neq("status", "archived")
       .order("starts_at", { ascending: false }),
     supabase
       .from("event_plan_access")
@@ -211,7 +210,9 @@ export async function getWebinarCatalog(): Promise<{
     canManageEvents: await canManageEvents(supabase, member.id),
     webinars: mapWebinars({
       access: (access ?? []) as EventAccessRow[],
-      events: (events ?? []) as EventRow[],
+      events: ((events ?? []) as EventRow[]).filter(
+        (event) => event.status !== "archived",
+      ),
       organizationRegistrations,
       organizationTier: organization.tier,
       registrations: (registrations ?? []) as Array<{
@@ -245,7 +246,6 @@ export async function getWebinarBySlug(slug: string): Promise<Webinar | null> {
       )
       .eq("slug", slug)
       .in("type", [...eventTypes])
-      .neq("status", "archived")
       .maybeSingle(),
     supabase
       .from("event_plan_access")
@@ -269,7 +269,7 @@ export async function getWebinarBySlug(slug: string): Promise<Webinar | null> {
   if (accessError) throw accessError;
   if (registrationsError) throw registrationsError;
   if (organizationRegistrationsError) throw organizationRegistrationsError;
-  if (!event) return null;
+  if (!event || event.status === "archived") return null;
 
   return (
     mapWebinars({
