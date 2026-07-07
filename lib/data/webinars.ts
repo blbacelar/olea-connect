@@ -149,7 +149,11 @@ async function loadWebinarContext() {
   return { member, organization, supabase };
 }
 
-export async function getWebinarCatalog(): Promise<{
+export async function getWebinarCatalog({
+  includeArchived = false,
+}: {
+  includeArchived?: boolean;
+} = {}): Promise<{
   canManageEvents: boolean;
   webinars: Webinar[];
 }> {
@@ -211,7 +215,7 @@ export async function getWebinarCatalog(): Promise<{
     webinars: mapWebinars({
       access: (access ?? []) as EventAccessRow[],
       events: ((events ?? []) as EventRow[]).filter(
-        (event) => event.status !== "archived",
+        (event) => includeArchived || event.status !== "archived",
       ),
       organizationRegistrations,
       organizationTier: organization.tier,

@@ -40,7 +40,7 @@ testWithData.describe("@critical webinar and event access", () => {
     await expect(page.getByRole("button", { name: "Register →" })).toBeVisible();
   });
 
-  testWithData("shows the create webinar action only to event admins", async ({
+  testWithData("shows webinar management actions only to event admins", async ({
     baseURL,
     page,
     testData,
@@ -56,7 +56,10 @@ testWithData.describe("@critical webinar and event access", () => {
 
     await webinars.open();
     await webinars.expectCreateButtonHidden();
+    await webinars.expectManageButtonHidden();
     await page.goto("/webinars/new");
+    await expect(page.getByRole("heading", { name: "404" })).toBeVisible();
+    await page.goto("/webinars/manage");
     await expect(page.getByRole("heading", { name: "404" })).toBeVisible();
   });
 
@@ -78,6 +81,7 @@ testWithData.describe("@critical webinar and event access", () => {
 
     await webinars.open();
     await webinars.expectCreateButtonVisible();
+    await webinars.expectManageButtonVisible();
     await webinars.openCreateForm();
     await page.getByLabel("Title").fill(title);
     await page.getByLabel("Summary").fill("A Zoom session created from the app UI.");
@@ -161,8 +165,9 @@ testWithData.describe("@critical webinar and event access", () => {
 
     await webinars.open();
     await webinars.expectEventVisible(event.title);
-    await webinars.expectArchiveQueueHidden();
-    await expect(webinars.archiveRow(event.title)).toHaveCount(0);
+    await webinars.expectManageButtonHidden();
+    await page.goto("/webinars/manage");
+    await expect(page.getByRole("heading", { name: "404" })).toBeVisible();
   });
 
   testWithData("allows event admins to archive old webinars", async ({
@@ -190,10 +195,14 @@ testWithData.describe("@critical webinar and event access", () => {
     const webinars = new WebinarsPage(page);
 
     await webinars.open();
-    await expect(webinars.archiveRow(event.title)).toBeVisible();
-    await webinars.archiveEvent(event.title);
+    await webinars.expectManageButtonVisible();
+    await webinars.openManagePage();
+    await expect(webinars.manageRow(event.title)).toBeVisible();
+    await webinars.archiveEventFromManage(event.title);
 
-    await expect(webinars.archiveRow(event.title)).toHaveCount(0);
+    await expect(webinars.manageRow(event.title).getByText("archived")).toBeVisible();
+    await expect(webinars.manageRow(event.title).getByText("Hidden from members")).toBeVisible();
+    await webinars.open();
     await expect(webinars.eventCard(event.title)).toHaveCount(0);
     expect(await testData.getEventByTitle(event.title)).toMatchObject({
       status: "archived",

@@ -11,8 +11,16 @@ export class WebinarsPage {
     await this.page.getByRole("link", { name: "Create webinar" }).click();
   }
 
+  async openManagePage() {
+    await this.page.getByRole("link", { name: "Manage webinars" }).click();
+  }
+
   eventCard(title: string) {
     return this.page.getByTestId("webinar-card").filter({ hasText: title });
+  }
+
+  manageRow(title: string) {
+    return this.page.getByTestId("webinar-manage-row").filter({ hasText: title });
   }
 
   async openEventDetails(title: string) {
@@ -31,16 +39,27 @@ export class WebinarsPage {
     ).toHaveCount(0);
   }
 
-  archiveRow(title: string) {
-    return this.page.getByTestId("webinar-archive-row").filter({ hasText: title });
+  async expectManageButtonVisible() {
+    await expect(
+      this.page.getByRole("link", { name: "Manage webinars" }),
+    ).toBeVisible();
   }
 
-  async archiveEvent(title: string) {
-    await this.archiveRow(title).getByRole("button", { name: "Archive webinar" }).click();
+  async expectManageButtonHidden() {
+    await expect(
+      this.page.getByRole("link", { name: "Manage webinars" }),
+    ).toHaveCount(0);
   }
 
-  async expectArchiveQueueHidden() {
-    await expect(this.page.getByText("Admin archive queue")).toHaveCount(0);
+  async archiveEventFromManage(title: string) {
+    await this.manageRow(title).getByRole("button", { name: "Archive" }).click();
+    await expect(
+      this.page.getByRole("dialog", { name: "Archive this webinar?" }),
+    ).toBeVisible();
+    await this.page
+      .getByRole("dialog", { name: "Archive this webinar?" })
+      .getByRole("button", { name: "Archive webinar" })
+      .click();
   }
 
   async expectEventVisible(title: string) {

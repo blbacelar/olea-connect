@@ -1,4 +1,4 @@
-import { CalendarDays, Play, Plus } from "lucide-react";
+import { CalendarDays, ListChecks, Play, Plus } from "lucide-react";
 import Link from "next/link";
 
 import { Button } from "@/components/ui/button";
@@ -7,10 +7,8 @@ import { PageHeader } from "@/components/PageHeader";
 import { SectionHeading } from "@/components/SectionHeading";
 import { getWebinarCatalog } from "@/lib/data/webinars";
 import {
-  ArchiveWebinarAction,
   EventAction,
   RecordingAction,
-  canArchiveWebinar,
   formatEventDate,
   formatEventType,
   formatTicketLabel,
@@ -27,9 +25,6 @@ export default async function WebinarsPage() {
     (webinar) => webinar.status === "completed" && webinar.recordingAvailable,
   );
   const locked = webinars.filter((webinar) => !webinar.available);
-  const archiveCandidates = canManageEvents
-    ? webinars.filter((webinar) => canArchiveWebinar(webinar, now))
-    : [];
 
   return (
     <div>
@@ -39,12 +34,20 @@ export default async function WebinarsPage() {
           description="Live sessions and recordings on governance, fundraising, and nonprofit leadership."
         />
         {canManageEvents ? (
-          <Button asChild>
-            <Link href="/webinars/new">
-              <Plus className="size-4" />
-              Create webinar
-            </Link>
-          </Button>
+          <div className="flex flex-wrap gap-2">
+            <Button asChild variant="outline">
+              <Link href="/webinars/manage">
+                <ListChecks className="size-4" />
+                Manage webinars
+              </Link>
+            </Button>
+            <Button asChild>
+              <Link href="/webinars/new">
+                <Plus className="size-4" />
+                Create webinar
+              </Link>
+            </Button>
+          </div>
         ) : null}
       </div>
 
@@ -127,38 +130,6 @@ export default async function WebinarsPage() {
           {locked.length} additional event{locked.length === 1 ? " is" : "s are"}{" "}
           available on higher membership tiers.
         </p>
-      ) : null}
-
-      {canManageEvents ? (
-        <div className="mt-10">
-          <SectionHeading>Admin archive queue</SectionHeading>
-          {archiveCandidates.length ? (
-            <div className="overflow-hidden rounded-xl border bg-white shadow-soft">
-              {archiveCandidates.map((webinar) => (
-                <div
-                  key={webinar.id}
-                  data-testid="webinar-archive-row"
-                  className="flex flex-wrap items-center justify-between gap-4 border-b border-slate-100 px-[22px] py-4 last:border-0"
-                >
-                  <div>
-                    <h3 className="text-[15px] font-semibold">{webinar.title}</h3>
-                    <p className="mt-0.5 text-[13px] text-slate-400">
-                      {formatEventType(webinar.type)} · Ended{" "}
-                      {formatEventDate(webinar.endsAt)} · {webinar.status}
-                    </p>
-                  </div>
-                  <ArchiveWebinarAction webinar={webinar} />
-                </div>
-              ))}
-            </div>
-          ) : (
-            <EmptyPanel
-              title="No old webinars to archive"
-              description="Past webinars that are still visible will appear here for admins."
-              icon={<CalendarDays className="size-5" />}
-            />
-          )}
-        </div>
       ) : null}
     </div>
   );

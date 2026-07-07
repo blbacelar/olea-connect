@@ -217,7 +217,7 @@ For human developers, mirror the same idea:
 - Community: `app/community/page.tsx`, `lib/data/community.ts`,
   `supabase/migrations/*native_community_foundation.sql`.
 - Webinars: `app/webinars/page.tsx`, `app/webinars/[slug]/page.tsx`,
-  `app/webinars/new/page.tsx`, `app/webinars/actions.ts`,
+  `app/webinars/manage/page.tsx`, `app/webinars/new/page.tsx`, `app/webinars/actions.ts`,
   `lib/data/webinars.ts`. Platform event admins can create webinars and archive
   old webinars; archive is a status change, and archived webinars are excluded
   from member-facing catalog/detail queries.

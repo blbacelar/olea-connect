@@ -359,6 +359,7 @@ Webinars:
 
 - `app/webinars/page.tsx`
 - `app/webinars/[slug]/page.tsx`
+- `app/webinars/manage/page.tsx`
 - `app/webinars/new/page.tsx`
 - `app/webinars/actions.ts`
 - `lib/data/webinars.ts`
@@ -369,7 +370,7 @@ archiving are limited to platform event admins (`super_admin` or
 the role check. Archiving sets `events.status = 'archived'` for past webinars;
 archived webinars are hidden from the catalog and detail pages rather than
 deleted. Regular members can see webinar details and valid actions, but cannot
-access the create route, archive queue, or protected mutation paths
+access the create route, manage route, or protected mutation paths
 successfully.
 
 ## Testing Architecture

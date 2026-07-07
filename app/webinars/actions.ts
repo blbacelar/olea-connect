@@ -349,6 +349,7 @@ export async function createWebinarEvent(formData: FormData) {
     }
 
     revalidatePath("/webinars");
+    revalidatePath("/webinars/manage");
     return { slug: event.slug as Webinar["slug"] };
   } catch (error) {
     return {
@@ -374,6 +375,7 @@ export async function archiveWebinarEvent(formData: FormData) {
   if (!event) throw new Error("Webinar not found.");
   if (event.status === "archived") {
     revalidatePath("/webinars");
+    revalidatePath("/webinars/manage");
     revalidatePath(`/webinars/${event.slug}`);
     return;
   }
@@ -388,6 +390,7 @@ export async function archiveWebinarEvent(formData: FormData) {
 
   if (error) throw error;
   revalidatePath("/webinars");
+  revalidatePath("/webinars/manage");
   revalidatePath(`/webinars/${event.slug}`);
 }
 

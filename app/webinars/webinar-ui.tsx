@@ -5,7 +5,6 @@ import { Button } from "@/components/ui/button";
 import type { Webinar } from "@/lib/types";
 
 import {
-  archiveWebinarEvent,
   cancelEventRegistration,
   registerForEvent,
 } from "./actions";
@@ -60,17 +59,6 @@ export function isUpcomingOrActiveEvent(webinar: Webinar, now: number) {
 
 export function canArchiveWebinar(webinar: Webinar, now: number) {
   return webinar.status !== "archived" && new Date(webinar.endsAt).getTime() < now;
-}
-
-export function ArchiveWebinarAction({ webinar }: { webinar: Webinar }) {
-  return (
-    <form action={archiveWebinarEvent}>
-      <input type="hidden" name="eventId" value={webinar.id} />
-      <Button type="submit" size="sm" variant="outline">
-        Archive webinar
-      </Button>
-    </form>
-  );
 }
 
 export function EventAction({ webinar }: { webinar: Webinar }) {
