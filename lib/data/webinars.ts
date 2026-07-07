@@ -1,6 +1,7 @@
 import "server-only";
 
 import type { MembershipTier, Webinar } from "@/lib/types";
+import { createAdminClient } from "@/utils/supabase/admin";
 import { createClient } from "@/utils/supabase/server";
 
 import { requireMemberContext } from "./member-context";
@@ -14,81 +15,78 @@ type EventAccessRow = {
   currency: string;
 };
 
+type EventRow = {
+  id: string;
+  type: Webinar["type"];
+  slug: string;
+  title: string;
+  summary: string;
+  description: string | null;
+  status: Webinar["status"];
+  starts_at: string;
+  ends_at: string;
+  timezone: string;
+  capacity: number | null;
+  meeting_provider: string | null;
+  provider_event_id: string | null;
+  join_url: string | null;
+  recording_storage_path: string | null;
+  recording_url: string | null;
+};
+
+const eventTypes = [
+  "webinar",
+  "speaker_session",
+  "funder_ama",
+  "networking",
+  "workshop",
+  "summit",
+] as const;
+const platformEventRoles = ["super_admin", "community_admin"] as const;
+
 function logWebinarDataError(label: string, error: unknown) {
   console.warn(`Unable to load webinar ${label}; showing safe empty state.`, {
     error,
   });
 }
 
-export async function getWebinars(): Promise<Webinar[]> {
-  const { member, organization } = await requireMemberContext();
-  const supabase = await createClient();
-  const [
-    { data: events, error: eventsError },
-    { data: access, error: accessError },
-    { data: registrations, error: registrationsError },
-    {
-      data: organizationRegistrations,
-      error: organizationRegistrationsError,
-    },
-  ] = await Promise.all([
-    supabase
-      .from("events")
-      .select(
-        "id, type, slug, title, summary, status, starts_at, ends_at, timezone, capacity, meeting_provider, provider_event_id, join_url, recording_storage_path, recording_url",
-      )
-      .in("type", [
-        "webinar",
-        "speaker_session",
-        "funder_ama",
-        "networking",
-        "workshop",
-        "summit",
-      ])
-      .order("starts_at", { ascending: false }),
-    supabase
-      .from("event_plan_access")
-      .select(
-        "event_id, plan_id, included, complimentary_ticket_limit, ticket_price_cents, currency",
-      ),
-    supabase
-      .from("event_registrations")
-      .select("event_id, status")
-      .eq("organization_id", organization.id)
-      .eq("user_id", member.id)
-      .neq("status", "canceled"),
-    supabase
-      .from("event_registrations")
-      .select("event_id")
-      .eq("organization_id", organization.id)
-      .neq("status", "canceled"),
-  ]);
+async function canManageEvents(userId: string) {
+  const admin = createAdminClient();
+  const { data, error } = await admin
+    .from("platform_user_roles")
+    .select("role")
+    .eq("user_id", userId)
+    .in("role", [...platformEventRoles])
+    .limit(1)
+    .maybeSingle();
 
-  if (eventsError) {
-    logWebinarDataError("events", eventsError);
-    return [];
-  }
-  if (accessError) {
-    logWebinarDataError("plan access", accessError);
-    return [];
-  }
-  if (registrationsError) {
-    logWebinarDataError("member registrations", registrationsError);
-  }
-  if (organizationRegistrationsError) {
-    logWebinarDataError(
-      "organization registrations",
-      organizationRegistrationsError,
-    );
-  }
+  if (error) throw error;
+  return Boolean(data);
+}
 
+function mapWebinars({
+  access,
+  events,
+  organizationRegistrations,
+  organizationTier,
+  registrations,
+}: {
+  access: EventAccessRow[] | null;
+  events: EventRow[] | null;
+  organizationRegistrations: Array<{ event_id: string }> | null;
+  organizationTier: MembershipTier;
+  registrations: Array<{
+    event_id: string;
+    status: Webinar["registrationStatus"];
+  }> | null;
+}) {
   const registrationsSet = new Set(
     (registrations ?? []).map((registration) => registration.event_id),
   );
   const registrationStatusByEvent = new Map(
     (registrations ?? []).map((registration) => [
       registration.event_id,
-      registration.status as Webinar["registrationStatus"],
+      registration.status,
     ]),
   );
   const accessByEvent = new Map<string, EventAccessRow[]>();
@@ -105,10 +103,10 @@ export async function getWebinars(): Promise<Webinar[]> {
     );
   }
 
-  return (events ?? []).map((event) => {
+  return (events ?? []).map((event): Webinar => {
     const accessRules = accessByEvent.get(event.id) ?? [];
     const currentPlanAccess = accessRules.find(
-      (rule) => rule.plan_id === organization.tier,
+      (rule) => rule.plan_id === organizationTier,
     );
     const allowedPlanIds = accessRules.map((rule) => rule.plan_id);
     const recordingAvailable = Boolean(
@@ -120,6 +118,7 @@ export async function getWebinars(): Promise<Webinar[]> {
       type: event.type,
       title: event.title,
       summary: event.summary,
+      description: event.description,
       status: event.status,
       startsAt: event.starts_at,
       endsAt: event.ends_at,
@@ -143,3 +142,150 @@ export async function getWebinars(): Promise<Webinar[]> {
     };
   });
 }
+
+async function loadWebinarContext() {
+  const { member, organization } = await requireMemberContext();
+  const supabase = await createClient();
+  return { member, organization, supabase };
+}
+
+export async function getWebinarCatalog(): Promise<{
+  canManageEvents: boolean;
+  webinars: Webinar[];
+}> {
+  const { member, organization, supabase } = await loadWebinarContext();
+  const [
+    { data: events, error: eventsError },
+    { data: access, error: accessError },
+    { data: registrations, error: registrationsError },
+    {
+      data: organizationRegistrations,
+      error: organizationRegistrationsError,
+    },
+  ] = await Promise.all([
+    supabase
+      .from("events")
+      .select(
+        "id, type, slug, title, summary, description, status, starts_at, ends_at, timezone, capacity, meeting_provider, provider_event_id, join_url, recording_storage_path, recording_url",
+      )
+      .in("type", [...eventTypes])
+      .order("starts_at", { ascending: false }),
+    supabase
+      .from("event_plan_access")
+      .select(
+        "event_id, plan_id, included, complimentary_ticket_limit, ticket_price_cents, currency",
+      ),
+    supabase
+      .from("event_registrations")
+      .select("event_id, status")
+      .eq("organization_id", organization.id)
+      .eq("user_id", member.id)
+      .neq("status", "canceled"),
+    supabase
+      .from("event_registrations")
+      .select("event_id")
+      .eq("organization_id", organization.id)
+      .neq("status", "canceled"),
+  ]);
+
+  if (eventsError) {
+    logWebinarDataError("events", eventsError);
+    return { canManageEvents: await canManageEvents(member.id), webinars: [] };
+  }
+  if (accessError) {
+    logWebinarDataError("plan access", accessError);
+    return { canManageEvents: await canManageEvents(member.id), webinars: [] };
+  }
+  if (registrationsError) {
+    logWebinarDataError("member registrations", registrationsError);
+  }
+  if (organizationRegistrationsError) {
+    logWebinarDataError(
+      "organization registrations",
+      organizationRegistrationsError,
+    );
+  }
+
+  return {
+    canManageEvents: await canManageEvents(member.id),
+    webinars: mapWebinars({
+      access: (access ?? []) as EventAccessRow[],
+      events: (events ?? []) as EventRow[],
+      organizationRegistrations,
+      organizationTier: organization.tier,
+      registrations: (registrations ?? []) as Array<{
+        event_id: string;
+        status: Webinar["registrationStatus"];
+      }>,
+    }),
+  };
+}
+
+export async function getWebinars(): Promise<Webinar[]> {
+  const { webinars } = await getWebinarCatalog();
+  return webinars;
+}
+
+export async function getWebinarBySlug(slug: string): Promise<Webinar | null> {
+  const { member, organization, supabase } = await loadWebinarContext();
+  const [
+    { data: event, error: eventError },
+    { data: access, error: accessError },
+    { data: registrations, error: registrationsError },
+    {
+      data: organizationRegistrations,
+      error: organizationRegistrationsError,
+    },
+  ] = await Promise.all([
+    supabase
+      .from("events")
+      .select(
+        "id, type, slug, title, summary, description, status, starts_at, ends_at, timezone, capacity, meeting_provider, provider_event_id, join_url, recording_storage_path, recording_url",
+      )
+      .eq("slug", slug)
+      .in("type", [...eventTypes])
+      .maybeSingle(),
+    supabase
+      .from("event_plan_access")
+      .select(
+        "event_id, plan_id, included, complimentary_ticket_limit, ticket_price_cents, currency",
+      ),
+    supabase
+      .from("event_registrations")
+      .select("event_id, status")
+      .eq("organization_id", organization.id)
+      .eq("user_id", member.id)
+      .neq("status", "canceled"),
+    supabase
+      .from("event_registrations")
+      .select("event_id")
+      .eq("organization_id", organization.id)
+      .neq("status", "canceled"),
+  ]);
+
+  if (eventError) throw eventError;
+  if (accessError) throw accessError;
+  if (registrationsError) throw registrationsError;
+  if (organizationRegistrationsError) throw organizationRegistrationsError;
+  if (!event) return null;
+
+  return (
+    mapWebinars({
+      access: (access ?? []) as EventAccessRow[],
+      events: [event as EventRow],
+      organizationRegistrations,
+      organizationTier: organization.tier,
+      registrations: (registrations ?? []) as Array<{
+        event_id: string;
+        status: Webinar["registrationStatus"];
+      }>,
+    })[0] ?? null
+  );
+}
+
+export async function canCurrentUserManageEvents() {
+  const { member } = await requireMemberContext();
+  return canManageEvents(member.id);
+}
+
+export { eventTypes, platformEventRoles };

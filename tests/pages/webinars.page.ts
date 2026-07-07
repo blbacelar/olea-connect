@@ -7,12 +7,38 @@ export class WebinarsPage {
     await this.page.goto("/webinars");
   }
 
+  async openCreateForm() {
+    await this.page.getByRole("link", { name: "Create webinar" }).click();
+  }
+
   eventCard(title: string) {
     return this.page.getByTestId("webinar-card").filter({ hasText: title });
   }
 
+  async openEventDetails(title: string) {
+    await this.eventCard(title).getByRole("link", { name: "View details" }).click();
+  }
+
+  async expectCreateButtonVisible() {
+    await expect(
+      this.page.getByRole("link", { name: "Create webinar" }),
+    ).toBeVisible();
+  }
+
+  async expectCreateButtonHidden() {
+    await expect(
+      this.page.getByRole("link", { name: "Create webinar" }),
+    ).toHaveCount(0);
+  }
+
   async expectEventVisible(title: string) {
     await expect(this.page.getByRole("heading", { name: title })).toBeVisible();
+  }
+
+  async expectEventDetails(title: string) {
+    await expect(
+      this.page.getByRole("heading", { level: 1, name: title }),
+    ).toBeVisible();
   }
 
   async registerForEvent(title: string) {

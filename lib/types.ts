@@ -196,6 +196,7 @@ export interface Webinar {
     | "summit";
   title: string;
   summary: string;
+  description: string | null;
   status: "scheduled" | "live" | "completed" | "canceled" | "rescheduled";
   startsAt: string;
   endsAt: string;

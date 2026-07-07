@@ -3,14 +3,56 @@
 import { revalidatePath } from "next/cache";
 
 import { requireMemberContext } from "@/lib/data/member-context";
+import { eventTypes, platformEventRoles } from "@/lib/data/webinars";
+import type { MembershipTier, Webinar } from "@/lib/types";
 import { createAdminClient } from "@/utils/supabase/admin";
 import { createClient } from "@/utils/supabase/server";
 
 const activeSubscriptionStatuses = new Set(["active", "trialing"]);
-const platformEventRoles = ["super_admin", "community_admin"] as const;
+const membershipTiers = ["seedling", "roots", "canopy", "harvest"] as const;
+const creatableEventStatuses = ["scheduled", "live"] as const;
+const accessModes = ["included", "complimentary", "paid"] as const;
 
 function getText(formData: FormData, key: string) {
   return String(formData.get(key) ?? "").trim();
+}
+
+function assertOneOf<T extends readonly string[]>(
+  values: T,
+  value: string,
+  message: string,
+): asserts value is T[number] {
+  if (!values.includes(value)) throw new Error(message);
+}
+
+function parsePositiveInteger(value: string, message: string) {
+  const parsed = Number.parseInt(value, 10);
+  if (!Number.isInteger(parsed) || parsed <= 0) throw new Error(message);
+  return parsed;
+}
+
+function parseOptionalPositiveInteger(value: string, message: string) {
+  if (!value) return null;
+  return parsePositiveInteger(value, message);
+}
+
+function parseIsoDate(value: string, message: string) {
+  const date = new Date(value);
+  if (!value || Number.isNaN(date.getTime())) throw new Error(message);
+  return date;
+}
+
+function slugify(value: string) {
+  const slug = value
+    .toLowerCase()
+    .normalize("NFKD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "")
+    .slice(0, 80)
+    .replace(/^-+|-+$/g, "");
+
+  return slug || "webinar";
 }
 
 async function requireEventAdmin() {
@@ -33,7 +75,7 @@ async function requireEventAdmin() {
     .maybeSingle();
 
   if (error) throw error;
-  if (!role) throw new Error("Only platform event admins can import attendance.");
+  if (!role) throw new Error("Only platform event admins can manage events.");
 
   return { admin, userId: user.id };
 }
@@ -203,6 +245,119 @@ export async function registerForEvent(formData: FormData) {
   if (providerError) throw providerError;
 
   revalidatePath("/webinars");
+}
+
+export async function createWebinarEvent(formData: FormData) {
+  try {
+    const { admin, userId } = await requireEventAdmin();
+    const title = getText(formData, "title");
+    const summary = getText(formData, "summary");
+    const description = getText(formData, "description");
+    const type = getText(formData, "type");
+    const status = getText(formData, "status") || "scheduled";
+    const startsAt = parseIsoDate(
+      getText(formData, "startsAtIso"),
+      "Choose a valid start date and time.",
+    );
+    const endsAt = parseIsoDate(
+      getText(formData, "endsAtIso"),
+      "Choose a valid end date and time.",
+    );
+    const timezone = getText(formData, "timezone") || "America/Vancouver";
+    const joinUrl = getText(formData, "joinUrl");
+    const providerEventId = getText(formData, "providerEventId");
+    const accessMode = getText(formData, "accessMode") || "included";
+    const selectedPlanIds = formData
+      .getAll("planIds")
+      .map((value) => String(value));
+
+    assertOneOf(eventTypes, type, "Choose a supported event type.");
+    assertOneOf(creatableEventStatuses, status, "Choose a supported event status.");
+    assertOneOf(accessModes, accessMode, "Choose a supported access rule.");
+
+    if (title.length < 3) throw new Error("Enter a webinar title.");
+    if (summary.length < 10) throw new Error("Enter a short webinar summary.");
+    if (endsAt <= startsAt) throw new Error("End time must be after start time.");
+    if (!joinUrl.startsWith("https://")) {
+      throw new Error("Enter a secure Zoom URL that starts with https://.");
+    }
+    if (!selectedPlanIds.length) {
+      throw new Error("Choose at least one membership plan.");
+    }
+
+    const planIds = selectedPlanIds.map((planId) => {
+      assertOneOf(membershipTiers, planId, "Choose supported membership plans.");
+      return planId;
+    });
+    const complimentaryLimit =
+      accessMode === "complimentary"
+        ? parsePositiveInteger(
+            getText(formData, "complimentaryTicketLimit"),
+            "Enter a complimentary ticket limit greater than zero.",
+          )
+        : null;
+    const ticketPriceCents =
+      accessMode === "paid"
+        ? parsePositiveInteger(
+            getText(formData, "ticketPriceCents"),
+            "Enter a paid ticket amount in cents greater than zero.",
+          )
+        : parseOptionalPositiveInteger(
+            getText(formData, "ticketPriceCents"),
+            "Ticket amount must be greater than zero.",
+          );
+    const slug = `${slugify(title)}-${Date.now().toString(36)}`;
+
+    const { data: event, error: eventError } = await admin
+      .from("events")
+      .insert({
+        type,
+        status,
+        slug,
+        title,
+        summary,
+        description: description || null,
+        starts_at: startsAt.toISOString(),
+        ends_at: endsAt.toISOString(),
+        timezone,
+        registration_opens_at: new Date().toISOString(),
+        registration_closes_at: startsAt.toISOString(),
+        meeting_provider: "zoom",
+        provider_event_id: providerEventId || null,
+        join_url: joinUrl,
+        created_by: userId,
+      })
+      .select("id, slug")
+      .single();
+
+    if (eventError) throw eventError;
+
+    const { error: accessError } = await admin.from("event_plan_access").insert(
+      planIds.map((planId: MembershipTier) => ({
+        event_id: event.id,
+        plan_id: planId,
+        included: accessMode === "included",
+        complimentary_ticket_limit: complimentaryLimit,
+        ticket_price_cents: ticketPriceCents,
+        currency: "CAD",
+      })),
+    );
+
+    if (accessError) {
+      await admin.from("events").delete().eq("id", event.id);
+      throw accessError;
+    }
+
+    revalidatePath("/webinars");
+    return { slug: event.slug as Webinar["slug"] };
+  } catch (error) {
+    return {
+      error:
+        error instanceof Error
+          ? error.message
+          : "We could not create this webinar. Please review the details.",
+    };
+  }
 }
 
 export async function cancelEventRegistration(formData: FormData) {

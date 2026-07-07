@@ -358,9 +358,16 @@ Grants:
 Webinars:
 
 - `app/webinars/page.tsx`
+- `app/webinars/[slug]/page.tsx`
+- `app/webinars/new/page.tsx`
+- `app/webinars/actions.ts`
 - `lib/data/webinars.ts`
 
-Both rely on member context and plan-aware access rules.
+Both rely on member context and plan-aware access rules. Webinar creation is
+limited to platform event admins (`super_admin` or `community_admin`) and uses a
+server action with the Supabase service role after the role check. Regular
+members can see webinar details and valid actions, but cannot access the create
+route or call the creation path successfully.
 
 ## Testing Architecture
 

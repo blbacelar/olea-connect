@@ -216,6 +216,9 @@ For human developers, mirror the same idea:
 - Team: `app/team/*`, `lib/data/team.ts`, `lib/team/seats.ts`.
 - Community: `app/community/page.tsx`, `lib/data/community.ts`,
   `supabase/migrations/*native_community_foundation.sql`.
+- Webinars: `app/webinars/page.tsx`, `app/webinars/[slug]/page.tsx`,
+  `app/webinars/new/page.tsx`, `app/webinars/actions.ts`,
+  `lib/data/webinars.ts`.
 - Templates: `lib/data/templates.ts`, `components/templates/*`,
   `lib/template-renderer/*`.
 - Board Calendar: `components/templates/BoardCalendarWorkbench.tsx`,

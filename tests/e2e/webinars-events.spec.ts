@@ -15,6 +15,126 @@ base.describe("@critical webinar recording access boundaries", () => {
 });
 
 testWithData.describe("@critical webinar and event access", () => {
+  testWithData("shows webinar details from the listing", async ({
+    baseURL,
+    page,
+    testData,
+  }) => {
+    if (!baseURL) throw new Error("Playwright baseURL is required.");
+
+    const member = await testData.createOrganizationOwner({
+      activeSubscription: true,
+      planId: "roots",
+    });
+    const event = await testData.createEvent({
+      accessPlanIds: ["roots"],
+      title: "Clickable Webinar Detail Session",
+    });
+    await signInPage(page, baseURL, member.email, member.password);
+    const webinars = new WebinarsPage(page);
+
+    await webinars.open();
+    await webinars.openEventDetails(event.title);
+    await webinars.expectEventDetails(event.title);
+    await expect(page.getByText("QA-created Zoom event")).toBeVisible();
+    await expect(page.getByRole("button", { name: "Register →" })).toBeVisible();
+  });
+
+  testWithData("shows the create webinar action only to event admins", async ({
+    baseURL,
+    page,
+    testData,
+  }) => {
+    if (!baseURL) throw new Error("Playwright baseURL is required.");
+
+    const member = await testData.createOrganizationOwner({
+      activeSubscription: true,
+      planId: "roots",
+    });
+    await signInPage(page, baseURL, member.email, member.password);
+    const webinars = new WebinarsPage(page);
+
+    await webinars.open();
+    await webinars.expectCreateButtonHidden();
+    await page.goto("/webinars/new");
+    await expect(page.getByRole("heading", { name: "404" })).toBeVisible();
+  });
+
+  testWithData("allows platform event admins to create a Zoom webinar", async ({
+    baseURL,
+    page,
+    testData,
+  }) => {
+    if (!baseURL) throw new Error("Playwright baseURL is required.");
+
+    const admin = await testData.createOrganizationOwner({
+      activeSubscription: true,
+      planId: "roots",
+    });
+    await testData.assignPlatformRole(admin.userId, "community_admin");
+    await signInPage(page, baseURL, admin.email, admin.password);
+    const webinars = new WebinarsPage(page);
+    const title = `Admin Created Webinar ${admin.marker}`;
+
+    await webinars.open();
+    await webinars.expectCreateButtonVisible();
+    await webinars.openCreateForm();
+    await page.getByLabel("Title").fill(title);
+    await page.getByLabel("Summary").fill("A Zoom session created from the app UI.");
+    await page
+      .getByLabel("Description")
+      .fill("Members can open details, register, and join when eligible.");
+    await page.getByLabel("Zoom URL").fill("https://zoom.us/j/1234567890");
+    await page.getByLabel("Zoom event ID").fill(`zoom-${admin.marker}`);
+    await page.getByRole("button", { name: "Create webinar" }).click();
+
+    await webinars.expectEventDetails(title);
+    await expect(page.getByRole("button", { name: "Register →" })).toBeVisible();
+
+    const event = await testData.getEventByTitle(title);
+    expect(event).toMatchObject({
+      join_url: "https://zoom.us/j/1234567890",
+      title,
+    });
+    testData.trackEventCleanup(event!.id);
+    expect(
+      (await testData.getEventPlanAccess(event!.id)).map((access) => access.plan_id),
+    ).toEqual(["canopy", "harvest", "roots"]);
+  });
+
+  testWithData("shows validation errors without creating partial webinars", async ({
+    baseURL,
+    page,
+    testData,
+  }) => {
+    if (!baseURL) throw new Error("Playwright baseURL is required.");
+
+    const admin = await testData.createOrganizationOwner({
+      activeSubscription: true,
+      planId: "roots",
+    });
+    await testData.assignPlatformRole(admin.userId, "community_admin");
+    await signInPage(page, baseURL, admin.email, admin.password);
+    const webinars = new WebinarsPage(page);
+    const title = `Invalid Webinar ${admin.marker}`;
+
+    await webinars.open();
+    await webinars.openCreateForm();
+    await page.getByLabel("Title").fill(title);
+    await page.getByLabel("Summary").fill("A Zoom session missing plan access.");
+    await page.getByLabel("Zoom URL").fill("https://zoom.us/j/1234567890");
+    for (const label of ["Seedling", "Roots", "Canopy", "Harvest"]) {
+      const checkbox = page.getByLabel(label);
+      if (await checkbox.isChecked()) await checkbox.uncheck();
+    }
+    await page.getByRole("button", { name: "Create webinar" }).click();
+
+    await expect(
+      page.getByRole("alert").filter({ hasText: "Choose at least one membership plan." }),
+    ).toBeVisible();
+    expect(await testData.getEventByTitle(title)).toBeNull();
+  });
+
   testWithData("registers a member once and reveals the Zoom join action", async ({
     baseURL,
     page,

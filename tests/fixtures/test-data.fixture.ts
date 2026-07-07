@@ -44,6 +44,13 @@ type EventStatus =
   | "canceled"
   | "rescheduled";
 
+type PlatformRole =
+  | "super_admin"
+  | "content_admin"
+  | "grants_admin"
+  | "community_admin"
+  | "finance_admin";
+
 export type CreatedTemplateInstance = {
   id: string;
   organizationId: string;
@@ -354,6 +361,29 @@ export class TestDataManager {
       email: identity.email,
       password: identity.password,
     };
+  }
+
+  async assignPlatformRole(
+    userId: string,
+    role: PlatformRole = "community_admin",
+  ) {
+    const { error } = await this.supabase.from("platform_user_roles").insert({
+      user_id: userId,
+      role,
+    });
+    if (error) throw error;
+
+    this.registerCleanup({
+      label: `platform role ${role}/${userId}`,
+      run: async () => {
+        const { error: deleteError } = await this.supabase
+          .from("platform_user_roles")
+          .delete()
+          .eq("user_id", userId)
+          .eq("role", role);
+        if (deleteError) throw deleteError;
+      },
+    });
   }
 
   async authUserExists(userId: string) {
@@ -873,6 +903,31 @@ export class TestDataManager {
     return { id: eventId, slug, title, startsAt };
   }
 
+  trackEventCleanup(eventId: string) {
+    this.registerCleanup({
+      label: `event ${eventId}`,
+      run: async () => {
+        const { error: deleteError } = await this.supabase
+          .from("events")
+          .delete()
+          .eq("id", eventId);
+        if (deleteError) throw deleteError;
+      },
+    });
+
+    this.registerCleanup({
+      label: `event integration events ${eventId}`,
+      run: async () => {
+        const { error: deleteError } = await this.supabase
+          .from("integration_events")
+          .delete()
+          .eq("aggregate_type", "event")
+          .eq("aggregate_id", eventId);
+        if (deleteError) throw deleteError;
+      },
+    });
+  }
+
   async updateEvent(
     eventId: string,
     values: {
@@ -906,6 +961,26 @@ export class TestDataManager {
       .maybeSingle();
     if (error) throw error;
     return data;
+  }
+
+  async getEventByTitle(title: string) {
+    const { data, error } = await this.supabase
+      .from("events")
+      .select("id, slug, title, join_url")
+      .eq("title", title)
+      .maybeSingle();
+    if (error) throw error;
+    return data;
+  }
+
+  async getEventPlanAccess(eventId: string) {
+    const { data, error } = await this.supabase
+      .from("event_plan_access")
+      .select("plan_id, included, complimentary_ticket_limit, ticket_price_cents")
+      .eq("event_id", eventId)
+      .order("plan_id", { ascending: true });
+    if (error) throw error;
+    return data ?? [];
   }
 
   async getEventRegistrationCount(eventId: string, userId: string) {

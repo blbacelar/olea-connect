@@ -1,141 +1,22 @@
-import { CalendarDays, Lock, Play, Video } from "lucide-react";
+import { CalendarDays, Play, Plus } from "lucide-react";
+import Link from "next/link";
 
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { EmptyPanel } from "@/components/EmptyPanel";
 import { PageHeader } from "@/components/PageHeader";
 import { SectionHeading } from "@/components/SectionHeading";
-import { getWebinars } from "@/lib/data/webinars";
-import type { Webinar } from "@/lib/types";
-
+import { getWebinarCatalog } from "@/lib/data/webinars";
 import {
-  cancelEventRegistration,
-  registerForEvent,
-} from "./actions";
-
-function formatEventDate(value: string) {
-  return new Intl.DateTimeFormat("en-CA", {
-    dateStyle: "long",
-    timeStyle: "short",
-  }).format(new Date(value));
-}
-
-function formatEventType(type: Webinar["type"]) {
-  return type
-    .split("_")
-    .map((word) => word[0].toUpperCase() + word.slice(1))
-    .join(" ");
-}
-
-function formatPlanList(planIds: Webinar["allowedPlanIds"]) {
-  return planIds.map((plan) => plan[0].toUpperCase() + plan.slice(1)).join(", ");
-}
-
-function formatTicketLabel(webinar: Webinar) {
-  if (webinar.included) return "Included with your plan";
-  if (webinar.complimentaryTicketLimit) {
-    const remaining = Math.max(
-      webinar.complimentaryTicketLimit - webinar.complimentaryTicketsUsed,
-      0,
-    );
-
-    return `${remaining} of ${webinar.complimentaryTicketLimit} complimentary ticket${
-      webinar.complimentaryTicketLimit === 1 ? "" : "s"
-    } remaining`;
-  }
-  if (webinar.ticketPriceCents !== null) {
-    return `${webinar.currency} ${(webinar.ticketPriceCents / 100).toFixed(2)}`;
-  }
-  return "Included";
-}
-
-function isUpcomingOrActiveEvent(webinar: Webinar, now: number) {
-  if (!["scheduled", "live", "rescheduled"].includes(webinar.status)) {
-    return false;
-  }
-
-  if (new Date(webinar.endsAt).getTime() < now) return false;
-
-  const hasStarted = new Date(webinar.startsAt).getTime() <= now;
-  return !hasStarted || webinar.registered;
-}
-
-function EventAction({ webinar }: { webinar: Webinar }) {
-  const canJoin =
-    webinar.registered &&
-    Boolean(webinar.joinUrl) &&
-    (webinar.status === "scheduled" ||
-      webinar.status === "live" ||
-      webinar.status === "rescheduled");
-
-  if (!webinar.available) {
-    return (
-      <div className="text-right">
-        <span className="inline-flex items-center gap-2 text-sm font-semibold text-slate-500">
-          <Lock className="size-4" />
-          Upgrade required
-        </span>
-        <p className="mt-1 text-xs text-slate-400">
-          Available for {formatPlanList(webinar.allowedPlanIds)}
-        </p>
-      </div>
-    );
-  }
-
-  if (webinar.ticketPriceCents !== null && !webinar.included) {
-    return (
-      <div className="text-right">
-        <Button disabled>Paid ticket coming soon</Button>
-        <p className="mt-1 text-xs text-slate-400">{formatTicketLabel(webinar)}</p>
-      </div>
-    );
-  }
-
-  if (webinar.registered) {
-    return (
-      <div className="flex flex-wrap items-center justify-end gap-2">
-        {canJoin ? (
-          <Button asChild>
-            <a href={webinar.joinUrl!} target="_blank" rel="noreferrer">
-              <Video className="size-4" />
-              Join Zoom
-            </a>
-          </Button>
-        ) : (
-          <Badge variant="outline">Registered</Badge>
-        )}
-        <form action={cancelEventRegistration}>
-          <input type="hidden" name="eventId" value={webinar.id} />
-          <Button type="submit" variant="outline">
-            Cancel
-          </Button>
-        </form>
-      </div>
-    );
-  }
-
-  if (
-    !webinar.included &&
-    webinar.complimentaryTicketLimit !== null &&
-    webinar.complimentaryTicketsUsed >= webinar.complimentaryTicketLimit
-  ) {
-    return (
-      <div className="text-right">
-        <Button disabled>Complimentary limit reached</Button>
-      </div>
-    );
-  }
-
-  return (
-    <form action={registerForEvent}>
-      <input type="hidden" name="eventId" value={webinar.id} />
-      <Button type="submit">Register →</Button>
-    </form>
-  );
-}
+  EventAction,
+  RecordingAction,
+  formatEventDate,
+  formatEventType,
+  formatTicketLabel,
+  isUpcomingOrActiveEvent,
+} from "./webinar-ui";
 
 export default async function WebinarsPage() {
-  const webinars = await getWebinars();
+  const { canManageEvents, webinars } = await getWebinarCatalog();
   const now = Date.now();
   const upcoming = webinars.filter((webinar) =>
     isUpcomingOrActiveEvent(webinar, now),
@@ -147,10 +28,20 @@ export default async function WebinarsPage() {
 
   return (
     <div>
-      <PageHeader
-        title="Webinars"
-        description="Live sessions and recordings on governance, fundraising, and nonprofit leadership."
-      />
+      <div className="flex flex-wrap items-start justify-between gap-4">
+        <PageHeader
+          title="Webinars"
+          description="Live sessions and recordings on governance, fundraising, and nonprofit leadership."
+        />
+        {canManageEvents ? (
+          <Button asChild>
+            <Link href="/webinars/new">
+              <Plus className="size-4" />
+              Create webinar
+            </Link>
+          </Button>
+        ) : null}
+      </div>
 
       <SectionHeading>Upcoming</SectionHeading>
       {upcoming.length ? (
@@ -178,6 +69,9 @@ export default async function WebinarsPage() {
                 </p>
               </div>
               <EventAction webinar={webinar} />
+              <Button asChild variant="outline">
+                <Link href={`/webinars/${webinar.slug}`}>View details</Link>
+              </Button>
             </section>
           ))}
         </div>
@@ -206,16 +100,12 @@ export default async function WebinarsPage() {
                   {formatEventType(webinar.type)} · {formatEventDate(webinar.startsAt)}
                 </p>
               </div>
-              {webinar.available ? (
-                <Button asChild size="sm" variant="outline" className="text-olea-green">
-                  <a href={`/api/v1/events/${webinar.id}/recording`}>
-                    <Play className="size-3.5" />
-                    Watch
-                  </a>
+              <div className="flex flex-wrap items-center justify-end gap-2">
+                <RecordingAction webinar={webinar} />
+                <Button asChild size="sm" variant="outline">
+                  <Link href={`/webinars/${webinar.slug}`}>View details</Link>
                 </Button>
-              ) : (
-                <Lock className="size-4 text-slate-400" />
-              )}
+              </div>
             </div>
           ))}
         </div>
