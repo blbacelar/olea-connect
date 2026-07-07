@@ -1,7 +1,8 @@
 import "server-only";
 
+import type { SupabaseClient } from "@supabase/supabase-js";
+
 import type { MembershipTier, Webinar } from "@/lib/types";
-import { createAdminClient } from "@/utils/supabase/admin";
 import { createClient } from "@/utils/supabase/server";
 
 import { requireMemberContext } from "./member-context";
@@ -50,9 +51,8 @@ function logWebinarDataError(label: string, error: unknown) {
   });
 }
 
-async function canManageEvents(userId: string) {
-  const admin = createAdminClient();
-  const { data, error } = await admin
+async function canManageEvents(supabase: SupabaseClient, userId: string) {
+  const { data, error } = await supabase
     .from("platform_user_roles")
     .select("role")
     .eq("user_id", userId)
@@ -190,11 +190,11 @@ export async function getWebinarCatalog(): Promise<{
 
   if (eventsError) {
     logWebinarDataError("events", eventsError);
-    return { canManageEvents: await canManageEvents(member.id), webinars: [] };
+    return { canManageEvents: await canManageEvents(supabase, member.id), webinars: [] };
   }
   if (accessError) {
     logWebinarDataError("plan access", accessError);
-    return { canManageEvents: await canManageEvents(member.id), webinars: [] };
+    return { canManageEvents: await canManageEvents(supabase, member.id), webinars: [] };
   }
   if (registrationsError) {
     logWebinarDataError("member registrations", registrationsError);
@@ -207,7 +207,7 @@ export async function getWebinarCatalog(): Promise<{
   }
 
   return {
-    canManageEvents: await canManageEvents(member.id),
+    canManageEvents: await canManageEvents(supabase, member.id),
     webinars: mapWebinars({
       access: (access ?? []) as EventAccessRow[],
       events: (events ?? []) as EventRow[],
@@ -284,8 +284,8 @@ export async function getWebinarBySlug(slug: string): Promise<Webinar | null> {
 }
 
 export async function canCurrentUserManageEvents() {
-  const { member } = await requireMemberContext();
-  return canManageEvents(member.id);
+  const { member, supabase } = await loadWebinarContext();
+  return canManageEvents(supabase, member.id);
 }
 
 export { eventTypes, platformEventRoles };
