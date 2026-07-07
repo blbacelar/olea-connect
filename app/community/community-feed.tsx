@@ -79,6 +79,63 @@ function authorAttribution({
   return `${authorName} · ${authorOrganizationName}`;
 }
 
+type OptimisticLikeState = {
+  count: number;
+  liked: boolean;
+};
+
+function useSyncedOptimisticLike({
+  count,
+  liked,
+  targetId,
+}: OptimisticLikeState & {
+  targetId: string;
+}) {
+  const [optimisticLike, setOptimisticLike] = useState<OptimisticLikeState>({
+    count,
+    liked,
+  });
+  const pendingLikeRef = useRef<
+    (OptimisticLikeState & { targetId: string }) | null
+  >(null);
+
+  useEffect(() => {
+    const nextLike = { count, liked };
+    const pendingLike = pendingLikeRef.current;
+
+    if (pendingLike?.targetId === targetId) {
+      if (pendingLike.liked === liked) {
+        pendingLikeRef.current = null;
+        setOptimisticLike(nextLike);
+      }
+
+      return;
+    }
+
+    pendingLikeRef.current = null;
+    setOptimisticLike(nextLike);
+  }, [count, liked, targetId]);
+
+  function setPendingOptimisticLike(nextLike: OptimisticLikeState) {
+    pendingLikeRef.current = {
+      ...nextLike,
+      targetId,
+    };
+    setOptimisticLike(nextLike);
+  }
+
+  function clearPendingOptimisticLike(nextLike: OptimisticLikeState) {
+    pendingLikeRef.current = null;
+    setOptimisticLike(nextLike);
+  }
+
+  return {
+    clearPendingOptimisticLike,
+    optimisticLike,
+    setPendingOptimisticLike,
+  };
+}
+
 function ActionMessage({ state }: { state: CommunityActionState }) {
   if (!state.message) return null;
 
@@ -210,18 +267,16 @@ function LikeButton({
 }) {
   const router = useRouter();
   const [isSaving, setIsSaving] = useState(false);
-  const [optimisticLike, setOptimisticLike] = useState({
+  const {
+    clearPendingOptimisticLike,
+    optimisticLike,
+    setPendingOptimisticLike,
+  } = useSyncedOptimisticLike({
     count: post.likeCount,
     liked: post.likedByCurrentUser,
+    targetId: post.id,
   });
   const [errorMessage, setErrorMessage] = useState("");
-
-  useEffect(() => {
-    setOptimisticLike({
-      count: post.likeCount,
-      liked: post.likedByCurrentUser,
-    });
-  }, [post.id, post.likeCount, post.likedByCurrentUser]);
 
   function handleToggleLike() {
     if (isSaving) return;
@@ -231,7 +286,7 @@ function LikeButton({
 
     setIsSaving(true);
     setErrorMessage("");
-    setOptimisticLike({
+    setPendingOptimisticLike({
       count: Math.max(0, previousLike.count + (nextLiked ? 1 : -1)),
       liked: nextLiked,
     });
@@ -244,7 +299,7 @@ function LikeButton({
       const result = await toggleCommunityPostLike(initialActionState, formData);
 
       if (result.status === "error") {
-        setOptimisticLike(previousLike);
+        clearPendingOptimisticLike(previousLike);
         setErrorMessage(result.message);
         return;
       }
@@ -669,18 +724,16 @@ function CommentLikeButton({
 }) {
   const router = useRouter();
   const [isSaving, setIsSaving] = useState(false);
-  const [optimisticLike, setOptimisticLike] = useState({
+  const {
+    clearPendingOptimisticLike,
+    optimisticLike,
+    setPendingOptimisticLike,
+  } = useSyncedOptimisticLike({
     count: comment.likeCount,
     liked: comment.likedByCurrentUser,
+    targetId: comment.id,
   });
   const [errorMessage, setErrorMessage] = useState("");
-
-  useEffect(() => {
-    setOptimisticLike({
-      count: comment.likeCount,
-      liked: comment.likedByCurrentUser,
-    });
-  }, [comment.id, comment.likeCount, comment.likedByCurrentUser]);
 
   function handleToggleLike() {
     if (isSaving) return;
@@ -690,7 +743,7 @@ function CommentLikeButton({
 
     setIsSaving(true);
     setErrorMessage("");
-    setOptimisticLike({
+    setPendingOptimisticLike({
       count: Math.max(0, previousLike.count + (nextLiked ? 1 : -1)),
       liked: nextLiked,
     });
@@ -706,7 +759,7 @@ function CommentLikeButton({
       );
 
       if (result.status === "error") {
-        setOptimisticLike(previousLike);
+        clearPendingOptimisticLike(previousLike);
         setErrorMessage(result.message);
         return;
       }

@@ -91,6 +91,18 @@ Data isolation:
 npm run test:e2e:data:local
 ```
 
+Security boundaries and tenant isolation:
+
+```bash
+npm run test:e2e:security:local
+```
+
+The security suite signs in as real Supabase users and verifies that one
+organization cannot read or mutate another organization's private records,
+including organizations, brand profiles, members, subscriptions, template
+instances, generated exports, and export downloads. It also asserts that a
+non-author cannot edit, archive, or delete another member's community content.
+
 ## Playwright Server Behavior
 
 `playwright.config.ts` starts the app through:
@@ -213,9 +225,7 @@ npx playwright test tests/e2e/dynamic-template-renderer.spec.ts \
 Global auth/security boundaries:
 
 ```bash
-npx playwright test tests/e2e/security-boundaries.spec.ts \
-  --project=chromium \
-  --workers=1
+npm run test:e2e:security:local
 ```
 
 Brand profile:
@@ -261,7 +271,8 @@ Jobs:
 - `Quality and Build`: lint, typecheck, unit tests, production build.
 - `Database and Isolation`: local Supabase reset, lint, database tests,
   test-data isolation.
-- `Browser Smoke`: Chromium PR smoke tests.
+- `Browser Smoke`: Chromium PR smoke tests plus authenticated security-boundary
+  tests for tenant isolation and object-level authorization.
 - `PR Gate`: fails if any required job fails.
 
 `.github/workflows/regression.yml` runs nightly and on demand. It runs unit

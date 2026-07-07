@@ -18,6 +18,8 @@
     "test:e2e:platform:local": "bash scripts/with-local-supabase.sh npm run test:e2e:platform",
     "test:e2e:community": "playwright test tests/e2e/native-community.spec.ts --project=chromium",
     "test:e2e:community:local": "bash scripts/with-local-supabase.sh npm run test:e2e:community",
+    "test:e2e:security": "playwright test tests/e2e/security-boundaries.spec.ts --project=chromium",
+    "test:e2e:security:local": "bash scripts/with-local-supabase.sh npm run test:e2e:security",
     "test:e2e:critical": "playwright test tests/e2e --project=chromium --grep @critical",
     "test:e2e:a11y": "playwright test tests/accessibility --project=chromium",
     "test:e2e:data": "PLAYWRIGHT_SKIP_WEBSERVER=true playwright test tests/integration/test-data-isolation.spec.ts --project=chromium",

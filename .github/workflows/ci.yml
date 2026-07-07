@@ -76,8 +76,12 @@ jobs:
           cache: npm
       - run: npm ci
       - run: npx playwright install --with-deps chromium
-      - name: Run PR smoke tests
-        run: bash scripts/with-local-supabase.sh npm run test:e2e:pr
+      - name: Run PR smoke and security tests
+        run: |
+          bash scripts/with-local-supabase.sh bash -c '
+            npm run test:e2e:pr &&
+            npm run test:e2e:security
+          '
       - uses: actions/upload-artifact@v7
         if: failure()
         with:

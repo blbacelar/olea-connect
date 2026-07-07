@@ -465,6 +465,10 @@ testWithData.describe("@critical native community member experience", () => {
       await teammateCommunity.expectPostLikes(postTitle, 1);
       await ownerCommunity.unlikePost(postTitle);
       await teammateCommunity.expectPostLikes(postTitle, 0);
+      await ownerCommunity.likePost(postTitle);
+      await teammateCommunity.expectPostLikes(postTitle, 1);
+      await ownerCommunity.unlikePost(postTitle);
+      await teammateCommunity.expectPostLikes(postTitle, 0);
     } finally {
       await ownerSession.context.close();
       await teammateSession.context.close();

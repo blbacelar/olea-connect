@@ -71,6 +71,7 @@ npm run typecheck
 npm run test:unit
 npm run test:e2e:smoke
 npm run test:e2e:critical
+npm run test:e2e:security:local
 npm run test:e2e:a11y
 npm run test:db:local
 npm run build
@@ -91,6 +92,7 @@ For database or auth-sensitive changes, also run:
 ```bash
 npm run test:db:local
 npm run test:e2e:data:local
+npm run test:e2e:security:local
 ```
 
 ## Repository Map

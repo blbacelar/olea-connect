@@ -36,6 +36,26 @@ export type CreatedEvent = {
   startsAt: string;
 };
 
+export type CreatedTemplateInstance = {
+  id: string;
+  organizationId: string;
+  resourceId: string;
+  title: string;
+};
+
+export type CreatedTemplateExport = {
+  id: string;
+  organizationId: string;
+  resourceId: string;
+  templateInstanceId: string;
+};
+
+export type CreatedTemplateExportDownload = {
+  id: string;
+  exportId: string;
+  organizationId: string;
+};
+
 type DefaultCommunity = {
   id: string;
 };
@@ -353,6 +373,151 @@ export class TestDataManager {
     return {
       exports: exportsCount ?? 0,
       downloads: downloadsCount ?? 0,
+    };
+  }
+
+  private async getFirstResourceId() {
+    const { data, error } = await this.supabase
+      .from("resources")
+      .select("id")
+      .order("created_at", { ascending: true })
+      .limit(1)
+      .single();
+
+    if (error) throw error;
+    return data.id as string;
+  }
+
+  async createTemplateInstance(
+    owner: CreatedOrganizationOwner,
+    options: {
+      title?: string;
+    } = {},
+  ): Promise<CreatedTemplateInstance> {
+    const resourceId = await this.getFirstResourceId();
+    const title = options.title ?? `Security template ${owner.marker}`;
+    const { data, error } = await this.supabase
+      .from("template_instances")
+      .insert({
+        organization_id: owner.organizationId,
+        resource_id: resourceId,
+        created_by: owner.userId,
+        title,
+        status: "draft",
+        form_data: {},
+        branding_snapshot: {
+          organizationName: owner.organizationName,
+        },
+        definition_version: 1,
+        schema_snapshot: {},
+        completion_percent: 0,
+      })
+      .select("id")
+      .single();
+
+    if (error) throw error;
+    const templateInstanceId = data.id as string;
+
+    this.registerCleanup({
+      label: `template instance ${templateInstanceId}`,
+      run: async () => {
+        const { error: deleteError } = await this.supabase
+          .from("template_instances")
+          .delete()
+          .eq("id", templateInstanceId);
+        if (deleteError) throw deleteError;
+      },
+    });
+
+    return {
+      id: templateInstanceId,
+      organizationId: owner.organizationId,
+      resourceId,
+      title,
+    };
+  }
+
+  async createTemplateExport(
+    owner: CreatedOrganizationOwner,
+    templateInstance: CreatedTemplateInstance,
+  ): Promise<CreatedTemplateExport> {
+    const { data, error } = await this.supabase
+      .from("template_exports")
+      .insert({
+        template_instance_id: templateInstance.id,
+        organization_id: owner.organizationId,
+        resource_id: templateInstance.resourceId,
+        created_by: owner.userId,
+        format: "pdf",
+        file_name: `${owner.marker}-security-export.pdf`,
+        storage_path: `${owner.organizationId}/${templateInstance.id}/${owner.marker}.pdf`,
+        definition_version: 1,
+        schema_snapshot: {},
+        form_data_snapshot: {},
+        branding_snapshot: {
+          organizationName: owner.organizationName,
+        },
+        checksum_sha256:
+          "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef",
+      })
+      .select("id")
+      .single();
+
+    if (error) throw error;
+    const templateExportId = data.id as string;
+
+    this.registerCleanup({
+      label: `template export ${templateExportId}`,
+      run: async () => {
+        const { error: deleteError } = await this.supabase
+          .from("template_exports")
+          .delete()
+          .eq("id", templateExportId);
+        if (deleteError) throw deleteError;
+      },
+    });
+
+    return {
+      id: templateExportId,
+      organizationId: owner.organizationId,
+      resourceId: templateInstance.resourceId,
+      templateInstanceId: templateInstance.id,
+    };
+  }
+
+  async createTemplateExportDownload(
+    owner: CreatedOrganizationOwner,
+    templateExport: CreatedTemplateExport,
+  ): Promise<CreatedTemplateExportDownload> {
+    const { data, error } = await this.supabase
+      .from("template_export_downloads")
+      .insert({
+        export_id: templateExport.id,
+        organization_id: owner.organizationId,
+        downloaded_by: owner.userId,
+        metadata: { file_name: `${owner.marker}-security-export.pdf` },
+      })
+      .select("id")
+      .single();
+
+    if (error) throw error;
+    const downloadId = data.id as string;
+
+    this.registerCleanup({
+      label: `template export download ${downloadId}`,
+      run: async () => {
+        const { error: deleteError } = await this.supabase
+          .from("template_export_downloads")
+          .delete()
+          .eq("id", downloadId);
+        if (deleteError) throw deleteError;
+      },
+    });
+
+    return {
+      id: downloadId,
+      exportId: templateExport.id,
+      organizationId: owner.organizationId,
     };
   }
 
