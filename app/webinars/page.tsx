@@ -130,7 +130,7 @@ export default async function WebinarsPage() {
       ) : null}
 
       {canManageEvents ? (
-        <>
+        <div className="mt-10">
           <SectionHeading>Admin archive queue</SectionHeading>
           {archiveCandidates.length ? (
             <div className="overflow-hidden rounded-xl border bg-white shadow-soft">
@@ -158,7 +158,7 @@ export default async function WebinarsPage() {
               icon={<CalendarDays className="size-5" />}
             />
           )}
-        </>
+        </div>
       ) : null}
     </div>
   );
