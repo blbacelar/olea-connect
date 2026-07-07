@@ -360,6 +360,37 @@ export async function createWebinarEvent(formData: FormData) {
   }
 }
 
+export async function archiveWebinarEvent(formData: FormData) {
+  const eventId = getText(formData, "eventId");
+  const { admin } = await requireEventAdmin();
+  const { data: event, error: eventError } = await admin
+    .from("events")
+    .select("id, slug, ends_at, status")
+    .eq("id", eventId)
+    .in("type", [...eventTypes])
+    .maybeSingle();
+
+  if (eventError) throw eventError;
+  if (!event) throw new Error("Webinar not found.");
+  if (event.status === "archived") {
+    revalidatePath("/webinars");
+    revalidatePath(`/webinars/${event.slug}`);
+    return;
+  }
+  if (new Date(event.ends_at).getTime() >= Date.now()) {
+    throw new Error("Only past webinars can be archived.");
+  }
+
+  const { error } = await admin
+    .from("events")
+    .update({ status: "archived" })
+    .eq("id", event.id);
+
+  if (error) throw error;
+  revalidatePath("/webinars");
+  revalidatePath(`/webinars/${event.slug}`);
+}
+
 export async function cancelEventRegistration(formData: FormData) {
   const eventId = getText(formData, "eventId");
   const { member } = await requireMemberContext();

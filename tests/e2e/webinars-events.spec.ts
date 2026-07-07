@@ -135,6 +135,71 @@ testWithData.describe("@critical webinar and event access", () => {
     expect(await testData.getEventByTitle(title)).toBeNull();
   });
 
+  testWithData("shows old webinar archive controls only to event admins", async ({
+    baseURL,
+    page,
+    testData,
+  }) => {
+    if (!baseURL) throw new Error("Playwright baseURL is required.");
+
+    const member = await testData.createOrganizationOwner({
+      activeSubscription: true,
+      planId: "roots",
+    });
+    const startsAt = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString();
+    const endsAt = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000 + 60 * 60 * 1000).toISOString();
+    const event = await testData.createEvent({
+      accessPlanIds: ["roots"],
+      endsAt,
+      recordingUrl: "https://example.com/member-visible-recording",
+      startsAt,
+      status: "completed",
+      title: "Member Hidden Archive Candidate",
+    });
+    await signInPage(page, baseURL, member.email, member.password);
+    const webinars = new WebinarsPage(page);
+
+    await webinars.open();
+    await webinars.expectEventVisible(event.title);
+    await webinars.expectArchiveQueueHidden();
+    await expect(webinars.archiveRow(event.title)).toHaveCount(0);
+  });
+
+  testWithData("allows event admins to archive old webinars", async ({
+    baseURL,
+    page,
+    testData,
+  }) => {
+    if (!baseURL) throw new Error("Playwright baseURL is required.");
+
+    const admin = await testData.createOrganizationOwner({
+      activeSubscription: true,
+      planId: "roots",
+    });
+    await testData.assignPlatformRole(admin.userId, "community_admin");
+    const startsAt = new Date(Date.now() - 10 * 24 * 60 * 60 * 1000).toISOString();
+    const endsAt = new Date(Date.now() - 10 * 24 * 60 * 60 * 1000 + 60 * 60 * 1000).toISOString();
+    const event = await testData.createEvent({
+      accessPlanIds: ["roots"],
+      endsAt,
+      startsAt,
+      status: "completed",
+      title: "Admin Archive Candidate",
+    });
+    await signInPage(page, baseURL, admin.email, admin.password);
+    const webinars = new WebinarsPage(page);
+
+    await webinars.open();
+    await expect(webinars.archiveRow(event.title)).toBeVisible();
+    await webinars.archiveEvent(event.title);
+
+    await expect(webinars.archiveRow(event.title)).toHaveCount(0);
+    await expect(webinars.eventCard(event.title)).toHaveCount(0);
+    expect(await testData.getEventByTitle(event.title)).toMatchObject({
+      status: "archived",
+    });
+  });
+
   testWithData("registers a member once and reveals the Zoom join action", async ({
     baseURL,
     page,

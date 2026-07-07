@@ -363,11 +363,14 @@ Webinars:
 - `app/webinars/actions.ts`
 - `lib/data/webinars.ts`
 
-Both rely on member context and plan-aware access rules. Webinar creation is
-limited to platform event admins (`super_admin` or `community_admin`) and uses a
-server action with the Supabase service role after the role check. Regular
-members can see webinar details and valid actions, but cannot access the create
-route or call the creation path successfully.
+Both rely on member context and plan-aware access rules. Webinar creation and
+archiving are limited to platform event admins (`super_admin` or
+`community_admin`) and use server actions with the Supabase service role after
+the role check. Archiving sets `events.status = 'archived'` for past webinars;
+archived webinars are hidden from the catalog and detail pages rather than
+deleted. Regular members can see webinar details and valid actions, but cannot
+access the create route, archive queue, or protected mutation paths
+successfully.
 
 ## Testing Architecture
 

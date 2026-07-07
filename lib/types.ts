@@ -197,7 +197,13 @@ export interface Webinar {
   title: string;
   summary: string;
   description: string | null;
-  status: "scheduled" | "live" | "completed" | "canceled" | "rescheduled";
+  status:
+    | "scheduled"
+    | "live"
+    | "completed"
+    | "canceled"
+    | "rescheduled"
+    | "archived";
   startsAt: string;
   endsAt: string;
   timezone: string;

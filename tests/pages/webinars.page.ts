@@ -31,6 +31,18 @@ export class WebinarsPage {
     ).toHaveCount(0);
   }
 
+  archiveRow(title: string) {
+    return this.page.getByTestId("webinar-archive-row").filter({ hasText: title });
+  }
+
+  async archiveEvent(title: string) {
+    await this.archiveRow(title).getByRole("button", { name: "Archive webinar" }).click();
+  }
+
+  async expectArchiveQueueHidden() {
+    await expect(this.page.getByText("Admin archive queue")).toHaveCount(0);
+  }
+
   async expectEventVisible(title: string) {
     await expect(this.page.getByRole("heading", { name: title })).toBeVisible();
   }

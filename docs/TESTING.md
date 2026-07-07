@@ -77,9 +77,9 @@ This suite covers member-facing Zoom event behavior: tier-aware event visibility
 single registration per member, complimentary-ticket limits, paid-ticket
 blocking until checkout exists, rescheduled event registration, active
 rescheduled event visibility, recording entitlement checks, admin-only webinar
-creation, webinar detail navigation, validation without partial records, and
-schedule-change email outbox creation for canceled or rescheduled registered
-events.
+creation and archiving, webinar detail navigation, validation without partial
+records, and schedule-change email outbox creation for canceled or rescheduled
+registered events.
 
 Full cross-browser suite:
 

@@ -42,6 +42,7 @@ type EventStatus =
   | "live"
   | "completed"
   | "canceled"
+  | "archived"
   | "rescheduled";
 
 type PlatformRole =
@@ -966,7 +967,7 @@ export class TestDataManager {
   async getEventByTitle(title: string) {
     const { data, error } = await this.supabase
       .from("events")
-      .select("id, slug, title, join_url")
+      .select("id, slug, title, join_url, status")
       .eq("title", title)
       .maybeSingle();
     if (error) throw error;
