@@ -1,13 +1,19 @@
 "use client";
 
 import { Archive, AlertTriangle } from "lucide-react";
+import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
-import { useFormStatus } from "react-dom";
+import { useFormState, useFormStatus } from "react-dom";
 
 import { Button } from "@/components/ui/button";
 import type { Webinar } from "@/lib/types";
 
-import { archiveWebinarEvent } from "../actions";
+import { archiveWebinarEvent, type WebinarActionState } from "../actions";
+
+const initialState: WebinarActionState = {
+  message: "",
+  status: "idle",
+};
 
 function ArchiveSubmitButton() {
   const { pending } = useFormStatus();
@@ -21,6 +27,8 @@ function ArchiveSubmitButton() {
 
 export function ArchiveWebinarAction({ webinar }: { webinar: Webinar }) {
   const [isOpen, setIsOpen] = useState(false);
+  const [state, formAction] = useFormState(archiveWebinarEvent, initialState);
+  const router = useRouter();
   const cancelButtonRef = useRef<HTMLButtonElement>(null);
   const titleId = `archive-webinar-${webinar.id}-title`;
   const descriptionId = `archive-webinar-${webinar.id}-description`;
@@ -37,6 +45,13 @@ export function ArchiveWebinarAction({ webinar }: { webinar: Webinar }) {
     document.addEventListener("keydown", handleKeyDown);
     return () => document.removeEventListener("keydown", handleKeyDown);
   }, [isOpen]);
+
+  useEffect(() => {
+    if (state.status !== "success") return;
+
+    setIsOpen(false);
+    router.refresh();
+  }, [router, state.status]);
 
   return (
     <>
@@ -79,8 +94,13 @@ export function ArchiveWebinarAction({ webinar }: { webinar: Webinar }) {
                 </p>
               </div>
             </div>
-            <form action={archiveWebinarEvent} className="mt-6 space-y-4">
+            <form action={formAction} className="mt-6 space-y-4">
               <input type="hidden" name="eventId" value={webinar.id} />
+              {state.status === "error" ? (
+                <p role="alert" className="text-sm font-semibold text-red-600">
+                  {state.message}
+                </p>
+              ) : null}
               <div className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
                 <Button
                   ref={cancelButtonRef}

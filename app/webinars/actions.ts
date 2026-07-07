@@ -13,8 +13,27 @@ const membershipTiers = ["seedling", "roots", "canopy", "harvest"] as const;
 const creatableEventStatuses = ["scheduled", "live"] as const;
 const accessModes = ["included", "complimentary", "paid"] as const;
 
+export type WebinarActionState = {
+  message: string;
+  status: "error" | "idle" | "success";
+};
+
 function getText(formData: FormData, key: string) {
   return String(formData.get(key) ?? "").trim();
+}
+
+function getActionErrorMessage(error: unknown, fallback: string) {
+  if (error instanceof Error) return error.message;
+  if (
+    error &&
+    typeof error === "object" &&
+    "message" in error &&
+    typeof error.message === "string"
+  ) {
+    return error.message;
+  }
+
+  return fallback;
 }
 
 function assertOneOf<T extends readonly string[]>(
@@ -361,37 +380,61 @@ export async function createWebinarEvent(formData: FormData) {
   }
 }
 
-export async function archiveWebinarEvent(formData: FormData) {
-  const eventId = getText(formData, "eventId");
-  const { admin } = await requireEventAdmin();
-  const { data: event, error: eventError } = await admin
-    .from("events")
-    .select("id, slug, ends_at, status")
-    .eq("id", eventId)
-    .in("type", [...eventTypes])
-    .maybeSingle();
+export async function archiveWebinarEvent(
+  _previousState: WebinarActionState,
+  formData: FormData,
+): Promise<WebinarActionState> {
+  try {
+    const eventId = getText(formData, "eventId");
+    const { admin } = await requireEventAdmin();
+    const { data: event, error: eventError } = await admin
+      .from("events")
+      .select("id, slug, ends_at, status")
+      .eq("id", eventId)
+      .in("type", [...eventTypes])
+      .maybeSingle();
 
-  if (eventError) throw eventError;
-  if (!event) throw new Error("Webinar not found.");
-  if (event.status === "archived") {
+    if (eventError) throw eventError;
+    if (!event) throw new Error("Webinar not found.");
+    if (event.status === "archived") {
+      revalidatePath("/webinars");
+      revalidatePath("/webinars/manage");
+      revalidatePath(`/webinars/${event.slug}`);
+      return {
+        message: "This webinar is already archived.",
+        status: "success",
+      };
+    }
+
+    const hasEnded = new Date(event.ends_at).getTime() < Date.now();
+    if (!hasEnded && event.status !== "canceled") {
+      throw new Error(
+        "Only past or canceled webinars can be archived.",
+      );
+    }
+
+    const { error } = await admin
+      .from("events")
+      .update({ status: "archived" })
+      .eq("id", event.id);
+
+    if (error) throw error;
     revalidatePath("/webinars");
     revalidatePath("/webinars/manage");
     revalidatePath(`/webinars/${event.slug}`);
-    return;
+    return {
+      message: "Webinar archived.",
+      status: "success",
+    };
+  } catch (error) {
+    return {
+      message: getActionErrorMessage(
+        error,
+        "We could not archive this webinar. Please try again.",
+      ),
+      status: "error",
+    };
   }
-  if (new Date(event.ends_at).getTime() >= Date.now()) {
-    throw new Error("Only past webinars can be archived.");
-  }
-
-  const { error } = await admin
-    .from("events")
-    .update({ status: "archived" })
-    .eq("id", event.id);
-
-  if (error) throw error;
-  revalidatePath("/webinars");
-  revalidatePath("/webinars/manage");
-  revalidatePath(`/webinars/${event.slug}`);
 }
 
 export async function cancelEventRegistration(formData: FormData) {

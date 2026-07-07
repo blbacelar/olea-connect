@@ -119,11 +119,15 @@ export default async function ManageWebinarsPage() {
   const now = Date.now();
   const upcoming = webinars.filter(
     (webinar) =>
-      webinar.status !== "archived" && new Date(webinar.endsAt).getTime() >= now,
+      webinar.status !== "archived" &&
+      webinar.status !== "canceled" &&
+      new Date(webinar.endsAt).getTime() >= now,
   );
   const past = webinars.filter(
     (webinar) =>
-      webinar.status !== "archived" && new Date(webinar.endsAt).getTime() < now,
+      webinar.status !== "archived" &&
+      (webinar.status === "canceled" ||
+        new Date(webinar.endsAt).getTime() < now),
   );
   const archived = webinars.filter((webinar) => webinar.status === "archived");
 
@@ -139,7 +143,7 @@ export default async function ManageWebinarsPage() {
       <div className="flex flex-wrap items-start justify-between gap-4">
         <PageHeader
           title="Manage webinars"
-          description="Review webinar operations, open public details, and archive old webinars."
+          description="Review webinar operations, open public details, and archive past or canceled webinars."
         />
         <Button asChild>
           <Link href="/webinars/new">
@@ -158,11 +162,11 @@ export default async function ManageWebinarsPage() {
           emptyDescription="Create a webinar to make it available to members."
         />
         <WebinarAdminSection
-          title="Past webinars"
+          title="Past and canceled webinars"
           webinars={past}
           now={now}
-          emptyTitle="No past webinars"
-          emptyDescription="Old webinars that can be archived will appear here."
+          emptyTitle="No past or canceled webinars"
+          emptyDescription="Old or canceled webinars that can be archived will appear here."
         />
         <WebinarAdminSection
           title="Archived"

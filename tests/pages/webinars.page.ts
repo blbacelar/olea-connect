@@ -60,6 +60,9 @@ export class WebinarsPage {
       .getByRole("dialog", { name: "Archive this webinar?" })
       .getByRole("button", { name: "Archive webinar" })
       .click();
+    await expect(
+      this.page.getByRole("dialog", { name: "Archive this webinar?" }),
+    ).toHaveCount(0);
   }
 
   async expectEventVisible(title: string) {

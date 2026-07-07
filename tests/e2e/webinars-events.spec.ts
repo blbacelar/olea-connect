@@ -209,6 +209,65 @@ testWithData.describe("@critical webinar and event access", () => {
     });
   });
 
+  testWithData("only exposes archive for past or canceled webinars", async ({
+    baseURL,
+    page,
+    testData,
+  }) => {
+    if (!baseURL) throw new Error("Playwright baseURL is required.");
+
+    const admin = await testData.createOrganizationOwner({
+      activeSubscription: true,
+      planId: "roots",
+    });
+    await testData.assignPlatformRole(admin.userId, "community_admin");
+    const scheduledStartsAt = new Date(
+      Date.now() + 9 * 24 * 60 * 60 * 1000,
+    ).toISOString();
+    const scheduledEndsAt = new Date(
+      Date.now() + 9 * 24 * 60 * 60 * 1000 + 60 * 60 * 1000,
+    ).toISOString();
+    const canceledStartsAt = new Date(
+      Date.now() + 12 * 24 * 60 * 60 * 1000,
+    ).toISOString();
+    const canceledEndsAt = new Date(
+      Date.now() + 12 * 24 * 60 * 60 * 1000 + 60 * 60 * 1000,
+    ).toISOString();
+    const scheduled = await testData.createEvent({
+      accessPlanIds: ["roots"],
+      endsAt: scheduledEndsAt,
+      startsAt: scheduledStartsAt,
+      status: "scheduled",
+      title: "Future Scheduled Webinar",
+    });
+    const canceled = await testData.createEvent({
+      accessPlanIds: ["roots"],
+      endsAt: canceledEndsAt,
+      startsAt: canceledStartsAt,
+      status: "canceled",
+      title: "Canceled Future Webinar",
+    });
+    await signInPage(page, baseURL, admin.email, admin.password);
+    const webinars = new WebinarsPage(page);
+
+    await webinars.open();
+    await webinars.openManagePage();
+
+    await expect(webinars.manageRow(scheduled.title)).toBeVisible();
+    await expect(
+      webinars.manageRow(scheduled.title).getByRole("button", { name: "Archive" }),
+    ).toHaveCount(0);
+    await expect(webinars.manageRow(canceled.title)).toBeVisible();
+    await webinars.archiveEventFromManage(canceled.title);
+
+    await expect(
+      webinars.manageRow(canceled.title).getByText("archived"),
+    ).toBeVisible();
+    expect(await testData.getEventByTitle(canceled.title)).toMatchObject({
+      status: "archived",
+    });
+  });
+
   testWithData("registers a member once and reveals the Zoom join action", async ({
     baseURL,
     page,
