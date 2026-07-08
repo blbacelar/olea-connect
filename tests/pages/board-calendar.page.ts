@@ -1,7 +1,10 @@
 import { expect, type Locator, type Page } from "@playwright/test";
 
+import { boardCalendarModule } from "@/lib/modules";
+
 export const boardCalendarTemplatePath =
   "/templates/board-calendar-operational-workflow";
+export const boardCalendarModulePath = boardCalendarModule.path;
 
 export type BoardCalendarEntryType =
   | "Annual calendar note"
@@ -78,6 +81,28 @@ export class BoardCalendarPage {
     await this.expectLoaded();
   }
 
+  async openNewModuleCalendar() {
+    await this.page.goto(`${boardCalendarModulePath}?session=new`);
+    await this.expectLoaded();
+  }
+
+  async expectModuleChrome() {
+    await expect(
+      this.page.getByRole("heading", { name: "Board Calendar", exact: true }),
+    ).toBeVisible();
+    await expect(this.page.getByText("Olea module")).toBeVisible();
+    await expect(this.page.getByText("Board calendar module")).toBeVisible();
+    await expect(this.page.getByLabel("Calendar workspace name")).toBeVisible();
+    await expect(this.page.getByText("Saved calendars")).toBeVisible();
+    await expect(
+      this.page.getByRole("link", { name: /Start new calendar/ }),
+    ).toBeVisible();
+    await expect(this.page.getByRole("button", { name: "Save now" })).toBeVisible();
+    await expect(
+      this.page.getByRole("button", { name: "Mark complete" }),
+    ).toBeVisible();
+  }
+
   async expectLoaded() {
     await expect(
       this.page.getByRole("heading", {
@@ -87,7 +112,9 @@ export class BoardCalendarPage {
   }
 
   async nameWorkbook(name: string) {
-    await this.page.getByLabel("Workbook name").fill(name);
+    await this.page
+      .getByLabel(/^(Workbook name|Calendar workspace name)$/)
+      .fill(name);
   }
 
   async expectWorkspaceViewOptionHidden(option: string) {
@@ -421,7 +448,8 @@ export class BoardCalendarPage {
       this.page.waitForResponse(
         (response) =>
           response.request().method() === "POST" &&
-          response.url().includes(boardCalendarTemplatePath),
+          (response.url().includes(boardCalendarTemplatePath) ||
+            response.url().includes(boardCalendarModulePath)),
         { timeout: 15_000 },
       ),
       this.page.getByRole("button", { name: "Save now" }).click(),

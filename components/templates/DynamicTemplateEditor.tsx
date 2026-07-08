@@ -39,13 +39,25 @@ import { TemplateExportPanel } from "./TemplateExportPanel";
 import { TemplateFields } from "./TemplateFields";
 
 export function DynamicTemplateEditor({
-  data,
+  basePath,
+  eyebrow = "Dynamic template",
+  newSessionLabel = "Unsaved new workbook",
+  savedSessionsLabel = "Saved workbooks",
   saveSession,
+  sessionNameLabel = "Workbook name",
+  startNewLabel = "Start new",
+  data,
   generateExport,
   createDownloadUrl,
 }: {
+  basePath?: string;
   data: DynamicTemplateEditorData;
+  eyebrow?: string;
+  newSessionLabel?: string;
+  savedSessionsLabel?: string;
   saveSession: (payload: TemplateSavePayload) => Promise<DynamicTemplateSession>;
+  sessionNameLabel?: string;
+  startNewLabel?: string;
   generateExport: (input: {
     templateInstanceId: string;
     format: TemplateExportFormat;
@@ -53,6 +65,7 @@ export function DynamicTemplateEditor({
   createDownloadUrl: (exportId: string) => Promise<string>;
 }) {
   const router = useRouter();
+  const editorBasePath = basePath ?? `/templates/${data.template.slug}`;
   const {
     session,
     updateTitle,
@@ -69,7 +82,7 @@ export function DynamicTemplateEditor({
     initialSession: data.session,
     onSaved: (saved, previousSession) => {
       if (!previousSession.id && saved.id) {
-        const savedSessionUrl = `/templates/${data.template.slug}?session=${saved.id}`;
+        const savedSessionUrl = `${editorBasePath}?session=${saved.id}`;
 
         window.history.replaceState(null, "", savedSessionUrl);
       }
@@ -107,7 +120,7 @@ export function DynamicTemplateEditor({
       <div className="flex flex-wrap items-start justify-between gap-4">
         <div>
           <p className="text-xs font-semibold uppercase tracking-[0.08em] text-olea-dark">
-            Dynamic template
+            {eyebrow}
           </p>
           <h1 className="mt-1 text-[26px] font-bold tracking-[-0.02em]">
             {data.template.title}
@@ -137,7 +150,7 @@ export function DynamicTemplateEditor({
       <Card className="border-olea-green/15 bg-gradient-to-br from-white to-olea-light/50 shadow-soft">
         <CardContent className="grid gap-5 p-5 lg:grid-cols-[1.2fr_1fr_auto] lg:items-end">
           <div className="space-y-2">
-            <Label htmlFor="template-session-title">Workbook name</Label>
+            <Label htmlFor="template-session-title">{sessionNameLabel}</Label>
             <Input
               id="template-session-title"
               value={session.title}
@@ -146,11 +159,11 @@ export function DynamicTemplateEditor({
             />
           </div>
           <div className="space-y-2">
-            <Label htmlFor="template-session-picker">Saved workbooks</Label>
+            <Label htmlFor="template-session-picker">{savedSessionsLabel}</Label>
             <Select
               value={session.id || "new"}
               onValueChange={(value) =>
-                router.push(`/templates/${data.template.slug}?session=${value}`)
+                router.push(`${editorBasePath}?session=${value}`)
               }
             >
               <SelectTrigger id="template-session-picker">
@@ -158,7 +171,7 @@ export function DynamicTemplateEditor({
               </SelectTrigger>
               <SelectContent>
                 {!session.id ? (
-                  <SelectItem value="new">Unsaved new workbook</SelectItem>
+                  <SelectItem value="new">{newSessionLabel}</SelectItem>
                 ) : null}
                 {savedSessionOptions.map((savedSession) => (
                   <SelectItem key={savedSession.id} value={savedSession.id}>
@@ -169,9 +182,9 @@ export function DynamicTemplateEditor({
             </Select>
           </div>
           <Button asChild variant="outline">
-            <Link href={`/templates/${data.template.slug}?session=new`}>
+            <Link href={`${editorBasePath}?session=new`}>
               <PlusIcon />
-              Start new
+              {startNewLabel}
             </Link>
           </Button>
         </CardContent>

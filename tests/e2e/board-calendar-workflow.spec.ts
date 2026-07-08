@@ -8,6 +8,35 @@ import {
 test.describe("@critical Board Calendar & Operational Workflow", () => {
   test.setTimeout(60_000);
 
+  test("is reachable from desktop and mobile app navigation", async ({ page }) => {
+    await page.goto("/dashboard");
+    await expect(
+      page.getByRole("link", { name: "Board Calendar" }),
+    ).toBeVisible();
+    await page.getByRole("link", { name: "Board Calendar" }).click();
+    await expect(page).toHaveURL(/\/modules\/board-calendar/);
+
+    await page.setViewportSize({ width: 390, height: 844 });
+    await page.goto("/dashboard");
+    await page.getByRole("button", { name: "Open navigation" }).click();
+    await expect(
+      page.getByRole("link", { name: "Board Calendar" }),
+    ).toBeVisible();
+  });
+
+  test("opens as a first-class module and keeps saved sessions on the module route", async ({
+    page,
+  }) => {
+    const boardCalendar = new BoardCalendarPage(page);
+
+    await boardCalendar.openNewModuleCalendar();
+    await boardCalendar.expectModuleChrome();
+    await boardCalendar.nameWorkbook(`E2E Board Calendar Module ${Date.now()}`);
+    await boardCalendar.saveNowAndWaitForPost();
+    await boardCalendar.expectSessionPersisted();
+    await expect(page).toHaveURL(/\/modules\/board-calendar\?session=/);
+  });
+
   test("renders a usable compact month calendar on mobile", async ({ page }) => {
     const boardCalendar = new BoardCalendarPage(page);
     const eventDate = getFutureDateKey(1);

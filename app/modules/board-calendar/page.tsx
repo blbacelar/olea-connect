@@ -1,0 +1,93 @@
+import { CalendarDays, FileClock } from "lucide-react";
+import Link from "next/link";
+
+import { DynamicTemplateEditor } from "@/components/templates/DynamicTemplateEditor";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent } from "@/components/ui/card";
+import { getDynamicTemplateEditorData } from "@/lib/data/templates";
+import { boardCalendarModule } from "@/lib/modules";
+
+import {
+  createTemplateExportDownloadUrl,
+  generateTemplateExport,
+  saveDynamicTemplateSession,
+} from "../../templates/actions";
+
+export default async function BoardCalendarModulePage({
+  searchParams,
+}: {
+  searchParams?: { session?: string };
+}) {
+  const editorData = await getDynamicTemplateEditorData(
+    boardCalendarModule.resourceSlug,
+    searchParams?.session,
+  );
+
+  if (!editorData) {
+    return (
+      <Card className="overflow-hidden shadow-soft">
+        <div className="h-2 bg-olea-orange" />
+        <CardContent className="grid min-h-[520px] place-items-center p-6 text-center md:p-12">
+          <div className="max-w-xl">
+            <span className="mx-auto grid size-16 place-items-center rounded-xl bg-olea-light text-olea-green">
+              <FileClock className="size-8" />
+            </span>
+            <p className="mt-5 text-xs font-semibold uppercase tracking-[0.08em] text-olea-green">
+              Module unavailable
+            </p>
+            <h1 className="mt-2 text-balance text-3xl font-bold md:text-4xl">
+              Board Calendar
+            </h1>
+            <p className="mx-auto mt-4 max-w-lg leading-7 text-slate-600">
+              This module is not available for your current workspace yet.
+              Upgrade your plan or choose it as one of your selected resources
+              to use the connected board calendar system.
+            </p>
+            <Button asChild className="mt-8">
+              <Link href="/templates">Browse resources</Link>
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  return (
+    <div className="space-y-5">
+      <div className="rounded-2xl border bg-gradient-to-br from-white to-olea-light/60 p-5 shadow-soft md:p-6">
+        <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+          <div>
+            <div className="inline-flex items-center gap-2 rounded-full bg-white px-3 py-1 text-xs font-semibold uppercase tracking-[0.08em] text-olea-dark shadow-sm">
+              <CalendarDays className="size-3.5" />
+              Olea module
+            </div>
+            <h1 className="mt-3 text-3xl font-bold tracking-[-0.03em] text-slate-950 md:text-4xl">
+              Board Calendar
+            </h1>
+            <p className="mt-2 max-w-3xl text-sm leading-6 text-slate-600 md:text-base">
+              Plan board meetings, generate staff preparation tasks, maintain
+              AGM milestones, and produce board-ready calendar outputs from one
+              connected workspace.
+            </p>
+          </div>
+          <Button asChild variant="outline" className="lg:mt-1">
+            <Link href="/templates">Back to resources</Link>
+          </Button>
+        </div>
+      </div>
+
+      <DynamicTemplateEditor
+        basePath={boardCalendarModule.path}
+        data={editorData}
+        eyebrow="Board calendar module"
+        newSessionLabel="Unsaved new calendar"
+        savedSessionsLabel="Saved calendars"
+        saveSession={saveDynamicTemplateSession}
+        sessionNameLabel="Calendar workspace name"
+        startNewLabel="Start new calendar"
+        generateExport={generateTemplateExport}
+        createDownloadUrl={createTemplateExportDownloadUrl}
+      />
+    </div>
+  );
+}
