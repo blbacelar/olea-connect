@@ -41,8 +41,18 @@ export async function signUpWithEmail(registration: RegistrationState) {
   return data;
 }
 
-export async function signIn(email: string, password: string) {
-  const supabase = createClient();
+type SignInOptions = {
+  rememberFor30Days?: boolean;
+};
+
+export async function signIn(
+  email: string,
+  password: string,
+  options?: SignInOptions,
+) {
+  const supabase = createClient({
+    rememberFor30Days: Boolean(options?.rememberFor30Days),
+  });
   const { data, error } = await supabase.auth.signInWithPassword({
     email: email.trim().toLowerCase(),
     password,

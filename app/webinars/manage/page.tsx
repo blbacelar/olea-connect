@@ -143,7 +143,7 @@ export default async function ManageWebinarsPage() {
       <div className="flex flex-wrap items-start justify-between gap-4">
         <PageHeader
           title="Manage webinars"
-          description="Review webinar operations, open public details, and archive past or canceled webinars."
+          description="Review webinar operations, open public details, and archive webinars that should no longer appear to members."
         />
         <Button asChild>
           <Link href="/webinars/new">
@@ -166,7 +166,7 @@ export default async function ManageWebinarsPage() {
           webinars={past}
           now={now}
           emptyTitle="No past or canceled webinars"
-          emptyDescription="Old or canceled webinars that can be archived will appear here."
+          emptyDescription="Old or canceled webinars will appear here."
         />
         <WebinarAdminSection
           title="Archived"

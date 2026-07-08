@@ -19,6 +19,7 @@ export default function LoginPage() {
   const [error, setError] = useState("");
   const [message, setMessage] = useState("");
   const [nextPath, setNextPath] = useState("");
+  const [rememberFor30Days, setRememberFor30Days] = useState(false);
   const [isPending, startTransition] = useTransition();
 
   useEffect(() => {
@@ -40,7 +41,7 @@ export default function LoginPage() {
     startTransition(async () => {
       try {
         setError("");
-        await signIn(email, password);
+        await signIn(email, password, { rememberFor30Days });
         router.push(
           nextPath.startsWith("/") && !nextPath.startsWith("//")
             ? nextPath
@@ -100,7 +101,12 @@ export default function LoginPage() {
           </p>
         ) : null}
         <label className="flex items-center gap-2 text-sm text-slate-500">
-          <input type="checkbox" className="size-4 accent-olea-green" />
+          <input
+            type="checkbox"
+            className="size-4 accent-olea-green"
+            checked={rememberFor30Days}
+            onChange={(event) => setRememberFor30Days(event.target.checked)}
+          />
           Remember me for 30 days
         </label>
         <Button

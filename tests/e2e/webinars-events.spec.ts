@@ -209,7 +209,7 @@ testWithData.describe("@critical webinar and event access", () => {
     });
   });
 
-  testWithData("only exposes archive for past or canceled webinars", async ({
+  testWithData("allows event admins to archive upcoming and canceled webinars", async ({
     baseURL,
     page,
     testData,
@@ -254,15 +254,19 @@ testWithData.describe("@critical webinar and event access", () => {
     await webinars.openManagePage();
 
     await expect(webinars.manageRow(scheduled.title)).toBeVisible();
+    await webinars.archiveEventFromManage(scheduled.title);
     await expect(
-      webinars.manageRow(scheduled.title).getByRole("button", { name: "Archive" }),
-    ).toHaveCount(0);
+      webinars.manageRow(scheduled.title).getByText("archived"),
+    ).toBeVisible();
     await expect(webinars.manageRow(canceled.title)).toBeVisible();
     await webinars.archiveEventFromManage(canceled.title);
 
     await expect(
       webinars.manageRow(canceled.title).getByText("archived"),
     ).toBeVisible();
+    expect(await testData.getEventByTitle(scheduled.title)).toMatchObject({
+      status: "archived",
+    });
     expect(await testData.getEventByTitle(canceled.title)).toMatchObject({
       status: "archived",
     });

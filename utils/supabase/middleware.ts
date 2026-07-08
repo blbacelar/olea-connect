@@ -1,6 +1,11 @@
 import { createServerClient } from "@supabase/ssr";
 import { type NextRequest, NextResponse } from "next/server";
 
+import {
+  applyAuthCookieDuration,
+  AUTH_REMEMBER_COOKIE_NAME,
+} from "./auth-cookie-options";
+
 const publicPagePaths = new Set([
   "/",
   "/login",
@@ -28,6 +33,8 @@ function isPublicPath(pathname: string) {
 
 export async function updateSession(request: NextRequest) {
   let response = NextResponse.next({ request });
+  const rememberFor30Days =
+    request.cookies.get(AUTH_REMEMBER_COOKIE_NAME)?.value === "1";
 
   const supabase = createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -45,7 +52,11 @@ export async function updateSession(request: NextRequest) {
           response = NextResponse.next({ request });
 
           cookiesToSet.forEach(({ name, value, options }) => {
-            response.cookies.set(name, value, options);
+            response.cookies.set(
+              name,
+              value,
+              applyAuthCookieDuration(options, rememberFor30Days),
+            );
           });
         },
       },

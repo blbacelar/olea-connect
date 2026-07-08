@@ -41,6 +41,9 @@ test.describe("@smoke @critical public entry points", () => {
     await expect(page.getByLabel("Email address")).toBeVisible();
     await expect(page.getByLabel("Password")).toBeVisible();
     await expect(
+      page.getByRole("checkbox", { name: "Remember me for 30 days" }),
+    ).toBeVisible();
+    await expect(
       page.getByRole("link", { name: "Forgot password?" }),
     ).toHaveAttribute("href", "/reset-password");
   });

@@ -57,11 +57,8 @@ export function isUpcomingOrActiveEvent(webinar: Webinar, now: number) {
   return !hasStarted || webinar.registered;
 }
 
-export function canArchiveWebinar(webinar: Webinar, now: number) {
-  return (
-    webinar.status !== "archived" &&
-    (webinar.status === "canceled" || new Date(webinar.endsAt).getTime() < now)
-  );
+export function canArchiveWebinar(webinar: Webinar, _now: number) {
+  return webinar.status !== "archived";
 }
 
 export function EventAction({ webinar }: { webinar: Webinar }) {

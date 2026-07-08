@@ -406,13 +406,6 @@ export async function archiveWebinarEvent(
       };
     }
 
-    const hasEnded = new Date(event.ends_at).getTime() < Date.now();
-    if (!hasEnded && event.status !== "canceled") {
-      throw new Error(
-        "Only past or canceled webinars can be archived.",
-      );
-    }
-
     const { error } = await admin
       .from("events")
       .update({ status: "archived" })
