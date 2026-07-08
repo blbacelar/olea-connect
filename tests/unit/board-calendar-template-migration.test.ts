@@ -25,10 +25,15 @@ const refactorMigrationPath = join(
   process.cwd(),
   "supabase/migrations/20260629222141_refactor_board_calendar_setup_workflow.sql",
 );
+const emptyDefaultsMigrationPath = join(
+  process.cwd(),
+  "supabase/migrations/20260708160000_empty_board_calendar_portal_defaults.sql",
+);
 const migrationSql = readFileSync(migrationPath, "utf8");
 const presentationMigrationSql = readFileSync(presentationMigrationPath, "utf8");
 const snapshotSyncMigrationSql = readFileSync(snapshotSyncMigrationPath, "utf8");
 const refactorMigrationSql = readFileSync(refactorMigrationPath, "utf8");
+const emptyDefaultsMigrationSql = readFileSync(emptyDefaultsMigrationPath, "utf8");
 
 function extractJsonBlock(label: string) {
   const match = migrationSql.match(
@@ -191,6 +196,24 @@ describe("board calendar workflow template migration", () => {
     );
     expect(migrationSql).toContain(
       "('10000000-0000-4000-8000-000000000007', 'harvest')",
+    );
+  });
+
+  it("clears board portal defaults so new workbooks start empty", () => {
+    expect(emptyDefaultsMigrationSql).toContain(
+      "board-calendar-operational-workflow",
+    );
+    expect(emptyDefaultsMigrationSql).toContain("'fiscal_year', ''");
+    expect(emptyDefaultsMigrationSql).toContain("'monthly_calendar_year', ''");
+    expect(emptyDefaultsMigrationSql).toContain("'committees', '[]'::jsonb");
+    expect(emptyDefaultsMigrationSql).toContain(
+      "'operational_task_rules', '[]'::jsonb",
+    );
+    expect(emptyDefaultsMigrationSql).toContain(
+      "'agm_milestones', '[]'::jsonb",
+    );
+    expect(emptyDefaultsMigrationSql).toContain(
+      "'event_categories', '[]'::jsonb",
     );
   });
 

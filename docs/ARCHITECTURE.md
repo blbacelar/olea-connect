@@ -168,17 +168,21 @@ Database concepts:
 - `template_exports` records generated files.
 - `template_export_downloads` records download events.
 
-### Board Calendar Template
+### Board Calendar Portal
 
-The Board Calendar & Operational Workflow template has additional client-side
-logic:
+The Board Calendar is a board portal that currently uses the dynamic template
+session engine for storage and exports. The CEO prototype HTML is the source of
+truth for the portal behavior, while Olea Connects owns the final UI theme,
+auth, persistence, branding, and platform chrome.
+
+The portal has additional client-side logic:
 
 - `components/templates/BoardCalendarWorkbench.tsx`
 - `lib/template-renderer/board-calendar-editor.ts`
 - `lib/template-renderer/calendar-view.ts`
 - `lib/template-renderer/calendar-time.ts`
 
-It maps a workbook-style template into calendar events and derived annual,
+It maps board calendar source data into calendar events and derived annual,
 monthly, operational, task, and AGM views.
 
 The Board Calendar data model has three source areas:
@@ -189,6 +193,15 @@ The Board Calendar data model has three source areas:
 - Meeting/calendar source rows in `meetings`, `annual_highlights`, `tasks`, and
   `agm_milestones`.
 - Derived views generated in the client from the source rows.
+
+New Board Calendar portal instances intentionally start with empty default
+values. The migration
+`supabase/migrations/20260708160000_empty_board_calendar_portal_defaults.sql`
+clears seeded committees, task rules, AGM milestones, event categories, fiscal
+year values, and sample calendar rows from the template definition. Runtime
+helpers should not reintroduce implicit fallbacks like "Administrator", "Board
+Meeting", "TBC", or "Not Started" when creating new records; those should remain
+dropdown choices only.
 
 `components/templates/BoardCalendarWorkflowPanels.tsx` owns the specialized
 Setup, Staff Task List, and AGM Timeline panels. `BoardCalendarWorkbench` keeps
@@ -206,10 +219,14 @@ migration keeps backward compatibility by converting existing `weeks_before`
 values to `days_before`, and runtime helpers still read legacy data as a
 fallback.
 
-Category colors are still stored in the template data under
+Category colors are still stored in the portal data under
 `event_categories`, but the product UI manages them inline from the calendar
 entry form. Avoid reintroducing a separate user-facing "Colour key" workflow
 unless there is a clear bulk-edit use case.
+
+Do not add a Board Calendar Integrations tab. Integration credentials and replay
+operations belong in platform-level settings. The Board Calendar portal should
+only surface integration outcomes when they directly affect board work.
 
 Calendar entry creates/updates use `updateData()` from
 `hooks/use-dynamic-template-session.ts` so mutations are applied against the

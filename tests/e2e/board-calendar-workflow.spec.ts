@@ -42,7 +42,7 @@ test.describe("@critical Board Calendar & Operational Workflow", () => {
     const eventDate = getFutureDateKey(1);
 
     await page.setViewportSize({ width: 390, height: 844 });
-    await boardCalendar.openNewWorkbook();
+    await boardCalendar.openNewModuleCalendar();
 
     await boardCalendar.expectMonthGridFitsViewport();
     await boardCalendar.selectCalendarDate(eventDate);
@@ -60,7 +60,7 @@ test.describe("@critical Board Calendar & Operational Workflow", () => {
     const expectedAgmMilestoneDate = getRelativeDateKey(agmDate, -30);
 
     await test.step("open a new isolated board calendar workbook", async () => {
-      await boardCalendar.openNewWorkbook();
+      await boardCalendar.openNewModuleCalendar();
       await boardCalendar.nameWorkbook(`E2E Board Calendar ${Date.now()}`);
       await boardCalendar.saveNowAndWaitForPost();
       await boardCalendar.expectSessionPersisted();
@@ -92,6 +92,7 @@ test.describe("@critical Board Calendar & Operational Workflow", () => {
       await boardCalendar.chooseWorkspaceView("Calendar workspace");
       await boardCalendar.expectPastDatesDisabled();
       await boardCalendar.selectCalendarDate(eventDate);
+      await boardCalendar.expectBlankEntryForm();
       await boardCalendar.fillTitle("");
       await boardCalendar.expectAddDisabled();
     });

@@ -10,7 +10,7 @@ export type BoardCalendarEntryType =
   | "Annual calendar note"
   | "Operational task"
   | "AGM milestone"
-  | "Board meeting or event";
+  | "Meeting or event";
 
 export type MeetingEntry = {
   title: string;
@@ -90,10 +90,7 @@ export class BoardCalendarPage {
     await expect(
       this.page.getByRole("heading", { name: "Board Calendar", exact: true }),
     ).toBeVisible();
-    await expect(this.page.getByText("Olea module")).toBeVisible();
-    await expect(
-      this.page.getByText("Board calendar module", { exact: true }),
-    ).toBeVisible();
+    await expect(this.page.getByText("Board portal").first()).toBeVisible();
     await expect(this.page.getByLabel("Calendar workspace name")).toBeVisible();
     await expect(this.page.getByText("Saved calendars")).toBeVisible();
     await expect(
@@ -110,7 +107,7 @@ export class BoardCalendarPage {
     await expect(this.page.getByRole("tab", { name: "Board Packages" })).toBeVisible();
     await expect(this.page.getByRole("tab", { name: "Directory" })).toBeVisible();
     await expect(this.page.getByRole("tab", { name: "Audit Log" })).toBeVisible();
-    await expect(this.page.getByRole("tab", { name: "Integrations" })).toBeVisible();
+    await expect(this.page.getByRole("tab", { name: "Integrations" })).toHaveCount(0);
     await expect(this.page.getByRole("tab", { name: "Settings" })).toBeVisible();
     await expect(
       this.page.getByRole("button", { name: "Add meeting" }),
@@ -307,19 +304,30 @@ export class BoardCalendarPage {
   }
 
   async selectCalendarDate(dateKey: string) {
+    await this.chooseWorkspaceView("Calendar workspace");
     await this.goToMonthContaining(dateKey);
     await this.monthGrid
       .getByRole("button", { name: `Select ${dateKey}`, exact: true })
       .click();
     await expect(this.page.getByRole("heading", { name: dateKey })).toBeVisible();
-    await expect(this.page.getByLabel("Entry date")).toHaveValue(dateKey);
+  }
+
+  async openEntryForm() {
+    await this.chooseWorkspaceView("Calendar workspace");
+    await this.page.getByRole("button", { name: "Add meeting" }).click();
+    await expect(this.entryForm).toBeVisible();
+    await expect(
+      this.page.getByRole("dialog", { name: "Add Entry" }),
+    ).toBeVisible();
   }
 
   async setEntryType(option: BoardCalendarEntryType) {
+    await this.ensureEntryFormOpen();
     await this.chooseSelectOption("Entry type", option, this.entryForm);
   }
 
   async fillMeeting(entry: MeetingEntry) {
+    await this.ensureEntryFormOpen();
     await this.fillTitle(entry.title);
     if (entry.category) {
       await this.chooseSelectOption("Category", entry.category, this.entryForm);
@@ -347,8 +355,9 @@ export class BoardCalendarPage {
   }
 
   async addAnnualNote(dateKey: string, entry: AnnualNoteEntry) {
-    await this.setEntryType("Annual calendar note");
     await this.selectCalendarDate(dateKey);
+    await this.openEntryForm();
+    await this.setEntryType("Annual calendar note");
     await this.fillTitle(entry.title);
     if (entry.category) {
       await this.chooseSelectOption("Category", entry.category, this.entryForm);
@@ -359,8 +368,9 @@ export class BoardCalendarPage {
   }
 
   async addOperationalTask(dateKey: string, entry: OperationalTaskEntry) {
-    await this.setEntryType("Operational task");
     await this.selectCalendarDate(dateKey);
+    await this.openEntryForm();
+    await this.setEntryType("Operational task");
     await this.fillTitle(entry.title);
     if (entry.status) {
       await this.chooseSelectOption("Workflow status", entry.status, this.entryForm);
@@ -377,8 +387,9 @@ export class BoardCalendarPage {
   }
 
   async addAgmMilestone(dateKey: string, entry: AgmMilestoneEntry) {
-    await this.setEntryType("AGM milestone");
     await this.selectCalendarDate(dateKey);
+    await this.openEntryForm();
+    await this.setEntryType("AGM milestone");
     await this.fillTitle(entry.title);
     if (entry.track) await this.chooseSelectOption("Track", entry.track, this.entryForm);
     if (entry.status) {
@@ -395,14 +406,19 @@ export class BoardCalendarPage {
   }
 
   async fillTitle(title: string) {
+    await this.ensureEntryFormOpen();
     await this.page.getByLabel("Title").fill(title);
   }
 
   async setCalendarColor(color: string) {
     await this.page.getByLabel("Calendar color", { exact: true }).fill(color);
-    await expect(this.page.getByLabel("Calendar color hex code")).toHaveValue(
-      color,
-    );
+    await expect
+      .poll(async () =>
+        (
+          await this.page.getByLabel("Calendar color hex code").inputValue()
+        ).toLowerCase(),
+      )
+      .toBe(color.toLowerCase());
   }
 
   async expectDefaultCalendarColor(color: string) {
@@ -429,12 +445,18 @@ export class BoardCalendarPage {
   async addToCalendar() {
     await this.expectAddEnabled();
     await this.entryForm.getByRole("button", { name: "Add entry" }).click();
-    await expect(this.field("Title")).toHaveValue("");
+    await expect(this.entryForm).toHaveCount(0);
     await this.waitForSaved();
   }
 
   async expectBlankEntryForm() {
+    await this.ensureEntryFormOpen();
     await expect(this.field("Title")).toHaveValue("");
+    await expect(this.field("Category")).toContainText("Choose category");
+    await expect(this.field("Confirmed?")).toContainText("Choose confirmation");
+    await expect(
+      this.entryForm.getByLabel("Calendar color", { exact: true }),
+    ).toHaveCount(0);
   }
 
   async editEntry(entryAccessibleName: RegExp | string) {
@@ -442,12 +464,12 @@ export class BoardCalendarPage {
       .getByRole("button", { name: entryAccessibleName })
       .first()
       .click();
-    await expect(this.page.getByRole("heading", { name: "Edit entry" })).toBeVisible();
+    await expect(this.page.getByRole("dialog", { name: "Edit entry" })).toBeVisible();
   }
 
   async updateEntry() {
     await this.page.getByRole("button", { name: "Update entry" }).click();
-    await expect(this.page.getByRole("heading", { name: "Add Entry" })).toBeVisible();
+    await expect(this.entryForm).toHaveCount(0);
     await this.waitForSaved();
   }
 
@@ -566,6 +588,12 @@ export class BoardCalendarPage {
     return this.page.getByRole("dialog", {
       name: "Delete this calendar entry?",
     });
+  }
+
+  private async ensureEntryFormOpen() {
+    if (await this.entryForm.count()) return;
+
+    await this.openEntryForm();
   }
 
   private async goToMonthContaining(dateKey: string) {

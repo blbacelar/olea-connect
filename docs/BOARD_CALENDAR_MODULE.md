@@ -1,8 +1,13 @@
-# Board Calendar Module
+# Board Calendar Portal
 
-The Board Calendar is treated as an Olea module, not a simple document template.
-It still uses the dynamic template session engine for persistence, exports, brand
-snapshots, and multi-instance workbooks, but the user-facing entry point is:
+The Board Calendar is treated as an Olea board portal, not a simple document
+template. The CEO prototype HTML from the Board Calendar handoff is the product
+behavior guide for the portal. We should use Olea Connects UI components and
+theme, but keep the portal behavior aligned with that source of truth.
+
+The current implementation still uses the dynamic template session engine for
+persistence, exports, brand snapshots, and multi-instance calendars, but the
+user-facing entry point is:
 
 `/modules/board-calendar`
 
@@ -10,16 +15,17 @@ The legacy template route remains available for compatibility:
 
 `/templates/board-calendar-operational-workflow`
 
-## Why It Is A Module
+## Why It Is A Portal
 
-The Board Calendar includes workflow behavior that is larger than a static
-template:
+The Board Calendar includes board-operations behavior that is larger than a
+static workbook:
 
 - calendar-first meeting and event entry
 - repeatable setup data for committees and task rules
 - generated staff tasks from meeting dates
 - AGM milestone calculations from a confirmed AGM date
-- annual, monthly, and operational output views
+- annual, monthly, and operational board views
+- board packages, directory, and audit log workspaces
 - PDF/DOCX exports through the shared template export pipeline
 
 ## Architecture
@@ -46,20 +52,34 @@ Core files:
 - Starting a new calendar from the module route should keep the browser on the
   module route after the first save.
 
-## Module UX
+## Portal UX
 
-The Board Calendar module uses internal tabs for the module areas inspired by
-the CEO prototype: Dashboard, Calendar, Meetings, Workflows, Board Packages,
-Directory, Audit Log, Integrations, and Settings.
+The Board Calendar portal uses internal tabs for the board-operations areas
+inspired by the CEO prototype: Dashboard, Calendar, Meetings, Workflows, Board
+Packages, Directory, Audit Log, and Settings.
 
-The top module action bar owns the primary workflow actions:
+The top portal action bar owns the primary workflow actions:
 
-- `Add meeting` opens the calendar tab and scrolls to the entry composer.
+- `Add meeting` opens the calendar tab and launches the entry modal.
 - `Export PDF` uses the browser print flow.
 - `Add to calendar` downloads an `.ics` calendar file from dated module events.
 
-Areas that are part of the product direction but not wired to persisted module
+The portal should not repeat organization identity or fiscal-year setup details
+in its chrome. Those details belong in the Settings tab and the shared template
+workspace header.
+
+The portal should not include an Integrations tab. Integration management belongs
+in platform-level settings; this portal may later show integration-driven
+outcomes only where they directly support board work.
+
+Areas that are part of the product direction but not wired to persisted portal
 data yet should render a clear coming-soon panel, not a dead control.
+
+New Board Calendar workspaces must start empty. Do not seed mock committees,
+task rules, AGM milestones, event categories, fiscal years, or sample meetings in
+template defaults, and do not preselect entry form values such as category,
+status, confirmation, lead contact, or responsible person. Placeholder text is
+acceptable; persisted values must come from explicit user input.
 
 ## Product Direction
 

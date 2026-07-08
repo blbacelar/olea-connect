@@ -18,7 +18,7 @@ The platform also includes:
 - Seedling "choose your 3 templates" onboarding.
 - Brand setup and reusable organization identity.
 - Dynamic template sessions with saved workbooks.
-- Board Calendar & Operational Workflow editor.
+- Board Calendar portal.
 - Grants, webinars, and native community entry points.
 - Team seats and invitations.
 - Transactional email, webhooks, and background workers.
@@ -62,10 +62,11 @@ if the copy is likely to become user-facing product text.
 5. User generates PDF or DOCX exports.
 6. Export records and download records are stored for auditability.
 
-### Board Calendar & Operational Workflow
+### Board Calendar Portal
 
-This is the most complex template currently in the app. It behaves like a
-calendar-backed workbook:
+This is the most complex module currently in the app. It should behave like a
+board portal guided by the CEO prototype HTML, while using Olea Connects
+components, auth, branding, and persistence:
 
 - Users can create more than one workbook/session.
 - The Setup view stores workbook-level details: organization name, fiscal year,
@@ -73,6 +74,10 @@ calendar-backed workbook:
   operational task rules.
 - Committees are added one at a time, up to 8. The UI should not prefill all 8
   committee slots.
+- New Board Calendar portal workspaces should not ship with mock/default
+  content. Setup fields, committees, operational task rules, meetings, AGM
+  milestones, event categories, fiscal year, status, confirmation, and assignee
+  values should stay empty until the user enters or selects them.
 - Operational task rules are configured in Setup with a task label, days
   before/after the related meeting, applies-to meeting type, and default
   responsible role/person.
@@ -98,6 +103,9 @@ calendar-backed workbook:
   Setup, committees, generated task rules, staff task updates, AGM target date
   calculation, duplicate same-date/same-time events, edit, delete confirmation,
   ordering, mobile rendering, and reload persistence.
+- The portal should not expose its own Integrations tab. Integration management
+  belongs to platform Settings; the Board Calendar should only show board-work
+  outcomes from integrations when those outcomes are implemented.
 
 ### Team Seats
 

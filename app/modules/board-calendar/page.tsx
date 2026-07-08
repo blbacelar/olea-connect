@@ -59,15 +59,15 @@ export default async function BoardCalendarModulePage({
           <div>
             <div className="inline-flex items-center gap-2 rounded-full bg-white px-3 py-1 text-xs font-semibold uppercase tracking-[0.08em] text-olea-dark shadow-sm">
               <CalendarDays className="size-3.5" />
-              Olea module
+              Board portal
             </div>
             <h1 className="mt-3 text-3xl font-bold tracking-[-0.03em] text-slate-950 md:text-4xl">
               Board Calendar
             </h1>
             <p className="mt-2 max-w-3xl text-sm leading-6 text-slate-600 md:text-base">
               Plan board meetings, generate staff preparation tasks, maintain
-              AGM milestones, and produce board-ready calendar outputs from one
-              connected workspace.
+              board packages, and keep your board operations moving from one
+              connected portal.
             </p>
           </div>
           <Button asChild variant="outline" className="lg:mt-1">
@@ -79,7 +79,7 @@ export default async function BoardCalendarModulePage({
       <DynamicTemplateEditor
         basePath={boardCalendarModule.path}
         data={editorData}
-        eyebrow="Board calendar module"
+        eyebrow="Board portal"
         newSessionLabel="Unsaved new calendar"
         savedSessionsLabel="Saved calendars"
         saveSession={saveDynamicTemplateSession}

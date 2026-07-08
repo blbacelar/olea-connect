@@ -82,7 +82,6 @@ type BoardCalendarModuleTab =
   | "packages"
   | "directory"
   | "audit_log"
-  | "integrations"
   | "settings";
 
 const viewOptions: Array<{ label: string; value: CalendarMode }> = [
@@ -103,27 +102,17 @@ const moduleTabs: Array<{
   { icon: PackageOpen, label: "Board Packages", value: "packages" },
   { icon: Users, label: "Directory", value: "directory" },
   { icon: ScrollText, label: "Audit Log", value: "audit_log" },
-  { icon: Download, label: "Integrations", value: "integrations" },
   { icon: Settings, label: "Settings", value: "settings" },
 ];
 
 const entryTypes: Array<{
-  defaultCategory: string;
   label: string;
   value: BoardCalendarEntryType;
 }> = [
-  { label: "Meeting or event", value: "meeting", defaultCategory: "Board Meeting" },
-  {
-    label: "Annual calendar note",
-    value: "annual_highlight",
-    defaultCategory: "Key Deadline",
-  },
-  { label: "Operational task", value: "staff_task", defaultCategory: "Not Started" },
-  {
-    label: "AGM milestone",
-    value: "agm_milestone",
-    defaultCategory: "Governance",
-  },
+  { label: "Meeting or event", value: "meeting" },
+  { label: "Annual calendar note", value: "annual_highlight" },
+  { label: "Operational task", value: "staff_task" },
+  { label: "AGM milestone", value: "agm_milestone" },
 ];
 
 const confirmedOptions = ["Yes", "TBC", "No"];
@@ -186,23 +175,23 @@ export function BoardCalendarWorkbench({
   const [selectedDateKey, setSelectedDateKey] = useState(initialDateKey);
   const [entryType, setEntryType] = useState<BoardCalendarEntryType>("meeting");
   const [entryTitle, setEntryTitle] = useState("");
-  const [entryCategory, setEntryCategory] = useState("Board Meeting");
+  const [entryCategory, setEntryCategory] = useState("");
   const [entryColor, setEntryColor] = useState(
-    boardCalendarCategoryColorDefaults["Board Meeting"],
+    boardCalendarCategoryColorDefaults["Other / General"],
   );
   const [entryTime, setEntryTime] = useState("");
   const [entryLocation, setEntryLocation] = useState("");
   const [entryNotes, setEntryNotes] = useState("");
   const [entryVirtualLink, setEntryVirtualLink] = useState("");
   const [entryLeadContact, setEntryLeadContact] = useState("");
-  const [entryConfirmed, setEntryConfirmed] = useState("TBC");
+  const [entryConfirmed, setEntryConfirmed] = useState("");
   const [entryRelatedMeeting, setEntryRelatedMeeting] = useState("");
   const [entryResponsible, setEntryResponsible] = useState("");
-  const [entryStatus, setEntryStatus] = useState("Not Started");
+  const [entryStatus, setEntryStatus] = useState("");
   const [entryDone, setEntryDone] = useState(false);
-  const [entryWeeksBefore, setEntryWeeksBefore] = useState("0");
+  const [entryWeeksBefore, setEntryWeeksBefore] = useState("");
   const [editingEventId, setEditingEventId] = useState<string | null>(null);
-  const composerRef = useRef<HTMLDivElement>(null);
+  const [isEntryModalOpen, setIsEntryModalOpen] = useState(false);
 
   const monthIndex = anchorDate.getMonth();
   const year = anchorDate.getFullYear();
@@ -232,6 +221,11 @@ export function BoardCalendarWorkbench({
   const editingEvent = editingEventId
     ? events.find((event) => event.id === editingEventId) ?? null
     : null;
+  const selectedColorCategory = entryType === "staff_task" ? entryStatus : entryCategory;
+  const isEntryReady =
+    Boolean(entryTitle.trim()) &&
+    Boolean(selectedColorCategory.trim()) &&
+    (Boolean(editingEventId) || !isSelectedDateInPast);
 
   function moveBackward() {
     setAnchorDate((current) => {
@@ -263,27 +257,23 @@ export function BoardCalendarWorkbench({
   }
 
   function updateEntryType(value: BoardCalendarEntryType) {
-    const defaultCategory =
-      entryTypes.find((option) => option.value === value)?.defaultCategory ??
-      "Board Meeting";
-
     setEntryType(value);
-    setEntryCategory(defaultCategory);
-    setEntryColor(resolveEntryColor(defaultCategory));
+    setEntryCategory("");
+    setEntryColor(boardCalendarCategoryColorDefaults["Other / General"]);
     setEntryTime("");
     setEntryLocation("");
     setEntryVirtualLink("");
     setEntryLeadContact("");
-    setEntryConfirmed("TBC");
+    setEntryConfirmed("");
     setEntryRelatedMeeting("");
     setEntryResponsible("");
-    setEntryStatus(value === "staff_task" ? defaultCategory : "Not Started");
+    setEntryStatus("");
     setEntryDone(false);
-    setEntryWeeksBefore("0");
+    setEntryWeeksBefore("");
   }
 
   function addCalendarEntry() {
-    if (!entryTitle.trim()) return;
+    if (!isEntryReady) return;
     if (!editingEventId && isSelectedDateInPast) return;
 
     const input = {
@@ -325,25 +315,22 @@ export function BoardCalendarWorkbench({
   }
 
   function clearEntryForm() {
-    const defaultCategory =
-      entryTypes.find((option) => option.value === entryType)?.defaultCategory ??
-      "Board Meeting";
-
     setEditingEventId(null);
-    setEntryCategory(defaultCategory);
+    setEntryCategory("");
     setEntryTitle("");
-    setEntryColor(resolveEntryColor(defaultCategory));
+    setEntryColor(boardCalendarCategoryColorDefaults["Other / General"]);
     setEntryTime("");
     setEntryLocation("");
     setEntryNotes("");
     setEntryVirtualLink("");
     setEntryLeadContact("");
-    setEntryConfirmed("TBC");
+    setEntryConfirmed("");
     setEntryRelatedMeeting("");
     setEntryResponsible("");
-    setEntryStatus(entryType === "staff_task" ? defaultCategory : "Not Started");
+    setEntryStatus("");
     setEntryDone(false);
-    setEntryWeeksBefore("0");
+    setEntryWeeksBefore("");
+    setIsEntryModalOpen(false);
   }
 
   function editCalendarEntry(event: CalendarViewEvent) {
@@ -361,13 +348,18 @@ export function BoardCalendarWorkbench({
     setEntryNotes(input.notes ?? "");
     setEntryVirtualLink(input.virtualLink ?? "");
     setEntryLeadContact(input.leadContact ?? "");
-    setEntryConfirmed(input.confirmed ?? "TBC");
+    setEntryConfirmed(input.confirmed ?? "");
     setEntryRelatedMeeting(input.relatedMeeting ?? "");
     setEntryResponsible(input.responsible ?? "");
-    setEntryStatus(input.status ?? input.category ?? "Not Started");
+    setEntryStatus(input.status ?? input.category ?? "");
     setEntryDone(Boolean(input.done));
-    setEntryWeeksBefore(String(input.daysBeforeAgm ?? input.weeksBefore ?? 0));
+    setEntryWeeksBefore(
+      input.daysBeforeAgm === undefined && input.weeksBefore === undefined
+        ? ""
+        : String(input.daysBeforeAgm ?? (input.weeksBefore ?? 0) * 7),
+    );
     setActiveTab("calendar");
+    setIsEntryModalOpen(true);
     const date = parseCalendarDateKey(input.dateKey);
     if (date) setAnchorDate(date);
   }
@@ -385,13 +377,25 @@ export function BoardCalendarWorkbench({
     const fallbackDate = parseCalendarDateKey(fallbackDateKey);
 
     setActiveTab("calendar");
-    updateEntryType("meeting");
     setSelectedDateKey(fallbackDateKey);
     if (fallbackDate) setAnchorDate(fallbackDate);
-
-    window.setTimeout(() => {
-      composerRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
-    }, 0);
+    setEditingEventId(null);
+    setEntryType("meeting");
+    setEntryCategory("");
+    setEntryColor(boardCalendarCategoryColorDefaults["Other / General"]);
+    setEntryTitle("");
+    setEntryTime("");
+    setEntryLocation("");
+    setEntryNotes("");
+    setEntryVirtualLink("");
+    setEntryLeadContact("");
+    setEntryConfirmed("");
+    setEntryRelatedMeeting("");
+    setEntryResponsible("");
+    setEntryStatus("");
+    setEntryDone(false);
+    setEntryWeeksBefore("");
+    setIsEntryModalOpen(true);
   }
 
   function exportPdf() {
@@ -473,52 +477,35 @@ export function BoardCalendarWorkbench({
 
   return (
     <section className="overflow-hidden rounded-xl border bg-white shadow-soft">
-      <div className="border-b bg-gradient-to-br from-white to-olea-light/60 p-4 sm:p-6">
-        <div className="flex flex-col gap-4 xl:flex-row xl:items-start xl:justify-between">
-          <div>
-            <div className="inline-flex items-center gap-2 rounded-full bg-white px-3 py-1 text-xs font-semibold uppercase tracking-[0.08em] text-olea-dark shadow-sm">
-              <CalendarDays className="size-3.5" />
-              Board Calendar Module
-            </div>
-            <h2 className="mt-3 text-2xl font-semibold tracking-[-0.02em] text-slate-950">
-              {organizationName} board calendar
-            </h2>
-            <p className="mt-1.5 max-w-3xl text-sm leading-6 text-slate-600">
-              Add meetings, notes, deadlines, staff tasks, and AGM milestones
-              directly from the calendar. Annual and monthly views are generated
-              from the same entries, so your workbook stays connected.
-            </p>
-          </div>
-
-          <div className="flex w-full flex-col gap-2 sm:flex-row sm:flex-wrap xl:w-auto xl:justify-end">
-            <Button
-              type="button"
-              className="w-full sm:w-auto"
-              onClick={openMeetingComposer}
-            >
-              <Plus className="size-4" />
-              Add meeting
-            </Button>
-            <Button
-              type="button"
-              variant="outline"
-              className="w-full sm:w-auto"
-              onClick={exportPdf}
-            >
-              <FileText className="size-4" />
-              Export PDF
-            </Button>
-            <Button
-              type="button"
-              variant="outline"
-              className="w-full sm:w-auto"
-              disabled={!hasDatedEvents}
-              onClick={addToCalendarFile}
-            >
-              <Download className="size-4" />
-              Add to calendar
-            </Button>
-          </div>
+      <div className="border-b bg-gradient-to-br from-white to-olea-light/60 p-4 sm:p-5">
+        <div className="flex w-full flex-col gap-2 sm:flex-row sm:flex-wrap sm:justify-end">
+          <Button
+            type="button"
+            className="w-full sm:w-auto"
+            onClick={openMeetingComposer}
+          >
+            <Plus className="size-4" />
+            Add meeting
+          </Button>
+          <Button
+            type="button"
+            variant="outline"
+            className="w-full sm:w-auto"
+            onClick={exportPdf}
+          >
+            <FileText className="size-4" />
+            Export PDF
+          </Button>
+          <Button
+            type="button"
+            variant="outline"
+            className="w-full sm:w-auto"
+            disabled={!hasDatedEvents}
+            onClick={addToCalendarFile}
+          >
+            <Download className="size-4" />
+            Add to calendar
+          </Button>
         </div>
       </div>
 
@@ -701,51 +688,50 @@ export function BoardCalendarWorkbench({
             />
           )}
 
-            <div ref={composerRef}>
-              <CalendarEntryComposer
-                entryCategory={entryCategory}
-                entryColor={entryColor}
-                entryLocation={entryLocation}
-                entryNotes={entryNotes}
-                entryTime={entryTime}
-                entryTitle={entryTitle}
-                entryType={entryType}
-                selectedDateEvents={selectedDateEvents}
-                selectedDateKey={selectedDateKey}
-                onAdd={addCalendarEntry}
-                onCancelEdit={clearEntryForm}
-                onEditEvent={editCalendarEntry}
-                onEntryTypeChange={updateEntryType}
-                onLocationChange={setEntryLocation}
-                onNotesChange={setEntryNotes}
-                onTimeChange={setEntryTime}
-                onTitleChange={setEntryTitle}
-                onVirtualLinkChange={setEntryVirtualLink}
-                onWeeksBeforeChange={setEntryWeeksBefore}
-                onLeadContactChange={setEntryLeadContact}
-                onConfirmedChange={setEntryConfirmed}
-                onRelatedMeetingChange={setEntryRelatedMeeting}
-                onResponsibleChange={setEntryResponsible}
-                onCategoryChange={updateEntryCategory}
-                onColorChange={setEntryColor}
-                onStatusChange={updateEntryStatus}
-                onDoneChange={setEntryDone}
-                onDeleteEntry={deleteCalendarEntry}
-                onSelectedDateChange={selectDate}
-                isSelectedDateInPast={isSelectedDateInPast}
-                todayKey={todayKey}
-                editingEventId={editingEventId}
-                entryConfirmed={entryConfirmed}
-                entryDone={entryDone}
-                entryLeadContact={entryLeadContact}
-                entryRelatedMeeting={entryRelatedMeeting}
-                entryResponsible={entryResponsible}
-                entryStatus={entryStatus}
-                entryVirtualLink={entryVirtualLink}
-                entryWeeksBefore={entryWeeksBefore}
-                editingEvent={editingEvent}
-              />
-            </div>
+            <CalendarEntryComposer
+              entryCategory={entryCategory}
+              entryColor={entryColor}
+              entryLocation={entryLocation}
+              entryNotes={entryNotes}
+              entryTime={entryTime}
+              entryTitle={entryTitle}
+              entryType={entryType}
+              selectedDateEvents={selectedDateEvents}
+              selectedDateKey={selectedDateKey}
+              onAdd={addCalendarEntry}
+              onCancelEdit={clearEntryForm}
+              onEditEvent={editCalendarEntry}
+              onEntryTypeChange={updateEntryType}
+              onLocationChange={setEntryLocation}
+              onNotesChange={setEntryNotes}
+              onTimeChange={setEntryTime}
+              onTitleChange={setEntryTitle}
+              onVirtualLinkChange={setEntryVirtualLink}
+              onWeeksBeforeChange={setEntryWeeksBefore}
+              onLeadContactChange={setEntryLeadContact}
+              onConfirmedChange={setEntryConfirmed}
+              onRelatedMeetingChange={setEntryRelatedMeeting}
+              onResponsibleChange={setEntryResponsible}
+              onCategoryChange={updateEntryCategory}
+              onColorChange={setEntryColor}
+              onStatusChange={updateEntryStatus}
+              onDoneChange={setEntryDone}
+              onDeleteEntry={deleteCalendarEntry}
+              onSelectedDateChange={selectDate}
+              isEntryModalOpen={isEntryModalOpen}
+              isSelectedDateInPast={isSelectedDateInPast}
+              todayKey={todayKey}
+              editingEventId={editingEventId}
+              entryConfirmed={entryConfirmed}
+              entryDone={entryDone}
+              entryLeadContact={entryLeadContact}
+              entryRelatedMeeting={entryRelatedMeeting}
+              entryResponsible={entryResponsible}
+              entryStatus={entryStatus}
+              entryVirtualLink={entryVirtualLink}
+              entryWeeksBefore={entryWeeksBefore}
+              editingEvent={editingEvent}
+            />
           </TabsContent>
 
           <TabsContent value="meetings" className="mt-0">
@@ -789,14 +775,6 @@ export function BoardCalendarWorkbench({
               icon={ScrollText}
               title="Audit log is coming soon"
               description="This area will show who changed meetings, exported files, downloaded packages, or updated workflow records."
-            />
-          </TabsContent>
-
-          <TabsContent value="integrations" className="mt-0">
-            <ComingSoonPanel
-              icon={Download}
-              title="Calendar integrations are coming soon"
-              description="This area will manage calendar sync, email reminders, and future operational integrations for the module."
             />
           </TabsContent>
 
@@ -1203,6 +1181,7 @@ function CalendarEntryComposer({
   editingEvent,
   selectedDateEvents,
   selectedDateKey,
+  isEntryModalOpen,
   isSelectedDateInPast,
   todayKey,
   onAdd,
@@ -1245,6 +1224,7 @@ function CalendarEntryComposer({
   editingEvent: CalendarViewEvent | null;
   selectedDateEvents: CalendarViewEvent[];
   selectedDateKey: string;
+  isEntryModalOpen: boolean;
   isSelectedDateInPast: boolean;
   todayKey: string;
   onAdd: () => void;
@@ -1279,6 +1259,27 @@ function CalendarEntryComposer({
       : meetingCategoryOptions;
   const [entryPendingDelete, setEntryPendingDelete] =
     useState<CalendarViewEvent | null>(null);
+  const cancelEditButtonRef = useRef<HTMLButtonElement>(null);
+
+  useEffect(() => {
+    if (!isEntryModalOpen || entryPendingDelete) return;
+
+    cancelEditButtonRef.current?.focus();
+
+    function handleKeyDown(keyboardEvent: KeyboardEvent) {
+      if (keyboardEvent.key === "Escape") onCancelEdit();
+    }
+
+    document.addEventListener("keydown", handleKeyDown);
+    return () => document.removeEventListener("keydown", handleKeyDown);
+  }, [entryPendingDelete, isEntryModalOpen, onCancelEdit]);
+
+  const selectedColorCategory =
+    entryType === "staff_task" ? entryStatus : entryCategory;
+  const isEntryReady =
+    Boolean(entryTitle.trim()) &&
+    Boolean(selectedColorCategory.trim()) &&
+    (Boolean(editingEventId) || !isSelectedDateInPast);
 
   function confirmDeleteEntry() {
     if (!entryPendingDelete) return;
@@ -1288,7 +1289,7 @@ function CalendarEntryComposer({
   }
 
   return (
-    <div className="grid gap-4 rounded-xl border bg-slate-50 p-3 sm:p-4 lg:grid-cols-[0.9fr_1.1fr] lg:gap-5">
+    <div className="rounded-xl border bg-slate-50 p-3 sm:p-4">
       <div
         className="rounded-xl bg-white p-3 shadow-sm sm:p-4"
         data-testid="board-calendar-selected-date-panel"
@@ -1343,27 +1344,53 @@ function CalendarEntryComposer({
         </div>
       </div>
 
-      <div
-        className="rounded-xl bg-white p-3 shadow-sm sm:p-4"
-        data-testid="board-calendar-entry-form"
-      >
-        <div className="flex items-center gap-2">
-          <div className="rounded-lg bg-olea-light p-2 text-olea-dark">
-            <Plus className="size-4" />
-          </div>
-          <div>
-            <h3 className="font-semibold text-slate-950">
-              {editingEventId ? "Edit entry" : "Add Entry"}
-            </h3>
-            <p className="text-sm text-slate-500">
-              {editingEventId
-                ? "Update this calendar item without leaving the calendar."
-                : "This creates the matching workbook record automatically."}
-            </p>
-          </div>
-        </div>
+      {isEntryModalOpen ? (
+        <div
+          aria-labelledby="calendar-entry-dialog-title"
+          aria-modal="true"
+          className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-slate-950/50 p-4 sm:items-center"
+          role="dialog"
+        >
+          <div
+            className="my-4 w-full max-w-4xl rounded-2xl bg-white p-4 shadow-2xl sm:my-8 sm:p-6"
+            data-testid="board-calendar-entry-form"
+          >
+            <div className="flex items-start justify-between gap-4">
+              <div className="flex items-center gap-2">
+                <div className="rounded-lg bg-olea-light p-2 text-olea-dark">
+                  {editingEventId ? (
+                    <Pencil className="size-4" />
+                  ) : (
+                    <Plus className="size-4" />
+                  )}
+                </div>
+                <div>
+                  <h3
+                    id="calendar-entry-dialog-title"
+                    className="font-semibold text-slate-950"
+                  >
+                    {editingEventId ? "Edit entry" : "Add Entry"}
+                  </h3>
+                  <p className="text-sm text-slate-500">
+                    {editingEventId
+                      ? "Update this calendar item without leaving the calendar."
+                      : "This creates the matching workbook record automatically."}
+                  </p>
+                </div>
+              </div>
+              <Button
+                ref={cancelEditButtonRef}
+                type="button"
+                variant="ghost"
+                size="icon"
+                aria-label="Close entry form"
+                onClick={onCancelEdit}
+              >
+                <X className="size-4" />
+              </Button>
+            </div>
 
-        <div className="mt-4 grid gap-4 md:grid-cols-2">
+            <div className="mt-4 grid gap-4 md:grid-cols-2">
           <div className="space-y-2">
             <Label htmlFor="calendar-entry-date">Entry date</Label>
             <Input
@@ -1417,9 +1444,12 @@ function CalendarEntryComposer({
               <Label htmlFor="calendar-entry-category">
                 {isAgmMilestone ? "Track" : "Category"}
               </Label>
-              <Select value={entryCategory} onValueChange={onCategoryChange}>
+              <Select
+                value={entryCategory || undefined}
+                onValueChange={onCategoryChange}
+              >
                 <SelectTrigger id="calendar-entry-category">
-                  <SelectValue />
+                  <SelectValue placeholder={isAgmMilestone ? "Choose track" : "Choose category"} />
                 </SelectTrigger>
                 <SelectContent>
                   {categoryOptions.map((category) => (
@@ -1434,9 +1464,12 @@ function CalendarEntryComposer({
           {isStaffTask || isAgmMilestone ? (
             <div className="space-y-2">
               <Label htmlFor="calendar-entry-status">Workflow status</Label>
-              <Select value={entryStatus} onValueChange={onStatusChange}>
+              <Select
+                value={entryStatus || undefined}
+                onValueChange={onStatusChange}
+              >
                 <SelectTrigger id="calendar-entry-status">
-                  <SelectValue />
+                  <SelectValue placeholder="Choose status" />
                 </SelectTrigger>
                 <SelectContent>
                   {statusOptions.map((status) => (
@@ -1448,27 +1481,29 @@ function CalendarEntryComposer({
               </Select>
             </div>
           ) : null}
-          <div className="space-y-2">
-            <Label htmlFor="calendar-entry-color">Calendar color</Label>
-            <div className="flex items-center gap-2 rounded-md border border-input bg-white px-3 py-2">
-              <Input
-                id="calendar-entry-color"
-                type="color"
-                value={entryColor}
-                onChange={(event) => onColorChange(event.target.value)}
-                className="h-7 w-10 cursor-pointer border-0 bg-transparent p-0"
-              />
-              <Input
-                aria-label="Calendar color hex code"
-                value={entryColor}
-                readOnly
-                className="h-7 border-0 px-0 font-mono uppercase shadow-none focus-visible:ring-0"
-              />
+          {selectedColorCategory ? (
+            <div className="space-y-2">
+              <Label htmlFor="calendar-entry-color">Calendar color</Label>
+              <div className="flex items-center gap-2 rounded-md border border-input bg-white px-3 py-2">
+                <Input
+                  id="calendar-entry-color"
+                  type="color"
+                  value={entryColor}
+                  onChange={(event) => onColorChange(event.target.value)}
+                  className="h-7 w-10 cursor-pointer border-0 bg-transparent p-0"
+                />
+                <Input
+                  aria-label="Calendar color hex code"
+                  value={entryColor}
+                  readOnly
+                  className="h-7 border-0 px-0 font-mono uppercase shadow-none focus-visible:ring-0"
+                />
+              </div>
+              <p className="text-xs text-slate-500">
+                This color is reused for matching calendar entries.
+              </p>
             </div>
-            <p className="text-xs text-slate-500">
-              This color is reused for matching calendar entries.
-            </p>
-          </div>
+          ) : null}
           <div className="space-y-2 md:col-span-2">
             <Label htmlFor="calendar-entry-title">Title</Label>
             <Input
@@ -1518,9 +1553,12 @@ function CalendarEntryComposer({
               </div>
               <div className="space-y-2">
                 <Label htmlFor="calendar-entry-confirmed">Confirmed?</Label>
-                <Select value={entryConfirmed} onValueChange={onConfirmedChange}>
+                <Select
+                  value={entryConfirmed || undefined}
+                  onValueChange={onConfirmedChange}
+                >
                   <SelectTrigger id="calendar-entry-confirmed">
-                    <SelectValue />
+                    <SelectValue placeholder="Choose confirmation" />
                   </SelectTrigger>
                   <SelectContent>
                     {confirmedOptions.map((option) => (
@@ -1566,6 +1604,7 @@ function CalendarEntryComposer({
                 <Input
                   id="calendar-entry-days-before-agm"
                   type="number"
+                  placeholder="30"
                   value={entryWeeksBefore}
                   onChange={(event) => onWeeksBeforeChange(event.target.value)}
                 />
@@ -1612,7 +1651,7 @@ function CalendarEntryComposer({
           <Button
             type="button"
             className="w-full sm:w-auto"
-            disabled={!entryTitle.trim() || (!editingEventId && isSelectedDateInPast)}
+            disabled={!isEntryReady}
             onClick={onAdd}
           >
             {editingEventId ? <Pencil className="size-4" /> : <Plus className="size-4" />}
@@ -1641,7 +1680,9 @@ function CalendarEntryComposer({
             </Button>
           ) : null}
         </div>
-      </div>
+          </div>
+        </div>
+      ) : null}
       <DeleteEntryDialog
         event={entryPendingDelete}
         onCancel={() => setEntryPendingDelete(null)}

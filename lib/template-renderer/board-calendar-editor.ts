@@ -149,10 +149,10 @@ function normalizeTaskRule(row: Record<string, unknown>): BoardCalendarTaskRule 
     appliesTo:
       getString(row, "applies_to") ||
       getString(row, "meeting_type") ||
-      "Any meeting",
+      "",
     daysOffset,
     label,
-    responsible: getString(row, "responsible") || "Administrator",
+    responsible: getString(row, "responsible"),
   };
 }
 
@@ -247,7 +247,7 @@ export function buildGeneratedStaffTasks(
           related_meeting: relatedMeeting,
           responsible:
             getString(existingTask ?? {}, "responsible") || rule.responsible,
-          status: getString(existingTask ?? {}, "status") || "Not Started",
+          status: getString(existingTask ?? {}, "status"),
           notes: getString(existingTask ?? {}, "notes"),
           done: getBoolean(existingTask ?? {}, "done"),
         };
@@ -273,19 +273,19 @@ export function createBoardCalendarEntryRow(input: BoardCalendarEntryInput) {
         task: title,
         due_date: input.dateKey,
         related_meeting: input.relatedMeeting?.trim() ?? "",
-        responsible: input.responsible?.trim() || "Administrator",
-        status: input.status || input.category || "Not Started",
+        responsible: input.responsible?.trim() ?? "",
+        status: input.status || input.category || "",
         notes,
         done: input.done ?? false,
       };
     case "agm_milestone":
       return {
-        track: input.category || "Governance",
+        track: input.category,
         task: title,
         days_before: input.daysBeforeAgm ?? (input.weeksBefore ?? 0) * 7,
         calculated_date: input.dateKey,
-        responsible: input.responsible?.trim() || "Administrator",
-        status: input.status || "Not Started",
+        responsible: input.responsible?.trim() ?? "",
+        status: input.status || "",
         notes,
         done: input.done ?? false,
       };
@@ -298,9 +298,9 @@ export function createBoardCalendarEntryRow(input: BoardCalendarEntryInput) {
         time: input.time?.trim() ?? "",
         location: input.location?.trim() ?? "",
         virtual_link: input.virtualLink?.trim() ?? "",
-        lead_contact: input.leadContact?.trim() || "Administrator",
+        lead_contact: input.leadContact?.trim() ?? "",
         notes,
-        confirmed: input.confirmed || "TBC",
+        confirmed: input.confirmed || "",
       };
   }
 }
@@ -432,7 +432,7 @@ export function getBoardCalendarEntryInput(
         type: identity.type,
         dateKey: getString(row, "date"),
         title: getString(row, "title"),
-        category: getString(row, "category") || "Key Deadline",
+        category: getString(row, "category"),
         notes: getString(row, "notes"),
       };
     case "staff_task":
@@ -440,10 +440,10 @@ export function getBoardCalendarEntryInput(
         type: identity.type,
         dateKey: getString(row, "due_date"),
         title: getString(row, "task"),
-        category: getString(row, "status") || "Not Started",
+        category: getString(row, "status"),
         relatedMeeting: getString(row, "related_meeting"),
         responsible: getString(row, "responsible"),
-        status: getString(row, "status") || "Not Started",
+        status: getString(row, "status"),
         notes: getString(row, "notes"),
         done: getBoolean(row, "done"),
       };
@@ -452,12 +452,12 @@ export function getBoardCalendarEntryInput(
         type: identity.type,
         dateKey: getString(row, "calculated_date"),
         title: getString(row, "task"),
-        category: getString(row, "track") || "Governance",
+        category: getString(row, "track"),
         daysBeforeAgm:
           getNumber(row, "days_before") ?? (getNumber(row, "weeks_before") ?? 0) * 7,
         weeksBefore: getNumber(row, "weeks_before"),
         responsible: getString(row, "responsible"),
-        status: getString(row, "status") || "Not Started",
+        status: getString(row, "status"),
         notes: getString(row, "notes"),
         done: getBoolean(row, "done"),
       };
@@ -467,13 +467,13 @@ export function getBoardCalendarEntryInput(
         type: identity.type,
         dateKey: getString(row, "date"),
         title: getString(row, "committee") || getString(row, "type"),
-        category: getString(row, "type") || "Board Meeting",
+        category: getString(row, "type"),
         time: toCalendarTimeInputValue(getString(row, "time")),
         location: getString(row, "location"),
         virtualLink: getString(row, "virtual_link"),
         leadContact: getString(row, "lead_contact"),
         notes: getString(row, "notes"),
-        confirmed: getString(row, "confirmed") || "TBC",
+        confirmed: getString(row, "confirmed"),
       };
   }
 }

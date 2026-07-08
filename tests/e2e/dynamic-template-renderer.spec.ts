@@ -23,17 +23,17 @@ test.describe("@critical dynamic template renderer", () => {
     const boardCalendar = new BoardCalendarPage(page);
     const futureDate = getFutureDateKey(1);
 
-    await boardCalendar.openNewWorkbook();
+    await boardCalendar.openNewModuleCalendar();
 
     await boardCalendar.nameWorkbook("2026 Board Calendar - Test workbook");
     await boardCalendar.saveNowAndWaitForPost();
     await boardCalendar.expectSessionPersisted();
     await boardCalendar.waitForSaved();
     await boardCalendar.expectWorkspaceViewOptionHidden("Colour key");
-    await boardCalendar.expectDefaultCalendarColor("#1A6B6B");
     await boardCalendar.selectCalendarDate(futureDate);
     await boardCalendar.addMeeting({
       title: "Finance Committee",
+      category: "Board Meeting",
       color: "#2563eb",
       time: "18:30",
       location: "Boardroom",
