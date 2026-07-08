@@ -1,9 +1,6 @@
 import { apiRoutes } from "@/lib/api-routes";
-import type { MembershipTier, RegistrationState } from "@/lib/types";
+import type { RegistrationState } from "@/lib/types";
 import { createClient } from "@/utils/supabase/client";
-
-const wait = (milliseconds = 500) =>
-  new Promise((resolve) => setTimeout(resolve, milliseconds));
 
 function getRedirectUrl(path: string) {
   if (typeof window === "undefined") {
@@ -130,18 +127,4 @@ export async function startStripeCheckout(
   }
 
   return result.url;
-}
-
-export async function triggerNewSubscriptionAutomations({
-  tier,
-}: {
-  tier: MembershipTier;
-}) {
-  await wait(250);
-  return {
-    attio: "contact_created",
-    klaviyo: "welcome_sequence_started",
-    circle: "invite_sent",
-    tier,
-  };
 }

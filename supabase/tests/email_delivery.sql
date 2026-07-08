@@ -1,6 +1,6 @@
 begin;
 
-select plan(7);
+select plan(9);
 
 select ok(
   has_schema_privilege('service_role', 'private', 'USAGE'),
@@ -89,6 +89,35 @@ select ok(
     'EXECUTE'
   ),
   'browser roles cannot claim lifecycle email events'
+);
+
+update public.integration_events
+set
+  status = 'dead_letter',
+  attempts = 5,
+  available_at = now() + interval '1 day',
+  locked_at = now(),
+  processing_started_at = now(),
+  completed_at = null,
+  last_error = 'Provider rejected the payload.'
+where id = '72000000-0000-0000-0000-000000000001';
+
+select is(
+  (public.replay_integration_event('72000000-0000-0000-0000-000000000001')).id,
+  '72000000-0000-0000-0000-000000000001'::uuid,
+  'failed integration events can be queued for replay'
+);
+
+select results_eq(
+  $$
+    select status::text, attempts, last_error, locked_at, processing_started_at
+    from public.integration_events
+    where id = '72000000-0000-0000-0000-000000000001'
+  $$,
+  $$
+    values ('pending'::text, 0, null::text, null::timestamptz, null::timestamptz)
+  $$,
+  'replay clears failure state and resets attempts'
 );
 
 select * from finish();

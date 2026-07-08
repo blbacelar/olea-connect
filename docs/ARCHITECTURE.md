@@ -343,8 +343,13 @@ and Circle/native community:
 
 Failures are isolated from member signup and billing. Temporary failures become
 `failed` with a future `available_at`; repeated failures become `dead_letter`
-for operator review. Klaviyo remains intentionally deferred; Zoom is manual-link
-only until API automation is justified.
+for operator review. Platform administrators can inspect recent Resend, Attio,
+and QuickBooks outbox events at `/settings/integrations` and replay failed or
+dead-letter events through the protected `replay_integration_event` RPC.
+
+Klaviyo is intentionally out of scope for the MVP; lifecycle email is handled
+through Resend and the email outbox. Zoom is manual-link only until API
+automation is justified.
 
 ## Grants and Webinars
 

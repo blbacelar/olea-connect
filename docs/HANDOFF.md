@@ -203,8 +203,9 @@ For human developers, mirror the same idea:
 - Attio and QuickBooks have code-level outbox workers. Circle SSO/provisioning
   code exists as deferred scaffolding, but native community is the MVP path to
   avoid Circle SSO cost. Operational credentials, Supabase Cron jobs, and
-  sandbox behavior must be verified per environment. Klaviyo is intentionally on
-  hold; Zoom is manual-link only until API automation is justified.
+  sandbox behavior must be verified per environment. Klaviyo is intentionally out
+  of scope for the MVP; Resend handles lifecycle email through the outbox.
+  Zoom is manual-link only until API automation is justified.
 - Language localization has a GitHub ticket but is not implemented yet.
 
 ## Where to Look First

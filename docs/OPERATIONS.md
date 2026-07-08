@@ -133,8 +133,16 @@ Attio and QuickBooks are processed asynchronously through
 worker for that provider; signup and billing webhooks should continue queuing
 events.
 
-Operators can replay a failed or dead-letter integration event with the service
-role:
+Platform administrators can inspect recent Resend, Attio, and QuickBooks
+outbox events at:
+
+```text
+https://<domain>/settings/integrations
+```
+
+That page shows pending, processing, failed, dead-letter, and completed counts,
+redacts sensitive payload fields, and can safely replay failed or dead-letter
+events. Operators can also replay an event directly with the service role:
 
 ```sql
 select public.replay_integration_event('<event-id>'::uuid);
