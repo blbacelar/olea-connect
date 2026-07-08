@@ -6,10 +6,18 @@ import {
   ChevronLeft,
   ChevronRight,
   Clock,
+  Download,
+  FileText,
+  LayoutDashboard,
   ListChecks,
+  PackageOpen,
   Pencil,
   Plus,
+  ScrollText,
+  Settings,
   Trash2,
+  Users,
+  Workflow,
   X,
 } from "lucide-react";
 
@@ -24,6 +32,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Textarea } from "@/components/ui/textarea";
 import {
   appendBoardCalendarEntry,
@@ -65,16 +74,16 @@ import {
 } from "./BoardCalendarWorkflowPanels";
 
 type CalendarMode = "month" | "week" | "year";
-type WorkspaceMode =
+type BoardCalendarModuleTab =
+  | "dashboard"
   | "calendar"
-  | "getting_started"
-  | "committees"
-  | "meeting_schedule"
-  | "operational_calendar"
-  | "annual_calendar"
-  | "monthly_calendar"
-  | "staff_tasks"
-  | "agm_timeline";
+  | "meetings"
+  | "workflows"
+  | "packages"
+  | "directory"
+  | "audit_log"
+  | "integrations"
+  | "settings";
 
 const viewOptions: Array<{ label: string; value: CalendarMode }> = [
   { label: "Month", value: "month" },
@@ -82,16 +91,20 @@ const viewOptions: Array<{ label: string; value: CalendarMode }> = [
   { label: "Annual", value: "year" },
 ];
 
-const workspaceOptions: Array<{ label: string; value: WorkspaceMode }> = [
-  { label: "Calendar workspace", value: "calendar" },
-  { label: "Setup", value: "getting_started" },
-  { label: "Committees", value: "committees" },
-  { label: "Meeting schedule", value: "meeting_schedule" },
-  { label: "Generated operational workflow", value: "operational_calendar" },
-  { label: "Annual calendar", value: "annual_calendar" },
-  { label: "Monthly calendar", value: "monthly_calendar" },
-  { label: "Staff task list", value: "staff_tasks" },
-  { label: "AGM planning timeline", value: "agm_timeline" },
+const moduleTabs: Array<{
+  icon: typeof CalendarDays;
+  label: string;
+  value: BoardCalendarModuleTab;
+}> = [
+  { icon: LayoutDashboard, label: "Dashboard", value: "dashboard" },
+  { icon: CalendarDays, label: "Calendar", value: "calendar" },
+  { icon: FileText, label: "Meetings", value: "meetings" },
+  { icon: Workflow, label: "Workflows", value: "workflows" },
+  { icon: PackageOpen, label: "Board Packages", value: "packages" },
+  { icon: Users, label: "Directory", value: "directory" },
+  { icon: ScrollText, label: "Audit Log", value: "audit_log" },
+  { icon: Download, label: "Integrations", value: "integrations" },
+  { icon: Settings, label: "Settings", value: "settings" },
 ];
 
 const entryTypes: Array<{
@@ -168,7 +181,7 @@ export function BoardCalendarWorkbench({
     (configuredDateKey < todayKey ? new Date() : configuredDate);
   const initialDateKey = firstDatedEvent?.dateKey ?? toDateKey(initialDate);
   const [mode, setMode] = useState<CalendarMode>("month");
-  const [workspaceMode, setWorkspaceMode] = useState<WorkspaceMode>("calendar");
+  const [activeTab, setActiveTab] = useState<BoardCalendarModuleTab>("dashboard");
   const [anchorDate, setAnchorDate] = useState(initialDate);
   const [selectedDateKey, setSelectedDateKey] = useState(initialDateKey);
   const [entryType, setEntryType] = useState<BoardCalendarEntryType>("meeting");
@@ -189,6 +202,7 @@ export function BoardCalendarWorkbench({
   const [entryDone, setEntryDone] = useState(false);
   const [entryWeeksBefore, setEntryWeeksBefore] = useState("0");
   const [editingEventId, setEditingEventId] = useState<string | null>(null);
+  const composerRef = useRef<HTMLDivElement>(null);
 
   const monthIndex = anchorDate.getMonth();
   const year = anchorDate.getFullYear();
@@ -199,13 +213,21 @@ export function BoardCalendarWorkbench({
   const boardMeetings = events.filter(
     (event) => event.category === "Board Meeting",
   ).length;
+  const upcomingEvents = events
+    .filter((event) => event.dateKey && event.dateKey >= todayKey)
+    .slice(0, 5);
+  const hasDatedEvents = events.some((event) => Boolean(event.dateKey));
   const categories = Array.from(
     events.reduce<Map<string, string>>((items, event) => {
       if (!items.has(event.category)) items.set(event.category, event.color);
       return items;
     }, new Map()),
   ).slice(0, 8);
-  const selectedSection = sections.find((section) => section.id === workspaceMode);
+  const meetingsSection = sections.find((section) => section.id === "meeting_schedule");
+  const workflowSection = sections.find(
+    (section) => section.id === "operational_calendar",
+  );
+  const directorySection = sections.find((section) => section.id === "committees");
   const selectedDateEvents = eventsByDate.get(selectedDateKey) ?? [];
   const editingEvent = editingEventId
     ? events.find((event) => event.id === editingEventId) ?? null
@@ -236,7 +258,7 @@ export function BoardCalendarWorkbench({
     if (!date) return;
 
     setSelectedDateKey(dateKey);
-    setWorkspaceMode("calendar");
+    setActiveTab("calendar");
     setAnchorDate(date);
   }
 
@@ -345,7 +367,7 @@ export function BoardCalendarWorkbench({
     setEntryStatus(input.status ?? input.category ?? "Not Started");
     setEntryDone(Boolean(input.done));
     setEntryWeeksBefore(String(input.daysBeforeAgm ?? input.weeksBefore ?? 0));
-    setWorkspaceMode("calendar");
+    setActiveTab("calendar");
     const date = parseCalendarDateKey(input.dateKey);
     if (date) setAnchorDate(date);
   }
@@ -356,6 +378,69 @@ export function BoardCalendarWorkbench({
 
     onChange(mutation.path, mutation.value);
     clearEntryForm();
+  }
+
+  function openMeetingComposer() {
+    const fallbackDateKey = selectedDateKey < todayKey ? todayKey : selectedDateKey;
+    const fallbackDate = parseCalendarDateKey(fallbackDateKey);
+
+    setActiveTab("calendar");
+    updateEntryType("meeting");
+    setSelectedDateKey(fallbackDateKey);
+    if (fallbackDate) setAnchorDate(fallbackDate);
+
+    window.setTimeout(() => {
+      composerRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+    }, 0);
+  }
+
+  function exportPdf() {
+    window.print();
+  }
+
+  function addToCalendarFile() {
+    const datedEvents = events.filter(
+      (event): event is CalendarViewEvent & { dateKey: string } =>
+        Boolean(event.dateKey),
+    );
+    if (!datedEvents.length) return;
+
+    const calendarLines = [
+      "BEGIN:VCALENDAR",
+      "VERSION:2.0",
+      "PRODID:-//Olea Connects//Board Calendar//EN",
+      `X-WR-CALNAME:${escapeIcsText(organizationName)} Board Calendar`,
+    ];
+
+    datedEvents.forEach((event) => {
+      const startsAt = formatIcsDate(event.dateKey, event.time);
+      const endsAt = formatIcsDate(event.dateKey, event.time, 60);
+      calendarLines.push(
+        "BEGIN:VEVENT",
+        `UID:${event.id}@olea-connects`,
+        `DTSTART:${startsAt}`,
+        `DTEND:${endsAt}`,
+        `SUMMARY:${escapeIcsText(event.title)}`,
+        `DESCRIPTION:${escapeIcsText(event.notes ?? event.category)}`,
+        "END:VEVENT",
+      );
+    });
+    calendarLines.push("END:VCALENDAR");
+
+    const blob = new Blob([calendarLines.join("\r\n")], {
+      type: "text/calendar;charset=utf-8",
+    });
+    const link = document.createElement("a");
+    const calendarUrl = URL.createObjectURL(blob);
+    link.href = calendarUrl;
+    link.download = `${organizationName
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, "-")
+      .replace(/(^-|-$)/g, "") || "board-calendar"}.ics`;
+    document.body.append(link);
+    link.click();
+    link.remove();
+    window.setTimeout(() => URL.revokeObjectURL(calendarUrl), 0);
   }
 
   function getColorCategoryForInput(input: {
@@ -387,127 +472,208 @@ export function BoardCalendarWorkbench({
   }
 
   return (
-    <section className="space-y-4 rounded-xl border bg-white p-4 shadow-soft sm:space-y-5 sm:p-6">
-      <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
-        <div>
-          <div className="inline-flex items-center gap-2 rounded-full bg-olea-light px-3 py-1 text-xs font-semibold uppercase tracking-[0.08em] text-olea-dark">
-            <CalendarDays className="size-3.5" />
-            Calendar workspace
+    <section className="overflow-hidden rounded-xl border bg-white shadow-soft">
+      <div className="border-b bg-gradient-to-br from-white to-olea-light/60 p-4 sm:p-6">
+        <div className="flex flex-col gap-4 xl:flex-row xl:items-start xl:justify-between">
+          <div>
+            <div className="inline-flex items-center gap-2 rounded-full bg-white px-3 py-1 text-xs font-semibold uppercase tracking-[0.08em] text-olea-dark shadow-sm">
+              <CalendarDays className="size-3.5" />
+              Board Calendar Module
+            </div>
+            <h2 className="mt-3 text-2xl font-semibold tracking-[-0.02em] text-slate-950">
+              {organizationName} board calendar
+            </h2>
+            <p className="mt-1.5 max-w-3xl text-sm leading-6 text-slate-600">
+              Add meetings, notes, deadlines, staff tasks, and AGM milestones
+              directly from the calendar. Annual and monthly views are generated
+              from the same entries, so your workbook stays connected.
+            </p>
           </div>
-          <h2 className="mt-3 text-2xl font-semibold tracking-[-0.02em] text-slate-950">
-            {organizationName} board calendar
-          </h2>
-          <p className="mt-1.5 max-w-3xl text-sm leading-6 text-slate-600">
-            Add meetings, notes, deadlines, staff tasks, and AGM milestones
-            directly from the calendar. Annual and monthly views are generated
-            from the same entries, so your workbook stays connected.
-          </p>
-        </div>
 
-        <div className="flex w-full flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-center lg:w-auto lg:justify-end">
-          <div className="w-full sm:min-w-[260px] sm:flex-1 lg:flex-none">
-            <Select
-              value={workspaceMode}
-              onValueChange={(value) => setWorkspaceMode(value as WorkspaceMode)}
-            >
-              <SelectTrigger aria-label="Choose calendar workspace view">
-                <SelectValue placeholder="Choose a view" />
-              </SelectTrigger>
-              <SelectContent>
-                {workspaceOptions.map((option) => (
-                  <SelectItem key={option.value} value={option.value}>
-                    {option.label}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-          <div className="grid w-full grid-cols-3 rounded-lg border bg-white p-1 shadow-sm sm:inline-flex sm:w-auto">
-            {viewOptions.map((option) => (
-              <Button
-                key={option.value}
-                type="button"
-                variant={mode === option.value ? "default" : "ghost"}
-                size="sm"
-                onClick={() => setMode(option.value)}
-                className="w-full sm:w-auto"
-              >
-                {option.label}
-              </Button>
-            ))}
-          </div>
-          <div className="grid w-full grid-cols-[auto_1fr_auto] rounded-lg border bg-white shadow-sm sm:inline-flex sm:w-auto">
+          <div className="flex w-full flex-col gap-2 sm:flex-row sm:flex-wrap xl:w-auto xl:justify-end">
             <Button
               type="button"
-              variant="ghost"
-              size="icon"
-              aria-label="Previous calendar period"
-              onClick={moveBackward}
+              className="w-full sm:w-auto"
+              onClick={openMeetingComposer}
             >
-              <ChevronLeft className="size-4" />
+              <Plus className="size-4" />
+              Add meeting
             </Button>
             <Button
               type="button"
-              variant="ghost"
-              className="min-w-0 px-2 text-sm sm:px-4"
-              onClick={goToConfiguredYear}
-            >
-              {mode === "year" ? year : `${monthNames[monthIndex]} ${year}`}
-            </Button>
-            <Button
-              type="button"
-              variant="ghost"
-              size="icon"
-              aria-label="Next calendar period"
-              onClick={moveForward}
-            >
-              <ChevronRight className="size-4" />
-            </Button>
-          </div>
-        </div>
-      </div>
-
-      <div className="grid gap-3 md:grid-cols-3">
-        <SummaryCard
-          icon={CalendarDays}
-          label="Calendar items"
-          value={String(events.length)}
-          detail="Meetings, deadlines, and AGM milestones"
-        />
-        <SummaryCard
-          icon={Clock}
-          label="Next dated item"
-          value={nextEvent?.dateKey ?? "Not scheduled"}
-          detail={nextEvent?.title ?? "Add a date from the calendar"}
-        />
-        <SummaryCard
-          icon={ListChecks}
-          label="Board meetings"
-          value={String(boardMeetings)}
-          detail="Generated from calendar entries"
-        />
-      </div>
-
-      {categories.length ? (
-        <div className="flex flex-wrap gap-2 rounded-xl border bg-slate-50 p-3">
-          {categories.map(([category, color]) => (
-            <Badge
-              key={category}
               variant="outline"
-              className="gap-2 border-slate-200 bg-white text-slate-700"
+              className="w-full sm:w-auto"
+              onClick={exportPdf}
             >
-              <span
-                className="size-2.5 rounded-full"
-                style={{ backgroundColor: color }}
-              />
-              {category}
-            </Badge>
-          ))}
+              <FileText className="size-4" />
+              Export PDF
+            </Button>
+            <Button
+              type="button"
+              variant="outline"
+              className="w-full sm:w-auto"
+              disabled={!hasDatedEvents}
+              onClick={addToCalendarFile}
+            >
+              <Download className="size-4" />
+              Add to calendar
+            </Button>
+          </div>
         </div>
-      ) : null}
+      </div>
 
-      {workspaceMode === "calendar" ? (
-        <>
+      <Tabs
+        value={activeTab}
+        onValueChange={(value) => setActiveTab(value as BoardCalendarModuleTab)}
+      >
+        <div className="border-b bg-white px-3 py-3 sm:px-5">
+          <div className="overflow-x-auto pb-1">
+            <TabsList className="h-auto min-w-max justify-start gap-1 bg-olea-light/70 p-1">
+              {moduleTabs.map((tab) => {
+                const Icon = tab.icon;
+                return (
+                  <TabsTrigger
+                    key={tab.value}
+                    value={tab.value}
+                    className="gap-2 px-3 py-2 data-[state=active]:bg-white data-[state=active]:text-olea-dark"
+                  >
+                    <Icon className="size-4" />
+                    {tab.label}
+                    {tab.value === "meetings" && boardMeetings ? (
+                      <span className="rounded-full bg-olea-orange px-2 py-0.5 text-[11px] font-bold text-white">
+                        {boardMeetings}
+                      </span>
+                    ) : null}
+                  </TabsTrigger>
+                );
+              })}
+            </TabsList>
+          </div>
+        </div>
+
+        <div className="space-y-5 p-4 sm:p-6">
+          <TabsContent value="dashboard" className="mt-0 space-y-5">
+            <div className="grid gap-3 md:grid-cols-3">
+              <SummaryCard
+                icon={CalendarDays}
+                label="Calendar items"
+                value={String(events.length)}
+                detail="Meetings, deadlines, and AGM milestones"
+              />
+              <SummaryCard
+                icon={Clock}
+                label="Next dated item"
+                value={nextEvent?.dateKey ?? "Not scheduled"}
+                detail={nextEvent?.title ?? "Add a date from the calendar"}
+              />
+              <SummaryCard
+                icon={ListChecks}
+                label="Board meetings"
+                value={String(boardMeetings)}
+                detail="Generated from calendar entries"
+              />
+            </div>
+
+            <section className="rounded-xl border bg-white p-5 shadow-sm">
+              <div className="flex flex-wrap items-center justify-between gap-3">
+                <div>
+                  <h3 className="text-lg font-semibold text-slate-950">
+                    Upcoming board work
+                  </h3>
+                  <p className="mt-1 text-sm text-slate-500">
+                    A quick read on the next meetings, deadlines, and staff work.
+                  </p>
+                </div>
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => setActiveTab("calendar")}
+                >
+                  View calendar
+                </Button>
+              </div>
+              <div className="mt-4 space-y-2">
+                {upcomingEvents.length ? (
+                  upcomingEvents.map((event) => (
+                    <CalendarEventPill
+                      key={event.id}
+                      event={event}
+                      onEditEvent={() => editCalendarEntry(event)}
+                    />
+                  ))
+                ) : (
+                  <p className="rounded-lg bg-slate-50 px-4 py-3 text-sm text-slate-500">
+                    No upcoming items yet. Use Add meeting to start the calendar.
+                  </p>
+                )}
+              </div>
+            </section>
+          </TabsContent>
+
+          <TabsContent value="calendar" className="mt-0 space-y-5">
+            <div className="flex flex-col gap-2 lg:flex-row lg:items-center lg:justify-between">
+              <div className="grid w-full grid-cols-3 rounded-lg border bg-white p-1 shadow-sm sm:inline-flex sm:w-auto">
+                {viewOptions.map((option) => (
+                  <Button
+                    key={option.value}
+                    type="button"
+                    variant={mode === option.value ? "default" : "ghost"}
+                    size="sm"
+                    onClick={() => setMode(option.value)}
+                    className="w-full sm:w-auto"
+                  >
+                    {option.label}
+                  </Button>
+                ))}
+              </div>
+              <div className="grid w-full grid-cols-[auto_1fr_auto] rounded-lg border bg-white shadow-sm sm:inline-flex sm:w-auto">
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="icon"
+                  aria-label="Previous calendar period"
+                  onClick={moveBackward}
+                >
+                  <ChevronLeft className="size-4" />
+                </Button>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  className="min-w-0 px-2 text-sm sm:px-4"
+                  onClick={goToConfiguredYear}
+                >
+                  {mode === "year" ? year : `${monthNames[monthIndex]} ${year}`}
+                </Button>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="icon"
+                  aria-label="Next calendar period"
+                  onClick={moveForward}
+                >
+                  <ChevronRight className="size-4" />
+                </Button>
+              </div>
+            </div>
+
+            {categories.length ? (
+              <div className="flex flex-wrap gap-2 rounded-xl border bg-slate-50 p-3">
+                {categories.map(([category, color]) => (
+                  <Badge
+                    key={category}
+                    variant="outline"
+                    className="gap-2 border-slate-200 bg-white text-slate-700"
+                  >
+                    <span
+                      className="size-2.5 rounded-full"
+                      style={{ backgroundColor: color }}
+                    />
+                    {category}
+                  </Badge>
+                ))}
+              </div>
+            ) : null}
+
           {mode === "year" ? (
             <YearCalendar
               events={events}
@@ -535,86 +701,111 @@ export function BoardCalendarWorkbench({
             />
           )}
 
-          <CalendarEntryComposer
-            entryCategory={entryCategory}
-            entryColor={entryColor}
-            entryLocation={entryLocation}
-            entryNotes={entryNotes}
-            entryTime={entryTime}
-            entryTitle={entryTitle}
-            entryType={entryType}
-            selectedDateEvents={selectedDateEvents}
-            selectedDateKey={selectedDateKey}
-            onAdd={addCalendarEntry}
-            onCancelEdit={clearEntryForm}
-            onEditEvent={editCalendarEntry}
-            onEntryTypeChange={updateEntryType}
-            onLocationChange={setEntryLocation}
-            onNotesChange={setEntryNotes}
-            onTimeChange={setEntryTime}
-            onTitleChange={setEntryTitle}
-            onVirtualLinkChange={setEntryVirtualLink}
-            onWeeksBeforeChange={setEntryWeeksBefore}
-            onLeadContactChange={setEntryLeadContact}
-            onConfirmedChange={setEntryConfirmed}
-            onRelatedMeetingChange={setEntryRelatedMeeting}
-            onResponsibleChange={setEntryResponsible}
-            onCategoryChange={updateEntryCategory}
-            onColorChange={setEntryColor}
-            onStatusChange={updateEntryStatus}
-            onDoneChange={setEntryDone}
-            onDeleteEntry={deleteCalendarEntry}
-            onSelectedDateChange={selectDate}
-            isSelectedDateInPast={isSelectedDateInPast}
-            todayKey={todayKey}
-            editingEventId={editingEventId}
-            entryConfirmed={entryConfirmed}
-            entryDone={entryDone}
-            entryLeadContact={entryLeadContact}
-            entryRelatedMeeting={entryRelatedMeeting}
-            entryResponsible={entryResponsible}
-            entryStatus={entryStatus}
-            entryVirtualLink={entryVirtualLink}
-            entryWeeksBefore={entryWeeksBefore}
-            editingEvent={editingEvent}
-          />
-        </>
-      ) : workspaceMode === "getting_started" ? (
-        <BoardCalendarSetupPanel data={data} onChange={onChange} />
-      ) : workspaceMode === "staff_tasks" ? (
-        <StaffTaskListPanel data={data} onChange={onChange} />
-      ) : workspaceMode === "agm_timeline" ? (
-        <AgmTimelinePanel data={data} onChange={onChange} />
-      ) : selectedSection ? (
-        <section
-          className="rounded-xl border bg-white p-6 shadow-sm"
-          aria-labelledby={`${selectedSection.id}-heading`}
-        >
-          <h3 id={`${selectedSection.id}-heading`} className="text-xl font-semibold">
-            {selectedSection.title}
-          </h3>
-          {selectedSection.description ? (
-            <p className="mt-1.5 text-sm leading-6 text-slate-500">
-              {selectedSection.description}
-            </p>
-          ) : null}
-          <div
-            className={cn(
-              "mt-5",
-              selectedSection.layout === "two_column"
-                ? "grid gap-5 md:grid-cols-2"
-                : "space-y-5",
-            )}
-          >
-            <TemplateFields
-              fields={selectedSection.questions}
+            <div ref={composerRef}>
+              <CalendarEntryComposer
+                entryCategory={entryCategory}
+                entryColor={entryColor}
+                entryLocation={entryLocation}
+                entryNotes={entryNotes}
+                entryTime={entryTime}
+                entryTitle={entryTitle}
+                entryType={entryType}
+                selectedDateEvents={selectedDateEvents}
+                selectedDateKey={selectedDateKey}
+                onAdd={addCalendarEntry}
+                onCancelEdit={clearEntryForm}
+                onEditEvent={editCalendarEntry}
+                onEntryTypeChange={updateEntryType}
+                onLocationChange={setEntryLocation}
+                onNotesChange={setEntryNotes}
+                onTimeChange={setEntryTime}
+                onTitleChange={setEntryTitle}
+                onVirtualLinkChange={setEntryVirtualLink}
+                onWeeksBeforeChange={setEntryWeeksBefore}
+                onLeadContactChange={setEntryLeadContact}
+                onConfirmedChange={setEntryConfirmed}
+                onRelatedMeetingChange={setEntryRelatedMeeting}
+                onResponsibleChange={setEntryResponsible}
+                onCategoryChange={updateEntryCategory}
+                onColorChange={setEntryColor}
+                onStatusChange={updateEntryStatus}
+                onDoneChange={setEntryDone}
+                onDeleteEntry={deleteCalendarEntry}
+                onSelectedDateChange={selectDate}
+                isSelectedDateInPast={isSelectedDateInPast}
+                todayKey={todayKey}
+                editingEventId={editingEventId}
+                entryConfirmed={entryConfirmed}
+                entryDone={entryDone}
+                entryLeadContact={entryLeadContact}
+                entryRelatedMeeting={entryRelatedMeeting}
+                entryResponsible={entryResponsible}
+                entryStatus={entryStatus}
+                entryVirtualLink={entryVirtualLink}
+                entryWeeksBefore={entryWeeksBefore}
+                editingEvent={editingEvent}
+              />
+            </div>
+          </TabsContent>
+
+          <TabsContent value="meetings" className="mt-0">
+            <TemplateSectionPanel
               data={data}
               errorsByPath={errorsByPath}
+              section={meetingsSection}
               onChange={onChange}
             />
-          </div>
-        </section>
-      ) : null}
+          </TabsContent>
+
+          <TabsContent value="workflows" className="mt-0 space-y-5">
+            <StaffTaskListPanel data={data} onChange={onChange} />
+            <TemplateSectionPanel
+              data={data}
+              errorsByPath={errorsByPath}
+              section={workflowSection}
+              onChange={onChange}
+            />
+          </TabsContent>
+
+          <TabsContent value="packages" className="mt-0">
+            <ComingSoonPanel
+              icon={PackageOpen}
+              title="Board packages are coming soon"
+              description="This area will collect agendas, minutes, reports, and approved board package files by meeting."
+            />
+          </TabsContent>
+
+          <TabsContent value="directory" className="mt-0">
+            <TemplateSectionPanel
+              data={data}
+              errorsByPath={errorsByPath}
+              section={directorySection}
+              onChange={onChange}
+            />
+          </TabsContent>
+
+          <TabsContent value="audit_log" className="mt-0">
+            <ComingSoonPanel
+              icon={ScrollText}
+              title="Audit log is coming soon"
+              description="This area will show who changed meetings, exported files, downloaded packages, or updated workflow records."
+            />
+          </TabsContent>
+
+          <TabsContent value="integrations" className="mt-0">
+            <ComingSoonPanel
+              icon={Download}
+              title="Calendar integrations are coming soon"
+              description="This area will manage calendar sync, email reminders, and future operational integrations for the module."
+            />
+          </TabsContent>
+
+          <TabsContent value="settings" className="mt-0 space-y-5">
+            <BoardCalendarSetupPanel data={data} onChange={onChange} />
+            <AgmTimelinePanel data={data} onChange={onChange} />
+          </TabsContent>
+        </div>
+      </Tabs>
     </section>
   );
 }
@@ -645,6 +836,79 @@ function SummaryCard({
         </div>
       </div>
     </div>
+  );
+}
+
+function TemplateSectionPanel({
+  data,
+  errorsByPath,
+  section,
+  onChange,
+}: {
+  data: TemplateFormData;
+  errorsByPath: Map<string, string>;
+  section?: TemplateSection;
+  onChange: (path: FieldPath, value: TemplateValue) => void;
+}) {
+  if (!section) {
+    return (
+      <ComingSoonPanel
+        icon={FileText}
+        title="This workspace is coming soon"
+        description="The module has a place for this area, but there is no connected template section yet."
+      />
+    );
+  }
+
+  return (
+    <section
+      className="rounded-xl border bg-white p-6 shadow-sm"
+      aria-labelledby={`${section.id}-heading`}
+    >
+      <h3 id={`${section.id}-heading`} className="text-xl font-semibold">
+        {section.title}
+      </h3>
+      {section.description ? (
+        <p className="mt-1.5 text-sm leading-6 text-slate-500">
+          {section.description}
+        </p>
+      ) : null}
+      <div
+        className={cn(
+          "mt-5",
+          section.layout === "two_column" ? "grid gap-5 md:grid-cols-2" : "space-y-5",
+        )}
+      >
+        <TemplateFields
+          fields={section.questions}
+          data={data}
+          errorsByPath={errorsByPath}
+          onChange={onChange}
+        />
+      </div>
+    </section>
+  );
+}
+
+function ComingSoonPanel({
+  description,
+  icon: Icon,
+  title,
+}: {
+  description: string;
+  icon: typeof CalendarDays;
+  title: string;
+}) {
+  return (
+    <section className="grid min-h-[260px] place-items-center rounded-xl border bg-white p-6 text-center shadow-sm">
+      <div className="max-w-xl">
+        <span className="mx-auto grid size-14 place-items-center rounded-xl bg-olea-light text-olea-dark">
+          <Icon className="size-7" />
+        </span>
+        <h3 className="mt-4 text-xl font-semibold text-slate-950">{title}</h3>
+        <p className="mt-2 text-sm leading-6 text-slate-500">{description}</p>
+      </div>
+    </section>
   );
 }
 
@@ -1352,7 +1616,7 @@ function CalendarEntryComposer({
             onClick={onAdd}
           >
             {editingEventId ? <Pencil className="size-4" /> : <Plus className="size-4" />}
-            {editingEventId ? "Update entry" : "Add to calendar"}
+            {editingEventId ? "Update entry" : "Add entry"}
           </Button>
           {editingEventId ? (
             <Button
@@ -1515,4 +1779,36 @@ function parseCalendarDateKey(dateKey: string) {
   const match = dateKey.match(/^(\d{4})-(\d{2})-(\d{2})$/);
   if (!match) return null;
   return new Date(Number(match[1]), Number(match[2]) - 1, Number(match[3]));
+}
+
+function escapeIcsText(value: string) {
+  return value
+    .replace(/\\/g, "\\\\")
+    .replace(/;/g, "\\;")
+    .replace(/,/g, "\\,")
+    .replace(/\r?\n/g, "\\n");
+}
+
+function formatIcsDate(dateKey: string, time?: string, minutesToAdd = 0) {
+  const date = parseCalendarDateKey(dateKey) ?? new Date();
+  const timeMatch = time?.match(/^(\d{1,2}):(\d{2})$/);
+  const hours = timeMatch ? Number(timeMatch[1]) : 9;
+  const minutes = timeMatch ? Number(timeMatch[2]) : 0;
+  const eventDate = new Date(
+    date.getFullYear(),
+    date.getMonth(),
+    date.getDate(),
+    hours,
+    minutes + minutesToAdd,
+  );
+
+  return [
+    eventDate.getFullYear(),
+    String(eventDate.getMonth() + 1).padStart(2, "0"),
+    String(eventDate.getDate()).padStart(2, "0"),
+    "T",
+    String(eventDate.getHours()).padStart(2, "0"),
+    String(eventDate.getMinutes()).padStart(2, "0"),
+    "00",
+  ].join("");
 }

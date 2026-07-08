@@ -46,6 +46,21 @@ Core files:
 - Starting a new calendar from the module route should keep the browser on the
   module route after the first save.
 
+## Module UX
+
+The Board Calendar module uses internal tabs for the module areas inspired by
+the CEO prototype: Dashboard, Calendar, Meetings, Workflows, Board Packages,
+Directory, Audit Log, Integrations, and Settings.
+
+The top module action bar owns the primary workflow actions:
+
+- `Add meeting` opens the calendar tab and scrolls to the entry composer.
+- `Export PDF` uses the browser print flow.
+- `Add to calendar` downloads an `.ics` calendar file from dated module events.
+
+Areas that are part of the product direction but not wired to persisted module
+data yet should render a clear coming-soon panel, not a dead control.
+
 ## Product Direction
 
 Future refactors should keep the user mental model simple:

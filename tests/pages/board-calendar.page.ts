@@ -91,7 +91,9 @@ export class BoardCalendarPage {
       this.page.getByRole("heading", { name: "Board Calendar", exact: true }),
     ).toBeVisible();
     await expect(this.page.getByText("Olea module")).toBeVisible();
-    await expect(this.page.getByText("Board calendar module")).toBeVisible();
+    await expect(
+      this.page.getByText("Board calendar module", { exact: true }),
+    ).toBeVisible();
     await expect(this.page.getByLabel("Calendar workspace name")).toBeVisible();
     await expect(this.page.getByText("Saved calendars")).toBeVisible();
     await expect(
@@ -100,6 +102,24 @@ export class BoardCalendarPage {
     await expect(this.page.getByRole("button", { name: "Save now" })).toBeVisible();
     await expect(
       this.page.getByRole("button", { name: "Mark complete" }),
+    ).toBeVisible();
+    await expect(this.page.getByRole("tab", { name: "Dashboard" })).toBeVisible();
+    await expect(this.page.getByRole("tab", { name: "Calendar" })).toBeVisible();
+    await expect(this.page.getByRole("tab", { name: "Meetings" })).toBeVisible();
+    await expect(this.page.getByRole("tab", { name: "Workflows" })).toBeVisible();
+    await expect(this.page.getByRole("tab", { name: "Board Packages" })).toBeVisible();
+    await expect(this.page.getByRole("tab", { name: "Directory" })).toBeVisible();
+    await expect(this.page.getByRole("tab", { name: "Audit Log" })).toBeVisible();
+    await expect(this.page.getByRole("tab", { name: "Integrations" })).toBeVisible();
+    await expect(this.page.getByRole("tab", { name: "Settings" })).toBeVisible();
+    await expect(
+      this.page.getByRole("button", { name: "Add meeting" }),
+    ).toBeVisible();
+    await expect(
+      this.page.getByRole("button", { name: "Export PDF" }),
+    ).toBeVisible();
+    await expect(
+      this.page.getByRole("button", { name: "Add to calendar" }),
     ).toBeVisible();
   }
 
@@ -118,15 +138,22 @@ export class BoardCalendarPage {
   }
 
   async expectWorkspaceViewOptionHidden(option: string) {
-    await this.page.getByLabel("Choose calendar workspace view").click();
-    await expect(this.page.getByRole("option", { name: option })).toHaveCount(
-      0,
-    );
-    await this.page.keyboard.press("Escape");
+    await expect(this.page.getByRole("tab", { name: option })).toHaveCount(0);
+    await expect(this.page.getByRole("option", { name: option })).toHaveCount(0);
   }
 
   async chooseWorkspaceView(option: string) {
-    await this.chooseSelectOption("Choose calendar workspace view", option);
+    const tabName =
+      {
+        "AGM planning timeline": "Settings",
+        "Calendar workspace": "Calendar",
+        "Generated operational workflow": "Workflows",
+        "Meeting schedule": "Meetings",
+        Setup: "Settings",
+        "Staff task list": "Workflows",
+      }[option] ?? option;
+
+    await this.page.getByRole("tab", { name: tabName }).click();
   }
 
   async fillSetupBasics({
@@ -263,6 +290,7 @@ export class BoardCalendarPage {
   }
 
   async expectMonthGridFitsViewport() {
+    await this.chooseWorkspaceView("Calendar workspace");
     await expect(this.monthGrid).toBeVisible();
     const fitsViewport = await this.monthGrid.evaluate((element) => {
       const bounds = element.getBoundingClientRect();
@@ -388,19 +416,19 @@ export class BoardCalendarPage {
 
   async expectAddDisabled() {
     await expect(
-      this.page.getByRole("button", { name: "Add to calendar" }),
+      this.entryForm.getByRole("button", { name: "Add entry" }),
     ).toBeDisabled();
   }
 
   async expectAddEnabled() {
     await expect(
-      this.page.getByRole("button", { name: "Add to calendar" }),
+      this.entryForm.getByRole("button", { name: "Add entry" }),
     ).toBeEnabled();
   }
 
   async addToCalendar() {
     await this.expectAddEnabled();
-    await this.page.getByRole("button", { name: "Add to calendar" }).click();
+    await this.entryForm.getByRole("button", { name: "Add entry" }).click();
     await expect(this.field("Title")).toHaveValue("");
     await this.waitForSaved();
   }
