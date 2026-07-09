@@ -67,10 +67,10 @@ import type {
 import { setValue } from "@/lib/template-renderer/schema";
 import { cn } from "@/lib/utils";
 
-import { TemplateFields } from "./TemplateFields";
 import {
   AgmTimelinePanel,
   BoardCalendarSetupPanel,
+  DirectoryTablePanel,
   StaffTaskListPanel,
 } from "./BoardCalendarWorkflowPanels";
 
@@ -214,7 +214,6 @@ export function BoardCalendarWorkbench({
       return items;
     }, new Map()),
   ).slice(0, 8);
-  const directorySection = sections.find((section) => section.id === "committees");
   const selectedDateEvents = eventsByDate.get(selectedDateKey) ?? [];
   const editingEvent = editingEventId
     ? events.find((event) => event.id === editingEventId) ?? null
@@ -761,11 +760,9 @@ export function BoardCalendarWorkbench({
           </TabsContent>
 
           <TabsContent value="directory" className="mt-0">
-            <TemplateSectionPanel
+            <DirectoryTablePanel
               data={data}
-              errorsByPath={errorsByPath}
-              section={directorySection}
-              onChange={onChange}
+              onDataChange={onDataChange}
             />
           </TabsContent>
 
@@ -909,57 +906,6 @@ function MeetingTableField({ label, value }: { label: string; value: string }) {
       </p>
       <p className="text-slate-700">{value}</p>
     </div>
-  );
-}
-
-function TemplateSectionPanel({
-  data,
-  errorsByPath,
-  section,
-  onChange,
-}: {
-  data: TemplateFormData;
-  errorsByPath: Map<string, string>;
-  section?: TemplateSection;
-  onChange: (path: FieldPath, value: TemplateValue) => void;
-}) {
-  if (!section) {
-    return (
-      <ComingSoonPanel
-        icon={FileText}
-        title="This workspace is coming soon"
-        description="The module has a place for this area, but there is no connected template section yet."
-      />
-    );
-  }
-
-  return (
-    <section
-      className="rounded-xl border bg-white p-6 shadow-sm"
-      aria-labelledby={`${section.id}-heading`}
-    >
-      <h3 id={`${section.id}-heading`} className="text-xl font-semibold">
-        {section.title}
-      </h3>
-      {section.description ? (
-        <p className="mt-1.5 text-sm leading-6 text-slate-500">
-          {section.description}
-        </p>
-      ) : null}
-      <div
-        className={cn(
-          "mt-5",
-          section.layout === "two_column" ? "grid gap-5 md:grid-cols-2" : "space-y-5",
-        )}
-      >
-        <TemplateFields
-          fields={section.questions}
-          data={data}
-          errorsByPath={errorsByPath}
-          onChange={onChange}
-        />
-      </div>
-    </section>
   );
 }
 

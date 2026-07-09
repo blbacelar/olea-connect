@@ -101,6 +101,15 @@ function removeRow(rows: TemplateRecord[], index: number) {
   return rows.filter((_, rowIndex) => rowIndex !== index);
 }
 
+function getCommitteeRowKey(committee: TemplateRecord, index: number) {
+  const name = getString(committee, "name").trim();
+  const chair = getString(committee, "chair").trim();
+  const notes = getString(committee, "notes").trim();
+  return [name, chair, notes].some(Boolean)
+    ? `committee-${name}-${chair}-${notes}`
+    : `committee-empty-${index}`;
+}
+
 export function BoardCalendarSetupPanel({
   data,
   onChange,
@@ -129,7 +138,24 @@ export function BoardCalendarSetupPanel({
 
   function addCommittee() {
     if (committees.length >= 8) return;
-    onChange(["committees"], [...committees, { name: "", chair: "", notes: "" }]);
+    onDataChange((currentData) => {
+      const currentCommittees = getRows(currentData, "committees");
+      if (currentCommittees.length >= 8) return currentData;
+      return {
+        ...currentData,
+        committees: [
+          ...currentCommittees,
+          { name: "", chair: "", notes: "" },
+        ],
+      };
+    });
+  }
+
+  function removeCommittee(index: number) {
+    onDataChange((currentData) => ({
+      ...currentData,
+      committees: removeRow(getRows(currentData, "committees"), index),
+    }));
   }
 
   function updateTaskRule(index: number, field: string, value: unknown) {
@@ -301,7 +327,7 @@ export function BoardCalendarSetupPanel({
                 type="button"
                 variant="ghost"
                 className="text-red-700 hover:bg-red-50 hover:text-red-800"
-                onClick={() => onChange(["committees"], removeRow(committees, index))}
+                onClick={() => removeCommittee(index)}
               >
                 <Trash2 className="size-4" />
                 Remove
@@ -634,6 +660,246 @@ export function StaffTaskListPanel({
       ) : (
         <p className="rounded-lg border border-dashed p-4 text-sm text-slate-500">
           Add meetings and task rules in Setup to generate staff tasks.
+        </p>
+      )}
+    </section>
+  );
+}
+
+export function DirectoryTablePanel({
+  data,
+  onDataChange,
+}: {
+  data: TemplateFormData;
+  onDataChange: (
+    updater: (currentData: TemplateFormData) => TemplateFormData,
+  ) => void;
+}) {
+  const committees = getRows(data, "committees");
+  const [editingCommitteeIndex, setEditingCommitteeIndex] = useState<number | null>(
+    null,
+  );
+  const [committeeDraft, setCommitteeDraft] = useState<TemplateRecord | null>(
+    null,
+  );
+
+  const editingCommittee =
+    editingCommitteeIndex === null
+      ? null
+      : committees[editingCommitteeIndex] ?? null;
+
+  useEffect(() => {
+    if (editingCommitteeIndex === null) return;
+    const nextCommittee = committees[editingCommitteeIndex];
+    if (!nextCommittee) {
+      setEditingCommitteeIndex(null);
+      setCommitteeDraft(null);
+    }
+  }, [committees, editingCommitteeIndex]);
+
+  function addCommittee() {
+    if (committees.length >= 8) return;
+    onDataChange((currentData) => {
+      const currentCommittees = getRows(currentData, "committees");
+      if (currentCommittees.length >= 8) return currentData;
+      return {
+        ...currentData,
+        committees: [...currentCommittees, { name: "", chair: "", notes: "" }],
+      };
+    });
+  }
+
+  function openCommitteeEditor(index: number) {
+    setEditingCommitteeIndex(index);
+    setCommitteeDraft({ ...(committees[index] ?? {}) });
+  }
+
+  function closeCommitteeEditor() {
+    setEditingCommitteeIndex(null);
+    setCommitteeDraft(null);
+  }
+
+  function updateCommitteeDraft(field: string, value: unknown) {
+    setCommitteeDraft((current) => ({ ...(current ?? {}), [field]: value }));
+  }
+
+  function saveCommitteeDraft() {
+    if (editingCommitteeIndex === null || !committeeDraft) return;
+    onDataChange((currentData) => ({
+      ...currentData,
+      committees: getRows(currentData, "committees").map((committee, index) =>
+        index === editingCommitteeIndex
+          ? { ...committee, ...committeeDraft }
+          : committee,
+      ),
+    }));
+    closeCommitteeEditor();
+  }
+
+  function removeCommittee(index: number) {
+    onDataChange((currentData) => ({
+      ...currentData,
+      committees: removeRow(getRows(currentData, "committees"), index),
+    }));
+  }
+
+  return (
+    <section
+      className="space-y-4 rounded-xl border bg-white p-5 shadow-sm"
+      data-testid="board-calendar-directory-panel"
+      aria-labelledby="board-calendar-directory-heading"
+    >
+      <div className="flex flex-wrap items-start justify-between gap-3">
+        <div>
+          <h3
+            id="board-calendar-directory-heading"
+            className="text-xl font-semibold text-slate-950"
+          >
+            Directory
+          </h3>
+          <p className="mt-1 text-sm leading-6 text-slate-500">
+            Maintain the board committees and primary contacts used throughout
+            this calendar.
+          </p>
+        </div>
+        <Button
+          type="button"
+          variant="outline"
+          size="sm"
+          disabled={committees.length >= 8}
+          onClick={addCommittee}
+        >
+          <Plus className="size-4" />
+          Add committee
+        </Button>
+      </div>
+
+      {committees.length ? (
+        <>
+          <div className="rounded-xl border">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Committee</TableHead>
+                  <TableHead>Chair</TableHead>
+                  <TableHead className="w-[120px]">Notes</TableHead>
+                  <TableHead className="w-[210px] text-right">Actions</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {committees.map((committee, index) => (
+                  <TableRow key={getCommitteeRowKey(committee, index)}>
+                    <TableCell className="min-w-[220px] font-semibold text-slate-950">
+                      {getString(committee, "name") || "Untitled committee"}
+                    </TableCell>
+                    <TableCell className="min-w-[180px] text-slate-700">
+                      {getString(committee, "chair") || "No chair assigned"}
+                    </TableCell>
+                    <TableCell className="whitespace-nowrap text-slate-500">
+                      {getString(committee, "notes") ? (
+                        <Badge
+                          variant="outline"
+                          className="border-olea-green/20 bg-olea-light text-olea-dark"
+                        >
+                          Has notes
+                        </Badge>
+                      ) : (
+                        "—"
+                      )}
+                    </TableCell>
+                    <TableCell className="text-right">
+                      <div className="flex justify-end gap-2">
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="sm"
+                          aria-label={`Edit committee ${index + 1}`}
+                          onClick={() => openCommitteeEditor(index)}
+                        >
+                          <Pencil className="size-4" />
+                          Edit
+                        </Button>
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="sm"
+                          className="text-red-700 hover:bg-red-50 hover:text-red-800"
+                          aria-label={`Remove committee ${index + 1}`}
+                          onClick={() => removeCommittee(index)}
+                        >
+                          <Trash2 className="size-4" />
+                          Remove
+                        </Button>
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </div>
+
+          <Dialog
+            open={editingCommitteeIndex !== null}
+            onOpenChange={(open) => {
+              if (!open) closeCommitteeEditor();
+            }}
+          >
+            <DialogContent>
+              <DialogHeader>
+                <DialogTitle>Edit directory entry</DialogTitle>
+                <DialogDescription>
+                  Update the committee name, chair, and internal notes.
+                </DialogDescription>
+              </DialogHeader>
+              {committeeDraft && editingCommittee ? (
+                <div className="space-y-4">
+                  <Field label="Committee name">
+                    <Input
+                      aria-label={`Committee ${(editingCommitteeIndex ?? 0) + 1} name`}
+                      value={getString(committeeDraft, "name")}
+                      onChange={(event) =>
+                        updateCommitteeDraft("name", event.target.value)
+                      }
+                    />
+                  </Field>
+                  <Field label="Chair">
+                    <Input
+                      aria-label={`Committee ${(editingCommitteeIndex ?? 0) + 1} chair`}
+                      value={getString(committeeDraft, "chair")}
+                      onChange={(event) =>
+                        updateCommitteeDraft("chair", event.target.value)
+                      }
+                    />
+                  </Field>
+                  <Field label="Notes">
+                    <Textarea
+                      aria-label={`Committee ${(editingCommitteeIndex ?? 0) + 1} notes`}
+                      value={getString(committeeDraft, "notes")}
+                      placeholder="Add context, meeting cadence, or contact details."
+                      onChange={(event) =>
+                        updateCommitteeDraft("notes", event.target.value)
+                      }
+                    />
+                  </Field>
+                </div>
+              ) : null}
+              <DialogFooter>
+                <DialogClose asChild>
+                  <Button type="button" variant="outline">
+                    Cancel
+                  </Button>
+                </DialogClose>
+                <Button type="button" onClick={saveCommitteeDraft}>
+                  Save directory entry
+                </Button>
+              </DialogFooter>
+            </DialogContent>
+          </Dialog>
+        </>
+      ) : (
+        <p className="rounded-lg border border-dashed p-4 text-sm text-slate-500">
+          No committees yet. Add one when this board uses committees or named
+          working groups.
         </p>
       )}
     </section>

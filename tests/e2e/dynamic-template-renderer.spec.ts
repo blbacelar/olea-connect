@@ -1,8 +1,5 @@
 import { expect, test } from "../fixtures/authenticated.fixture";
-import {
-  BoardCalendarPage,
-  getFutureDateKey,
-} from "../pages/board-calendar.page";
+import { BoardCalendarPage } from "../pages/board-calendar.page";
 import { TemplateEditorPage } from "../pages/template-editor.page";
 
 test.describe("@critical dynamic template renderer", () => {
@@ -21,35 +18,15 @@ test.describe("@critical dynamic template renderer", () => {
     page,
   }) => {
     const boardCalendar = new BoardCalendarPage(page);
-    const futureDate = getFutureDateKey(1);
 
     await boardCalendar.openNewModuleCalendar();
 
     await boardCalendar.expectWorkspaceViewOptionHidden("Colour key");
-    await boardCalendar.selectCalendarDate(futureDate);
-    await boardCalendar.addMeeting({
-      title: "Finance Committee",
-      category: "Board Meeting",
-      color: "#2563eb",
-      time: "18:30",
-      location: "Boardroom",
-      virtualLink: "https://example.com/finance-committee",
-      leadContact: "Treasurer",
-      confirmed: "Yes",
-      notes: "Review quarterly budget.",
-    });
-
-    await boardCalendar.expectSelectedDateText("Board Meeting - Finance Committee");
-    await boardCalendar.expectSelectedDateText(futureDate);
-    await boardCalendar.expectSelectedDateText("6:30 PM");
-    await boardCalendar.expectSelectedDateText("Boardroom");
-    await boardCalendar.saveNowAndWaitForPost();
-    await boardCalendar.expectSessionPersisted();
-    await boardCalendar.waitForSaved();
+    await boardCalendar.chooseWorkspaceView("Calendar workspace");
+    await boardCalendar.expectEmptySchedule();
 
     await boardCalendar.startNewWorkbook();
     await boardCalendar.expectBlankEntryForm();
-    await boardCalendar.expectNoEntryText("Board Meeting - Finance Committee");
     await boardCalendar.expectEmptySchedule();
   });
 

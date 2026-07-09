@@ -164,6 +164,9 @@ export class BoardCalendarPage {
     const tab = this.page.getByRole("tab", { name: tabName });
     for (let attempt = 0; attempt < 3; attempt += 1) {
       await tab.scrollIntoViewIfNeeded();
+      if ((await tab.getAttribute("aria-selected")) === "true") {
+        return;
+      }
       await tab.click();
       try {
         await expect(tab).toHaveAttribute("aria-selected", "true", {
@@ -212,6 +215,22 @@ export class BoardCalendarPage {
     await this.setupPanel
       .getByLabel(`Committee ${committeeCount} chair`)
       .fill(chair);
+    await expect(
+      this.setupPanel.getByLabel(`Committee ${committeeCount} name`),
+    ).toHaveValue(name);
+    await expect(
+      this.setupPanel.getByLabel(`Committee ${committeeCount} chair`),
+    ).toHaveValue(chair);
+  }
+
+  async expectSetupCommittee(name: string, chair: string) {
+    await this.chooseWorkspaceView("Setup");
+    await expect(this.setupPanel.getByLabel(/Committee \d+ name/).first()).toHaveValue(
+      name,
+    );
+    await expect(this.setupPanel.getByLabel(/Committee \d+ chair/).first()).toHaveValue(
+      chair,
+    );
   }
 
   async addTaskRule({
@@ -310,6 +329,68 @@ export class BoardCalendarPage {
   async expectMeetingTableDoesNotShow(text: string) {
     await this.chooseWorkspaceView("Meeting schedule");
     await expect(this.page.getByText(text)).toHaveCount(0);
+  }
+
+  async expectDirectoryCommittee(name: string, chair: string) {
+    await this.chooseWorkspaceView("Directory");
+    const row = this.page
+      .getByTestId("board-calendar-directory-panel")
+      .locator("tbody tr")
+      .filter({ hasText: name });
+    await expect(row).toContainText(chair);
+  }
+
+  async updateDirectoryCommittee(
+    index: number,
+    {
+      chair,
+      name,
+      notes,
+    }: {
+      chair: string;
+      name: string;
+      notes: string;
+    },
+  ) {
+    await this.chooseWorkspaceView("Directory");
+    await this.page
+      .getByTestId("board-calendar-directory-panel")
+      .getByRole("button", { name: `Edit committee ${index}` })
+      .click();
+    const dialog = this.page.getByRole("dialog", { name: "Edit directory entry" });
+    await expect(dialog).toBeVisible();
+    await dialog.getByLabel(`Committee ${index} name`).fill(name);
+    await dialog.getByLabel(`Committee ${index} chair`).fill(chair);
+    await dialog.getByLabel(`Committee ${index} notes`).fill(notes);
+    await dialog.getByRole("button", { name: "Save directory entry" }).click();
+    await expect(dialog).toHaveCount(0);
+  }
+
+  async expectDirectoryCommitteeDetails(
+    index: number,
+    {
+      chair,
+      name,
+      notes,
+    }: {
+      chair: string;
+      name: string;
+      notes: string;
+    },
+  ) {
+    await this.chooseWorkspaceView("Directory");
+    const row = this.page
+      .getByTestId("board-calendar-directory-panel")
+      .locator("tbody tr")
+      .nth(index - 1);
+    await expect(row).toContainText(name);
+    await expect(row).toContainText(chair);
+    await expect(row).toContainText("Has notes");
+    await row.getByRole("button", { name: `Edit committee ${index}` }).click();
+    const dialog = this.page.getByRole("dialog", { name: "Edit directory entry" });
+    await expect(dialog.getByLabel(`Committee ${index} notes`)).toHaveValue(notes);
+    await dialog.getByRole("button", { name: "Cancel" }).click();
+    await expect(dialog).toHaveCount(0);
   }
 
   async addAgmTimelineMilestone({
@@ -591,10 +672,16 @@ export class BoardCalendarPage {
       return;
     }
 
-    await this.waitForTemplatePost();
+    await this.waitForSaved();
   }
 
   async waitForSaved() {
+    const hiddenSaveState = this.page.getByTestId("template-save-state");
+    if (await hiddenSaveState.count()) {
+      await expect(hiddenSaveState).toHaveText("saved", { timeout: 15_000 });
+      return;
+    }
+
     const savedLabel = this.page.getByText(/^Saved$/);
     if (await savedLabel.count()) {
       await expect(savedLabel).toBeVisible({ timeout: 10_000 });
@@ -631,10 +718,12 @@ export class BoardCalendarPage {
   }
 
   async expectSelectedDateText(text: string) {
+    await this.chooseWorkspaceView("Calendar workspace");
     await expect(this.selectedDateText(text).first()).toBeVisible();
   }
 
   async expectAnySelectedDateText(texts: string[]) {
+    await this.chooseWorkspaceView("Calendar workspace");
     await expect(
       this.selectedDatePanel.getByText(oneOfTextPattern(texts)).first(),
     ).toBeVisible();

@@ -233,6 +233,12 @@ export function DynamicTemplateEditor({
         </p>
       ) : null}
 
+      {calendarEnabled ? (
+        <span className="sr-only" data-testid="template-save-state">
+          {saveState}
+        </span>
+      ) : null}
+
       {!calendarEnabled && validationErrors.length > 0 ? (
         <div className="rounded-xl border border-amber-200 bg-amber-50 px-5 py-4 text-sm text-amber-900">
           <div className="flex items-center gap-2 font-semibold">

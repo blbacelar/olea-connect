@@ -82,6 +82,7 @@ test.describe("@critical Board Calendar & Operational Workflow", () => {
         boardChair: "Chair Tester",
       });
       await boardCalendar.addCommittee("Finance Committee", "Treasurer");
+      await boardCalendar.expectSetupCommittee("Finance Committee", "Treasurer");
       await boardCalendar.addTaskRule({
         label: "Prepare board briefing",
         days: "10",
@@ -95,6 +96,21 @@ test.describe("@critical Board Calendar & Operational Workflow", () => {
         timing: "After",
         appliesTo: "Board Meeting",
         responsible: "Board Chair",
+      });
+      await boardCalendar.expectSetupCommittee("Finance Committee", "Treasurer");
+    });
+
+    await test.step("manage committee directory from a table and edit modal", async () => {
+      await boardCalendar.expectDirectoryCommittee("Finance Committee", "Treasurer");
+      await boardCalendar.updateDirectoryCommittee(1, {
+        name: "Finance / Audit Committee",
+        chair: "Treasurer QA",
+        notes: "Reviews financial reporting and budget readiness.",
+      });
+      await boardCalendar.expectDirectoryCommitteeDetails(1, {
+        name: "Finance / Audit Committee",
+        chair: "Treasurer QA",
+        notes: "Reviews financial reporting and budget readiness.",
       });
       await boardCalendar.saveNowAndWaitForPost();
       await boardCalendar.expectSessionPersisted();
