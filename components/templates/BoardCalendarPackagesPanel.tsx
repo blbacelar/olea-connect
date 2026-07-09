@@ -2,12 +2,14 @@
 
 import { useMemo, useState } from "react";
 
+import JSZip from "jszip";
 import {
   AlertTriangle,
   Download,
   FileText,
   FolderArchive,
   LinkIcon,
+  LoaderCircle,
   PackageOpen,
   Plus,
   Trash2,
@@ -109,8 +111,14 @@ export function BoardPackagesPanel({
   const [formError, setFormError] = useState("");
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [isUploading, setIsUploading] = useState(false);
+  const [isPackaging, setIsPackaging] = useState(false);
+  const [packageAcknowledged, setPackageAcknowledged] = useState(false);
   const [downloadError, setDownloadError] = useState("");
   const [operationError, setOperationError] = useState("");
+
+  const packageIncludesConfidentialDocuments = Boolean(
+    packageTarget?.documents.some((document) => document.confidential),
+  );
 
   const isUploadOpen = Boolean(uploadMeeting) || isGeneralUploadOpen;
   const uploadTitle = uploadMeeting
@@ -296,7 +304,9 @@ export function BoardPackagesPanel({
 
   async function confirmPackageDownload() {
     if (!packageTarget) return;
+    if (packageIncludesConfidentialDocuments && !packageAcknowledged) return;
 
+    setIsPackaging(true);
     try {
       if (templateInstanceId) {
         const auditResult = await recordBoardPackageAuditEvent({
@@ -308,7 +318,11 @@ export function BoardPackagesPanel({
         if (!auditResult.ok) throw new Error(auditResult.error);
       }
 
-      downloadPackageManifest(packageTarget);
+      await downloadBoardPackageZip({
+        meeting: packageTarget,
+        templateInstanceId,
+      });
+
       onDataChange((currentData) =>
         appendBoardPackageAccessLog(currentData, {
           action: "package_downloaded",
@@ -317,13 +331,15 @@ export function BoardPackagesPanel({
         }),
       );
       setPackageTarget(null);
+      setPackageAcknowledged(false);
     } catch (error) {
-      setPackageTarget(null);
       setOperationError(
         error instanceof Error
           ? error.message
-          : "Unable to record this package download.",
+          : "Unable to prepare this board package download.",
       );
+    } finally {
+      setIsPackaging(false);
     }
   }
 
@@ -629,29 +645,65 @@ export function BoardPackagesPanel({
 
       <Dialog
         open={Boolean(packageTarget)}
-        onOpenChange={(open) => !open && setPackageTarget(null)}
+        onOpenChange={(open) => {
+          if (!open && !isPackaging) {
+            setPackageTarget(null);
+            setPackageAcknowledged(false);
+          }
+        }}
       >
         <DialogContent>
           <DialogHeader>
             <DialogTitle>Download board package?</DialogTitle>
             <DialogDescription>
               “{packageTarget?.title}” includes {packageTarget?.documentCount ?? 0}
-              {" "}document(s). This will download a package manifest and record
-              the access in the audit log. Private files still open through
-              individual signed download links.
+              {" "}document(s). This will download a zip package with uploaded
+              files and a package index. Access is recorded in the audit log.
             </DialogDescription>
           </DialogHeader>
+          {packageIncludesConfidentialDocuments ? (
+            <label className="flex gap-3 rounded-lg border border-amber-200 bg-amber-50 p-4 text-sm leading-6 text-amber-950">
+              <input
+                type="checkbox"
+                className="mt-1 size-4 shrink-0 accent-olea-green"
+                checked={packageAcknowledged}
+                disabled={isPackaging}
+                onChange={(event) =>
+                  setPackageAcknowledged(event.target.checked)
+                }
+              />
+              <span>
+                <strong className="block font-semibold">
+                  Confidentiality acknowledgement required
+                </strong>
+                I acknowledge this board package includes confidential materials
+                and will only share them with authorized board package
+                recipients.
+              </span>
+            </label>
+          ) : null}
           <DialogFooter>
             <DialogClose asChild>
-              <Button type="button" variant="outline">
+              <Button type="button" variant="outline" disabled={isPackaging}>
                 Cancel
               </Button>
             </DialogClose>
             <Button
               type="button"
+              disabled={
+                isPackaging ||
+                (packageIncludesConfidentialDocuments && !packageAcknowledged)
+              }
               onClick={() => void confirmPackageDownload()}
             >
-              Download package
+              {isPackaging ? (
+                <>
+                  <LoaderCircle className="mr-2 size-4 animate-spin" />
+                  Preparing package
+                </>
+              ) : (
+                "Download package"
+              )}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -986,33 +1038,205 @@ function validateDocumentForm({
   return "";
 }
 
-function downloadPackageManifest(meeting: BoardPackageMeeting) {
-  const lines = [
-    meeting.title,
+async function downloadBoardPackageZip({
+  meeting,
+  templateInstanceId,
+}: {
+  meeting: BoardPackageMeeting;
+  templateInstanceId: string;
+}) {
+  const zip = new JSZip();
+  const includedFiles: Array<{
+    document: BoardPackageDocument;
+    path?: string;
+    status: "included" | "linked" | "unavailable";
+  }> = [];
+  const documentsFolder = zip.folder("documents");
+
+  for (const packageDocument of meeting.documents) {
+    if (packageDocument.storagePath) {
+      const documentUrlResult = await createBoardPackageDocumentDownloadUrl({
+        documentId: packageDocument.id,
+        documentName: packageDocument.name,
+        fileName: packageDocument.fileName || packageDocument.name,
+        meetingId: meeting.id,
+        meetingTitle: meeting.title,
+        storagePath: packageDocument.storagePath,
+        templateInstanceId,
+      });
+
+      if (!documentUrlResult.ok) {
+        includedFiles.push({
+          document: packageDocument,
+          status: "unavailable",
+        });
+        continue;
+      }
+
+      try {
+        const response = await fetch(documentUrlResult.data.signedUrl);
+        if (!response.ok) throw new Error("Download failed");
+        const fileBuffer = await response.arrayBuffer();
+        const filePath = getPackageDocumentPath(packageDocument);
+        documentsFolder?.file(filePath, fileBuffer);
+        includedFiles.push({
+          document: packageDocument,
+          path: `documents/${filePath}`,
+          status: "included",
+        });
+      } catch {
+        includedFiles.push({
+          document: packageDocument,
+          status: "unavailable",
+        });
+      }
+      continue;
+    }
+
+    includedFiles.push({
+      document: packageDocument,
+      status: packageDocument.url ? "linked" : "unavailable",
+    });
+  }
+
+  zip.file("package-index.html", buildBoardPackageIndexHtml(meeting, includedFiles));
+  zip.file("README.txt", buildBoardPackageReadme(meeting));
+
+  const packageBlob = await zip.generateAsync({
+    compression: "DEFLATE",
+    compressionOptions: { level: 6 },
+    type: "blob",
+  });
+
+  downloadBlob(packageBlob, `${slugify(meeting.title)}-board-package.zip`);
+}
+
+function getPackageDocumentPath(packageDocument: BoardPackageDocument) {
+  const sourceName = packageDocument.fileName || packageDocument.name;
+  const extensionMatch = sourceName.match(/\.[a-z0-9]{1,12}$/i);
+  const extension = extensionMatch?.[0] ?? "";
+  const baseName = extension
+    ? sourceName.slice(0, -extension.length)
+    : sourceName;
+
+  return `${slugify(packageDocument.category)}/${slugify(baseName)}${extension.toLowerCase()}`;
+}
+
+function buildBoardPackageIndexHtml(
+  meeting: BoardPackageMeeting,
+  includedFiles: Array<{
+    document: BoardPackageDocument;
+    path?: string;
+    status: "included" | "linked" | "unavailable";
+  }>,
+) {
+  const hasConfidentialDocuments = includedFiles.some(
+    ({ document: packageDocument }) => packageDocument.confidential,
+  );
+  const generatedAt = new Intl.DateTimeFormat("en-US", {
+    dateStyle: "medium",
+    timeStyle: "short",
+  }).format(new Date());
+
+  const rows = includedFiles
+    .map(({ document: packageDocument, path, status }) => {
+      const location =
+        status === "included" && path
+          ? `<a href="${escapeHtml(path)}">${escapeHtml(path)}</a>`
+          : status === "linked" && packageDocument.url
+            ? `<a href="${escapeHtml(packageDocument.url)}" target="_blank" rel="noopener noreferrer">${escapeHtml(packageDocument.url)}</a>`
+            : "Open Olea Connects to retry this private file.";
+
+      return `<tr>
+        <td>${escapeHtml(packageDocument.name)}</td>
+        <td>${escapeHtml(packageDocument.category)}</td>
+        <td>${packageDocument.confidential ? "Confidential" : "Standard"}</td>
+        <td>${location}</td>
+      </tr>`;
+    })
+    .join("");
+
+  return `<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <title>${escapeHtml(meeting.title)} board package</title>
+  <style>
+    body { color: #1f2937; font-family: Arial, sans-serif; margin: 40px; }
+    h1 { color: #10233f; margin-bottom: 8px; }
+    p { color: #52637a; line-height: 1.5; }
+    table { border-collapse: collapse; margin-top: 24px; width: 100%; }
+    th, td { border: 1px solid #d8dee8; padding: 12px; text-align: left; vertical-align: top; }
+    th { background: #eff6f2; color: #1d5132; font-size: 12px; letter-spacing: .08em; text-transform: uppercase; }
+    .warning { background: #fff7ed; border: 1px solid #fed7aa; border-radius: 12px; color: #7c2d12; margin-top: 24px; padding: 16px; }
+  </style>
+</head>
+<body>
+  <h1>${escapeHtml(meeting.title)}</h1>
+  <p>${escapeHtml([meeting.date, meeting.time].filter(Boolean).join(" at "))}</p>
+  <p>Generated by Olea Connects on ${escapeHtml(generatedAt)}.</p>
+  ${
+    hasConfidentialDocuments
+      ? `<div class="warning">
+    This package contains confidential board materials. Store and share it only with authorized recipients.
+  </div>`
+      : ""
+  }
+  <table>
+    <thead>
+      <tr>
+        <th>Document</th>
+        <th>Category</th>
+        <th>Access</th>
+        <th>File or link</th>
+      </tr>
+    </thead>
+    <tbody>${rows}</tbody>
+  </table>
+</body>
+</html>`;
+}
+
+function buildBoardPackageReadme(meeting: BoardPackageMeeting) {
+  return [
+    `${meeting.title} board package`,
     [meeting.date, meeting.time].filter(Boolean).join(" at "),
     "",
-    "Documents",
-    ...meeting.documents.map((document, index) =>
-      [
-        `${index + 1}. ${document.name}`,
-        `Category: ${document.category}`,
-        `Access: ${document.confidential ? "Confidential" : "Standard"}`,
-        document.storagePath
-          ? "Storage: Private Olea Connects file"
-          : `Link: ${document.url}`,
-      ].join("\n"),
-    ),
-  ].filter(Boolean);
-  const blob = new Blob([lines.join("\n\n")], {
-    type: "text/plain;charset=utf-8",
-  });
+    "Open package-index.html for the document list.",
+    "Private files are included in the documents folder when available.",
+    "External links are listed in the package index.",
+    "",
+    "Confidentiality: only share this package with authorized board package recipients.",
+  ]
+    .filter(Boolean)
+    .join("\n");
+}
+
+function downloadBlob(blob: Blob, filename: string) {
   const url = URL.createObjectURL(blob);
   const anchor = document.createElement("a");
 
   anchor.href = url;
-  anchor.download = `${slugify(meeting.title)}-board-package.txt`;
+  anchor.download = filename;
   anchor.click();
   URL.revokeObjectURL(url);
+}
+
+function escapeHtml(value: string) {
+  return value.replace(/[&<>"']/g, (character) => {
+    switch (character) {
+      case "&":
+        return "&amp;";
+      case "<":
+        return "&lt;";
+      case ">":
+        return "&gt;";
+      case '"':
+        return "&quot;";
+      default:
+        return "&#39;";
+    }
+  });
 }
 
 function slugify(value: string) {
