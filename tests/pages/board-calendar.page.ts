@@ -330,6 +330,37 @@ export class BoardCalendarPage {
     await expect(dialog).toHaveCount(0);
   }
 
+  async filterWorkflowTasksByStatus(status: string) {
+    await this.chooseWorkspaceView("Staff task list");
+    const filterButton = this.staffTaskListPanel.getByRole("button", {
+      name: /Filters/,
+    });
+    if ((await filterButton.getAttribute("aria-expanded")) !== "true") {
+      await filterButton.click();
+    }
+    await this.chooseSelectOption(
+      "Filter workflow tasks by status",
+      status,
+      this.staffTaskListPanel,
+    );
+  }
+
+  async clearWorkflowFilters() {
+    await this.staffTaskListPanel.getByRole("button", { name: "Clear filters" }).click();
+  }
+
+  async expectWorkflowTaskVisible(taskName: string) {
+    await expect(
+      this.staffTaskListPanel.locator("tbody tr").filter({ hasText: taskName }),
+    ).toBeVisible();
+  }
+
+  async expectWorkflowTaskHidden(taskName: string) {
+    await expect(
+      this.staffTaskListPanel.locator("tbody tr").filter({ hasText: taskName }),
+    ).toHaveCount(0);
+  }
+
   async expectMeetingVisibleInMeetingsTable(meetingTitle: string) {
     await this.chooseWorkspaceView("Meeting schedule");
     await expect(
@@ -408,6 +439,32 @@ export class BoardCalendarPage {
     await expect(dialog.getByLabel(`Committee ${index} notes`)).toHaveValue(notes);
     await dialog.getByRole("button", { name: "Cancel" }).click();
     await expect(dialog).toHaveCount(0);
+  }
+
+  async filterDirectoryByNotes(option: "Has notes" | "No notes") {
+    await this.chooseWorkspaceView("Directory");
+    const directoryPanel = this.page.getByTestId("board-calendar-directory-panel");
+    const filterButton = directoryPanel.getByRole("button", { name: /Filters/ });
+    if ((await filterButton.getAttribute("aria-expanded")) !== "true") {
+      await filterButton.click();
+    }
+    await this.chooseSelectOption("Filter directory by notes", option, directoryPanel);
+  }
+
+  async clearDirectoryFilters() {
+    await this.page
+      .getByTestId("board-calendar-directory-panel")
+      .getByRole("button", { name: "Clear filters" })
+      .click();
+  }
+
+  async expectDirectoryCommitteeHidden(name: string) {
+    await expect(
+      this.page
+        .getByTestId("board-calendar-directory-panel")
+        .locator("tbody tr")
+        .filter({ hasText: name }),
+    ).toHaveCount(0);
   }
 
   async addAgmTimelineMilestone({

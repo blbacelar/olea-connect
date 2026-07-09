@@ -82,6 +82,7 @@ test.describe("@critical Board Calendar & Operational Workflow", () => {
         boardChair: "Chair Tester",
       });
       await boardCalendar.addCommittee("Finance Committee", "Treasurer");
+      await boardCalendar.addCommittee("Governance Committee", "Chair Tester");
       await boardCalendar.expectSetupCommittee("Finance Committee", "Treasurer");
       await boardCalendar.addTaskRule({
         label: "Prepare board briefing",
@@ -102,6 +103,10 @@ test.describe("@critical Board Calendar & Operational Workflow", () => {
 
     await test.step("manage committee directory from a table and edit modal", async () => {
       await boardCalendar.expectDirectoryCommittee("Finance Committee", "Treasurer");
+      await boardCalendar.expectDirectoryCommittee(
+        "Governance Committee",
+        "Chair Tester",
+      );
       await boardCalendar.updateDirectoryCommittee(1, {
         name: "Finance / Audit Committee",
         chair: "Treasurer QA",
@@ -112,6 +117,22 @@ test.describe("@critical Board Calendar & Operational Workflow", () => {
         chair: "Treasurer QA",
         notes: "Reviews financial reporting and budget readiness.",
       });
+      await boardCalendar.filterDirectoryByNotes("Has notes");
+      await boardCalendar.expectDirectoryCommittee(
+        "Finance / Audit Committee",
+        "Treasurer QA",
+      );
+      await boardCalendar.expectDirectoryCommitteeHidden("Governance Committee");
+      await boardCalendar.clearDirectoryFilters();
+      await boardCalendar.filterDirectoryByNotes("No notes");
+      await boardCalendar.expectDirectoryCommittee(
+        "Governance Committee",
+        "Chair Tester",
+      );
+      await boardCalendar.expectDirectoryCommitteeHidden(
+        "Finance / Audit Committee",
+      );
+      await boardCalendar.clearDirectoryFilters();
       await boardCalendar.saveNowAndWaitForPost();
       await boardCalendar.expectSessionPersisted();
       await boardCalendar.waitForSaved();
@@ -182,6 +203,10 @@ test.describe("@critical Board Calendar & Operational Workflow", () => {
         "In Progress",
         "Briefing packet drafted.",
       );
+      await boardCalendar.filterWorkflowTasksByStatus("In Progress");
+      await boardCalendar.expectWorkflowTaskVisible("Send save-the-date");
+      await boardCalendar.expectWorkflowTaskHidden("Send action summary");
+      await boardCalendar.clearWorkflowFilters();
       await boardCalendar.saveNowAndWaitForPost();
       await boardCalendar.waitForSaved();
     });

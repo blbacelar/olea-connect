@@ -2,7 +2,7 @@
 
 import { useEffect, useState, type ReactNode } from "react";
 
-import { Pencil, Plus, Trash2 } from "lucide-react";
+import { Filter, Pencil, Plus, Trash2 } from "lucide-react";
 
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -56,6 +56,12 @@ const trackOptions = [
   "Other",
 ];
 
+const noteFilterOptions = [
+  { label: "All notes", value: "all" },
+  { label: "Has notes", value: "with_notes" },
+  { label: "No notes", value: "without_notes" },
+];
+
 function isRecord(value: unknown): value is TemplateRecord {
   return Boolean(value) && typeof value === "object" && !Array.isArray(value);
 }
@@ -84,6 +90,24 @@ function getNumber(record: TemplateRecord, key: string) {
 function getTopLevelString(data: TemplateFormData, key: string) {
   const value = data[key];
   return typeof value === "string" ? value : "";
+}
+
+function normalizeFilterValue(value: string) {
+  return value.trim().toLowerCase();
+}
+
+function includesFilterValue(value: string, filter: string) {
+  const normalizedFilter = normalizeFilterValue(filter);
+  return (
+    !normalizedFilter ||
+    value.toLowerCase().includes(normalizedFilter)
+  );
+}
+
+function matchesNoteFilter(notes: string, filter: string) {
+  if (filter === "with_notes") return Boolean(notes.trim());
+  if (filter === "without_notes") return !notes.trim();
+  return true;
 }
 
 function updateRow(
@@ -459,8 +483,53 @@ export function StaffTaskListPanel({
   const tasks = getRows(syncBoardCalendarGeneratedTasks(data), "tasks");
   const [editingTaskIndex, setEditingTaskIndex] = useState<number | null>(null);
   const [taskDraft, setTaskDraft] = useState<TemplateRecord | null>(null);
+  const [showFilters, setShowFilters] = useState(false);
+  const [taskFilter, setTaskFilter] = useState("");
+  const [dueFromFilter, setDueFromFilter] = useState("");
+  const [dueToFilter, setDueToFilter] = useState("");
+  const [relatedMeetingFilter, setRelatedMeetingFilter] = useState("");
+  const [responsibleFilter, setResponsibleFilter] = useState("all");
+  const [statusFilter, setStatusFilter] = useState("all");
+  const [notesFilter, setNotesFilter] = useState("all");
   const editingTask =
     editingTaskIndex === null ? null : tasks[editingTaskIndex] ?? null;
+  const responsibleOptions = Array.from(
+    new Set(
+      tasks
+        .map((task) => getString(task, "responsible"))
+        .filter(Boolean),
+    ),
+  );
+  const filteredTasks = tasks
+    .map((task, index) => ({ index, task }))
+    .filter(({ task }) => {
+      const dueDate = getString(task, "due_date");
+      const notes = getString(task, "notes");
+
+      return (
+        includesFilterValue(getString(task, "task"), taskFilter) &&
+        includesFilterValue(
+          getString(task, "related_meeting"),
+          relatedMeetingFilter,
+        ) &&
+        (!dueFromFilter || dueDate >= dueFromFilter) &&
+        (!dueToFilter || dueDate <= dueToFilter) &&
+        (responsibleFilter === "all" ||
+          getString(task, "responsible") === responsibleFilter) &&
+        (statusFilter === "all" ||
+          (getString(task, "status") || "Not Started") === statusFilter) &&
+        matchesNoteFilter(notes, notesFilter)
+      );
+    });
+  const hasActiveFilters = Boolean(
+    taskFilter ||
+      dueFromFilter ||
+      dueToFilter ||
+      relatedMeetingFilter ||
+      responsibleFilter !== "all" ||
+      statusFilter !== "all" ||
+      notesFilter !== "all",
+  );
 
   useEffect(() => {
     if (editingTaskIndex === null) return;
@@ -496,18 +565,140 @@ export function StaffTaskListPanel({
     closeTaskEditor();
   }
 
+  function clearFilters() {
+    setTaskFilter("");
+    setDueFromFilter("");
+    setDueToFilter("");
+    setRelatedMeetingFilter("");
+    setResponsibleFilter("all");
+    setStatusFilter("all");
+    setNotesFilter("all");
+  }
+
   return (
     <section
       className="space-y-4 rounded-xl border bg-white p-5 shadow-sm"
       data-testid="board-calendar-staff-task-list-panel"
     >
-      <div>
-        <h3 className="text-xl font-semibold text-slate-950">Staff task list</h3>
-        <p className="mt-1 text-sm leading-6 text-slate-500">
-          Generated from Meeting Schedule and Setup task rules. Update owner,
-          status, and notes here; generated due dates stay connected.
-        </p>
+      <div className="flex flex-wrap items-start justify-between gap-3">
+        <div>
+          <h3 className="text-xl font-semibold text-slate-950">Staff task list</h3>
+          <p className="mt-1 text-sm leading-6 text-slate-500">
+            Generated from Meeting Schedule and Setup task rules. Update owner,
+            status, and notes here; generated due dates stay connected.
+          </p>
+        </div>
+        <Button
+          type="button"
+          variant="outline"
+          size="sm"
+          aria-expanded={showFilters}
+          aria-controls="board-calendar-workflow-filters"
+          onClick={() => setShowFilters((current) => !current)}
+        >
+          <Filter className="size-4" />
+          Filters
+          {hasActiveFilters ? (
+            <Badge className="ml-1 bg-olea-green text-white">On</Badge>
+          ) : null}
+        </Button>
       </div>
+
+      {showFilters ? (
+        <div
+          id="board-calendar-workflow-filters"
+          className="grid gap-3 rounded-xl border bg-slate-50 p-4 md:grid-cols-2 xl:grid-cols-4"
+        >
+          <Field label="Task">
+            <Input
+              aria-label="Filter workflow tasks by task"
+              value={taskFilter}
+              placeholder="Task name"
+              onChange={(event) => setTaskFilter(event.target.value)}
+            />
+          </Field>
+          <Field label="Related meeting">
+            <Input
+              aria-label="Filter workflow tasks by related meeting"
+              value={relatedMeetingFilter}
+              placeholder="Meeting name"
+              onChange={(event) => setRelatedMeetingFilter(event.target.value)}
+            />
+          </Field>
+          <Field label="Due from">
+            <Input
+              aria-label="Filter workflow tasks due from"
+              type="date"
+              value={dueFromFilter}
+              onChange={(event) => setDueFromFilter(event.target.value)}
+            />
+          </Field>
+          <Field label="Due to">
+            <Input
+              aria-label="Filter workflow tasks due to"
+              type="date"
+              value={dueToFilter}
+              onChange={(event) => setDueToFilter(event.target.value)}
+            />
+          </Field>
+          <Field label="Responsible">
+            <Select value={responsibleFilter} onValueChange={setResponsibleFilter}>
+              <SelectTrigger aria-label="Filter workflow tasks by responsible">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All responsible</SelectItem>
+                {responsibleOptions.map((responsible) => (
+                  <SelectItem key={responsible} value={responsible}>
+                    {responsible}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </Field>
+          <Field label="Status">
+            <Select value={statusFilter} onValueChange={setStatusFilter}>
+              <SelectTrigger aria-label="Filter workflow tasks by status">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All statuses</SelectItem>
+                {statusOptions.map((status) => (
+                  <SelectItem key={status} value={status}>
+                    {status}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </Field>
+          <Field label="Notes">
+            <Select value={notesFilter} onValueChange={setNotesFilter}>
+              <SelectTrigger aria-label="Filter workflow tasks by notes">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {noteFilterOptions.map((option) => (
+                  <SelectItem key={option.value} value={option.value}>
+                    {option.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </Field>
+          <div className="flex items-end">
+            <Button
+              type="button"
+              variant="ghost"
+              className="w-full"
+              disabled={!hasActiveFilters}
+              onClick={clearFilters}
+            >
+              Clear filters
+            </Button>
+          </div>
+        </div>
+      ) : null}
+
       {tasks.length ? (
         <>
           <div className="rounded-xl border">
@@ -524,7 +715,7 @@ export function StaffTaskListPanel({
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {tasks.map((task, index) => (
+                {filteredTasks.map(({ task, index }) => (
                   <TableRow
                     key={getString(task, "generated_key") || `manual-task-${index}`}
                   >
@@ -572,6 +763,12 @@ export function StaffTaskListPanel({
               </TableBody>
             </Table>
           </div>
+
+          {!filteredTasks.length ? (
+            <p className="rounded-lg border border-dashed p-4 text-sm text-slate-500">
+              No workflow tasks match the current filters.
+            </p>
+          ) : null}
 
           <Dialog
             open={editingTaskIndex !== null}
@@ -682,11 +879,25 @@ export function DirectoryTablePanel({
   const [committeeDraft, setCommitteeDraft] = useState<TemplateRecord | null>(
     null,
   );
+  const [showFilters, setShowFilters] = useState(false);
+  const [committeeFilter, setCommitteeFilter] = useState("");
+  const [chairFilter, setChairFilter] = useState("");
+  const [notesFilter, setNotesFilter] = useState("all");
 
   const editingCommittee =
     editingCommitteeIndex === null
       ? null
       : committees[editingCommitteeIndex] ?? null;
+  const filteredCommittees = committees
+    .map((committee, index) => ({ committee, index }))
+    .filter(({ committee }) =>
+      includesFilterValue(getString(committee, "name"), committeeFilter) &&
+      includesFilterValue(getString(committee, "chair"), chairFilter) &&
+      matchesNoteFilter(getString(committee, "notes"), notesFilter),
+    );
+  const hasActiveFilters = Boolean(
+    committeeFilter || chairFilter || notesFilter !== "all",
+  );
 
   useEffect(() => {
     if (editingCommitteeIndex === null) return;
@@ -743,6 +954,12 @@ export function DirectoryTablePanel({
     }));
   }
 
+  function clearFilters() {
+    setCommitteeFilter("");
+    setChairFilter("");
+    setNotesFilter("all");
+  }
+
   return (
     <section
       className="space-y-4 rounded-xl border bg-white p-5 shadow-sm"
@@ -762,17 +979,82 @@ export function DirectoryTablePanel({
             this calendar.
           </p>
         </div>
-        <Button
-          type="button"
-          variant="outline"
-          size="sm"
-          disabled={committees.length >= 8}
-          onClick={addCommittee}
-        >
-          <Plus className="size-4" />
-          Add committee
-        </Button>
+        <div className="flex flex-wrap gap-2">
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            aria-expanded={showFilters}
+            aria-controls="board-calendar-directory-filters"
+            onClick={() => setShowFilters((current) => !current)}
+          >
+            <Filter className="size-4" />
+            Filters
+            {hasActiveFilters ? (
+              <Badge className="ml-1 bg-olea-green text-white">On</Badge>
+            ) : null}
+          </Button>
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            disabled={committees.length >= 8}
+            onClick={addCommittee}
+          >
+            <Plus className="size-4" />
+            Add committee
+          </Button>
+        </div>
       </div>
+
+      {showFilters ? (
+        <div
+          id="board-calendar-directory-filters"
+          className="grid gap-3 rounded-xl border bg-slate-50 p-4 md:grid-cols-2 xl:grid-cols-4"
+        >
+          <Field label="Committee">
+            <Input
+              aria-label="Filter directory by committee"
+              value={committeeFilter}
+              placeholder="Committee name"
+              onChange={(event) => setCommitteeFilter(event.target.value)}
+            />
+          </Field>
+          <Field label="Chair">
+            <Input
+              aria-label="Filter directory by chair"
+              value={chairFilter}
+              placeholder="Chair name"
+              onChange={(event) => setChairFilter(event.target.value)}
+            />
+          </Field>
+          <Field label="Notes">
+            <Select value={notesFilter} onValueChange={setNotesFilter}>
+              <SelectTrigger aria-label="Filter directory by notes">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {noteFilterOptions.map((option) => (
+                  <SelectItem key={option.value} value={option.value}>
+                    {option.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </Field>
+          <div className="flex items-end">
+            <Button
+              type="button"
+              variant="ghost"
+              className="w-full"
+              disabled={!hasActiveFilters}
+              onClick={clearFilters}
+            >
+              Clear filters
+            </Button>
+          </div>
+        </div>
+      ) : null}
 
       {committees.length ? (
         <>
@@ -787,7 +1069,7 @@ export function DirectoryTablePanel({
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {committees.map((committee, index) => (
+                {filteredCommittees.map(({ committee, index }) => (
                   <TableRow key={getCommitteeRowKey(committee, index)}>
                     <TableCell className="min-w-[220px] font-semibold text-slate-950">
                       {getString(committee, "name") || "Untitled committee"}
@@ -837,6 +1119,12 @@ export function DirectoryTablePanel({
               </TableBody>
             </Table>
           </div>
+
+          {!filteredCommittees.length ? (
+            <p className="rounded-lg border border-dashed p-4 text-sm text-slate-500">
+              No directory entries match the current filters.
+            </p>
+          ) : null}
 
           <Dialog
             open={editingCommitteeIndex !== null}
