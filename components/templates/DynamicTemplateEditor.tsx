@@ -271,8 +271,11 @@ export function DynamicTemplateEditor({
           <BoardCalendarWorkbench
             data={session.formData}
             errorsByPath={errorsByPath}
+            templateInstanceId={session.id}
             organizationName={session.brandingSnapshot.organizationName}
             sections={session.schemaSnapshot.sections}
+            generateExport={generateExport}
+            createDownloadUrl={createDownloadUrl}
             onChange={updateValue}
             onDataChange={updateData}
           />

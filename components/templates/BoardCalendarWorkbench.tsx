@@ -10,6 +10,7 @@ import {
   FileText,
   LayoutDashboard,
   ListChecks,
+  LoaderCircle,
   PackageOpen,
   Pencil,
   Plus,
@@ -60,6 +61,8 @@ import {
 } from "@/lib/template-renderer/calendar-view";
 import type {
   FieldPath,
+  TemplateExportFormat,
+  TemplateExportRecord,
   TemplateFormData,
   TemplateSection,
   TemplateValue,
@@ -157,15 +160,24 @@ function getBoardCalendarActiveTabStorageKey() {
 export function BoardCalendarWorkbench({
   data,
   errorsByPath,
+  templateInstanceId,
   organizationName,
   sections,
+  generateExport,
+  createDownloadUrl,
   onChange,
   onDataChange,
 }: {
   data: TemplateFormData;
   errorsByPath: Map<string, string>;
+  templateInstanceId?: string;
   organizationName: string;
   sections: TemplateSection[];
+  generateExport: (input: {
+    templateInstanceId: string;
+    format: TemplateExportFormat;
+  }) => Promise<TemplateExportRecord>;
+  createDownloadUrl: (exportId: string) => Promise<string>;
   onChange: (path: FieldPath, value: TemplateValue) => void;
   onDataChange: (
     updater: (currentData: TemplateFormData) => TemplateFormData,
@@ -201,6 +213,8 @@ export function BoardCalendarWorkbench({
   const [entryWeeksBefore, setEntryWeeksBefore] = useState("");
   const [editingEventId, setEditingEventId] = useState<string | null>(null);
   const [isEntryModalOpen, setIsEntryModalOpen] = useState(false);
+  const [isExportingPdf, setIsExportingPdf] = useState(false);
+  const [exportError, setExportError] = useState("");
   const hasMountedActiveTabPersistence = useRef(false);
 
   useEffect(() => {
@@ -440,8 +454,30 @@ export function BoardCalendarWorkbench({
     setIsEntryModalOpen(true);
   }
 
-  function exportPdf() {
-    window.print();
+  async function exportPdf() {
+    if (!templateInstanceId) {
+      window.print();
+      return;
+    }
+
+    setIsExportingPdf(true);
+    try {
+      const generated = await generateExport({
+        templateInstanceId,
+        format: "pdf",
+      });
+      const signedUrl = await createDownloadUrl(generated.id);
+      window.location.assign(signedUrl);
+      setExportError("");
+    } catch (error) {
+      setExportError(
+        error instanceof Error
+          ? error.message
+          : "Unable to generate this PDF export.",
+      );
+    } finally {
+      setIsExportingPdf(false);
+    }
   }
 
   function addToCalendarFile() {
@@ -520,8 +556,8 @@ export function BoardCalendarWorkbench({
   }
 
   return (
-    <section className="overflow-hidden rounded-xl border bg-white shadow-soft">
-      <div className="border-b bg-gradient-to-br from-white to-olea-light/60 p-4 sm:p-5">
+    <div className="space-y-4">
+      <div className="rounded-xl border bg-gradient-to-br from-white to-olea-light/60 p-4 shadow-sm sm:p-5">
         <div className="flex w-full flex-col gap-2 sm:flex-row sm:flex-wrap sm:justify-end">
           <Button
             type="button"
@@ -535,10 +571,15 @@ export function BoardCalendarWorkbench({
             type="button"
             variant="outline"
             className="w-full sm:w-auto"
-            onClick={exportPdf}
+            disabled={isExportingPdf}
+            onClick={() => void exportPdf()}
           >
-            <FileText className="size-4" />
-            Export PDF
+            {isExportingPdf ? (
+              <LoaderCircle className="size-4 animate-spin" />
+            ) : (
+              <FileText className="size-4" />
+            )}
+            {templateInstanceId ? "Export PDF" : "Print / save PDF"}
           </Button>
           <Button
             type="button"
@@ -551,13 +592,21 @@ export function BoardCalendarWorkbench({
             Add to calendar
           </Button>
         </div>
+        {exportError ? (
+          <p
+            role="alert"
+            className="mt-3 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm font-medium text-red-700"
+          >
+            {exportError}
+          </p>
+        ) : null}
       </div>
 
       <Tabs
         value={activeTab}
         onValueChange={(value) => setActiveTab(value as BoardCalendarModuleTab)}
       >
-        <div className="border-b bg-white px-3 py-3 sm:px-5">
+        <div className="rounded-xl border bg-white px-3 py-3 shadow-sm sm:px-5">
           <div className="overflow-x-auto pb-1">
             <TabsList className="h-auto min-w-max justify-start gap-1 bg-olea-light/70 p-1">
               {moduleTabs.map((tab) => {
@@ -582,7 +631,7 @@ export function BoardCalendarWorkbench({
           </div>
         </div>
 
-        <div className="space-y-5 p-4 sm:p-6">
+        <div className="space-y-5">
           <TabsContent value="dashboard" className="mt-0 space-y-5">
             <div className="grid gap-3 md:grid-cols-3">
               <SummaryCard
@@ -790,7 +839,11 @@ export function BoardCalendarWorkbench({
           </TabsContent>
 
           <TabsContent value="packages" className="mt-0">
-            <BoardPackagesPanel data={data} onDataChange={onDataChange} />
+            <BoardPackagesPanel
+              data={data}
+              onDataChange={onDataChange}
+              templateInstanceId={templateInstanceId ?? ""}
+            />
           </TabsContent>
 
           <TabsContent value="directory" className="mt-0">
@@ -814,7 +867,7 @@ export function BoardCalendarWorkbench({
           </TabsContent>
         </div>
       </Tabs>
-    </section>
+    </div>
   );
 }
 

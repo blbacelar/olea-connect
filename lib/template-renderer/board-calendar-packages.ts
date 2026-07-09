@@ -5,21 +5,29 @@ type TemplateRecord = Record<string, unknown>;
 
 export interface BoardPackageDocumentInput {
   category: string;
+  contentType?: string;
   confidential: boolean;
+  fileName?: string;
   meetingId?: string;
   name: string;
+  size?: number;
   sizeLabel?: string;
+  storagePath?: string;
   uploadedAt?: string;
-  url: string;
+  url?: string;
 }
 
 export interface BoardPackageDocument {
   category: string;
+  contentType: string;
   confidential: boolean;
+  fileName: string;
   id: string;
   meetingId: string;
   name: string;
+  size: number;
   sizeLabel: string;
+  storagePath: string;
   uploadedAt: string;
   url: string;
 }
@@ -71,6 +79,11 @@ function getBoolean(record: TemplateRecord, key: string) {
   return record[key] === true;
 }
 
+function getNumber(record: TemplateRecord, key: string) {
+  const value = record[key];
+  return typeof value === "number" && Number.isFinite(value) ? value : 0;
+}
+
 function getDocumentMeetingId(record: TemplateRecord) {
   return getString(record, "meeting_id") || getString(record, "meetingId");
 }
@@ -93,11 +106,17 @@ export function getBoardPackageDocuments(
 ): BoardPackageDocument[] {
   return getRows(data, "documents").map((document, index) => ({
     category: getString(document, "category") || "Board package",
+    contentType:
+      getString(document, "content_type") || getString(document, "contentType"),
     confidential: getBoolean(document, "confidential"),
+    fileName: getString(document, "file_name") || getString(document, "fileName"),
     id: getString(document, "id") || `document-${index}`,
     meetingId: getDocumentMeetingId(document),
     name: getString(document, "name") || "Untitled document",
+    size: getNumber(document, "size"),
     sizeLabel: getString(document, "size_label") || getString(document, "size") || "",
+    storagePath:
+      getString(document, "storage_path") || getString(document, "storagePath"),
     uploadedAt:
       getString(document, "uploaded_at") ||
       getString(document, "uploadedAt") ||
@@ -159,13 +178,17 @@ export function appendBoardPackageDocument(
       ...documents,
       {
         category: input.category.trim() || "Board package",
+        content_type: input.contentType?.trim() ?? "",
         confidential: input.confidential,
+        file_name: input.fileName?.trim() ?? "",
         id: createTemplateRecordId("document"),
         meeting_id: input.meetingId ?? "",
         name: input.name.trim(),
+        size: input.size ?? 0,
         size_label: input.sizeLabel?.trim() ?? "",
+        storage_path: input.storagePath?.trim() ?? "",
         uploaded_at: input.uploadedAt ?? new Date().toISOString(),
-        url: input.url.trim(),
+        url: input.url?.trim() ?? "",
       },
     ],
   };

@@ -1,6 +1,11 @@
 import { describe, expect, it } from "vitest";
 
 import {
+  buildBoardPackageStoragePath,
+  isBoardPackageStoragePathForSession,
+  sanitizeBoardPackageFileName,
+} from "@/lib/template-renderer/board-calendar-storage";
+import {
   appendBoardPackageAccessLog,
   appendBoardPackageDocument,
   buildBoardPackageMeetings,
@@ -35,6 +40,10 @@ describe("board calendar package helpers", () => {
         name: "Q3 board agenda",
         category: "Agenda",
         confidential: true,
+        file_name: "agenda.pdf",
+        size: 2400,
+        storage_path:
+          "workspaces/org-1/board-calendar/session-1/meeting-q3/doc-agenda.pdf",
         url: "https://example.com/agenda",
       },
       {
@@ -49,18 +58,23 @@ describe("board calendar package helpers", () => {
   };
 
   it("groups package documents by meeting and keeps general documents separate", () => {
-    expect(buildBoardPackageMeetings(templateData)).toEqual([
+    expect(buildBoardPackageMeetings(templateData)).toMatchObject([
       {
         date: "2026-07-15",
         documentCount: 1,
         documents: [
           {
             category: "Agenda",
+            contentType: "",
             confidential: true,
+            fileName: "agenda.pdf",
             id: "doc-agenda",
             meetingId: "meeting-q3",
             name: "Q3 board agenda",
+            size: 2400,
             sizeLabel: "",
+            storagePath:
+              "workspaces/org-1/board-calendar/session-1/meeting-q3/doc-agenda.pdf",
             uploadedAt: "",
             url: "https://example.com/agenda",
           },
@@ -93,10 +107,15 @@ describe("board calendar package helpers", () => {
   it("adds and removes board package documents without touching other data", () => {
     const withDocument = appendBoardPackageDocument(templateData, {
       category: "Minutes",
+      contentType: "application/pdf",
       confidential: true,
+      fileName: "minutes.pdf",
       meetingId: "meeting-finance",
       name: "Finance minutes",
+      size: 1024,
       sizeLabel: "v1",
+      storagePath:
+        "workspaces/org-1/board-calendar/session-1/meeting-finance/minutes.pdf",
       url: "https://example.com/minutes",
     });
 
@@ -107,10 +126,15 @@ describe("board calendar package helpers", () => {
 
     expect(addedDocument).toMatchObject({
       category: "Minutes",
+      contentType: "application/pdf",
       confidential: true,
+      fileName: "minutes.pdf",
       meetingId: "meeting-finance",
       name: "Finance minutes",
+      size: 1024,
       sizeLabel: "v1",
+      storagePath:
+        "workspaces/org-1/board-calendar/session-1/meeting-finance/minutes.pdf",
       url: "https://example.com/minutes",
     });
     expect(withDocument.meetings).toBe(templateData.meetings);
@@ -143,5 +167,36 @@ describe("board calendar package helpers", () => {
       meetingId: "meeting-q3",
       meetingTitle: "Q3 Board Meeting",
     });
+  });
+
+  it("builds tenant-scoped storage paths for private board package files", () => {
+    expect(sanitizeBoardPackageFileName("../Finance Report Q3.pdf")).toBe(
+      "Finance-Report-Q3.pdf",
+    );
+
+    const path = buildBoardPackageStoragePath({
+      fileName: "Finance Report Q3.pdf",
+      meetingId: "meeting-q3",
+      organizationId: "00000000-0000-0000-0000-000000000001",
+      templateInstanceId: "session-1",
+    });
+
+    expect(path).toMatch(
+      /^workspaces\/00000000-0000-0000-0000-000000000001\/board-calendar\/session-1\/meeting-q3\/.+-Finance-Report-Q3\.pdf$/,
+    );
+    expect(
+      isBoardPackageStoragePathForSession({
+        organizationId: "00000000-0000-0000-0000-000000000001",
+        storagePath: path,
+        templateInstanceId: "session-1",
+      }),
+    ).toBe(true);
+    expect(
+      isBoardPackageStoragePathForSession({
+        organizationId: "00000000-0000-0000-0000-000000000002",
+        storagePath: path,
+        templateInstanceId: "session-1",
+      }),
+    ).toBe(false);
   });
 });

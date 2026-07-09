@@ -42,6 +42,12 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import {
+  createBoardPackageDocumentDownloadUrl,
+  deleteBoardPackageDocumentFile,
+  recordBoardPackageAuditEvent,
+  uploadBoardPackageDocument,
+} from "@/app/modules/board-calendar/actions";
+import {
   appendBoardPackageAccessLog,
   appendBoardPackageDocument,
   buildBoardPackageMeetings,
@@ -77,11 +83,13 @@ type UploadFormState = typeof emptyUploadForm;
 export function BoardPackagesPanel({
   data,
   onDataChange,
+  templateInstanceId,
 }: {
   data: TemplateFormData;
   onDataChange: (
     updater: (currentData: TemplateFormData) => TemplateFormData,
   ) => void;
+  templateInstanceId: string;
 }) {
   const meetings = useMemo(() => buildBoardPackageMeetings(data), [data]);
   const generalDocuments = useMemo(
@@ -99,6 +107,10 @@ export function BoardPackagesPanel({
     useState<BoardPackageMeeting | null>(null);
   const [form, setForm] = useState<UploadFormState>(emptyUploadForm);
   const [formError, setFormError] = useState("");
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [isUploading, setIsUploading] = useState(false);
+  const [downloadError, setDownloadError] = useState("");
+  const [operationError, setOperationError] = useState("");
 
   const isUploadOpen = Boolean(uploadMeeting) || isGeneralUploadOpen;
   const uploadTitle = uploadMeeting
@@ -110,6 +122,7 @@ export function BoardPackagesPanel({
     setIsGeneralUploadOpen(false);
     setForm(emptyUploadForm);
     setFormError("");
+    setSelectedFile(null);
   }
 
   function openGeneralUpload() {
@@ -117,6 +130,7 @@ export function BoardPackagesPanel({
     setIsGeneralUploadOpen(true);
     setForm(emptyUploadForm);
     setFormError("");
+    setSelectedFile(null);
   }
 
   function closeUpload() {
@@ -124,6 +138,8 @@ export function BoardPackagesPanel({
     setIsGeneralUploadOpen(false);
     setForm(emptyUploadForm);
     setFormError("");
+    setSelectedFile(null);
+    setIsUploading(false);
   }
 
   function updateForm<Key extends keyof UploadFormState>(
@@ -133,25 +149,55 @@ export function BoardPackagesPanel({
     setForm((currentForm) => ({ ...currentForm, [key]: value }));
   }
 
-  function submitUpload() {
+  async function submitUpload() {
     const trimmedName = form.name.trim();
     const trimmedUrl = form.url.trim();
-    const validationError = validateDocumentForm(trimmedName, trimmedUrl);
+    const validationError = validateDocumentForm({
+      file: selectedFile,
+      name: trimmedName,
+      templateInstanceId,
+      url: trimmedUrl,
+    });
 
     if (validationError) {
       setFormError(validationError);
       return;
     }
 
-    onDataChange((currentData) =>
-      appendBoardPackageDocument(currentData, {
-        ...form,
-        meetingId: uploadMeeting?.id,
-        name: trimmedName,
-        url: trimmedUrl,
-      }),
-    );
-    closeUpload();
+    setIsUploading(true);
+    setFormError("");
+
+    try {
+      const uploadedDocument = selectedFile
+        ? await uploadSelectedFile({
+            file: selectedFile,
+            meetingId: uploadMeeting?.id,
+            templateInstanceId,
+          })
+        : null;
+
+      onDataChange((currentData) =>
+        appendBoardPackageDocument(currentData, {
+          ...form,
+          contentType: uploadedDocument?.contentType,
+          fileName: uploadedDocument?.fileName,
+          meetingId: uploadMeeting?.id,
+          name: trimmedName,
+          size: uploadedDocument?.size,
+          sizeLabel: uploadedDocument?.sizeLabel ?? form.sizeLabel,
+          storagePath: uploadedDocument?.storagePath,
+          url: trimmedUrl,
+        }),
+      );
+      closeUpload();
+    } catch (error) {
+      setFormError(
+        error instanceof Error
+          ? error.message
+          : "Unable to upload this board package document.",
+      );
+      setIsUploading(false);
+    }
   }
 
   function logDownload(
@@ -169,13 +215,48 @@ export function BoardPackagesPanel({
     );
   }
 
-  function openDocument(
+  async function openDocument(
     document: BoardPackageDocument,
     meeting?: BoardPackageMeeting,
   ) {
-    logDownload(document, meeting);
-    if (document.url) {
-      window.open(document.url, "_blank", "noopener,noreferrer");
+    setDownloadError("");
+
+    try {
+      const documentUrl = document.storagePath
+        ? await createBoardPackageDocumentDownloadUrl({
+            documentId: document.id,
+            documentName: document.name,
+            fileName: document.fileName || document.name,
+            meetingId: meeting?.id ?? document.meetingId,
+            meetingTitle: meeting?.title ?? "",
+            storagePath: document.storagePath,
+            templateInstanceId,
+          })
+        : document.url;
+
+      if (!documentUrl) {
+        throw new Error("This document does not have a downloadable file.");
+      }
+
+      if (!document.storagePath && templateInstanceId) {
+        await recordBoardPackageAuditEvent({
+          action: "document_downloaded",
+          documentId: document.id,
+          documentName: document.name,
+          meetingId: meeting?.id ?? document.meetingId,
+          meetingTitle: meeting?.title ?? "",
+          templateInstanceId,
+        });
+      }
+
+      logDownload(document, meeting);
+      window.open(documentUrl, "_blank", "noopener,noreferrer");
+    } catch (error) {
+      setDownloadError(
+        error instanceof Error
+          ? error.message
+          : "Unable to open this board package document.",
+      );
     }
   }
 
@@ -188,47 +269,94 @@ export function BoardPackagesPanel({
       return;
     }
 
-    openDocument(document, meeting);
+    void openDocument(document, meeting);
   }
 
   function confirmConfidentialDownload() {
     if (!downloadTarget) return;
     const meeting = meetings.find((item) => item.id === downloadTarget.meetingId);
-    openDocument(downloadTarget, meeting);
+    void openDocument(downloadTarget, meeting);
     setDownloadTarget(null);
   }
 
-  function confirmPackageDownload() {
+  async function confirmPackageDownload() {
     if (!packageTarget) return;
 
-    downloadPackageManifest(packageTarget);
-    onDataChange((currentData) =>
-      appendBoardPackageAccessLog(currentData, {
-        action: "package_downloaded",
-        meetingId: packageTarget.id,
-        meetingTitle: packageTarget.title,
-      }),
-    );
-    setPackageTarget(null);
+    try {
+      if (templateInstanceId) {
+        await recordBoardPackageAuditEvent({
+          action: "package_downloaded",
+          meetingId: packageTarget.id,
+          meetingTitle: packageTarget.title,
+          templateInstanceId,
+        });
+      }
+
+      downloadPackageManifest(packageTarget);
+      onDataChange((currentData) =>
+        appendBoardPackageAccessLog(currentData, {
+          action: "package_downloaded",
+          meetingId: packageTarget.id,
+          meetingTitle: packageTarget.title,
+        }),
+      );
+      setPackageTarget(null);
+    } catch (error) {
+      setPackageTarget(null);
+      setOperationError(
+        error instanceof Error
+          ? error.message
+          : "Unable to record this package download.",
+      );
+    }
   }
 
-  function confirmDelete() {
+  async function confirmDelete() {
     if (!deleteTarget) return;
     const meeting = meetings.find((item) => item.id === deleteTarget.meetingId);
 
-    onDataChange((currentData) =>
-      appendBoardPackageAccessLog(
-        deleteBoardPackageDocument(currentData, deleteTarget.id),
-        {
+    try {
+      if (deleteTarget.storagePath) {
+        await deleteBoardPackageDocumentFile({
+          documentId: deleteTarget.id,
+          documentName: deleteTarget.name,
+          meetingId: meeting?.id ?? deleteTarget.meetingId,
+          meetingTitle: meeting?.title ?? "",
+          storagePath: deleteTarget.storagePath,
+          templateInstanceId,
+        });
+      } else if (templateInstanceId) {
+        await recordBoardPackageAuditEvent({
           action: "document_deleted",
           documentId: deleteTarget.id,
           documentName: deleteTarget.name,
           meetingId: meeting?.id ?? deleteTarget.meetingId,
           meetingTitle: meeting?.title ?? "",
-        },
-      ),
-    );
-    setDeleteTarget(null);
+          templateInstanceId,
+        });
+      }
+
+      onDataChange((currentData) =>
+        appendBoardPackageAccessLog(
+          deleteBoardPackageDocument(currentData, deleteTarget.id),
+          {
+            action: "document_deleted",
+            documentId: deleteTarget.id,
+            documentName: deleteTarget.name,
+            meetingId: meeting?.id ?? deleteTarget.meetingId,
+            meetingTitle: meeting?.title ?? "",
+          },
+        ),
+      );
+      setDeleteTarget(null);
+    } catch (error) {
+      setDeleteTarget(null);
+      setOperationError(
+        error instanceof Error
+          ? error.message
+          : "Unable to delete this board package document.",
+      );
+    }
   }
 
   return (
@@ -300,8 +428,9 @@ export function BoardPackagesPanel({
           <DialogHeader>
             <DialogTitle>{uploadTitle}</DialogTitle>
             <DialogDescription>
-              Add a secure document link for phase 1. Private file storage can
-              later replace this field without changing the package workflow.
+              Upload a private board document or attach a secure external
+              reference link. Private files are opened through short-lived
+              signed download links.
             </DialogDescription>
           </DialogHeader>
 
@@ -353,15 +482,33 @@ export function BoardPackagesPanel({
             </div>
 
             <div className="space-y-2 sm:col-span-2">
+              <Label htmlFor="board-package-document-file">
+                Private file upload
+              </Label>
+              <Input
+                id="board-package-document-file"
+                type="file"
+                accept=".pdf,.doc,.docx,.xls,.xlsx,.txt,image/png,image/jpeg,image/webp"
+                onChange={(event) =>
+                  setSelectedFile(event.target.files?.[0] ?? null)
+                }
+              />
+              <p className="text-xs leading-5 text-slate-500">
+                PDF, Word, Excel, text, PNG, JPG, or WebP up to 25 MB.
+              </p>
+            </div>
+
+            <div className="space-y-2 sm:col-span-2">
               <Label htmlFor="board-package-document-url">
-                Secure document link
+                External document link
+                <span className="ml-1 text-slate-400">(optional)</span>
               </Label>
               <Input
                 id="board-package-document-url"
                 type="url"
                 value={form.url}
                 onChange={(event) => updateForm("url", event.target.value)}
-                placeholder="https://..."
+                placeholder="https://... only when the file is stored outside Olea Connects"
               />
             </div>
 
@@ -390,8 +537,8 @@ export function BoardPackagesPanel({
                 Cancel
               </Button>
             </DialogClose>
-            <Button type="button" onClick={submitUpload}>
-              Add file
+            <Button type="button" disabled={isUploading} onClick={submitUpload}>
+              {isUploading ? "Adding file..." : "Add file"}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -399,7 +546,12 @@ export function BoardPackagesPanel({
 
       <Dialog
         open={Boolean(downloadTarget)}
-        onOpenChange={(open) => !open && setDownloadTarget(null)}
+        onOpenChange={(open) => {
+          if (!open) {
+            setDownloadTarget(null);
+            setDownloadError("");
+          }
+        }}
       >
         <DialogContent>
           <DialogHeader>
@@ -424,6 +576,40 @@ export function BoardPackagesPanel({
       </Dialog>
 
       <Dialog
+        open={Boolean(downloadError)}
+        onOpenChange={(open) => !open && setDownloadError("")}
+      >
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Document unavailable</DialogTitle>
+            <DialogDescription>{downloadError}</DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <DialogClose asChild>
+              <Button type="button">Close</Button>
+            </DialogClose>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog
+        open={Boolean(operationError)}
+        onOpenChange={(open) => !open && setOperationError("")}
+      >
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Package action failed</DialogTitle>
+            <DialogDescription>{operationError}</DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <DialogClose asChild>
+              <Button type="button">Close</Button>
+            </DialogClose>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog
         open={Boolean(packageTarget)}
         onOpenChange={(open) => !open && setPackageTarget(null)}
       >
@@ -432,8 +618,9 @@ export function BoardPackagesPanel({
             <DialogTitle>Download board package?</DialogTitle>
             <DialogDescription>
               “{packageTarget?.title}” includes {packageTarget?.documentCount ?? 0}
-              {" "}document(s). This will download a package manifest with secure
-              document links and record the access in the audit log.
+              {" "}document(s). This will download a package manifest and record
+              the access in the audit log. Private files still open through
+              individual signed download links.
             </DialogDescription>
           </DialogHeader>
           <DialogFooter>
@@ -442,7 +629,10 @@ export function BoardPackagesPanel({
                 Cancel
               </Button>
             </DialogClose>
-            <Button type="button" onClick={confirmPackageDownload}>
+            <Button
+              type="button"
+              onClick={() => void confirmPackageDownload()}
+            >
               Download package
             </Button>
           </DialogFooter>
@@ -467,7 +657,11 @@ export function BoardPackagesPanel({
                 Cancel
               </Button>
             </DialogClose>
-            <Button type="button" variant="destructive" onClick={confirmDelete}>
+            <Button
+              type="button"
+              variant="destructive"
+              onClick={() => void confirmDelete()}
+            >
               Delete document
             </Button>
           </DialogFooter>
@@ -636,9 +830,13 @@ function DocumentList({
                       {document.name}
                     </p>
                     <p className="text-xs text-slate-500">
-                      {[formatDateTime(document.uploadedAt), document.sizeLabel]
+                      {[
+                        formatDateTime(document.uploadedAt),
+                        document.sizeLabel,
+                        document.storagePath ? "Private file" : "External link",
+                      ]
                         .filter(Boolean)
-                        .join(" · ") || "No upload details"}
+                        .join(" · ")}
                     </p>
                   </div>
                 </div>
@@ -665,7 +863,11 @@ function DocumentList({
                     aria-label={`Open ${document.name}`}
                     onClick={() => onDownloadDocument(document)}
                   >
-                    <LinkIcon className="size-4" />
+                    {document.storagePath ? (
+                      <Download className="size-4" />
+                    ) : (
+                      <LinkIcon className="size-4" />
+                    )}
                   </Button>
                   <Button
                     type="button"
@@ -718,9 +920,41 @@ function EmptyPackageState({
   );
 }
 
-function validateDocumentForm(name: string, url: string) {
+async function uploadSelectedFile({
+  file,
+  meetingId,
+  templateInstanceId,
+}: {
+  file: File;
+  meetingId?: string;
+  templateInstanceId: string;
+}) {
+  const formData = new FormData();
+  formData.set("templateInstanceId", templateInstanceId);
+  if (meetingId) formData.set("meetingId", meetingId);
+  formData.set("file", file);
+
+  return uploadBoardPackageDocument(formData);
+}
+
+function validateDocumentForm({
+  file,
+  name,
+  templateInstanceId,
+  url,
+}: {
+  file: File | null;
+  name: string;
+  templateInstanceId: string;
+  url: string;
+}) {
   if (!name) return "Document name is required.";
-  if (!url) return "Secure document link is required.";
+  if (!file && !url) return "Upload a private file or add an external document link.";
+  if (file && !templateInstanceId) {
+    return "Save this board calendar before uploading private files.";
+  }
+
+  if (!url) return "";
 
   try {
     const parsedUrl = new URL(url);
@@ -745,7 +979,9 @@ function downloadPackageManifest(meeting: BoardPackageMeeting) {
         `${index + 1}. ${document.name}`,
         `Category: ${document.category}`,
         `Access: ${document.confidential ? "Confidential" : "Standard"}`,
-        `Link: ${document.url}`,
+        document.storagePath
+          ? "Storage: Private Olea Connects file"
+          : `Link: ${document.url}`,
       ].join("\n"),
     ),
   ].filter(Boolean);

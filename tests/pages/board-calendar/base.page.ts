@@ -63,7 +63,7 @@ export class BoardCalendarBasePage {
       this.page.getByRole("button", { name: "Add meeting" }),
     ).toBeVisible();
     await expect(
-      this.page.getByRole("button", { name: "Export PDF" }),
+      this.page.getByRole("button", { name: /^(Export PDF|Print \/ save PDF)$/ }),
     ).toBeVisible();
     await expect(
       this.page.getByRole("button", { name: "Add to calendar" }),
@@ -229,4 +229,3 @@ export function oneOfTextPattern(values: string[]) {
 function escapeRegExp(value: string) {
   return value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 }
-
