@@ -17,9 +17,10 @@ import {
 import { Textarea } from "@/components/ui/textarea";
 import {
   buildBoardCalendarSetup,
-  buildGeneratedStaffTasks,
   calculateAgmMilestoneDate,
+  syncBoardCalendarGeneratedTasks,
 } from "@/lib/template-renderer/board-calendar-editor";
+import { setValue } from "@/lib/template-renderer/schema";
 import type {
   FieldPath,
   TemplateFormData,
@@ -85,9 +86,13 @@ function removeRow(rows: TemplateRecord[], index: number) {
 export function BoardCalendarSetupPanel({
   data,
   onChange,
+  onDataChange,
 }: {
   data: TemplateFormData;
   onChange: (path: FieldPath, value: TemplateValue) => void;
+  onDataChange: (
+    updater: (currentData: TemplateFormData) => TemplateFormData,
+  ) => void;
 }) {
   const setup = buildBoardCalendarSetup(data);
   const committees = getRows(data, "committees");
@@ -107,15 +112,14 @@ export function BoardCalendarSetupPanel({
   }
 
   function updateTaskRule(index: number, field: string, value: unknown) {
-    onChange(["operational_task_rules"], updateRow(taskRules, index, field, value));
+    updateTaskRules(updateRow(taskRules, index, field, value));
   }
 
   function updateTaskRuleTiming(index: number, timing: "after" | "before") {
     const currentRule = taskRules[index];
     const currentDays =
       getNumber(currentRule, "days_after") || getNumber(currentRule, "days_before");
-    onChange(
-      ["operational_task_rules"],
+    updateTaskRules(
       taskRules.map((rule, ruleIndex) =>
         ruleIndex === index
           ? {
@@ -128,10 +132,16 @@ export function BoardCalendarSetupPanel({
     );
   }
 
+  function updateTaskRules(nextRules: TemplateRecord[]) {
+    onDataChange((currentData) =>
+      syncBoardCalendarGeneratedTasks(
+        setValue(currentData, ["operational_task_rules"], nextRules),
+      ),
+    );
+  }
+
   function addTaskRule() {
-    onChange([
-      "operational_task_rules",
-    ], [
+    updateTaskRules([
       ...taskRules,
       {
         label: "",
@@ -359,9 +369,7 @@ export function BoardCalendarSetupPanel({
                   type="button"
                   variant="ghost"
                   className="text-red-700 hover:bg-red-50 hover:text-red-800"
-                  onClick={() =>
-                    onChange(["operational_task_rules"], removeRow(taskRules, index))
-                  }
+                  onClick={() => updateTaskRules(removeRow(taskRules, index))}
                 >
                   <Trash2 className="size-4" />
                   Remove
@@ -383,13 +391,10 @@ export function StaffTaskListPanel({
   onChange: (path: FieldPath, value: TemplateValue) => void;
 }) {
   const setup = buildBoardCalendarSetup(data);
-  const tasks = buildGeneratedStaffTasks(data);
+  const tasks = getRows(syncBoardCalendarGeneratedTasks(data), "tasks");
 
   function updateTask(index: number, field: string, value: unknown) {
-    onChange(
-      ["tasks"],
-      updateRow(tasks as unknown as TemplateRecord[], index, field, value),
-    );
+    onChange(["tasks"], updateRow(tasks, index, field, value));
   }
 
   return (
@@ -407,26 +412,33 @@ export function StaffTaskListPanel({
       {tasks.length ? (
         <div className="space-y-3">
           {tasks.map((task, index) => (
-            <div key={task.generated_key} className="rounded-xl border p-4">
+            <div
+              key={getString(task, "generated_key") || `manual-task-${index}`}
+              className="rounded-xl border p-4"
+            >
               <div className="grid gap-3 lg:grid-cols-[1.2fr_0.8fr_0.8fr_0.8fr]">
                 <div>
-                  <p className="font-semibold text-slate-950">{task.task}</p>
-                  <p className="text-sm text-slate-500">{task.related_meeting}</p>
+                  <p className="font-semibold text-slate-950">
+                    {getString(task, "task") || "Untitled task"}
+                  </p>
+                  <p className="text-sm text-slate-500">
+                    {getString(task, "related_meeting") || "Calendar task"}
+                  </p>
                 </div>
                 <Field label="Due date">
-                  <Input value={task.due_date} readOnly />
+                  <Input value={getString(task, "due_date")} readOnly />
                 </Field>
                 <Field label="Responsible">
                   <ResponsibleSelect
                     label={`Task ${index + 1} responsible`}
                     options={setup.responsibleOptions}
-                    value={task.responsible}
+                    value={getString(task, "responsible")}
                     onChange={(value) => updateTask(index, "responsible", value)}
                   />
                 </Field>
                 <Field label="Status">
                   <Select
-                    value={task.status}
+                    value={getString(task, "status")}
                     onValueChange={(value) => updateTask(index, "status", value)}
                   >
                     <SelectTrigger aria-label={`Task ${index + 1} status`}>
@@ -446,7 +458,7 @@ export function StaffTaskListPanel({
                 aria-label={`Task ${index + 1} notes`}
                 className="mt-3"
                 placeholder="Notes"
-                value={task.notes}
+                value={getString(task, "notes")}
                 onChange={(event) => updateTask(index, "notes", event.target.value)}
               />
             </div>

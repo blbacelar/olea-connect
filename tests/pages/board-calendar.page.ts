@@ -254,6 +254,24 @@ export class BoardCalendarPage {
     ).toHaveValue(notes);
   }
 
+  async expectMeetingVisibleInMeetingsTable(meetingTitle: string) {
+    await this.chooseWorkspaceView("Meeting schedule");
+    await expect(
+      this.page.getByRole("heading", { name: "Meetings", exact: true }),
+    ).toBeVisible();
+    await expect(this.page.getByText(meetingTitle).first()).toBeVisible();
+  }
+
+  async expectMeetingTableText(text: string) {
+    await this.chooseWorkspaceView("Meeting schedule");
+    await expect(this.page.getByText(text).first()).toBeVisible();
+  }
+
+  async expectMeetingTableDoesNotShow(text: string) {
+    await this.chooseWorkspaceView("Meeting schedule");
+    await expect(this.page.getByText(text)).toHaveCount(0);
+  }
+
   async addAgmTimelineMilestone({
     agmDate,
     daysBefore,

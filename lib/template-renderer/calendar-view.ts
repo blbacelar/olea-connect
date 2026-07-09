@@ -53,6 +53,7 @@ export interface CalendarViewEvent {
   category: string;
   color: string;
   source: "meeting" | "annual" | "task" | "agm";
+  leadContact?: string;
   time?: string;
   location?: string;
   notes?: string;
@@ -196,6 +197,7 @@ export function buildCalendarEvents(data: TemplateFormData) {
         monthIndex: date?.getMonth() ?? null,
         category,
         source: "meeting",
+        leadContact: getString(record, "lead_contact"),
         time: formatCalendarTime(getString(record, "time")),
         location: getString(record, "location"),
         notes,

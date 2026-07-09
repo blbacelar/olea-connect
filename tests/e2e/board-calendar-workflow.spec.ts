@@ -54,6 +54,7 @@ test.describe("@critical Board Calendar & Operational Workflow", () => {
   }) => {
     const boardCalendar = new BoardCalendarPage(page);
     const eventDate = getFutureDateKey(1);
+    const generatedTaskDate = getRelativeDateKey(eventDate, 1);
     const annualNoteDate = getFutureDateKey(2);
     const taskDate = getFutureDateKey(3);
     const agmDate = getFutureDateKey(4);
@@ -83,6 +84,13 @@ test.describe("@critical Board Calendar & Operational Workflow", () => {
         timing: "Before",
         appliesTo: "Board Meeting",
         responsible: "Administrator",
+      });
+      await boardCalendar.addTaskRule({
+        label: "Send action summary",
+        days: "1",
+        timing: "After",
+        appliesTo: "Board Meeting",
+        responsible: "Board Chair",
       });
       await boardCalendar.saveNowAndWaitForPost();
       await boardCalendar.waitForSaved();
@@ -120,6 +128,13 @@ test.describe("@critical Board Calendar & Operational Workflow", () => {
       await boardCalendar.expectSelectedDateText("1:30 PM");
       await boardCalendar.expectSelectedDateText("Boardroom A");
       await boardCalendar.expectSelectedDateText("Review budget package.");
+      await boardCalendar.expectMeetingVisibleInMeetingsTable(
+        "Board Meeting - Board Budget Review",
+      );
+      await boardCalendar.expectMeetingTableText("Treasurer");
+      await boardCalendar.expectMeetingTableDoesNotShow("Send action summary");
+      await boardCalendar.selectCalendarDate(generatedTaskDate);
+      await boardCalendar.expectSelectedDateText("Send action summary");
       await boardCalendar.saveNowAndWaitForPost();
       await boardCalendar.waitForSaved();
     });

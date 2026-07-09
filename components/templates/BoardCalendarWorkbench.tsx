@@ -38,6 +38,7 @@ import {
   appendBoardCalendarEntry,
   deleteBoardCalendarEntry,
   getBoardCalendarEntryInput,
+  syncBoardCalendarGeneratedTasks,
   type BoardCalendarEntryType,
   updateBoardCalendarEntry,
   upsertBoardCalendarCategoryColor,
@@ -202,6 +203,7 @@ export function BoardCalendarWorkbench({
   const boardMeetings = events.filter(
     (event) => event.category === "Board Meeting",
   ).length;
+  const meetingEvents = events.filter((event) => event.source === "meeting");
   const upcomingEvents = events
     .filter((event) => event.dateKey && event.dateKey >= todayKey)
     .slice(0, 5);
@@ -212,10 +214,6 @@ export function BoardCalendarWorkbench({
       return items;
     }, new Map()),
   ).slice(0, 8);
-  const meetingsSection = sections.find((section) => section.id === "meeting_schedule");
-  const workflowSection = sections.find(
-    (section) => section.id === "operational_calendar",
-  );
   const directorySection = sections.find((section) => section.id === "committees");
   const selectedDateEvents = eventsByDate.get(selectedDateKey) ?? [];
   const editingEvent = editingEventId
@@ -307,9 +305,13 @@ export function BoardCalendarWorkbench({
         entryColor,
       );
 
-      return colorMutation
+      const nextDataWithColor = colorMutation
         ? setValue(nextData, colorMutation.path, colorMutation.value)
         : nextData;
+
+      return input.type === "meeting"
+        ? syncBoardCalendarGeneratedTasks(nextDataWithColor)
+        : nextDataWithColor;
     });
     clearEntryForm();
   }
@@ -365,10 +367,15 @@ export function BoardCalendarWorkbench({
   }
 
   function deleteCalendarEntry(eventId: string) {
-    const mutation = deleteBoardCalendarEntry(data, eventId);
-    if (!mutation) return;
+    onDataChange((currentData) => {
+      const mutation = deleteBoardCalendarEntry(currentData, eventId);
+      if (!mutation) return currentData;
 
-    onChange(mutation.path, mutation.value);
+      const nextData = setValue(currentData, mutation.path, mutation.value);
+      return eventId.startsWith("meeting-")
+        ? syncBoardCalendarGeneratedTasks(nextData)
+        : nextData;
+    });
     clearEntryForm();
   }
 
@@ -526,9 +533,9 @@ export function BoardCalendarWorkbench({
                   >
                     <Icon className="size-4" />
                     {tab.label}
-                    {tab.value === "meetings" && boardMeetings ? (
+                    {tab.value === "meetings" && meetingEvents.length ? (
                       <span className="rounded-full bg-olea-orange px-2 py-0.5 text-[11px] font-bold text-white">
-                        {boardMeetings}
+                        {meetingEvents.length}
                       </span>
                     ) : null}
                   </TabsTrigger>
@@ -735,22 +742,14 @@ export function BoardCalendarWorkbench({
           </TabsContent>
 
           <TabsContent value="meetings" className="mt-0">
-            <TemplateSectionPanel
-              data={data}
-              errorsByPath={errorsByPath}
-              section={meetingsSection}
-              onChange={onChange}
+            <MeetingsTablePanel
+              meetings={meetingEvents}
+              onEditEvent={editCalendarEntry}
             />
           </TabsContent>
 
           <TabsContent value="workflows" className="mt-0 space-y-5">
             <StaffTaskListPanel data={data} onChange={onChange} />
-            <TemplateSectionPanel
-              data={data}
-              errorsByPath={errorsByPath}
-              section={workflowSection}
-              onChange={onChange}
-            />
           </TabsContent>
 
           <TabsContent value="packages" className="mt-0">
@@ -779,7 +778,11 @@ export function BoardCalendarWorkbench({
           </TabsContent>
 
           <TabsContent value="settings" className="mt-0 space-y-5">
-            <BoardCalendarSetupPanel data={data} onChange={onChange} />
+            <BoardCalendarSetupPanel
+              data={data}
+              onChange={onChange}
+              onDataChange={onDataChange}
+            />
             <AgmTimelinePanel data={data} onChange={onChange} />
           </TabsContent>
         </div>
@@ -813,6 +816,98 @@ function SummaryCard({
           <p className="mt-1 text-xs leading-5 text-slate-500">{detail}</p>
         </div>
       </div>
+    </div>
+  );
+}
+
+function MeetingsTablePanel({
+  meetings,
+  onEditEvent,
+}: {
+  meetings: CalendarViewEvent[];
+  onEditEvent: (event: CalendarViewEvent) => void;
+}) {
+  return (
+    <section
+      className="rounded-xl border bg-white p-5 shadow-sm"
+      aria-labelledby="board-calendar-meetings-heading"
+    >
+      <div className="flex flex-wrap items-start justify-between gap-3">
+        <div>
+          <h3
+            id="board-calendar-meetings-heading"
+            className="text-xl font-semibold text-slate-950"
+          >
+            Meetings
+          </h3>
+          <p className="mt-1 text-sm leading-6 text-slate-500">
+            Only entries created as Meeting or Event appear here.
+          </p>
+        </div>
+        <Badge variant="outline">{meetings.length} total</Badge>
+      </div>
+
+      {meetings.length ? (
+        <div className="mt-5 overflow-hidden rounded-xl border">
+          <div className="hidden grid-cols-[1.2fr_0.9fr_0.8fr_1fr_1fr_auto] gap-3 border-b bg-slate-50 px-4 py-3 text-xs font-semibold uppercase tracking-[0.08em] text-slate-500 lg:grid">
+            <span>Meeting</span>
+            <span>Date</span>
+            <span>Time</span>
+            <span>Location</span>
+            <span>Lead contact</span>
+            <span className="text-right">Action</span>
+          </div>
+          <div className="divide-y">
+            {meetings.map((meeting) => (
+              <div
+                key={meeting.id}
+                className="grid gap-3 px-4 py-4 text-sm lg:grid-cols-[1.2fr_0.9fr_0.8fr_1fr_1fr_auto] lg:items-center"
+              >
+                <div>
+                  <p className="font-semibold text-slate-950">{meeting.title}</p>
+                  <p className="text-xs text-slate-500">{meeting.category}</p>
+                </div>
+                <MeetingTableField label="Date" value={meeting.dateKey ?? "No date"} />
+                <MeetingTableField label="Time" value={meeting.time || "No time"} />
+                <MeetingTableField
+                  label="Location"
+                  value={meeting.location || "No location"}
+                />
+                <MeetingTableField
+                  label="Lead contact"
+                  value={meeting.leadContact || "No lead contact"}
+                />
+                <div className="lg:text-right">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={() => onEditEvent(meeting)}
+                  >
+                    <Pencil className="size-3.5" />
+                    Edit
+                  </Button>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      ) : (
+        <p className="mt-5 rounded-lg border border-dashed p-4 text-sm text-slate-500">
+          No meetings yet. Use Add meeting to create the first meeting or event.
+        </p>
+      )}
+    </section>
+  );
+}
+
+function MeetingTableField({ label, value }: { label: string; value: string }) {
+  return (
+    <div>
+      <p className="text-[11px] font-semibold uppercase tracking-[0.08em] text-slate-400 lg:hidden">
+        {label}
+      </p>
+      <p className="text-slate-700">{value}</p>
     </div>
   );
 }

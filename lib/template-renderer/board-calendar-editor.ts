@@ -100,6 +100,23 @@ function getNumberFromUnknown(value: unknown) {
   return undefined;
 }
 
+function getTaskRuleDaysOffset({
+  daysAfter,
+  daysBefore,
+  legacyOffset,
+}: {
+  daysAfter?: number;
+  daysBefore?: number;
+  legacyOffset?: number;
+}) {
+  if (daysAfter !== undefined && daysAfter !== 0) return Math.abs(daysAfter);
+  if (daysBefore !== undefined && daysBefore !== 0) return -Math.abs(daysBefore);
+  if (legacyOffset !== undefined) return legacyOffset;
+  if (daysAfter !== undefined) return Math.abs(daysAfter);
+  if (daysBefore !== undefined) return -Math.abs(daysBefore);
+  return 0;
+}
+
 function cleanList(values: string[]) {
   return Array.from(new Set(values.map((value) => value.trim()).filter(Boolean)));
 }
@@ -138,19 +155,13 @@ function normalizeTaskRule(row: Record<string, unknown>): BoardCalendarTaskRule 
   const daysBefore = getNumberFromUnknown(row.days_before);
   const daysAfter = getNumberFromUnknown(row.days_after);
   const legacyOffset = getNumberFromUnknown(row.days_offset);
-  const daysOffset =
-    daysBefore !== undefined
-      ? -Math.abs(daysBefore)
-      : daysAfter !== undefined
-        ? Math.abs(daysAfter)
-        : legacyOffset ?? 0;
 
   return {
     appliesTo:
       getString(row, "applies_to") ||
       getString(row, "meeting_type") ||
       "",
-    daysOffset,
+    daysOffset: getTaskRuleDaysOffset({ daysAfter, daysBefore, legacyOffset }),
     label,
     responsible: getString(row, "responsible"),
   };
@@ -253,6 +264,21 @@ export function buildGeneratedStaffTasks(
         };
       });
   });
+}
+
+export function syncBoardCalendarGeneratedTasks(
+  data: TemplateFormData,
+): TemplateFormData {
+  const manualTasks = getRows(data, "tasks").filter(
+    (task) => !getString(task, "generated_key"),
+  );
+  const generatedTasks: Array<Record<string, unknown>> =
+    buildGeneratedStaffTasks(data).map((task) => ({ ...task }));
+
+  return {
+    ...data,
+    tasks: [...manualTasks, ...generatedTasks],
+  };
 }
 
 export function createBoardCalendarEntryRow(input: BoardCalendarEntryInput) {

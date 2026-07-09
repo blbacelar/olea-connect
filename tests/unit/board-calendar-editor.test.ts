@@ -8,6 +8,7 @@ import {
   createBoardCalendarEntryRow,
   deleteBoardCalendarEntry,
   getBoardCalendarEntryInput,
+  syncBoardCalendarGeneratedTasks,
   updateBoardCalendarEntry,
   upsertBoardCalendarCategoryColor,
 } from "@/lib/template-renderer/board-calendar-editor";
@@ -44,6 +45,7 @@ describe("board calendar editor helpers", () => {
           {
             label: "Draft action items",
             days_after: 1,
+            days_before: 0,
             applies_to: "Board Meeting",
             responsible: "Board Chair",
           },
@@ -166,6 +168,100 @@ describe("board calendar editor helpers", () => {
         status: "",
         notes: "",
         done: false,
+      },
+    ]);
+  });
+
+  it("syncs generated staff tasks into calendar data while preserving manual tasks", () => {
+    const synced = syncBoardCalendarGeneratedTasks({
+      meetings: [
+        {
+          date: "2026-06-17",
+          type: "Board Meeting",
+          committee: "Q2 Board Meeting",
+        },
+      ],
+      operational_task_rules: [
+        {
+          label: "Send agenda package",
+          days_before: 7,
+          applies_to: "Board Meeting",
+          responsible: "Administrator",
+        },
+      ],
+      tasks: [
+        {
+          task: "Manual follow-up",
+          due_date: "2026-06-20",
+          related_meeting: "",
+          responsible: "Board Chair",
+          status: "Not Started",
+          notes: "This should remain.",
+          done: false,
+        },
+      ],
+    });
+
+    expect(synced.tasks).toEqual([
+      {
+        task: "Manual follow-up",
+        due_date: "2026-06-20",
+        related_meeting: "",
+        responsible: "Board Chair",
+        status: "Not Started",
+        notes: "This should remain.",
+        done: false,
+      },
+      {
+        generated_key:
+          "meeting:2026-06-17:Board Meeting:Q2 Board Meeting:Send agenda package:-7:Board Meeting",
+        task: "Send agenda package",
+        due_date: "2026-06-10",
+        related_meeting: "Board Meeting - Q2 Board Meeting",
+        responsible: "Administrator",
+        status: "",
+        notes: "",
+        done: false,
+      },
+    ]);
+  });
+
+  it("removes stale generated staff tasks when meetings no longer match rules", () => {
+    const synced = syncBoardCalendarGeneratedTasks({
+      meetings: [],
+      operational_task_rules: [
+        {
+          label: "Send agenda package",
+          days_before: 7,
+          applies_to: "Board Meeting",
+          responsible: "Administrator",
+        },
+      ],
+      tasks: [
+        {
+          generated_key:
+            "meeting:2026-06-17:Board Meeting:Q2 Board Meeting:Send agenda package:-7:Board Meeting",
+          task: "Send agenda package",
+          due_date: "2026-06-10",
+          related_meeting: "Board Meeting - Q2 Board Meeting",
+          responsible: "Administrator",
+          status: "In Progress",
+          notes: "Old generated task.",
+          done: false,
+        },
+        {
+          task: "Manual follow-up",
+          due_date: "2026-06-20",
+          status: "Not Started",
+        },
+      ],
+    });
+
+    expect(synced.tasks).toEqual([
+      {
+        task: "Manual follow-up",
+        due_date: "2026-06-20",
+        status: "Not Started",
       },
     ]);
   });
