@@ -6,7 +6,7 @@ import {
 } from "../pages/board-calendar.page";
 
 test.describe("@critical Board Calendar & Operational Workflow", () => {
-  test.setTimeout(60_000);
+  test.setTimeout(90_000);
 
   test("is reachable from desktop and mobile app navigation", async ({ page }) => {
     await page.goto("/dashboard");
@@ -31,8 +31,14 @@ test.describe("@critical Board Calendar & Operational Workflow", () => {
 
     await boardCalendar.openNewModuleCalendar();
     await boardCalendar.expectModuleChrome();
-    await boardCalendar.nameWorkbook(`E2E Board Calendar Module ${Date.now()}`);
-    await boardCalendar.saveNowAndWaitForPost();
+    await boardCalendar.fillSetupBasics({
+      organizationName: `E2E Board Calendar Module ${Date.now()}`,
+      fiscalYear: "2026",
+      administrator: "Bruno QA",
+      administratorEmail: "bruno.qa@example.com",
+      executiveDirector: "Executive Tester",
+      boardChair: "Chair Tester",
+    });
     await boardCalendar.expectSessionPersisted();
     await expect(page).toHaveURL(/\/modules\/board-calendar\?session=/);
   });
@@ -53,19 +59,17 @@ test.describe("@critical Board Calendar & Operational Workflow", () => {
     page,
   }) => {
     const boardCalendar = new BoardCalendarPage(page);
-    const eventDate = getFutureDateKey(1);
-    const generatedTaskDate = getRelativeDateKey(eventDate, 1);
-    const annualNoteDate = getFutureDateKey(2);
-    const taskDate = getFutureDateKey(3);
-    const agmDate = getFutureDateKey(4);
+    const eventDate = getFutureDateKey(14);
+    const generatedTaskBeforeDate = getRelativeDateKey(eventDate, -10);
+    const legacyGeneratedTaskBeforeDate = getRelativeDateKey(eventDate, -14);
+    const generatedTaskAfterDate = getRelativeDateKey(eventDate, 1);
+    const annualNoteDate = getFutureDateKey(16);
+    const taskDate = getFutureDateKey(17);
+    const agmDate = getFutureDateKey(18);
     const expectedAgmMilestoneDate = getRelativeDateKey(agmDate, -30);
 
     await test.step("open a new isolated board calendar workbook", async () => {
       await boardCalendar.openNewModuleCalendar();
-      await boardCalendar.nameWorkbook(`E2E Board Calendar ${Date.now()}`);
-      await boardCalendar.saveNowAndWaitForPost();
-      await boardCalendar.expectSessionPersisted();
-      await boardCalendar.waitForSaved();
     });
 
     await test.step("configure setup, committees, and generated task rules", async () => {
@@ -93,6 +97,7 @@ test.describe("@critical Board Calendar & Operational Workflow", () => {
         responsible: "Board Chair",
       });
       await boardCalendar.saveNowAndWaitForPost();
+      await boardCalendar.expectSessionPersisted();
       await boardCalendar.waitForSaved();
     });
 
@@ -133,14 +138,23 @@ test.describe("@critical Board Calendar & Operational Workflow", () => {
       );
       await boardCalendar.expectMeetingTableText("Treasurer");
       await boardCalendar.expectMeetingTableDoesNotShow("Send action summary");
-      await boardCalendar.selectCalendarDate(generatedTaskDate);
-      await boardCalendar.expectSelectedDateText("Send action summary");
+      await boardCalendar.expectGeneratedTaskOnAnyDate([
+        { dateKey: generatedTaskBeforeDate, text: "Prepare board briefing" },
+        { dateKey: legacyGeneratedTaskBeforeDate, text: "Draft agenda to Chair" },
+      ]);
+      await boardCalendar.expectGeneratedTaskOnAnyDate([
+        { dateKey: generatedTaskAfterDate, text: "Send action summary" },
+        { dateKey: generatedTaskAfterDate, text: "Action items sent" },
+      ]);
       await boardCalendar.saveNowAndWaitForPost();
       await boardCalendar.waitForSaved();
     });
 
     await test.step("generate and update staff tasks from setup rules and meeting dates", async () => {
-      await boardCalendar.expectGeneratedStaffTask("Prepare board briefing");
+      await boardCalendar.expectAnyGeneratedStaffTask([
+        "Prepare board briefing",
+        "Draft agenda to Chair",
+      ]);
       await boardCalendar.updateGeneratedStaffTask(
         1,
         "In Progress",

@@ -18,10 +18,12 @@ import type {
 type SaveState = "saved" | "saving" | "unsaved" | "error";
 
 export function useDynamicTemplateSession({
+  enableCompletionFlow = true,
   initialSession,
   onSaved,
   saveSession,
 }: {
+  enableCompletionFlow?: boolean;
   initialSession: DynamicTemplateSession;
   onSaved?: (
     saved: DynamicTemplateSession,
@@ -42,12 +44,23 @@ export function useDynamicTemplateSession({
   sessionRef.current = session;
 
   const validationErrors = useMemo(
-    () => validateTemplateData(session.schemaSnapshot, session.formData),
-    [session.formData, session.schemaSnapshot],
+    () =>
+      enableCompletionFlow
+        ? validateTemplateData(session.schemaSnapshot, session.formData)
+        : [],
+    [enableCompletionFlow, session.formData, session.schemaSnapshot],
   );
   const completionPercent = useMemo(
-    () => calculateCompletionPercent(session.schemaSnapshot, session.formData),
-    [session.formData, session.schemaSnapshot],
+    () =>
+      enableCompletionFlow
+        ? calculateCompletionPercent(session.schemaSnapshot, session.formData)
+        : session.completionPercent,
+    [
+      enableCompletionFlow,
+      session.completionPercent,
+      session.formData,
+      session.schemaSnapshot,
+    ],
   );
 
   useEffect(() => {
@@ -78,10 +91,9 @@ export function useDynamicTemplateSession({
 
       return {
         ...current,
-        completionPercent: calculateCompletionPercent(
-          current.schemaSnapshot,
-          formData,
-        ),
+        completionPercent: enableCompletionFlow
+          ? calculateCompletionPercent(current.schemaSnapshot, formData)
+          : current.completionPercent,
         formData,
       };
     });
@@ -96,10 +108,9 @@ export function useDynamicTemplateSession({
       const formData = updater(current.formData);
       return {
         ...current,
-        completionPercent: calculateCompletionPercent(
-          current.schemaSnapshot,
-          formData,
-        ),
+        completionPercent: enableCompletionFlow
+          ? calculateCompletionPercent(current.schemaSnapshot, formData)
+          : current.completionPercent,
         formData,
       };
     });
@@ -120,14 +131,15 @@ export function useDynamicTemplateSession({
     const savedEditVersion = editVersion.current;
     const payload = toSavePayload({
       ...sessionSnapshot,
-      status,
-      completionPercent:
-        status === "completed"
+      status: enableCompletionFlow ? status : "draft",
+      completionPercent: enableCompletionFlow
+        ? status === "completed"
           ? 100
           : calculateCompletionPercent(
               sessionSnapshot.schemaSnapshot,
               sessionSnapshot.formData,
-            ),
+            )
+        : sessionSnapshot.completionPercent,
     });
 
     setSaveState("saving");
@@ -151,16 +163,22 @@ export function useDynamicTemplateSession({
     }
   };
 
-  const complete = () => {
-    if (validationErrors.length > 0) {
-      setSaveError("Please fix the highlighted fields before completing.");
-      return;
-    }
+  const saveNow = enableCompletionFlow
+    ? () => persist("draft")
+    : undefined;
 
-    startCompleteTransition(async () => {
-      await persist("completed");
-    });
-  };
+  const complete = enableCompletionFlow
+    ? () => {
+        if (validationErrors.length > 0) {
+          setSaveError("Please fix the highlighted fields before completing.");
+          return;
+        }
+
+        startCompleteTransition(async () => {
+          await persist("completed");
+        });
+      }
+    : undefined;
 
   useEffect(() => {
     if (!didMount.current) {
@@ -188,7 +206,7 @@ export function useDynamicTemplateSession({
     validationErrors,
     completionPercent,
     isCompleting,
-    saveNow: () => persist("draft"),
+    saveNow,
     complete,
   };
 }

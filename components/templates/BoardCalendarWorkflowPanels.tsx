@@ -103,7 +103,10 @@ export function BoardCalendarSetupPanel({
   }
 
   function updateCommittee(index: number, field: string, value: string) {
-    onChange(["committees"], updateRow(committees, index, field, value));
+    onDataChange((currentData) => ({
+      ...currentData,
+      committees: updateRow(getRows(currentData, "committees"), index, field, value),
+    }));
   }
 
   function addCommittee() {
@@ -112,15 +115,19 @@ export function BoardCalendarSetupPanel({
   }
 
   function updateTaskRule(index: number, field: string, value: unknown) {
-    updateTaskRules(updateRow(taskRules, index, field, value));
+    updateTaskRulesFromCurrent((currentRules) =>
+      updateRow(currentRules, index, field, value),
+    );
   }
 
   function updateTaskRuleTiming(index: number, timing: "after" | "before") {
-    const currentRule = taskRules[index];
-    const currentDays =
-      getNumber(currentRule, "days_after") || getNumber(currentRule, "days_before");
-    updateTaskRules(
-      taskRules.map((rule, ruleIndex) =>
+    updateTaskRulesFromCurrent((currentRules) => {
+      const currentRule = currentRules[index];
+      const currentDays =
+        getNumber(currentRule, "days_after") ||
+        getNumber(currentRule, "days_before");
+
+      return currentRules.map((rule, ruleIndex) =>
         ruleIndex === index
           ? {
               ...rule,
@@ -128,14 +135,28 @@ export function BoardCalendarSetupPanel({
               days_before: timing === "before" ? currentDays : 0,
             }
           : rule,
-      ),
-    );
+      );
+    });
   }
 
   function updateTaskRules(nextRules: TemplateRecord[]) {
     onDataChange((currentData) =>
       syncBoardCalendarGeneratedTasks(
         setValue(currentData, ["operational_task_rules"], nextRules),
+      ),
+    );
+  }
+
+  function updateTaskRulesFromCurrent(
+    updater: (currentRules: TemplateRecord[]) => TemplateRecord[],
+  ) {
+    onDataChange((currentData) =>
+      syncBoardCalendarGeneratedTasks(
+        setValue(
+          currentData,
+          ["operational_task_rules"],
+          updater(getRows(currentData, "operational_task_rules")),
+        ),
       ),
     );
   }

@@ -25,10 +25,6 @@ test.describe("@critical dynamic template renderer", () => {
 
     await boardCalendar.openNewModuleCalendar();
 
-    await boardCalendar.nameWorkbook("2026 Board Calendar - Test workbook");
-    await boardCalendar.saveNowAndWaitForPost();
-    await boardCalendar.expectSessionPersisted();
-    await boardCalendar.waitForSaved();
     await boardCalendar.expectWorkspaceViewOptionHidden("Colour key");
     await boardCalendar.selectCalendarDate(futureDate);
     await boardCalendar.addMeeting({
@@ -48,6 +44,7 @@ test.describe("@critical dynamic template renderer", () => {
     await boardCalendar.expectSelectedDateText("6:30 PM");
     await boardCalendar.expectSelectedDateText("Boardroom");
     await boardCalendar.saveNowAndWaitForPost();
+    await boardCalendar.expectSessionPersisted();
     await boardCalendar.waitForSaved();
 
     await boardCalendar.startNewWorkbook();

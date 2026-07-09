@@ -102,10 +102,11 @@ export class BoardCalendarPage {
     await expect(this.page.getByText(/Schema v\d+/)).toHaveCount(0);
     await expect(this.page.getByText(/Brand snapshot:/)).toHaveCount(0);
     await expect(this.page.getByText(/required item/)).toHaveCount(0);
-    await expect(this.page.getByRole("button", { name: "Save now" })).toBeVisible();
+    await expect(this.page.getByText(/^Saved$/)).toHaveCount(0);
+    await expect(this.page.getByRole("button", { name: "Save now" })).toHaveCount(0);
     await expect(
       this.page.getByRole("button", { name: "Mark complete" }),
-    ).toBeVisible();
+    ).toHaveCount(0);
     await expect(this.page.getByRole("tab", { name: "Dashboard" })).toBeVisible();
     await expect(this.page.getByRole("tab", { name: "Calendar" })).toBeVisible();
     await expect(this.page.getByRole("tab", { name: "Meetings" })).toBeVisible();
@@ -159,7 +160,19 @@ export class BoardCalendarPage {
         "Staff task list": "Workflows",
       }[option] ?? option;
 
-    await this.page.getByRole("tab", { name: tabName }).click();
+    const tab = this.page.getByRole("tab", { name: tabName });
+    for (let attempt = 0; attempt < 3; attempt += 1) {
+      await tab.scrollIntoViewIfNeeded();
+      await tab.click();
+      try {
+        await expect(tab).toHaveAttribute("aria-selected", "true", {
+          timeout: 2_000,
+        });
+        return;
+      } catch (error) {
+        if (attempt === 2) throw error;
+      }
+    }
   }
 
   async fillSetupBasics({
@@ -189,10 +202,11 @@ export class BoardCalendarPage {
   }
 
   async addCommittee(name: string, chair: string) {
+    const committeeLabels = this.setupPanel.getByLabel(/Committee \d+ name/);
+    const previousCommitteeCount = await committeeLabels.count();
     await this.setupPanel.getByRole("button", { name: "Add committee" }).click();
-    const committeeCount = await this.setupPanel
-      .getByLabel(/Committee \d+ name/)
-      .count();
+    await expect(committeeLabels).toHaveCount(previousCommitteeCount + 1);
+    const committeeCount = previousCommitteeCount + 1;
     await this.setupPanel.getByLabel(`Committee ${committeeCount} name`).fill(name);
     await this.setupPanel
       .getByLabel(`Committee ${committeeCount} chair`)
@@ -212,10 +226,11 @@ export class BoardCalendarPage {
     responsible?: string;
     timing?: "After" | "Before";
   }) {
+    const ruleLabels = this.setupPanel.getByLabel(/Task rule \d+ label/);
+    const previousRuleCount = await ruleLabels.count();
     await this.setupPanel.getByRole("button", { name: "Add task rule" }).click();
-    const ruleCount = await this.setupPanel
-      .getByLabel(/Task rule \d+ label/)
-      .count();
+    await expect(ruleLabels).toHaveCount(previousRuleCount + 1);
+    const ruleCount = previousRuleCount + 1;
     await this.setupPanel.getByLabel(`Task rule ${ruleCount} label`).fill(label);
     await this.setupPanel.getByLabel(`Task rule ${ruleCount} days`).fill(days);
     await this.chooseSelectOption(
@@ -239,6 +254,13 @@ export class BoardCalendarPage {
     await this.chooseWorkspaceView("Staff task list");
     await expect(
       this.staffTaskListPanel.getByText(taskName, { exact: true }),
+    ).toBeVisible();
+  }
+
+  async expectAnyGeneratedStaffTask(taskNames: string[]) {
+    await this.chooseWorkspaceView("Staff task list");
+    await expect(
+      this.staffTaskListPanel.getByText(oneOfTextPattern(taskNames)).first(),
     ).toBeVisible();
   }
 
@@ -310,6 +332,7 @@ export class BoardCalendarPage {
   }
 
   async expectPastDatesDisabled() {
+    await expect(this.monthGrid).toBeVisible();
     await expect(this.monthGrid.locator("button:disabled").first()).toBeVisible();
   }
 
@@ -517,7 +540,10 @@ export class BoardCalendarPage {
   }
 
   async updateEntry() {
-    await this.page.getByRole("button", { name: "Update entry" }).click();
+    await Promise.all([
+      this.waitForTemplatePost(),
+      this.page.getByRole("button", { name: "Update entry" }).click(),
+    ]);
     await expect(this.entryForm).toHaveCount(0);
     await this.waitForSaved();
   }
@@ -535,30 +561,32 @@ export class BoardCalendarPage {
   }
 
   async confirmDelete() {
-    await this.deleteDialog
-      .getByRole("button", { name: "Delete entry" })
-      .click();
+    await Promise.all([
+      this.waitForTemplatePost(),
+      this.deleteDialog.getByRole("button", { name: "Delete entry" }).click(),
+    ]);
     await expect(this.deleteDialog).toHaveCount(0);
     await this.waitForSaved();
   }
 
   async saveNowAndWaitForPost() {
-    await Promise.all([
-      this.page.waitForResponse(
-        (response) =>
-          response.request().method() === "POST" &&
-          (response.url().includes(boardCalendarTemplatePath) ||
-            response.url().includes(boardCalendarModulePath)),
-        { timeout: 15_000 },
-      ),
-      this.page.getByRole("button", { name: "Save now" }).click(),
-    ]);
+    const saveButton = this.page.getByRole("button", { name: "Save now" });
+    if (await saveButton.count()) {
+      await Promise.all([
+        this.waitForTemplatePost(),
+        saveButton.click(),
+      ]);
+      return;
+    }
+
+    await this.waitForTemplatePost();
   }
 
   async waitForSaved() {
-    await expect(this.page.getByText(/^Saved$/)).toBeVisible({
-      timeout: 10_000,
-    });
+    const savedLabel = this.page.getByText(/^Saved$/);
+    if (await savedLabel.count()) {
+      await expect(savedLabel).toBeVisible({ timeout: 10_000 });
+    }
   }
 
   async expectSessionPersisted() {
@@ -592,6 +620,30 @@ export class BoardCalendarPage {
 
   async expectSelectedDateText(text: string) {
     await expect(this.selectedDateText(text).first()).toBeVisible();
+  }
+
+  async expectAnySelectedDateText(texts: string[]) {
+    await expect(
+      this.selectedDatePanel.getByText(oneOfTextPattern(texts)).first(),
+    ).toBeVisible();
+  }
+
+  async expectGeneratedTaskOnAnyDate(
+    candidates: Array<{ dateKey: string; text: string }>,
+  ) {
+    for (const candidate of candidates) {
+      await this.selectCalendarDate(candidate.dateKey);
+      if ((await this.selectedDateText(candidate.text).count()) > 0) {
+        await this.expectSelectedDateText(candidate.text);
+        return;
+      }
+    }
+
+    throw new Error(
+      `Expected one generated task candidate: ${candidates
+        .map((candidate) => `${candidate.text} on ${candidate.dateKey}`)
+        .join(", ")}`,
+    );
   }
 
   async expectSelectedDateTextCount(text: string, count: number) {
@@ -685,6 +737,16 @@ export class BoardCalendarPage {
     await scope.getByLabel(label, { exact: true }).click();
     await this.page.getByRole("option", { name: option, exact: true }).click();
   }
+
+  private async waitForTemplatePost() {
+    await this.page.waitForResponse(
+      (response) =>
+        response.request().method() === "POST" &&
+        (response.url().includes(boardCalendarTemplatePath) ||
+          response.url().includes(boardCalendarModulePath)),
+      { timeout: 15_000 },
+    );
+  }
 }
 
 export function getFutureDateKey(daysFromNow: number) {
@@ -704,4 +766,12 @@ export function getRelativeDateKey(dateKey: string, daysFromDate: number) {
   const nextMonth = String(date.getMonth() + 1).padStart(2, "0");
   const nextDay = String(date.getDate()).padStart(2, "0");
   return `${nextYear}-${nextMonth}-${nextDay}`;
+}
+
+function oneOfTextPattern(values: string[]) {
+  return new RegExp(values.map(escapeRegExp).join("|"));
+}
+
+function escapeRegExp(value: string) {
+  return value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 }

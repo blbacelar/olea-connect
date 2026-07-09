@@ -66,6 +66,12 @@ export function DynamicTemplateEditor({
 }) {
   const router = useRouter();
   const editorBasePath = basePath ?? `/templates/${data.template.slug}`;
+  const renderSectionsAsTabs =
+    (data.session.schemaSnapshot.presentation?.section_layout ??
+      data.session.schemaSnapshot.presentation?.sectionLayout) === "tabs";
+  const calendarEnabled =
+    renderSectionsAsTabs &&
+    Boolean(data.session.schemaSnapshot.presentation?.calendar?.enabled);
   const {
     session,
     updateTitle,
@@ -79,6 +85,7 @@ export function DynamicTemplateEditor({
     saveNow,
     complete,
   } = useDynamicTemplateSession({
+    enableCompletionFlow: !calendarEnabled,
     initialSession: data.session,
     onSaved: (saved, previousSession) => {
       if (!previousSession.id && saved.id) {
@@ -93,12 +100,6 @@ export function DynamicTemplateEditor({
   const errorsByPath = new Map(
     validationErrors.map((error) => [error.path, error.message]),
   );
-  const renderSectionsAsTabs =
-    (session.schemaSnapshot.presentation?.section_layout ??
-      session.schemaSnapshot.presentation?.sectionLayout) === "tabs";
-  const calendarEnabled =
-    renderSectionsAsTabs &&
-    Boolean(session.schemaSnapshot.presentation?.calendar?.enabled);
   const defaultTabValue = calendarEnabled
     ? "calendar"
     : session.schemaSnapshot.sections[0]?.id;
@@ -130,21 +131,23 @@ export function DynamicTemplateEditor({
           </p>
         </div>
 
-        <div className="flex flex-wrap items-center gap-3">
-          <SaveStateLabel state={saveState} />
-          <Button variant="outline" onClick={() => void saveNow()}>
-            <Save className="size-4" />
-            Save now
-          </Button>
-          <Button onClick={complete} disabled={isCompleting}>
-            {isCompleting ? (
-              <LoaderCircle className="size-4 animate-spin" />
-            ) : (
-              <Check className="size-4" />
-            )}
-            Mark complete
-          </Button>
-        </div>
+        {!calendarEnabled && saveNow && complete ? (
+          <div className="flex flex-wrap items-center gap-3">
+            <SaveStateLabel state={saveState} />
+            <Button variant="outline" onClick={() => void saveNow()}>
+              <Save className="size-4" />
+              Save now
+            </Button>
+            <Button onClick={complete} disabled={isCompleting}>
+              {isCompleting ? (
+                <LoaderCircle className="size-4 animate-spin" />
+              ) : (
+                <Check className="size-4" />
+              )}
+              Mark complete
+            </Button>
+          </div>
+        ) : null}
       </div>
 
       {!calendarEnabled ? (
