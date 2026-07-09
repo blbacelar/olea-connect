@@ -115,6 +115,7 @@ test.describe("@critical Board Calendar & Operational Workflow", () => {
       await boardCalendar.saveNowAndWaitForPost();
       await boardCalendar.expectSessionPersisted();
       await boardCalendar.waitForSaved();
+      await boardCalendar.expectWorkspaceViewSelected("Directory");
     });
 
     await test.step("block invalid new entries for past dates and empty titles", async () => {

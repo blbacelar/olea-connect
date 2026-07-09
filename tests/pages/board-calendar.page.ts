@@ -179,6 +179,23 @@ export class BoardCalendarPage {
     }
   }
 
+  async expectWorkspaceViewSelected(option: string) {
+    const tabName =
+      {
+        "AGM planning timeline": "Settings",
+        "Calendar workspace": "Calendar",
+        "Generated operational workflow": "Workflows",
+        "Meeting schedule": "Meetings",
+        Setup: "Settings",
+        "Staff task list": "Workflows",
+      }[option] ?? option;
+
+    await expect(this.page.getByRole("tab", { name: tabName })).toHaveAttribute(
+      "aria-selected",
+      "true",
+    );
+  }
+
   async fillSetupBasics({
     administrator,
     administratorEmail,

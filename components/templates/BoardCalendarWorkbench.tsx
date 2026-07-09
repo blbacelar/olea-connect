@@ -106,6 +106,8 @@ const moduleTabs: Array<{
   { icon: Settings, label: "Settings", value: "settings" },
 ];
 
+const boardCalendarActiveTabStorageKey = "olea:board-calendar:active-tab";
+
 const entryTypes: Array<{
   label: string;
   value: BoardCalendarEntryType;
@@ -139,6 +141,14 @@ const agmTrackOptions = [
   "Compliance",
   "Other / General",
 ];
+
+function isBoardCalendarModuleTab(value: string): value is BoardCalendarModuleTab {
+  return moduleTabs.some((tab) => tab.value === value);
+}
+
+function getBoardCalendarActiveTabStorageKey() {
+  return `${boardCalendarActiveTabStorageKey}:${window.location.pathname}`;
+}
 
 export function BoardCalendarWorkbench({
   data,
@@ -193,6 +203,28 @@ export function BoardCalendarWorkbench({
   const [entryWeeksBefore, setEntryWeeksBefore] = useState("");
   const [editingEventId, setEditingEventId] = useState<string | null>(null);
   const [isEntryModalOpen, setIsEntryModalOpen] = useState(false);
+  const hasMountedActiveTabPersistence = useRef(false);
+
+  useEffect(() => {
+    const storedTab = window.sessionStorage.getItem(
+      getBoardCalendarActiveTabStorageKey(),
+    );
+    if (storedTab && isBoardCalendarModuleTab(storedTab)) {
+      setActiveTab(storedTab);
+    }
+  }, []);
+
+  useEffect(() => {
+    if (!hasMountedActiveTabPersistence.current) {
+      hasMountedActiveTabPersistence.current = true;
+      return;
+    }
+
+    window.sessionStorage.setItem(
+      getBoardCalendarActiveTabStorageKey(),
+      activeTab,
+    );
+  }, [activeTab]);
 
   const monthIndex = anchorDate.getMonth();
   const year = anchorDate.getFullYear();
