@@ -102,6 +102,7 @@ export class BoardCalendarPage {
     await expect(this.page.getByText(/Schema v\d+/)).toHaveCount(0);
     await expect(this.page.getByText(/Brand snapshot:/)).toHaveCount(0);
     await expect(this.page.getByText(/required item/)).toHaveCount(0);
+    await expect(this.page.getByRole("heading", { name: "Exports" })).toHaveCount(0);
     await expect(this.page.getByText(/^Saved$/)).toHaveCount(0);
     await expect(this.page.getByRole("button", { name: "Save now" })).toHaveCount(0);
     await expect(
@@ -265,8 +266,15 @@ export class BoardCalendarPage {
   }
 
   async updateGeneratedStaffTask(index: number, status: string, notes: string) {
-    await this.chooseSelectOption(`Task ${index} status`, status, this.staffTaskListPanel);
-    await this.staffTaskListPanel.getByLabel(`Task ${index} notes`).fill(notes);
+    await this.staffTaskListPanel
+      .getByRole("button", { name: `Edit task ${index}` })
+      .click();
+    const dialog = this.page.getByRole("dialog", { name: "Edit workflow task" });
+    await expect(dialog).toBeVisible();
+    await this.chooseSelectOption(`Task ${index} status`, status, dialog);
+    await dialog.getByLabel(`Task ${index} notes`).fill(notes);
+    await dialog.getByRole("button", { name: "Save task" }).click();
+    await expect(dialog).toHaveCount(0);
   }
 
   async expectGeneratedStaffTaskDetails(
@@ -274,12 +282,11 @@ export class BoardCalendarPage {
     status: string,
     notes: string,
   ) {
-    await expect(
-      this.staffTaskListPanel.getByLabel(`Task ${index} status`),
-    ).toContainText(status);
-    await expect(
-      this.staffTaskListPanel.getByLabel(`Task ${index} notes`),
-    ).toHaveValue(notes);
+    const row = this.staffTaskListPanel
+      .locator("tbody tr")
+      .nth(index - 1);
+    await expect(row).toContainText(status);
+    await expect(row).toContainText(notes);
   }
 
   async expectMeetingVisibleInMeetingsTable(meetingTitle: string) {

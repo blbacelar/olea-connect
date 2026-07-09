@@ -310,14 +310,16 @@ export function DynamicTemplateEditor({
         )}
       </div>
 
-      <TemplateExportPanel
-        templateInstanceId={session.id}
-        supportsPdf={data.template.supportsPdf}
-        supportsDocx={data.template.supportsDocx}
-        initialExports={data.exports}
-        generateExport={generateExport}
-        createDownloadUrl={createDownloadUrl}
-      />
+      {!calendarEnabled ? (
+        <TemplateExportPanel
+          templateInstanceId={session.id}
+          supportsPdf={data.template.supportsPdf}
+          supportsDocx={data.template.supportsDocx}
+          initialExports={data.exports}
+          generateExport={generateExport}
+          createDownloadUrl={createDownloadUrl}
+        />
+      ) : null}
     </div>
   );
 }

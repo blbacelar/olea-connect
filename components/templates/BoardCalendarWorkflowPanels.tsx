@@ -1,10 +1,20 @@
 "use client";
 
-import type { ReactNode } from "react";
+import { useEffect, useState, type ReactNode } from "react";
 
-import { Plus, Trash2 } from "lucide-react";
+import { Pencil, Plus, Trash2 } from "lucide-react";
 
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import {
+  Dialog,
+  DialogClose,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
@@ -14,6 +24,14 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
 import { Textarea } from "@/components/ui/textarea";
 import {
   buildBoardCalendarSetup,
@@ -413,9 +431,43 @@ export function StaffTaskListPanel({
 }) {
   const setup = buildBoardCalendarSetup(data);
   const tasks = getRows(syncBoardCalendarGeneratedTasks(data), "tasks");
+  const [editingTaskIndex, setEditingTaskIndex] = useState<number | null>(null);
+  const [taskDraft, setTaskDraft] = useState<TemplateRecord | null>(null);
+  const editingTask =
+    editingTaskIndex === null ? null : tasks[editingTaskIndex] ?? null;
 
-  function updateTask(index: number, field: string, value: unknown) {
-    onChange(["tasks"], updateRow(tasks, index, field, value));
+  useEffect(() => {
+    if (editingTaskIndex === null) return;
+    const nextTask = tasks[editingTaskIndex];
+    if (!nextTask) {
+      setEditingTaskIndex(null);
+      setTaskDraft(null);
+    }
+  }, [editingTaskIndex, tasks]);
+
+  function openTaskEditor(index: number) {
+    setEditingTaskIndex(index);
+    setTaskDraft({ ...(tasks[index] ?? {}) });
+  }
+
+  function closeTaskEditor() {
+    setEditingTaskIndex(null);
+    setTaskDraft(null);
+  }
+
+  function updateTaskDraft(field: string, value: unknown) {
+    setTaskDraft((current) => ({ ...(current ?? {}), [field]: value }));
+  }
+
+  function saveTaskDraft() {
+    if (editingTaskIndex === null || !taskDraft) return;
+    onChange(
+      ["tasks"],
+      tasks.map((task, index) =>
+        index === editingTaskIndex ? { ...task, ...taskDraft } : task,
+      ),
+    );
+    closeTaskEditor();
   }
 
   return (
@@ -431,66 +483,168 @@ export function StaffTaskListPanel({
         </p>
       </div>
       {tasks.length ? (
-        <div className="space-y-3">
-          {tasks.map((task, index) => (
-            <div
-              key={getString(task, "generated_key") || `manual-task-${index}`}
-              className="rounded-xl border p-4"
-            >
-              <div className="grid gap-3 lg:grid-cols-[1.2fr_0.8fr_0.8fr_0.8fr]">
-                <div>
-                  <p className="font-semibold text-slate-950">
-                    {getString(task, "task") || "Untitled task"}
-                  </p>
-                  <p className="text-sm text-slate-500">
-                    {getString(task, "related_meeting") || "Calendar task"}
-                  </p>
-                </div>
-                <Field label="Due date">
-                  <Input value={getString(task, "due_date")} readOnly />
-                </Field>
-                <Field label="Responsible">
-                  <ResponsibleSelect
-                    label={`Task ${index + 1} responsible`}
-                    options={setup.responsibleOptions}
-                    value={getString(task, "responsible")}
-                    onChange={(value) => updateTask(index, "responsible", value)}
-                  />
-                </Field>
-                <Field label="Status">
-                  <Select
-                    value={getString(task, "status")}
-                    onValueChange={(value) => updateTask(index, "status", value)}
+        <>
+          <div className="rounded-xl border">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Task</TableHead>
+                  <TableHead>Due date</TableHead>
+                  <TableHead>Related meeting</TableHead>
+                  <TableHead>Responsible</TableHead>
+                  <TableHead>Status</TableHead>
+                  <TableHead>Notes</TableHead>
+                  <TableHead className="w-[120px] text-right">Actions</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {tasks.map((task, index) => (
+                  <TableRow
+                    key={getString(task, "generated_key") || `manual-task-${index}`}
                   >
-                    <SelectTrigger aria-label={`Task ${index + 1} status`}>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {statusOptions.map((status) => (
-                        <SelectItem key={status} value={status}>
-                          {status}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </Field>
-              </div>
-              <Textarea
-                aria-label={`Task ${index + 1} notes`}
-                className="mt-3"
-                placeholder="Notes"
-                value={getString(task, "notes")}
-                onChange={(event) => updateTask(index, "notes", event.target.value)}
-              />
-            </div>
-          ))}
-        </div>
+                    <TableCell className="min-w-[220px] font-semibold text-slate-950">
+                      {getString(task, "task") || "Untitled task"}
+                    </TableCell>
+                    <TableCell className="whitespace-nowrap text-slate-700">
+                      {getString(task, "due_date") || "No due date"}
+                    </TableCell>
+                    <TableCell className="min-w-[180px] text-slate-600">
+                      {getString(task, "related_meeting") || "Calendar task"}
+                    </TableCell>
+                    <TableCell className="min-w-[160px] text-slate-700">
+                      {getString(task, "responsible") || "Unassigned"}
+                    </TableCell>
+                    <TableCell>
+                      <StatusBadge status={getString(task, "status")} />
+                    </TableCell>
+                    <TableCell className="max-w-[260px] truncate text-slate-500">
+                      {getString(task, "notes") || "—"}
+                    </TableCell>
+                    <TableCell className="text-right">
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        aria-label={`Edit task ${index + 1}`}
+                        onClick={() => openTaskEditor(index)}
+                      >
+                        <Pencil className="size-4" />
+                        Edit
+                      </Button>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </div>
+
+          <Dialog
+            open={editingTaskIndex !== null}
+            onOpenChange={(open) => {
+              if (!open) closeTaskEditor();
+            }}
+          >
+            <DialogContent>
+              <DialogHeader>
+                <DialogTitle>Edit workflow task</DialogTitle>
+                <DialogDescription>
+                  Update the owner, status, and notes for this generated task.
+                  The due date stays tied to the meeting and setup rule.
+                </DialogDescription>
+              </DialogHeader>
+              {taskDraft && editingTask ? (
+                <div className="space-y-4">
+                  <div className="rounded-xl border bg-slate-50 p-4">
+                    <p className="text-sm font-semibold uppercase tracking-[0.08em] text-slate-500">
+                      Task
+                    </p>
+                    <p className="mt-1 font-semibold text-slate-950">
+                      {getString(taskDraft, "task") || "Untitled task"}
+                    </p>
+                    <p className="mt-1 text-sm text-slate-600">
+                      Due {getString(taskDraft, "due_date") || "without date"} ·{" "}
+                      {getString(taskDraft, "related_meeting") || "Calendar task"}
+                    </p>
+                  </div>
+
+                  <div className="grid gap-4 md:grid-cols-2">
+                    <Field label="Responsible">
+                      <ResponsibleSelect
+                        label={`Task ${(editingTaskIndex ?? 0) + 1} responsible`}
+                        options={setup.responsibleOptions}
+                        value={getString(taskDraft, "responsible")}
+                        onChange={(value) => updateTaskDraft("responsible", value)}
+                      />
+                    </Field>
+                    <Field label="Status">
+                      <Select
+                        value={getString(taskDraft, "status") || "Not Started"}
+                        onValueChange={(value) => updateTaskDraft("status", value)}
+                      >
+                        <SelectTrigger
+                          aria-label={`Task ${(editingTaskIndex ?? 0) + 1} status`}
+                        >
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {statusOptions.map((status) => (
+                            <SelectItem key={status} value={status}>
+                              {status}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </Field>
+                  </div>
+
+                  <Field label="Notes">
+                    <Textarea
+                      aria-label={`Task ${(editingTaskIndex ?? 0) + 1} notes`}
+                      placeholder="Notes"
+                      value={getString(taskDraft, "notes")}
+                      onChange={(event) =>
+                        updateTaskDraft("notes", event.target.value)
+                      }
+                    />
+                  </Field>
+                </div>
+              ) : null}
+              <DialogFooter>
+                <DialogClose asChild>
+                  <Button type="button" variant="outline">
+                    Cancel
+                  </Button>
+                </DialogClose>
+                <Button type="button" onClick={saveTaskDraft}>
+                  Save task
+                </Button>
+              </DialogFooter>
+            </DialogContent>
+          </Dialog>
+        </>
       ) : (
         <p className="rounded-lg border border-dashed p-4 text-sm text-slate-500">
           Add meetings and task rules in Setup to generate staff tasks.
         </p>
       )}
     </section>
+  );
+}
+
+function StatusBadge({ status }: { status: string }) {
+  const normalizedStatus = status || "Not Started";
+  const statusClassName =
+    {
+      "Not Started": "border-slate-200 bg-slate-50 text-slate-600",
+      "In Progress": "border-amber-200 bg-amber-50 text-amber-800",
+      Complete: "border-green-200 bg-green-50 text-green-800",
+      Blocked: "border-red-200 bg-red-50 text-red-800",
+    }[normalizedStatus] ?? "border-slate-200 bg-slate-50 text-slate-600";
+
+  return (
+    <Badge variant="outline" className={statusClassName}>
+      {normalizedStatus}
+    </Badge>
   );
 }
 
