@@ -1800,6 +1800,11 @@ function CalendarEventPill({
         {event.time ? <span>{event.time}</span> : null}
         {event.location && !compact ? <span>{event.location}</span> : null}
       </div>
+      {event.relatedMeeting ? (
+        <p className="truncate text-[11px] leading-4 text-slate-700">
+          For: {event.relatedMeeting}
+        </p>
+      ) : null}
       {event.notes && !compact ? (
         <p className="text-[11px] leading-4 text-slate-600">{event.notes}</p>
       ) : null}

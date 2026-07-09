@@ -134,6 +134,15 @@ function getCommitteeRowKey(committee: TemplateRecord, index: number) {
     : `committee-empty-${index}`;
 }
 
+function getAgmMilestoneRowKey(milestone: TemplateRecord, index: number) {
+  const task = getString(milestone, "task").trim();
+  const targetDate = getString(milestone, "calculated_date").trim();
+  const track = getString(milestone, "track").trim();
+  return [task, targetDate, track].some(Boolean)
+    ? `agm-${task}-${targetDate}-${track}-${index}`
+    : `agm-empty-${index}`;
+}
+
 export function BoardCalendarSetupPanel({
   data,
   onChange,
@@ -1221,6 +1230,76 @@ export function AgmTimelinePanel({
   const setup = buildBoardCalendarSetup(data);
   const agmDate = getTopLevelString(data, "agm_date");
   const milestones = getRows(data, "agm_milestones");
+  const [editingMilestoneIndex, setEditingMilestoneIndex] = useState<
+    number | "new" | null
+  >(null);
+  const [milestoneDraft, setMilestoneDraft] = useState<TemplateRecord | null>(
+    null,
+  );
+  const [showFilters, setShowFilters] = useState(false);
+  const [taskFilter, setTaskFilter] = useState("");
+  const [targetFromFilter, setTargetFromFilter] = useState("");
+  const [targetToFilter, setTargetToFilter] = useState("");
+  const [trackFilter, setTrackFilter] = useState("all");
+  const [responsibleFilter, setResponsibleFilter] = useState("all");
+  const [statusFilter, setStatusFilter] = useState("all");
+  const [notesFilter, setNotesFilter] = useState("all");
+  const [doneFilter, setDoneFilter] = useState("all");
+  const editingMilestone =
+    editingMilestoneIndex === null || editingMilestoneIndex === "new"
+      ? null
+      : milestones[editingMilestoneIndex] ?? null;
+  const activeMilestoneNumber =
+    editingMilestoneIndex === "new"
+      ? milestones.length + 1
+      : (editingMilestoneIndex ?? 0) + 1;
+  const responsibleOptions = Array.from(
+    new Set(
+      milestones
+        .map((milestone) => getString(milestone, "responsible"))
+        .filter(Boolean),
+    ),
+  );
+  const filteredMilestones = milestones
+    .map((milestone, index) => ({ milestone, index }))
+    .filter(({ milestone }) => {
+      const targetDate = getString(milestone, "calculated_date");
+      const done = Boolean(milestone.done);
+
+      return (
+        includesFilterValue(getString(milestone, "task"), taskFilter) &&
+        (!targetFromFilter || targetDate >= targetFromFilter) &&
+        (!targetToFilter || targetDate <= targetToFilter) &&
+        (trackFilter === "all" ||
+          (getString(milestone, "track") || "Governance") === trackFilter) &&
+        (responsibleFilter === "all" ||
+          getString(milestone, "responsible") === responsibleFilter) &&
+        (statusFilter === "all" ||
+          (getString(milestone, "status") || "Not Started") === statusFilter) &&
+        (doneFilter === "all" ||
+          (doneFilter === "done" ? done : !done)) &&
+        matchesNoteFilter(getString(milestone, "notes"), notesFilter)
+      );
+    });
+  const hasActiveFilters = Boolean(
+    taskFilter ||
+      targetFromFilter ||
+      targetToFilter ||
+      trackFilter !== "all" ||
+      responsibleFilter !== "all" ||
+      statusFilter !== "all" ||
+      notesFilter !== "all" ||
+      doneFilter !== "all",
+  );
+
+  useEffect(() => {
+    if (editingMilestoneIndex === null || editingMilestoneIndex === "new") return;
+    const nextMilestone = milestones[editingMilestoneIndex];
+    if (!nextMilestone) {
+      setEditingMilestoneIndex(null);
+      setMilestoneDraft(null);
+    }
+  }, [editingMilestoneIndex, milestones]);
 
   function updateAgmDate(value: string) {
     onChange(["agm_date"], value);
@@ -1236,37 +1315,80 @@ export function AgmTimelinePanel({
     );
   }
 
-  function updateMilestone(index: number, field: string, value: unknown) {
-    const nextRows = updateRow(milestones, index, field, value).map((row) => {
-      if (field !== "days_before" && field !== "task") return row;
-      return {
-        ...row,
-        calculated_date: calculateAgmMilestoneDate(
-          agmDate,
-          getNumber(row, "days_before"),
-        ),
-      };
-    });
-    onChange(["agm_milestones"], nextRows);
-  }
-
   function addMilestone() {
     const daysBefore = 30;
-    onChange([
-      "agm_milestones",
-    ], [
-      ...milestones,
-      {
-        track: "Governance",
-        task: "",
-        days_before: daysBefore,
-        calculated_date: calculateAgmMilestoneDate(agmDate, daysBefore),
-        responsible: "Administrator",
-        status: "Not Started",
-        notes: "",
-        done: false,
-      },
-    ]);
+    const nextMilestone = {
+      track: "Governance",
+      task: "",
+      days_before: daysBefore,
+      calculated_date: calculateAgmMilestoneDate(agmDate, daysBefore),
+      responsible: "Administrator",
+      status: "Not Started",
+      notes: "",
+      done: false,
+    };
+    setEditingMilestoneIndex("new");
+    setMilestoneDraft(nextMilestone);
+  }
+
+  function openMilestoneEditor(index: number) {
+    setEditingMilestoneIndex(index);
+    setMilestoneDraft({ ...(milestones[index] ?? {}) });
+  }
+
+  function closeMilestoneEditor() {
+    setEditingMilestoneIndex(null);
+    setMilestoneDraft(null);
+  }
+
+  function updateMilestoneDraft(field: string, value: unknown) {
+    setMilestoneDraft((current) => {
+      const nextDraft = { ...(current ?? {}), [field]: value };
+      if (field === "days_before" || field === "task") {
+        nextDraft.calculated_date = calculateAgmMilestoneDate(
+          agmDate,
+          getNumber(nextDraft, "days_before"),
+        );
+      }
+      return nextDraft;
+    });
+  }
+
+  function saveMilestoneDraft() {
+    if (editingMilestoneIndex === null || !milestoneDraft) return;
+    const daysBefore = getNumber(milestoneDraft, "days_before");
+    const normalizedDraft = {
+      ...milestoneDraft,
+      days_before: daysBefore,
+      calculated_date: calculateAgmMilestoneDate(agmDate, daysBefore),
+    };
+
+    onChange(
+      ["agm_milestones"],
+      editingMilestoneIndex === "new"
+        ? [...milestones, normalizedDraft]
+        : milestones.map((milestone, index) =>
+            index === editingMilestoneIndex
+              ? { ...milestone, ...normalizedDraft }
+              : milestone,
+          ),
+    );
+    closeMilestoneEditor();
+  }
+
+  function removeMilestone(index: number) {
+    onChange(["agm_milestones"], removeRow(milestones, index));
+  }
+
+  function clearFilters() {
+    setTaskFilter("");
+    setTargetFromFilter("");
+    setTargetToFilter("");
+    setTrackFilter("all");
+    setResponsibleFilter("all");
+    setStatusFilter("all");
+    setNotesFilter("all");
+    setDoneFilter("all");
   }
 
   return (
@@ -1284,10 +1406,26 @@ export function AgmTimelinePanel({
             confirmed AGM date and days before AGM.
           </p>
         </div>
-        <Button type="button" variant="outline" size="sm" onClick={addMilestone}>
-          <Plus className="size-4" />
-          Add milestone
-        </Button>
+        <div className="flex flex-wrap gap-2">
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            aria-expanded={showFilters}
+            aria-controls="board-calendar-agm-filters"
+            onClick={() => setShowFilters((current) => !current)}
+          >
+            <Filter className="size-4" />
+            Filters
+            {hasActiveFilters ? (
+              <Badge className="ml-1 bg-olea-green text-white">On</Badge>
+            ) : null}
+          </Button>
+          <Button type="button" variant="outline" size="sm" onClick={addMilestone}>
+            <Plus className="size-4" />
+            Add milestone
+          </Button>
+        </div>
       </div>
       <Field label="Confirmed AGM date">
         <Input
@@ -1297,92 +1435,351 @@ export function AgmTimelinePanel({
           onChange={(event) => updateAgmDate(event.target.value)}
         />
       </Field>
-      <div className="space-y-3">
-        {milestones.map((milestone, index) => (
-          <div key={index} className="rounded-xl border bg-slate-50 p-4">
-            <div className="grid gap-3 lg:grid-cols-[1fr_0.7fr_0.7fr_1fr_1fr_auto]">
-              <Input
-                aria-label={`AGM milestone ${index + 1} task`}
-                placeholder="Send formal AGM notice"
-                value={getString(milestone, "task")}
-                onChange={(event) =>
-                  updateMilestone(index, "task", event.target.value)
-                }
-              />
-              <Input
-                aria-label={`AGM milestone ${index + 1} days before AGM`}
-                type="number"
-                value={String(getNumber(milestone, "days_before"))}
-                onChange={(event) =>
-                  updateMilestone(index, "days_before", Number(event.target.value))
-                }
-              />
-              <Input
-                aria-label={`AGM milestone ${index + 1} target date`}
-                value={getString(milestone, "calculated_date")}
-                readOnly
-              />
-              <Select
-                value={getString(milestone, "track") || "Governance"}
-                onValueChange={(value) => updateMilestone(index, "track", value)}
-              >
-                <SelectTrigger aria-label={`AGM milestone ${index + 1} track`}>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {trackOptions.map((track) => (
-                    <SelectItem key={track} value={track}>
-                      {track}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-              <ResponsibleSelect
-                label={`AGM milestone ${index + 1} responsible`}
-                options={setup.responsibleOptions}
-                value={getString(milestone, "responsible") || "Administrator"}
-                onChange={(value) => updateMilestone(index, "responsible", value)}
-              />
-              <Button
-                type="button"
-                variant="ghost"
-                className="text-red-700 hover:bg-red-50 hover:text-red-800"
-                onClick={() =>
-                  onChange(["agm_milestones"], removeRow(milestones, index))
-                }
-              >
-                <Trash2 className="size-4" />
-                Remove
-              </Button>
-            </div>
-            <div className="mt-3 grid gap-3 md:grid-cols-[240px_1fr]">
-              <Select
-                value={getString(milestone, "status") || "Not Started"}
-                onValueChange={(value) => updateMilestone(index, "status", value)}
-              >
-                <SelectTrigger aria-label={`AGM milestone ${index + 1} status`}>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {statusOptions.map((status) => (
-                    <SelectItem key={status} value={status}>
-                      {status}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-              <Textarea
-                aria-label={`AGM milestone ${index + 1} notes`}
-                placeholder="Notes"
-                value={getString(milestone, "notes")}
-                onChange={(event) =>
-                  updateMilestone(index, "notes", event.target.value)
-                }
-              />
-            </div>
+
+      {showFilters ? (
+        <div
+          id="board-calendar-agm-filters"
+          className="grid gap-3 rounded-xl border bg-slate-50 p-4 md:grid-cols-2 xl:grid-cols-4"
+        >
+          <Field label="Task">
+            <Input
+              aria-label="Filter AGM milestones by task"
+              value={taskFilter}
+              placeholder="Milestone name"
+              onChange={(event) => setTaskFilter(event.target.value)}
+            />
+          </Field>
+          <Field label="Target from">
+            <Input
+              aria-label="Filter AGM milestones target from"
+              type="date"
+              value={targetFromFilter}
+              onChange={(event) => setTargetFromFilter(event.target.value)}
+            />
+          </Field>
+          <Field label="Target to">
+            <Input
+              aria-label="Filter AGM milestones target to"
+              type="date"
+              value={targetToFilter}
+              onChange={(event) => setTargetToFilter(event.target.value)}
+            />
+          </Field>
+          <Field label="Track">
+            <Select value={trackFilter} onValueChange={setTrackFilter}>
+              <SelectTrigger aria-label="Filter AGM milestones by track">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All tracks</SelectItem>
+                {trackOptions.map((track) => (
+                  <SelectItem key={track} value={track}>
+                    {track}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </Field>
+          <Field label="Responsible">
+            <Select value={responsibleFilter} onValueChange={setResponsibleFilter}>
+              <SelectTrigger aria-label="Filter AGM milestones by responsible">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All responsible</SelectItem>
+                {responsibleOptions.map((responsible) => (
+                  <SelectItem key={responsible} value={responsible}>
+                    {responsible}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </Field>
+          <Field label="Status">
+            <Select value={statusFilter} onValueChange={setStatusFilter}>
+              <SelectTrigger aria-label="Filter AGM milestones by status">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All statuses</SelectItem>
+                {statusOptions.map((status) => (
+                  <SelectItem key={status} value={status}>
+                    {status}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </Field>
+          <Field label="Notes">
+            <Select value={notesFilter} onValueChange={setNotesFilter}>
+              <SelectTrigger aria-label="Filter AGM milestones by notes">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {noteFilterOptions.map((option) => (
+                  <SelectItem key={option.value} value={option.value}>
+                    {option.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </Field>
+          <Field label="Done">
+            <Select value={doneFilter} onValueChange={setDoneFilter}>
+              <SelectTrigger aria-label="Filter AGM milestones by done">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All milestones</SelectItem>
+                <SelectItem value="done">Done</SelectItem>
+                <SelectItem value="not_done">Not done</SelectItem>
+              </SelectContent>
+            </Select>
+          </Field>
+          <div className="flex items-end">
+            <Button
+              type="button"
+              variant="ghost"
+              className="w-full"
+              disabled={!hasActiveFilters}
+              onClick={clearFilters}
+            >
+              Clear filters
+            </Button>
           </div>
-        ))}
-      </div>
+        </div>
+      ) : null}
+
+      {milestones.length ? (
+        <>
+          <div className="rounded-xl border">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Task / deliverable</TableHead>
+                  <TableHead>Track</TableHead>
+                  <TableHead>Days before</TableHead>
+                  <TableHead>Target date</TableHead>
+                  <TableHead>Responsible</TableHead>
+                  <TableHead>Status</TableHead>
+                  <TableHead className="w-[120px]">Notes</TableHead>
+                  <TableHead className="w-[90px]">Done</TableHead>
+                  <TableHead className="w-[210px] text-right">Actions</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {filteredMilestones.map(({ milestone, index }) => (
+                  <TableRow key={getAgmMilestoneRowKey(milestone, index)}>
+                    <TableCell className="min-w-[220px] font-semibold text-slate-950">
+                      {getString(milestone, "task") || "Untitled milestone"}
+                    </TableCell>
+                    <TableCell className="min-w-[140px] text-slate-700">
+                      {getString(milestone, "track") || "Governance"}
+                    </TableCell>
+                    <TableCell className="whitespace-nowrap text-slate-700">
+                      {getNumber(milestone, "days_before")}
+                    </TableCell>
+                    <TableCell className="whitespace-nowrap text-slate-700">
+                      {getString(milestone, "calculated_date") || "No target date"}
+                    </TableCell>
+                    <TableCell className="min-w-[160px] text-slate-700">
+                      {getString(milestone, "responsible") || "Unassigned"}
+                    </TableCell>
+                    <TableCell>
+                      <StatusBadge status={getString(milestone, "status")} />
+                    </TableCell>
+                    <TableCell className="whitespace-nowrap text-slate-500">
+                      {getString(milestone, "notes") ? (
+                        <Badge
+                          variant="outline"
+                          className="border-olea-green/20 bg-olea-light text-olea-dark"
+                        >
+                          Has notes
+                        </Badge>
+                      ) : (
+                        "—"
+                      )}
+                    </TableCell>
+                    <TableCell className="whitespace-nowrap text-slate-600">
+                      {milestone.done ? "Yes" : "No"}
+                    </TableCell>
+                    <TableCell className="text-right">
+                      <div className="flex justify-end gap-2">
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="sm"
+                          aria-label={`Edit AGM milestone ${index + 1}`}
+                          onClick={() => openMilestoneEditor(index)}
+                        >
+                          <Pencil className="size-4" />
+                          Edit
+                        </Button>
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="sm"
+                          className="text-red-700 hover:bg-red-50 hover:text-red-800"
+                          aria-label={`Remove AGM milestone ${index + 1}`}
+                          onClick={() => removeMilestone(index)}
+                        >
+                          <Trash2 className="size-4" />
+                          Remove
+                        </Button>
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </div>
+
+          {!filteredMilestones.length ? (
+            <p className="rounded-lg border border-dashed p-4 text-sm text-slate-500">
+              No AGM milestones match the current filters.
+            </p>
+          ) : null}
+        </>
+      ) : (
+        <p className="rounded-lg border border-dashed p-4 text-sm text-slate-500">
+          Add the confirmed AGM date, then add the first milestone for this
+          planning timeline.
+        </p>
+      )}
+
+      <Dialog
+        open={editingMilestoneIndex !== null}
+        onOpenChange={(open) => {
+          if (!open) closeMilestoneEditor();
+        }}
+      >
+        <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-3xl">
+          <DialogHeader>
+            <DialogTitle>Edit AGM milestone</DialogTitle>
+            <DialogDescription>
+              Target date is calculated from the confirmed AGM date and days
+              before AGM.
+            </DialogDescription>
+          </DialogHeader>
+          {milestoneDraft && (editingMilestone || editingMilestoneIndex === "new") ? (
+            <div className="space-y-4">
+              <Field label="Task / deliverable">
+                <Input
+                  aria-label={`AGM milestone ${activeMilestoneNumber} task`}
+                  placeholder="Send formal AGM notice"
+                  value={getString(milestoneDraft, "task")}
+                  onChange={(event) =>
+                    updateMilestoneDraft("task", event.target.value)
+                  }
+                />
+              </Field>
+
+              <div className="grid gap-4 md:grid-cols-2">
+                <Field label="Days before AGM">
+                  <Input
+                    aria-label={`AGM milestone ${activeMilestoneNumber} days before AGM`}
+                    type="number"
+                    value={String(getNumber(milestoneDraft, "days_before"))}
+                    onChange={(event) =>
+                      updateMilestoneDraft(
+                        "days_before",
+                        Number(event.target.value),
+                      )
+                    }
+                  />
+                </Field>
+                <Field label="Target date">
+                  <Input
+                    aria-label={`AGM milestone ${activeMilestoneNumber} target date`}
+                    value={getString(milestoneDraft, "calculated_date")}
+                    readOnly
+                  />
+                </Field>
+                <Field label="Track">
+                  <Select
+                    value={getString(milestoneDraft, "track") || "Governance"}
+                    onValueChange={(value) => updateMilestoneDraft("track", value)}
+                  >
+                    <SelectTrigger
+                      aria-label={`AGM milestone ${activeMilestoneNumber} track`}
+                    >
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {trackOptions.map((track) => (
+                        <SelectItem key={track} value={track}>
+                          {track}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </Field>
+                <Field label="Responsible">
+                  <ResponsibleSelect
+                    label={`AGM milestone ${activeMilestoneNumber} responsible`}
+                    options={setup.responsibleOptions}
+                    value={getString(milestoneDraft, "responsible") || "Administrator"}
+                    onChange={(value) =>
+                      updateMilestoneDraft("responsible", value)
+                    }
+                  />
+                </Field>
+                <Field label="Status">
+                  <Select
+                    value={getString(milestoneDraft, "status") || "Not Started"}
+                    onValueChange={(value) => updateMilestoneDraft("status", value)}
+                  >
+                    <SelectTrigger
+                      aria-label={`AGM milestone ${activeMilestoneNumber} status`}
+                    >
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {statusOptions.map((status) => (
+                        <SelectItem key={status} value={status}>
+                          {status}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </Field>
+                <label className="flex items-center gap-3 rounded-lg border bg-slate-50 px-3 py-2 text-sm font-semibold text-slate-700">
+                  <input
+                    aria-label={`AGM milestone ${activeMilestoneNumber} done`}
+                    type="checkbox"
+                    checked={Boolean(milestoneDraft.done)}
+                    onChange={(event) =>
+                      updateMilestoneDraft("done", event.target.checked)
+                    }
+                  />
+                  Done
+                </label>
+              </div>
+
+              <Field label="Notes">
+                <Textarea
+                  aria-label={`AGM milestone ${activeMilestoneNumber} notes`}
+                  placeholder="Add timing assumptions, legal notes, or ownership context."
+                  value={getString(milestoneDraft, "notes")}
+                  onChange={(event) =>
+                    updateMilestoneDraft("notes", event.target.value)
+                  }
+                />
+              </Field>
+            </div>
+          ) : null}
+          <DialogFooter>
+            <DialogClose asChild>
+              <Button type="button" variant="outline">
+                Cancel
+              </Button>
+            </DialogClose>
+            <Button type="button" onClick={saveMilestoneDraft}>
+              Save milestone
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </section>
   );
 }

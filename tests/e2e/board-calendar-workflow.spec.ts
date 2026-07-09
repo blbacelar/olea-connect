@@ -184,6 +184,9 @@ test.describe("@critical Board Calendar & Operational Workflow", () => {
         { dateKey: generatedTaskAfterDate, text: "Send action summary" },
         { dateKey: generatedTaskAfterDate, text: "Action items sent" },
       ]);
+      await boardCalendar.expectSelectedDateText(
+        "For: Board Meeting - Board Budget Review",
+      );
       await boardCalendar.saveNowAndWaitForPost();
       await boardCalendar.waitForSaved();
     });
@@ -215,12 +218,14 @@ test.describe("@critical Board Calendar & Operational Workflow", () => {
       await boardCalendar.addAgmTimelineMilestone({
         agmDate,
         daysBefore: "30",
+        notes: "Confirm statutory notice period before sending.",
         task: "Send formal AGM notice",
       });
       await boardCalendar.expectAgmMilestoneTargetDate(
         1,
         expectedAgmMilestoneDate,
       );
+      await boardCalendar.expectAgmMilestoneHasNotes(1);
       await boardCalendar.saveNowAndWaitForPost();
       await boardCalendar.waitForSaved();
     });

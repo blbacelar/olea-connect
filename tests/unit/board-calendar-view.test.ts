@@ -56,6 +56,7 @@ const templateData: TemplateFormData = {
       due_date: "2026-04-03",
       status: "In Progress",
       related_meeting: "Board Meeting - Apr 15",
+      notes: "Send package after chair review",
     },
   ],
   agm_milestones: [
@@ -92,6 +93,11 @@ describe("board calendar view helpers", () => {
       dateKey: null,
       monthIndex: 5,
       color: "#B45309",
+    });
+    expect(events.find((event) => event.id === "task-0")).toMatchObject({
+      title: "Board package sent",
+      relatedMeeting: "Board Meeting - Apr 15",
+      notes: "Send package after chair review",
     });
   });
 

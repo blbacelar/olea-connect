@@ -56,6 +56,7 @@ export interface CalendarViewEvent {
   leadContact?: string;
   time?: string;
   location?: string;
+  relatedMeeting?: string;
   notes?: string;
 }
 
@@ -237,7 +238,8 @@ export function buildCalendarEvents(data: TemplateFormData) {
         monthIndex: date?.getMonth() ?? null,
         category,
         source: "task",
-        notes: getString(record, "related_meeting"),
+        relatedMeeting: getString(record, "related_meeting"),
+        notes: getString(record, "notes"),
       }),
     );
   });
