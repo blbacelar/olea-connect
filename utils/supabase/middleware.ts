@@ -10,6 +10,10 @@ const publicPagePaths = new Set([
   "/",
   "/login",
   "/reset-password",
+  "/opengraph-image",
+  "/twitter-image",
+  "/robots.txt",
+  "/sitemap.xml",
   "/update-password",
   "/verify-email",
 ]);
