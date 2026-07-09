@@ -286,7 +286,12 @@ export class BoardCalendarPage {
       .locator("tbody tr")
       .nth(index - 1);
     await expect(row).toContainText(status);
-    await expect(row).toContainText(notes);
+    await expect(row).toContainText("Has notes");
+    await row.getByRole("button", { name: `Edit task ${index}` }).click();
+    const dialog = this.page.getByRole("dialog", { name: "Edit workflow task" });
+    await expect(dialog.getByLabel(`Task ${index} notes`)).toHaveValue(notes);
+    await dialog.getByRole("button", { name: "Cancel" }).click();
+    await expect(dialog).toHaveCount(0);
   }
 
   async expectMeetingVisibleInMeetingsTable(meetingTitle: string) {

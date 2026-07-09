@@ -493,7 +493,7 @@ export function StaffTaskListPanel({
                   <TableHead>Related meeting</TableHead>
                   <TableHead>Responsible</TableHead>
                   <TableHead>Status</TableHead>
-                  <TableHead>Notes</TableHead>
+                  <TableHead className="w-[120px]">Notes</TableHead>
                   <TableHead className="w-[120px] text-right">Actions</TableHead>
                 </TableRow>
               </TableHeader>
@@ -517,8 +517,17 @@ export function StaffTaskListPanel({
                     <TableCell>
                       <StatusBadge status={getString(task, "status")} />
                     </TableCell>
-                    <TableCell className="max-w-[260px] truncate text-slate-500">
-                      {getString(task, "notes") || "—"}
+                    <TableCell className="whitespace-nowrap text-slate-500">
+                      {getString(task, "notes") ? (
+                        <Badge
+                          variant="outline"
+                          className="border-olea-green/20 bg-olea-light text-olea-dark"
+                        >
+                          Has notes
+                        </Badge>
+                      ) : (
+                        "—"
+                      )}
                     </TableCell>
                     <TableCell className="text-right">
                       <Button
