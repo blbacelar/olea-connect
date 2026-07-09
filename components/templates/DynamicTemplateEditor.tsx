@@ -147,75 +147,79 @@ export function DynamicTemplateEditor({
         </div>
       </div>
 
-      <Card className="border-olea-green/15 bg-gradient-to-br from-white to-olea-light/50 shadow-soft">
-        <CardContent className="grid gap-5 p-5 lg:grid-cols-[1.2fr_1fr_auto] lg:items-end">
-          <div className="space-y-2">
-            <Label htmlFor="template-session-title">{sessionNameLabel}</Label>
-            <Input
-              id="template-session-title"
-              value={session.title}
-              onChange={(event) => updateTitle(event.target.value)}
-              placeholder={`${data.template.title} ${new Date().getFullYear()}`}
-            />
-          </div>
-          <div className="space-y-2">
-            <Label htmlFor="template-session-picker">{savedSessionsLabel}</Label>
-            <Select
-              value={session.id || "new"}
-              onValueChange={(value) =>
-                router.push(`${editorBasePath}?session=${value}`)
-              }
-            >
-              <SelectTrigger id="template-session-picker">
-                <SelectValue placeholder="Choose a workbook" />
-              </SelectTrigger>
-              <SelectContent>
-                {!session.id ? (
-                  <SelectItem value="new">{newSessionLabel}</SelectItem>
-                ) : null}
-                {savedSessionOptions.map((savedSession) => (
-                  <SelectItem key={savedSession.id} value={savedSession.id}>
-                    {savedSession.title}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-          <Button asChild variant="outline">
-            <Link href={`${editorBasePath}?session=new`}>
-              <PlusIcon />
-              {startNewLabel}
-            </Link>
-          </Button>
-        </CardContent>
-      </Card>
+      {!calendarEnabled ? (
+        <>
+          <Card className="border-olea-green/15 bg-gradient-to-br from-white to-olea-light/50 shadow-soft">
+            <CardContent className="grid gap-5 p-5 lg:grid-cols-[1.2fr_1fr_auto] lg:items-end">
+              <div className="space-y-2">
+                <Label htmlFor="template-session-title">{sessionNameLabel}</Label>
+                <Input
+                  id="template-session-title"
+                  value={session.title}
+                  onChange={(event) => updateTitle(event.target.value)}
+                  placeholder={`${data.template.title} ${new Date().getFullYear()}`}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="template-session-picker">{savedSessionsLabel}</Label>
+                <Select
+                  value={session.id || "new"}
+                  onValueChange={(value) =>
+                    router.push(`${editorBasePath}?session=${value}`)
+                  }
+                >
+                  <SelectTrigger id="template-session-picker">
+                    <SelectValue placeholder="Choose a workbook" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {!session.id ? (
+                      <SelectItem value="new">{newSessionLabel}</SelectItem>
+                    ) : null}
+                    {savedSessionOptions.map((savedSession) => (
+                      <SelectItem key={savedSession.id} value={savedSession.id}>
+                        {savedSession.title}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <Button asChild variant="outline">
+                <Link href={`${editorBasePath}?session=new`}>
+                  <PlusIcon />
+                  {startNewLabel}
+                </Link>
+              </Button>
+            </CardContent>
+          </Card>
 
-      <Card className="border-olea-green/15 bg-gradient-to-br from-white to-olea-light/50 shadow-soft">
-        <CardContent className="grid gap-4 p-5 md:grid-cols-[1fr_auto] md:items-center">
-          <div>
-            <p className="text-sm font-semibold text-slate-900">
-              {completionPercent}% complete
-            </p>
-            <div
-              aria-label={`${completionPercent}% complete`}
-              className="mt-2 h-2 overflow-hidden rounded-full bg-white"
-              role="progressbar"
-              aria-valuenow={completionPercent}
-              aria-valuemin={0}
-              aria-valuemax={100}
-            >
-              <div
-                className="h-full rounded-full bg-olea-green transition-all"
-                style={{ width: `${completionPercent}%` }}
-              />
-            </div>
-          </div>
-          <div className="text-sm text-slate-600">
-            Schema v{session.schemaVersion} · Brand snapshot:{" "}
-            {session.brandingSnapshot.organizationName}
-          </div>
-        </CardContent>
-      </Card>
+          <Card className="border-olea-green/15 bg-gradient-to-br from-white to-olea-light/50 shadow-soft">
+            <CardContent className="grid gap-4 p-5 md:grid-cols-[1fr_auto] md:items-center">
+              <div>
+                <p className="text-sm font-semibold text-slate-900">
+                  {completionPercent}% complete
+                </p>
+                <div
+                  aria-label={`${completionPercent}% complete`}
+                  className="mt-2 h-2 overflow-hidden rounded-full bg-white"
+                  role="progressbar"
+                  aria-valuenow={completionPercent}
+                  aria-valuemin={0}
+                  aria-valuemax={100}
+                >
+                  <div
+                    className="h-full rounded-full bg-olea-green transition-all"
+                    style={{ width: `${completionPercent}%` }}
+                  />
+                </div>
+              </div>
+              <div className="text-sm text-slate-600">
+                Schema v{session.schemaVersion} · Brand snapshot:{" "}
+                {session.brandingSnapshot.organizationName}
+              </div>
+            </CardContent>
+          </Card>
+        </>
+      ) : null}
 
       {saveError ? (
         <p
@@ -226,7 +230,7 @@ export function DynamicTemplateEditor({
         </p>
       ) : null}
 
-      {validationErrors.length > 0 ? (
+      {!calendarEnabled && validationErrors.length > 0 ? (
         <div className="rounded-xl border border-amber-200 bg-amber-50 px-5 py-4 text-sm text-amber-900">
           <div className="flex items-center gap-2 font-semibold">
             <AlertCircle className="size-4" />

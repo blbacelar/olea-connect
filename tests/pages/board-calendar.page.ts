@@ -94,11 +94,14 @@ export class BoardCalendarPage {
     await expect(
       this.page.getByRole("heading", { name: "Header information" }),
     ).toHaveCount(0);
-    await expect(this.page.getByLabel("Calendar workspace name")).toBeVisible();
-    await expect(this.page.getByText("Saved calendars")).toBeVisible();
+    await expect(this.page.getByLabel("Calendar workspace name")).toHaveCount(0);
+    await expect(this.page.getByText("Saved calendars")).toHaveCount(0);
     await expect(
       this.page.getByRole("link", { name: /Start new calendar/ }),
-    ).toBeVisible();
+    ).toHaveCount(0);
+    await expect(this.page.getByText(/Schema v\d+/)).toHaveCount(0);
+    await expect(this.page.getByText(/Brand snapshot:/)).toHaveCount(0);
+    await expect(this.page.getByText(/required item/)).toHaveCount(0);
     await expect(this.page.getByRole("button", { name: "Save now" })).toBeVisible();
     await expect(
       this.page.getByRole("button", { name: "Mark complete" }),
@@ -132,9 +135,12 @@ export class BoardCalendarPage {
   }
 
   async nameWorkbook(name: string) {
-    await this.page
-      .getByLabel(/^(Workbook name|Calendar workspace name)$/)
-      .fill(name);
+    const workbookName = this.page.getByLabel(
+      /^(Workbook name|Calendar workspace name)$/,
+    );
+    if (await workbookName.count()) {
+      await workbookName.fill(name);
+    }
   }
 
   async expectWorkspaceViewOptionHidden(option: string) {
@@ -560,10 +566,7 @@ export class BoardCalendarPage {
   }
 
   async startNewWorkbook() {
-    await this.page.getByRole("link", { name: "Start new" }).click();
-    await expect
-      .poll(() => new URL(this.page.url()).searchParams.get("session"))
-      .toBe("new");
+    await this.openNewModuleCalendar();
   }
 
   async expectNoEntryText(text: string) {
