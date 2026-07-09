@@ -93,6 +93,7 @@ test.describe("@critical Board Calendar & Operational Workflow", () => {
       await boardCalendar.expectPastDatesDisabled();
       await boardCalendar.selectCalendarDate(eventDate);
       await boardCalendar.expectBlankEntryForm();
+      await boardCalendar.expectEntryModalTopVisible();
       await boardCalendar.fillTitle("");
       await boardCalendar.expectAddDisabled();
     });

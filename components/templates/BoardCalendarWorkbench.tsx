@@ -1348,11 +1348,11 @@ function CalendarEntryComposer({
         <div
           aria-labelledby="calendar-entry-dialog-title"
           aria-modal="true"
-          className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-slate-950/50 p-4 sm:items-center"
+          className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-slate-950/50 p-3 sm:p-4"
           role="dialog"
         >
           <div
-            className="my-4 w-full max-w-4xl rounded-2xl bg-white p-4 shadow-2xl sm:my-8 sm:p-6"
+            className="my-3 max-h-[calc(100dvh-1.5rem)] w-full max-w-4xl overflow-y-auto rounded-2xl bg-white p-4 shadow-2xl sm:my-4 sm:max-h-[calc(100dvh-2rem)] sm:p-6"
             data-testid="board-calendar-entry-form"
           >
             <div className="flex items-start justify-between gap-4">

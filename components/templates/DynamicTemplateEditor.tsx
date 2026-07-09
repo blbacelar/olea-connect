@@ -237,7 +237,7 @@ export function DynamicTemplateEditor({
       ) : null}
 
       <div className="space-y-5">
-        {session.schemaSnapshot.header_fields?.length ? (
+        {!calendarEnabled && session.schemaSnapshot.header_fields?.length ? (
           <section className="rounded-xl border bg-white p-6 shadow-soft">
             <h2 className="text-xl font-semibold">Header information</h2>
             <p className="mt-1.5 text-sm leading-6 text-slate-500">

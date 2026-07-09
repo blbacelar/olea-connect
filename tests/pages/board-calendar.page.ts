@@ -91,6 +91,9 @@ export class BoardCalendarPage {
       this.page.getByRole("heading", { name: "Board Calendar", exact: true }),
     ).toBeVisible();
     await expect(this.page.getByText("Board portal").first()).toBeVisible();
+    await expect(
+      this.page.getByRole("heading", { name: "Header information" }),
+    ).toHaveCount(0);
     await expect(this.page.getByLabel("Calendar workspace name")).toBeVisible();
     await expect(this.page.getByText("Saved calendars")).toBeVisible();
     await expect(
@@ -319,6 +322,17 @@ export class BoardCalendarPage {
     await expect(
       this.page.getByRole("dialog", { name: "Add Entry" }),
     ).toBeVisible();
+  }
+
+  async expectEntryModalTopVisible() {
+    await this.ensureEntryFormOpen();
+    await expect(
+      this.page.getByRole("dialog", { name: "Add Entry" }),
+    ).toBeInViewport();
+    await expect(
+      this.page.getByRole("heading", { name: "Add Entry" }),
+    ).toBeInViewport();
+    await expect(this.field("Entry date")).toBeInViewport();
   }
 
   async setEntryType(option: BoardCalendarEntryType) {
