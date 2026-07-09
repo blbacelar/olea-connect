@@ -9,13 +9,23 @@ import { requireMemberContext } from "@/lib/data/member-context";
 import { buildExportFileName, buildExportStoragePath } from "@/lib/template-renderer/export-files";
 import { buildTemplateExportModel } from "@/lib/template-renderer/export-model";
 import { renderTemplateDocxBuffer } from "@/lib/template-renderer/docx-export";
+import {
+  buildBoardCalendarReportFooterText,
+  buildBoardCalendarReportHtml,
+  isBoardCalendarSchema,
+} from "@/lib/template-renderer/board-calendar-report-html";
+import { renderHtmlToPdfBuffer } from "@/lib/template-renderer/html-pdf-export";
 import { renderTemplatePdfBuffer } from "@/lib/template-renderer/pdf-export";
 import { validateTemplateData } from "@/lib/template-renderer/validation";
+import type { BrandProfile } from "@/lib/types";
 import type {
   DynamicTemplateSession,
+  TemplateFieldSchema,
   TemplateExportFormat,
+  TemplateFormData,
   TemplateSavePayload,
 } from "@/lib/template-renderer/types";
+import type { TemplateExportModel } from "@/lib/template-renderer/export-model";
 import { createClient } from "@/utils/supabase/server";
 import { createAdminClient } from "@/utils/supabase/admin";
 
@@ -153,11 +163,13 @@ export async function generateTemplateExport({
   });
   const buffer =
     format === "pdf"
-      ? await renderTemplatePdfBuffer({
-          title,
-          organizationName: organization.name,
+      ? await renderPdfExportBuffer({
           brand: instance.branding_snapshot,
+          formData: instance.form_data,
           model,
+          organizationName: organization.name,
+          schema: instance.schema_snapshot,
+          title,
         })
       : await renderTemplateDocxBuffer({
           title,
@@ -215,6 +227,43 @@ export async function generateTemplateExport({
     generatedAt: exportRecord.generated_at,
     generatedBy: exportRecord.created_by as string | null,
   };
+}
+
+async function renderPdfExportBuffer({
+  brand,
+  formData,
+  model,
+  organizationName,
+  schema,
+  title,
+}: {
+  brand: BrandProfile;
+  formData: TemplateFormData;
+  model: TemplateExportModel;
+  organizationName: string;
+  schema: TemplateFieldSchema;
+  title: string;
+}) {
+  if (isBoardCalendarSchema(schema)) {
+    return renderHtmlToPdfBuffer(
+      buildBoardCalendarReportHtml({
+        brand,
+        formData,
+        organizationName,
+        title,
+      }),
+      {
+        footerText: buildBoardCalendarReportFooterText(brand, organizationName),
+      },
+    );
+  }
+
+  return renderTemplatePdfBuffer({
+    title,
+    organizationName,
+    brand,
+    model,
+  });
 }
 
 export async function createTemplateExportDownloadUrl(exportId: string) {
