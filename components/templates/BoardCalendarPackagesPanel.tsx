@@ -60,6 +60,7 @@ import {
   type BoardPackageMeeting,
 } from "@/lib/template-renderer/board-calendar-packages";
 import type { TemplateFormData } from "@/lib/template-renderer/types";
+import type { BrandProfile } from "@/lib/types";
 import { cn } from "@/lib/utils";
 
 const documentCategories = [
@@ -83,10 +84,12 @@ const emptyUploadForm = {
 type UploadFormState = typeof emptyUploadForm;
 
 export function BoardPackagesPanel({
+  brand,
   data,
   onDataChange,
   templateInstanceId,
 }: {
+  brand: BrandProfile;
   data: TemplateFormData;
   onDataChange: (
     updater: (currentData: TemplateFormData) => TemplateFormData,
@@ -319,6 +322,7 @@ export function BoardPackagesPanel({
       }
 
       await downloadBoardPackageZip({
+        brand,
         meeting: packageTarget,
         templateInstanceId,
       });
@@ -1039,9 +1043,11 @@ function validateDocumentForm({
 }
 
 async function downloadBoardPackageZip({
+  brand,
   meeting,
   templateInstanceId,
 }: {
+  brand: BrandProfile;
   meeting: BoardPackageMeeting;
   templateInstanceId: string;
 }) {
@@ -1099,7 +1105,10 @@ async function downloadBoardPackageZip({
     });
   }
 
-  zip.file("package-index.html", buildBoardPackageIndexHtml(meeting, includedFiles));
+  zip.file(
+    "package-index.html",
+    buildBoardPackageIndexHtml(brand, meeting, includedFiles),
+  );
   zip.file("README.txt", buildBoardPackageReadme(meeting));
 
   const packageBlob = await zip.generateAsync({
@@ -1123,6 +1132,7 @@ function getPackageDocumentPath(packageDocument: BoardPackageDocument) {
 }
 
 function buildBoardPackageIndexHtml(
+  brand: BrandProfile,
   meeting: BoardPackageMeeting,
   includedFiles: Array<{
     document: BoardPackageDocument;
@@ -1137,6 +1147,20 @@ function buildBoardPackageIndexHtml(
     dateStyle: "medium",
     timeStyle: "short",
   }).format(new Date());
+  const primaryColor = sanitizeCssColor(brand.primaryColor, "#2f6b4f");
+  const secondaryColor = sanitizeCssColor(brand.secondaryColor, "#df7a54");
+  const logoMarkup = brand.logoUrl
+    ? `<img src="${escapeHtml(brand.logoUrl)}" alt="${escapeHtml(brand.organizationName)} logo" />`
+    : `<span>${escapeHtml(brand.logoInitials || getInitials(brand.organizationName))}</span>`;
+  const contactItems = [
+    brand.address,
+    brand.phone,
+    brand.contactEmail,
+    brand.website,
+  ].filter(Boolean);
+  const footerText = contactItems.length
+    ? contactItems.map((item) => escapeHtml(item ?? "")).join(" · ")
+    : escapeHtml(brand.organizationName);
 
   const rows = includedFiles
     .map(({ document: packageDocument, path, status }) => {
@@ -1162,39 +1186,167 @@ function buildBoardPackageIndexHtml(
   <meta charset="utf-8" />
   <title>${escapeHtml(meeting.title)} board package</title>
   <style>
-    body { color: #1f2937; font-family: Arial, sans-serif; margin: 40px; }
-    h1 { color: #10233f; margin-bottom: 8px; }
-    p { color: #52637a; line-height: 1.5; }
+    :root {
+      --brand-primary: ${primaryColor};
+      --brand-secondary: ${secondaryColor};
+      --ink: #1f2937;
+      --muted: #52637a;
+      --line: #d8dee8;
+      --soft: #f5f8f6;
+    }
+    * { box-sizing: border-box; }
+    body {
+      background: #f3f6f8;
+      color: var(--ink);
+      font-family: Arial, sans-serif;
+      margin: 0;
+      padding: 40px;
+    }
+    main {
+      background: #fff;
+      border-radius: 20px;
+      box-shadow: 0 18px 45px rgba(15, 23, 42, 0.10);
+      overflow: hidden;
+    }
+    .accent { background: var(--brand-secondary); height: 12px; }
+    .page { padding: 40px; }
+    .brand-header {
+      align-items: center;
+      border-bottom: 1px solid var(--line);
+      display: flex;
+      gap: 16px;
+      padding-bottom: 24px;
+    }
+    .logo {
+      align-items: center;
+      background: var(--brand-primary);
+      border-radius: 999px;
+      color: #fff;
+      display: flex;
+      font-weight: 800;
+      height: 56px;
+      justify-content: center;
+      letter-spacing: 0.08em;
+      overflow: hidden;
+      width: 56px;
+    }
+    .logo img { height: 100%; object-fit: cover; width: 100%; }
+    .eyebrow {
+      color: var(--brand-primary);
+      font-size: 12px;
+      font-weight: 800;
+      letter-spacing: 0.14em;
+      margin: 0 0 4px;
+      text-transform: uppercase;
+    }
+    .org-name {
+      color: #10233f;
+      font-size: 20px;
+      font-weight: 800;
+      margin: 0;
+    }
+    h1 { color: #10233f; font-size: 34px; line-height: 1.1; margin: 32px 0 8px; }
+    p { color: var(--muted); line-height: 1.5; }
+    .meta {
+      background: var(--soft);
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      display: grid;
+      gap: 12px;
+      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+      margin-top: 24px;
+      padding: 16px;
+    }
+    .meta span {
+      color: #74839a;
+      display: block;
+      font-size: 11px;
+      font-weight: 800;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+    }
+    .meta strong {
+      color: #10233f;
+      display: block;
+      margin-top: 4px;
+    }
     table { border-collapse: collapse; margin-top: 24px; width: 100%; }
     th, td { border: 1px solid #d8dee8; padding: 12px; text-align: left; vertical-align: top; }
-    th { background: #eff6f2; color: #1d5132; font-size: 12px; letter-spacing: .08em; text-transform: uppercase; }
+    th { background: var(--soft); color: var(--brand-primary); font-size: 12px; letter-spacing: .08em; text-transform: uppercase; }
     .warning { background: #fff7ed; border: 1px solid #fed7aa; border-radius: 12px; color: #7c2d12; margin-top: 24px; padding: 16px; }
+    footer {
+      border-top: 1px solid var(--line);
+      color: var(--muted);
+      font-size: 12px;
+      margin-top: 32px;
+      padding-top: 16px;
+      text-align: center;
+    }
+    a { color: var(--brand-primary); }
   </style>
 </head>
 <body>
-  <h1>${escapeHtml(meeting.title)}</h1>
-  <p>${escapeHtml([meeting.date, meeting.time].filter(Boolean).join(" at "))}</p>
-  <p>Generated by Olea Connects on ${escapeHtml(generatedAt)}.</p>
-  ${
-    hasConfidentialDocuments
-      ? `<div class="warning">
-    This package contains confidential board materials. Store and share it only with authorized recipients.
-  </div>`
-      : ""
-  }
-  <table>
-    <thead>
-      <tr>
-        <th>Document</th>
-        <th>Category</th>
-        <th>Access</th>
-        <th>File or link</th>
-      </tr>
-    </thead>
-    <tbody>${rows}</tbody>
-  </table>
+  <main>
+    <div class="accent"></div>
+    <div class="page">
+      <header class="brand-header">
+        <div class="logo">${logoMarkup}</div>
+        <div>
+          <p class="eyebrow">Board package</p>
+          <p class="org-name">${escapeHtml(brand.organizationName)}</p>
+        </div>
+      </header>
+      <h1>${escapeHtml(meeting.title)}</h1>
+      <p>${escapeHtml([meeting.date, meeting.time].filter(Boolean).join(" at "))}</p>
+      <section class="meta" aria-label="Package details">
+        <div>
+          <span>Generated</span>
+          <strong>${escapeHtml(generatedAt)}</strong>
+        </div>
+        <div>
+          <span>Documents</span>
+          <strong>${includedFiles.length}</strong>
+        </div>
+        <div>
+          <span>Prepared by</span>
+          <strong>Olea Connects</strong>
+        </div>
+      </section>
+      ${
+        hasConfidentialDocuments
+          ? `<div class="warning">
+        This package contains confidential board materials. Store and share it only with authorized recipients.
+      </div>`
+          : ""
+      }
+      <table>
+        <thead>
+          <tr>
+            <th>Document</th>
+            <th>Category</th>
+            <th>Access</th>
+            <th>File or link</th>
+          </tr>
+        </thead>
+        <tbody>${rows}</tbody>
+      </table>
+      <footer>${footerText}</footer>
+    </div>
+  </main>
 </body>
 </html>`;
+}
+
+function sanitizeCssColor(value: string, fallback: string) {
+  return /^#[0-9a-f]{6}$/i.test(value) ? value : fallback;
+}
+
+function getInitials(value: string) {
+  const words = value.trim().split(/\s+/).filter(Boolean);
+  return words
+    .slice(0, 2)
+    .map((word) => word[0]?.toUpperCase() ?? "")
+    .join("");
 }
 
 function buildBoardPackageReadme(meeting: BoardPackageMeeting) {

@@ -67,6 +67,7 @@ import type {
   TemplateSection,
   TemplateValue,
 } from "@/lib/template-renderer/types";
+import type { BrandProfile } from "@/lib/types";
 import { setValue } from "@/lib/template-renderer/schema";
 import { cn } from "@/lib/utils";
 
@@ -158,6 +159,7 @@ function getBoardCalendarActiveTabStorageKey() {
 }
 
 export function BoardCalendarWorkbench({
+  brand,
   data,
   errorsByPath,
   templateInstanceId,
@@ -168,6 +170,7 @@ export function BoardCalendarWorkbench({
   onChange,
   onDataChange,
 }: {
+  brand: BrandProfile;
   data: TemplateFormData;
   errorsByPath: Map<string, string>;
   templateInstanceId?: string;
@@ -840,6 +843,7 @@ export function BoardCalendarWorkbench({
 
           <TabsContent value="packages" className="mt-0">
             <BoardPackagesPanel
+              brand={brand}
               data={data}
               onDataChange={onDataChange}
               templateInstanceId={templateInstanceId ?? ""}

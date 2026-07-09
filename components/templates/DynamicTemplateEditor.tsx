@@ -269,6 +269,7 @@ export function DynamicTemplateEditor({
 
         {calendarEnabled ? (
           <BoardCalendarWorkbench
+            brand={session.brandingSnapshot}
             data={session.formData}
             errorsByPath={errorsByPath}
             templateInstanceId={session.id}
