@@ -55,7 +55,7 @@ const templateData: TemplateFormData = {
       task: "Board package sent",
       due_date: "2026-04-03",
       status: "In Progress",
-      related_meeting: "Board Meeting - Apr 15",
+      related_meeting: "April board meeting",
       notes: "Send package after chair review",
     },
   ],
@@ -100,7 +100,7 @@ describe("board calendar view helpers", () => {
     });
     expect(events.find((event) => event.id === "task-0")).toMatchObject({
       title: "Board package sent",
-      relatedMeeting: "Board Meeting - Apr 15",
+      relatedMeeting: "April board meeting",
       notes: "Send package after chair review",
     });
   });

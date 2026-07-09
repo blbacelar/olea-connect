@@ -250,7 +250,8 @@ export function BoardCalendarWorkbench({
   const editingEvent = editingEventId
     ? events.find((event) => event.id === editingEventId) ?? null
     : null;
-  const selectedColorCategory = entryType === "staff_task" ? entryStatus : entryCategory;
+  const selectedColorCategory =
+    entryType === "staff_task" ? entryStatus || "Not Started" : entryCategory;
   const isEntryReady =
     Boolean(entryTitle.trim()) &&
     Boolean(selectedColorCategory.trim()) &&
@@ -296,7 +297,7 @@ export function BoardCalendarWorkbench({
     setEntryConfirmed("");
     setEntryRelatedMeeting("");
     setEntryResponsible("");
-    setEntryStatus("");
+    setEntryStatus(value === "staff_task" ? "Not Started" : "");
     setEntryDone(false);
     setEntryWeeksBefore("");
   }
@@ -317,7 +318,8 @@ export function BoardCalendarWorkbench({
       confirmed: entryConfirmed,
       relatedMeeting: entryRelatedMeeting,
       responsible: entryResponsible,
-      status: entryStatus,
+      status:
+        entryType === "staff_task" ? entryStatus || "Not Started" : entryStatus,
       done: entryDone,
       daysBeforeAgm: Number.parseInt(entryWeeksBefore, 10) || 0,
       notes: entryNotes,
@@ -384,7 +386,11 @@ export function BoardCalendarWorkbench({
     setEntryConfirmed(input.confirmed ?? "");
     setEntryRelatedMeeting(input.relatedMeeting ?? "");
     setEntryResponsible(input.responsible ?? "");
-    setEntryStatus(input.status ?? input.category ?? "");
+    setEntryStatus(
+      input.type === "staff_task"
+        ? input.status || "Not Started"
+        : input.status ?? input.category ?? "",
+    );
     setEntryDone(Boolean(input.done));
     setEntryWeeksBefore(
       input.daysBeforeAgm === undefined && input.weeksBefore === undefined
@@ -490,7 +496,9 @@ export function BoardCalendarWorkbench({
     status: string;
     type: BoardCalendarEntryType;
   }) {
-    return input.type === "staff_task" ? input.status : input.category;
+    return input.type === "staff_task"
+      ? input.status || "Not Started"
+      : input.category;
   }
 
   function resolveEntryColor(category: string) {
@@ -1366,7 +1374,7 @@ function CalendarEntryComposer({
   }, [entryPendingDelete, isEntryModalOpen]);
 
   const selectedColorCategory =
-    entryType === "staff_task" ? entryStatus : entryCategory;
+    entryType === "staff_task" ? entryStatus || "Not Started" : entryCategory;
   const isEntryReady =
     Boolean(entryTitle.trim()) &&
     Boolean(selectedColorCategory.trim()) &&
@@ -1670,7 +1678,7 @@ function CalendarEntryComposer({
                 </Label>
                 <Input
                   id="calendar-entry-related-meeting"
-                  placeholder="Board Meeting - Apr 15"
+                  placeholder="Board budget review"
                   value={entryRelatedMeeting}
                   onChange={(event) => onRelatedMeetingChange(event.target.value)}
                 />

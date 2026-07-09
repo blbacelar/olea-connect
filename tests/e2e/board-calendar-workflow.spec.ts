@@ -166,13 +166,13 @@ test.describe("@critical Board Calendar & Operational Workflow", () => {
       });
 
       await boardCalendar.expectSelectedDateText(
-        "Board Meeting - Board Budget Review",
+        "Board Budget Review",
       );
       await boardCalendar.expectSelectedDateText("1:30 PM");
       await boardCalendar.expectSelectedDateText("Boardroom A");
       await boardCalendar.expectSelectedDateText("Review budget package.");
       await boardCalendar.expectMeetingVisibleInMeetingsTable(
-        "Board Meeting - Board Budget Review",
+        "Board Budget Review",
       );
       await boardCalendar.expectMeetingTableText("Treasurer");
       await boardCalendar.expectMeetingTableDoesNotShow("Send action summary");
@@ -185,7 +185,7 @@ test.describe("@critical Board Calendar & Operational Workflow", () => {
         { dateKey: generatedTaskAfterDate, text: "Action items sent" },
       ]);
       await boardCalendar.expectSelectedDateText(
-        "For: Board Meeting - Board Budget Review",
+        "For: Board Budget Review",
       );
       await boardCalendar.saveNowAndWaitForPost();
       await boardCalendar.waitForSaved();
@@ -196,6 +196,10 @@ test.describe("@critical Board Calendar & Operational Workflow", () => {
         "Prepare board briefing",
         "Draft agenda to Chair",
       ]);
+      await boardCalendar.selectCalendarDate(generatedTaskBeforeDate);
+      await boardCalendar.editEntry(/Edit Prepare board briefing/);
+      await boardCalendar.expectUpdateEnabled();
+      await boardCalendar.cancelEntryEdit();
       await boardCalendar.updateGeneratedStaffTask(
         1,
         "In Progress",
@@ -249,10 +253,10 @@ test.describe("@critical Board Calendar & Operational Workflow", () => {
       await boardCalendar.addToCalendar();
 
       await boardCalendar.expectSelectedDateText(
-        "Board Meeting - Board Budget Review",
+        "Board Budget Review",
       );
       await boardCalendar.expectSelectedDateText(
-        "Committee Meeting - Parallel Finance Committee",
+        "Parallel Finance Committee",
       );
       await boardCalendar.expectSelectedDateTextCount("1:30 PM", 2);
     });
@@ -291,7 +295,7 @@ test.describe("@critical Board Calendar & Operational Workflow", () => {
 
     await test.step("edit an existing event without losing time or details", async () => {
       await boardCalendar.selectCalendarDate(eventDate);
-      await boardCalendar.editEntry(/Edit Board Meeting - Board Budget Review/);
+      await boardCalendar.editEntry(/Edit Board Budget Review/);
       await boardCalendar.expectFieldValue("Time", "13:30");
       await boardCalendar.expectFieldValue(
         "Virtual link",
@@ -304,7 +308,7 @@ test.describe("@critical Board Calendar & Operational Workflow", () => {
       await boardCalendar.updateEntry();
 
       await boardCalendar.expectSelectedDateText(
-        "Board Meeting - Board Budget Review Updated",
+        "Board Budget Review Updated",
       );
       await boardCalendar.expectSelectedDateText("9:00 AM");
       await boardCalendar.expectSelectedDateText("Hybrid");
@@ -312,18 +316,18 @@ test.describe("@critical Board Calendar & Operational Workflow", () => {
 
     await test.step("order same-day meetings by time, keeping duplicate time entries", async () => {
       await boardCalendar.expectSelectedDateText(
-        "Board Meeting - Board Budget Review Updated",
+        "Board Budget Review Updated",
       );
       await boardCalendar.expectSelectedDateText(
-        "Committee Meeting - Parallel Finance Committee",
+        "Parallel Finance Committee",
       );
 
       const selectedDateContent = await boardCalendar.selectedDateContent();
       const updatedIndex = selectedDateContent.indexOf(
-        "Board Meeting - Board Budget Review Updated",
+        "Board Budget Review Updated",
       );
       const duplicateIndex = selectedDateContent.indexOf(
-        "Committee Meeting - Parallel Finance Committee",
+        "Parallel Finance Committee",
       );
 
       expect(updatedIndex).toBeGreaterThanOrEqual(0);
@@ -333,18 +337,18 @@ test.describe("@critical Board Calendar & Operational Workflow", () => {
     await test.step("cancel and confirm delete through the custom dialog", async () => {
       await boardCalendar.selectCalendarDate(eventDate);
       await boardCalendar.editEntry(
-        /Edit Committee Meeting - Parallel Finance Committee/,
+        /Edit Parallel Finance Committee/,
       );
       await boardCalendar.openDeleteDialog();
       await boardCalendar.cancelDelete();
       await boardCalendar.expectSelectedDateText(
-        "Committee Meeting - Parallel Finance Committee",
+        "Parallel Finance Committee",
       );
 
       await boardCalendar.openDeleteDialog();
       await boardCalendar.confirmDelete();
       await boardCalendar.expectSelectedDateTextCount(
-        "Committee Meeting - Parallel Finance Committee",
+        "Parallel Finance Committee",
         0,
       );
     });
@@ -364,7 +368,7 @@ test.describe("@critical Board Calendar & Operational Workflow", () => {
       await boardCalendar.selectCalendarDate(agmDate);
       await boardCalendar.expectTextVisible("Confirm AGM venue");
       await boardCalendar.expectTextCount(
-        "Committee Meeting - Parallel Finance Committee",
+        "Parallel Finance Committee",
         0,
       );
     });

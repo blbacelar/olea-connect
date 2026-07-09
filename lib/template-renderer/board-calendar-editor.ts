@@ -124,7 +124,7 @@ function cleanList(values: string[]) {
 function getMeetingLabel(record: Record<string, unknown>) {
   const type = getString(record, "type") || "Meeting";
   const committee = getString(record, "committee");
-  return committee ? `${type} - ${committee}` : type;
+  return committee || type;
 }
 
 function getTaskGeneratedKey({

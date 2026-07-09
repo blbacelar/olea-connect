@@ -693,6 +693,12 @@ export class BoardCalendarPage {
     ).toBeEnabled();
   }
 
+  async expectUpdateEnabled() {
+    await expect(
+      this.entryForm.getByRole("button", { name: "Update entry" }),
+    ).toBeEnabled();
+  }
+
   async addToCalendar() {
     await this.expectAddEnabled();
     await this.entryForm.getByRole("button", { name: "Add entry" }).click();
@@ -725,6 +731,11 @@ export class BoardCalendarPage {
     ]);
     await expect(this.entryForm).toHaveCount(0);
     await this.waitForSaved();
+  }
+
+  async cancelEntryEdit() {
+    await this.entryForm.getByRole("button", { name: "Cancel edit" }).click();
+    await expect(this.entryForm).toHaveCount(0);
   }
 
   async openDeleteDialog() {
