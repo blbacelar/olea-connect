@@ -11,7 +11,6 @@ import { buildTemplateExportModel } from "@/lib/template-renderer/export-model";
 import { renderTemplateDocxBuffer } from "@/lib/template-renderer/docx-export";
 import {
   buildBoardCalendarReportFooterText,
-  buildBoardCalendarReportHeaderHtml,
   buildBoardCalendarReportHtml,
   isBoardCalendarSchema,
 } from "@/lib/template-renderer/board-calendar-report-html";
@@ -255,7 +254,6 @@ async function renderPdfExportBuffer({
       }),
       {
         footerText: buildBoardCalendarReportFooterText(brand, organizationName),
-        headerHtml: buildBoardCalendarReportHeaderHtml(brand, organizationName),
       },
     );
   }

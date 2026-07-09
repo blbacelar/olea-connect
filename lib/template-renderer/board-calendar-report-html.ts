@@ -319,21 +319,6 @@ export function buildBoardCalendarReportHtml({
 </html>`;
 }
 
-export function buildBoardCalendarReportHeaderHtml(
-  brand: BrandProfile,
-  organizationName: string,
-) {
-  const primaryColor = sanitizeCssColor(brand.primaryColor, fallbackPrimaryColor);
-  const logoMarkup = brand.logoUrl
-    ? `<img src="${escapeHtml(brand.logoUrl)}" alt="" style="display:block;height:100%;object-fit:contain;padding:3px;width:100%;" />`
-    : `<span style="color:#fff;font-size:8px;font-weight:800;letter-spacing:0.08em;">${escapeHtml(brand.logoInitials || getInitials(organizationName))}</span>`;
-
-  return `<div style="align-items:center;border-bottom:1px solid #d8dee8;display:flex;height:40px;gap:10px;">
-    <div style="align-items:center;background:${primaryColor};border-radius:7px;display:flex;flex:0 0 28px;height:28px;justify-content:center;overflow:hidden;width:28px;">${logoMarkup}</div>
-    <div style="align-items:center;color:#162033;display:flex;font-size:9px;font-weight:700;line-height:1.1;min-height:28px;">${escapeHtml(organizationName)}</div>
-  </div>`;
-}
-
 export function buildBoardCalendarReportFooterText(
   brand: BrandProfile,
   organizationName: string,

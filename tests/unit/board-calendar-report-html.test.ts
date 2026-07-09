@@ -2,7 +2,6 @@ import { describe, expect, it } from "vitest";
 
 import {
   buildBoardCalendarReport,
-  buildBoardCalendarReportHeaderHtml,
   buildBoardCalendarReportHtml,
   isBoardCalendarSchema,
 } from "@/lib/template-renderer/board-calendar-report-html";
@@ -154,19 +153,22 @@ describe("board calendar HTML report export", () => {
     expect(html).not.toContain("<script>alert(1)</script>");
   });
 
-  it("builds a repeated PDF header with contained logo sizing", () => {
-    const headerHtml = buildBoardCalendarReportHeaderHtml(
-      {
+  it("keeps the branded in-document report header", () => {
+    const html = buildBoardCalendarReportHtml({
+      brand: {
         ...brand,
         logoUrl: "data:image/png;base64,abc123",
       },
-      "Olea Connects",
-    );
+      formData,
+      generatedAt: new Date("2026-07-09T12:00:00Z"),
+      organizationName: "Olea Connects",
+      title: "Board Calendar",
+    });
 
-    expect(headerHtml).toContain("Olea Connects");
-    expect(headerHtml).toContain("data:image/png;base64,abc123");
-    expect(headerHtml).toContain("object-fit:contain");
-    expect(headerHtml).not.toContain("background:#fff");
-    expect(headerHtml).toContain("border-bottom:1px solid #d8dee8");
+    expect(html).toContain("class=\"brand-header\"");
+    expect(html).toContain("class=\"logo\"");
+    expect(html).toContain("data:image/png;base64,abc123");
+    expect(html).toContain("object-fit: contain");
+    expect(html).not.toContain("background:#fff");
   });
 });
