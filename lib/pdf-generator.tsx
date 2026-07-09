@@ -1,5 +1,6 @@
 import {
   Document,
+  Image,
   Page,
   StyleSheet,
   Text,
@@ -7,6 +8,7 @@ import {
 } from "@react-pdf/renderer";
 import React from "react";
 
+import { getEmbeddedLogo } from "@/lib/template-renderer/logo-data";
 import { openEndedQuestions, surveySections } from "@/lib/survey-content";
 import type {
   Organization,
@@ -34,10 +36,24 @@ const styles = StyleSheet.create({
     right: 0,
     height: 14,
   },
+  coverContent: {
+    position: "absolute",
+    left: 56,
+    right: 56,
+    bottom: 104,
+  },
+  coverEyebrow: {
+    color: "#94A3B8",
+    fontSize: 10,
+    fontFamily: "Helvetica-Bold",
+    letterSpacing: 1.6,
+    marginBottom: 12,
+    textTransform: "uppercase",
+  },
   logo: {
     width: 76,
     height: 76,
-    borderRadius: 38,
+    borderRadius: 12,
     color: "#FFFFFF",
     alignItems: "center",
     justifyContent: "center",
@@ -45,34 +61,45 @@ const styles = StyleSheet.create({
     fontFamily: "Helvetica-Bold",
     marginBottom: 22,
   },
+  logoImage: {
+    width: 64,
+    height: 64,
+    objectFit: "contain",
+  },
   orgName: {
-    fontSize: 15,
+    fontSize: 17,
     fontFamily: "Helvetica-Bold",
-    marginBottom: 76,
+    marginBottom: 8,
   },
   coverTitle: {
     fontSize: 32,
     fontFamily: "Helvetica-Bold",
     lineHeight: 1.1,
-    maxWidth: 380,
+    maxWidth: 460,
   },
-  subtitle: {
-    marginTop: 10,
-    fontSize: 17,
-    color: "#6B7280",
+  coverRule: {
+    width: 92,
+    height: 4,
+    borderRadius: 999,
+    marginTop: 28,
+    marginBottom: 28,
   },
   coverMeta: {
+    color: "#64748B",
+    fontSize: 12,
+  },
+  coverFooter: {
     position: "absolute",
+    bottom: 34,
     left: 56,
-    bottom: 56,
     right: 56,
+    paddingTop: 14,
     borderTopWidth: 1,
     borderTopColor: "#E5E7EB",
-    paddingTop: 16,
     flexDirection: "row",
     justifyContent: "space-between",
-    color: "#6B7280",
-    fontSize: 10,
+    color: "#94A3B8",
+    fontSize: 9,
   },
   section: {
     marginBottom: 16,
@@ -183,6 +210,7 @@ export function BoardEvaluationPdf({
   organization: Organization;
   session: TemplateSession;
 }) {
+  const logo = getEmbeddedLogo(organization.brand.logoUrl);
   const sectionAverages = surveySections.map((section) => {
     const numericScores = section.questions.flatMap((question) => {
       const answer = session.answers[question.id];
@@ -210,27 +238,34 @@ export function BoardEvaluationPdf({
             { backgroundColor: organization.brand.secondaryColor },
           ]}
         />
-        <View
-          style={[
-            styles.logo,
-            { backgroundColor: organization.brand.primaryColor },
-          ]}
-        >
-          <Text>{organization.brand.logoInitials}</Text>
+        <BrandLogo organization={organization} logo={logo} />
+        <View style={styles.coverContent}>
+          <Text style={styles.coverEyebrow}>Annual survey template</Text>
+          <Text
+            style={[
+              styles.coverTitle,
+              { color: organization.brand.primaryColor },
+            ]}
+          >
+            Board Self-Evaluation
+          </Text>
+          <View
+            style={[
+              styles.coverRule,
+              { backgroundColor: organization.brand.secondaryColor },
+            ]}
+          />
+          <Text style={styles.orgName}>{organization.name}</Text>
+          <Text style={styles.coverMeta}>
+            Board Year: {session.boardYear || "Not specified"}
+          </Text>
+          <Text style={styles.coverMeta}>
+            Survey Period: {session.surveyPeriod || "Not specified"}
+          </Text>
         </View>
-        <Text style={styles.orgName}>{organization.name}</Text>
-        <Text
-          style={[
-            styles.coverTitle,
-            { color: organization.brand.primaryColor },
-          ]}
-        >
-          Board Self-Evaluation
-        </Text>
-        <Text style={styles.subtitle}>Annual Survey Template</Text>
-        <View style={styles.coverMeta}>
-          <Text>Board Year: {session.boardYear || "Not specified"}</Text>
-          <Text>Survey Period: {session.surveyPeriod || "Not specified"}</Text>
+        <View style={styles.coverFooter}>
+          <Text>oleaconnects.ca</Text>
+          <Text render={({ pageNumber, totalPages }) => `Page ${pageNumber} of ${totalPages}`} />
         </View>
       </Page>
 
@@ -352,5 +387,29 @@ export function BoardEvaluationPdf({
         <PdfFooter organization={organization} />
       </Page>
     </Document>
+  );
+}
+
+function BrandLogo({
+  organization,
+  logo,
+}: {
+  organization: Organization;
+  logo: ReturnType<typeof getEmbeddedLogo>;
+}) {
+  return (
+    <View
+      style={[
+        styles.logo,
+        { backgroundColor: organization.brand.primaryColor },
+      ]}
+    >
+      {logo ? (
+        // eslint-disable-next-line jsx-a11y/alt-text -- React-PDF Image has no alt prop.
+        <Image src={logo.dataUrl} style={styles.logoImage} />
+      ) : (
+        <Text>{organization.brand.logoInitials}</Text>
+      )}
+    </View>
   );
 }

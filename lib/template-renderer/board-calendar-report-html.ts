@@ -119,6 +119,72 @@ export function buildBoardCalendarReportHtml({
       margin: 0;
     }
     .accent { background: var(--brand-secondary); height: 10px; margin: 0 -0.45in 24px; }
+    .cover-page {
+      display: flex;
+      flex-direction: column;
+      min-height: 9.25in;
+      page-break-after: always;
+    }
+    .cover-logo {
+      align-items: center;
+      background: var(--brand-primary);
+      border-radius: 14px;
+      color: #fff;
+      display: flex;
+      flex: 0 0 76px;
+      font-size: 18px;
+      font-weight: 800;
+      height: 76px;
+      justify-content: center;
+      letter-spacing: 0.08em;
+      overflow: hidden;
+      width: 76px;
+    }
+    .cover-logo img {
+      height: 100%;
+      object-fit: contain;
+      padding: 8px;
+      width: 100%;
+    }
+    .cover-content {
+      margin-top: auto;
+      padding-bottom: 42px;
+    }
+    .cover-eyebrow {
+      color: #94a3b8;
+      font-size: 11px;
+      font-weight: 800;
+      letter-spacing: 0.16em;
+      margin: 0 0 12px;
+      text-transform: uppercase;
+    }
+    .cover-title {
+      color: var(--brand-primary);
+      font-size: 32px;
+      font-weight: 800;
+      letter-spacing: -0.02em;
+      line-height: 1.1;
+      margin: 0;
+      max-width: 520px;
+    }
+    .cover-rule {
+      background: var(--brand-secondary);
+      border-radius: 999px;
+      height: 4px;
+      margin: 28px 0 28px;
+      width: 92px;
+    }
+    .cover-org {
+      color: var(--ink);
+      font-size: 17px;
+      font-weight: 800;
+      margin: 0 0 8px;
+    }
+    .cover-meta {
+      color: #64748b;
+      font-size: 13px;
+      margin: 0;
+    }
     .brand-header {
       align-items: center;
       border-bottom: 1px solid var(--line);
@@ -130,7 +196,7 @@ export function buildBoardCalendarReportHtml({
     .logo {
       align-items: center;
       background: var(--brand-primary);
-      border-radius: 999px;
+      border-radius: 9px;
       color: #fff;
       display: flex;
       flex: 0 0 42px;
@@ -143,7 +209,6 @@ export function buildBoardCalendarReportHtml({
       width: 42px;
     }
     .logo img {
-      background: #fff;
       height: 100%;
       object-fit: contain;
       padding: 4px;
@@ -226,18 +291,28 @@ export function buildBoardCalendarReportHtml({
   </style>
 </head>
 <body>
-  <div class="accent"></div>
-  <header class="brand-header">
-    <div class="logo">${logoMarkup}</div>
-    <div>
-      <p class="eyebrow">Board calendar report</p>
-      <h1>${escapeHtml(report.title)}</h1>
-      <div class="meta">
-        ${escapeHtml(report.organizationName)} · Generated ${escapeHtml(formatDateTime(report.generatedAt))}
-      </div>
+  <section class="cover-page">
+    <div class="cover-logo">${logoMarkup}</div>
+    <div class="cover-content">
+      <p class="cover-eyebrow">Board portal report</p>
+      <h1 class="cover-title">${escapeHtml(report.title)}</h1>
+      <div class="cover-rule"></div>
+      <p class="cover-org">${escapeHtml(report.organizationName)}</p>
+      <p class="cover-meta">Generated ${escapeHtml(formatDateTime(report.generatedAt))}</p>
     </div>
-  </header>
+  </section>
   <main>
+    <div class="accent"></div>
+    <header class="brand-header">
+      <div class="logo">${logoMarkup}</div>
+      <div>
+        <p class="eyebrow">Board calendar report</p>
+        <h1>${escapeHtml(report.title)}</h1>
+        <div class="meta">
+          ${escapeHtml(report.organizationName)} · Generated ${escapeHtml(formatDateTime(report.generatedAt))}
+        </div>
+      </div>
+    </header>
     ${report.sections.map(renderSection).join("")}
   </main>
 </body>
@@ -250,11 +325,11 @@ export function buildBoardCalendarReportHeaderHtml(
 ) {
   const primaryColor = sanitizeCssColor(brand.primaryColor, fallbackPrimaryColor);
   const logoMarkup = brand.logoUrl
-    ? `<img src="${escapeHtml(brand.logoUrl)}" alt="" style="background:#fff;display:block;height:100%;object-fit:contain;padding:3px;width:100%;" />`
+    ? `<img src="${escapeHtml(brand.logoUrl)}" alt="" style="display:block;height:100%;object-fit:contain;padding:3px;width:100%;" />`
     : `<span style="color:#fff;font-size:8px;font-weight:800;letter-spacing:0.08em;">${escapeHtml(brand.logoInitials || getInitials(organizationName))}</span>`;
 
   return `<div style="align-items:center;border-bottom:1px solid #d8dee8;display:flex;height:40px;gap:10px;">
-    <div style="align-items:center;background:${primaryColor};border-radius:999px;display:flex;flex:0 0 28px;height:28px;justify-content:center;overflow:hidden;width:28px;">${logoMarkup}</div>
+    <div style="align-items:center;background:${primaryColor};border-radius:7px;display:flex;flex:0 0 28px;height:28px;justify-content:center;overflow:hidden;width:28px;">${logoMarkup}</div>
     <div style="align-items:center;color:#162033;display:flex;font-size:9px;font-weight:700;line-height:1.1;min-height:28px;">${escapeHtml(organizationName)}</div>
   </div>`;
 }
