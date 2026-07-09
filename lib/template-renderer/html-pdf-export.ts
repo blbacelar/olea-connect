@@ -12,7 +12,7 @@ const localChromeCandidates = [
 
 export async function renderHtmlToPdfBuffer(
   html: string,
-  options: { footerText?: string } = {},
+  options: { footerText?: string; headerHtml?: string } = {},
 ) {
   const [{ default: chromium }, { default: puppeteer }] = await Promise.all([
     import("@sparticuz/chromium"),
@@ -37,12 +37,12 @@ export async function renderHtmlToPdfBuffer(
       displayHeaderFooter: true,
       format: "Letter",
       footerTemplate: buildFooterTemplate(options.footerText),
-      headerTemplate: "<div></div>",
+      headerTemplate: buildHeaderTemplate(options.headerHtml),
       margin: {
-        bottom: "0.72in",
+        bottom: "0.78in",
         left: "0.45in",
         right: "0.45in",
-        top: "0.55in",
+        top: "0.75in",
       },
       printBackground: true,
       preferCSSPageSize: true,
@@ -53,6 +53,14 @@ export async function renderHtmlToPdfBuffer(
   } finally {
     await browser.close();
   }
+}
+
+function buildHeaderTemplate(headerHtml = "") {
+  if (!headerHtml) return "<div></div>";
+
+  return `<div style="width:100%;padding:0 0.45in;color:#162033;font-family:Arial,sans-serif;font-size:9px;">
+    ${headerHtml}
+  </div>`;
 }
 
 function buildFooterTemplate(footerText = "") {

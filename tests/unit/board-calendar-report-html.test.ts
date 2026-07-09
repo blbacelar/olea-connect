@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 
 import {
   buildBoardCalendarReport,
+  buildBoardCalendarReportHeaderHtml,
   buildBoardCalendarReportHtml,
   isBoardCalendarSchema,
 } from "@/lib/template-renderer/board-calendar-report-html";
@@ -146,7 +147,23 @@ describe("board calendar HTML report export", () => {
     expect(html).toContain("Q3 Board Meeting");
     expect(html).toContain("Send board package");
     expect(html).toContain("--brand-primary: #2F6B4F;");
+    expect(html).toContain("object-fit: contain;");
     expect(html).toContain("Agenda &lt;script&gt;alert(1)&lt;/script&gt;");
     expect(html).not.toContain("<script>alert(1)</script>");
+  });
+
+  it("builds a repeated PDF header with contained logo sizing", () => {
+    const headerHtml = buildBoardCalendarReportHeaderHtml(
+      {
+        ...brand,
+        logoUrl: "data:image/png;base64,abc123",
+      },
+      "Olea Connects",
+    );
+
+    expect(headerHtml).toContain("Olea Connects");
+    expect(headerHtml).toContain("data:image/png;base64,abc123");
+    expect(headerHtml).toContain("object-fit:contain");
+    expect(headerHtml).toContain("border-bottom:1px solid #d8dee8");
   });
 });

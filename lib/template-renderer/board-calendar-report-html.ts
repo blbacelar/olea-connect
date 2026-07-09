@@ -89,7 +89,6 @@ export function buildBoardCalendarReportHtml({
   const logoMarkup = brand.logoUrl
     ? `<img src="${escapeHtml(brand.logoUrl)}" alt="${escapeHtml(organizationName)} logo" />`
     : `<span>${escapeHtml(brand.logoInitials || getInitials(organizationName))}</span>`;
-  const footerText = buildBoardCalendarReportFooterText(brand, organizationName);
 
   return `<!doctype html>
 <html lang="en">
@@ -107,7 +106,7 @@ export function buildBoardCalendarReportHtml({
       --surface: #ffffff;
     }
     @page {
-      margin: 0.55in 0.45in 0.72in;
+      margin: 0.75in 0.45in 0.78in;
       size: Letter;
     }
     * { box-sizing: border-box; }
@@ -143,7 +142,13 @@ export function buildBoardCalendarReportHtml({
       overflow: hidden;
       width: 42px;
     }
-    .logo img { height: 100%; object-fit: cover; width: 100%; }
+    .logo img {
+      background: #fff;
+      height: 100%;
+      object-fit: contain;
+      padding: 4px;
+      width: 100%;
+    }
     .eyebrow {
       color: var(--brand-primary);
       font-size: 9px;
@@ -237,6 +242,21 @@ export function buildBoardCalendarReportHtml({
   </main>
 </body>
 </html>`;
+}
+
+export function buildBoardCalendarReportHeaderHtml(
+  brand: BrandProfile,
+  organizationName: string,
+) {
+  const primaryColor = sanitizeCssColor(brand.primaryColor, fallbackPrimaryColor);
+  const logoMarkup = brand.logoUrl
+    ? `<img src="${escapeHtml(brand.logoUrl)}" alt="" style="background:#fff;display:block;height:100%;object-fit:contain;padding:3px;width:100%;" />`
+    : `<span style="color:#fff;font-size:8px;font-weight:800;letter-spacing:0.08em;">${escapeHtml(brand.logoInitials || getInitials(organizationName))}</span>`;
+
+  return `<div style="align-items:center;border-bottom:1px solid #d8dee8;display:flex;height:40px;gap:10px;">
+    <div style="align-items:center;background:${primaryColor};border-radius:999px;display:flex;flex:0 0 28px;height:28px;justify-content:center;overflow:hidden;width:28px;">${logoMarkup}</div>
+    <div style="align-items:center;color:#162033;display:flex;font-size:9px;font-weight:700;line-height:1.1;min-height:28px;">${escapeHtml(organizationName)}</div>
+  </div>`;
 }
 
 export function buildBoardCalendarReportFooterText(
