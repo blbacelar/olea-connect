@@ -335,6 +335,17 @@ export class BoardCalendarPage {
     await expect(this.field("Entry date")).toBeInViewport();
   }
 
+  async expectEntryTitleKeepsFocusWhileTyping(text: string) {
+    await this.ensureEntryFormOpen();
+    const titleField = this.field("Title");
+
+    await expect(titleField).toBeFocused();
+    await titleField.pressSequentially(text, { delay: 20 });
+    await expect(titleField).toHaveValue(text);
+    await expect(titleField).toBeFocused();
+    await titleField.clear();
+  }
+
   async setEntryType(option: BoardCalendarEntryType) {
     await this.ensureEntryFormOpen();
     await this.chooseSelectOption("Entry type", option, this.entryForm);

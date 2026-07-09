@@ -94,6 +94,9 @@ test.describe("@critical Board Calendar & Operational Workflow", () => {
       await boardCalendar.selectCalendarDate(eventDate);
       await boardCalendar.expectBlankEntryForm();
       await boardCalendar.expectEntryModalTopVisible();
+      await boardCalendar.expectEntryTitleKeepsFocusWhileTyping(
+        "Focus stays while typing",
+      );
       await boardCalendar.fillTitle("");
       await boardCalendar.expectAddDisabled();
     });

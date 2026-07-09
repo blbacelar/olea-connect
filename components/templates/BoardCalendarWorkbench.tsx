@@ -1259,20 +1259,38 @@ function CalendarEntryComposer({
       : meetingCategoryOptions;
   const [entryPendingDelete, setEntryPendingDelete] =
     useState<CalendarViewEvent | null>(null);
-  const cancelEditButtonRef = useRef<HTMLButtonElement>(null);
+  const titleInputRef = useRef<HTMLInputElement>(null);
+  const wasEntryModalOpenRef = useRef(false);
+  const onCancelEditRef = useRef(onCancelEdit);
+
+  useEffect(() => {
+    onCancelEditRef.current = onCancelEdit;
+  }, [onCancelEdit]);
+
+  useEffect(() => {
+    if (isEntryModalOpen && !wasEntryModalOpenRef.current) {
+      const frame = window.requestAnimationFrame(() => {
+        titleInputRef.current?.focus();
+      });
+
+      wasEntryModalOpenRef.current = true;
+      return () => window.cancelAnimationFrame(frame);
+    }
+
+    wasEntryModalOpenRef.current = isEntryModalOpen;
+    return undefined;
+  }, [isEntryModalOpen]);
 
   useEffect(() => {
     if (!isEntryModalOpen || entryPendingDelete) return;
 
-    cancelEditButtonRef.current?.focus();
-
     function handleKeyDown(keyboardEvent: KeyboardEvent) {
-      if (keyboardEvent.key === "Escape") onCancelEdit();
+      if (keyboardEvent.key === "Escape") onCancelEditRef.current();
     }
 
     document.addEventListener("keydown", handleKeyDown);
     return () => document.removeEventListener("keydown", handleKeyDown);
-  }, [entryPendingDelete, isEntryModalOpen, onCancelEdit]);
+  }, [entryPendingDelete, isEntryModalOpen]);
 
   const selectedColorCategory =
     entryType === "staff_task" ? entryStatus : entryCategory;
@@ -1379,7 +1397,6 @@ function CalendarEntryComposer({
                 </div>
               </div>
               <Button
-                ref={cancelEditButtonRef}
                 type="button"
                 variant="ghost"
                 size="icon"
@@ -1507,6 +1524,7 @@ function CalendarEntryComposer({
           <div className="space-y-2 md:col-span-2">
             <Label htmlFor="calendar-entry-title">Title</Label>
             <Input
+              ref={titleInputRef}
               id="calendar-entry-title"
               placeholder="Board meeting, budget review, AGM notice..."
               value={entryTitle}
