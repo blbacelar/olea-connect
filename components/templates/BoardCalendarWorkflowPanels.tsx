@@ -759,12 +759,11 @@ export function StaffTaskListPanel({
                       <Button
                         type="button"
                         variant="outline"
-                        size="sm"
+                        size="icon"
                         aria-label={`Edit task ${index + 1}`}
                         onClick={() => openTaskEditor(index)}
                       >
                         <Pencil className="size-4" />
-                        Edit
                       </Button>
                     </TableCell>
                   </TableRow>
@@ -1103,23 +1102,21 @@ export function DirectoryTablePanel({
                         <Button
                           type="button"
                           variant="outline"
-                          size="sm"
+                          size="icon"
                           aria-label={`Edit committee ${index + 1}`}
                           onClick={() => openCommitteeEditor(index)}
                         >
                           <Pencil className="size-4" />
-                          Edit
                         </Button>
                         <Button
                           type="button"
                           variant="ghost"
-                          size="sm"
+                          size="icon"
                           className="text-red-700 hover:bg-red-50 hover:text-red-800"
                           aria-label={`Remove committee ${index + 1}`}
                           onClick={() => removeCommittee(index)}
                         >
                           <Trash2 className="size-4" />
-                          Remove
                         </Button>
                       </div>
                     </TableCell>
@@ -1608,23 +1605,21 @@ export function AgmTimelinePanel({
                         <Button
                           type="button"
                           variant="outline"
-                          size="sm"
+                          size="icon"
                           aria-label={`Edit AGM milestone ${index + 1}`}
                           onClick={() => openMilestoneEditor(index)}
                         >
                           <Pencil className="size-4" />
-                          Edit
                         </Button>
                         <Button
                           type="button"
                           variant="ghost"
-                          size="sm"
+                          size="icon"
                           className="text-red-700 hover:bg-red-50 hover:text-red-800"
                           aria-label={`Remove AGM milestone ${index + 1}`}
                           onClick={() => removeMilestone(index)}
                         >
                           <Trash2 className="size-4" />
-                          Remove
                         </Button>
                       </div>
                     </TableCell>

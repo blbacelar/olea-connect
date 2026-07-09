@@ -910,11 +910,11 @@ function MeetingsTablePanel({
                   <Button
                     type="button"
                     variant="outline"
-                    size="sm"
+                    size="icon"
+                    aria-label={`Edit meeting ${meeting.title}`}
                     onClick={() => onEditEvent(meeting)}
                   >
                     <Pencil className="size-3.5" />
-                    Edit
                   </Button>
                 </div>
               </div>
