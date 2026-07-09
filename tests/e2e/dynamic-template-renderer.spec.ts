@@ -23,11 +23,11 @@ test.describe("@critical dynamic template renderer", () => {
 
     await boardCalendar.expectWorkspaceViewOptionHidden("Colour key");
     await boardCalendar.chooseWorkspaceView("Calendar workspace");
-    await boardCalendar.expectEmptySchedule();
+    await boardCalendar.calendar.expectEmptySchedule();
 
     await boardCalendar.startNewWorkbook();
-    await boardCalendar.expectBlankEntryForm();
-    await boardCalendar.expectEmptySchedule();
+    await boardCalendar.calendar.expectBlankEntryForm();
+    await boardCalendar.calendar.expectEmptySchedule();
   });
 
   test("@smoke edits repeatable agenda rows, exports files, and audits downloads", async ({

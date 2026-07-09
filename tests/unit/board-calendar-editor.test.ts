@@ -301,6 +301,7 @@ describe("board calendar editor helpers", () => {
         committee: "Q1 Board Meeting",
       },
       {
+        id: expect.any(String),
         date: "2026-04-15",
         type: "Committee Meeting",
         committee: "Finance Committee",
@@ -512,6 +513,7 @@ describe("board calendar editor helpers", () => {
       path: ["meetings"],
       value: [
         {
+          id: expect.any(String),
           date: "2026-04-22",
           type: "Committee Meeting",
           committee: "Finance and Audit Committee",

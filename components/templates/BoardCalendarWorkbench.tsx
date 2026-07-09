@@ -68,6 +68,10 @@ import { setValue } from "@/lib/template-renderer/schema";
 import { cn } from "@/lib/utils";
 
 import {
+  BoardPackageAuditLogPanel,
+  BoardPackagesPanel,
+} from "./BoardCalendarPackagesPanel";
+import {
   AgmTimelinePanel,
   BoardCalendarSetupPanel,
   DirectoryTablePanel,
@@ -172,18 +176,12 @@ export function BoardCalendarWorkbench({
   const eventsByDate = useMemo(() => groupEventsByDate(events), [events]);
   const configuredYear = getTemplateYear(data);
   const configuredMonth = getTemplateMonthIndex(data);
-  const firstDatedEvent = events.find((event) => event.date);
   const todayKey = toDateKey(new Date());
-  const configuredDate = new Date(configuredYear, configuredMonth, 1);
-  const configuredDateKey = toDateKey(configuredDate);
-  const initialDate =
-    firstDatedEvent?.date ??
-    (configuredDateKey < todayKey ? new Date() : configuredDate);
-  const initialDateKey = firstDatedEvent?.dateKey ?? toDateKey(initialDate);
+  const todayDate = new Date();
   const [mode, setMode] = useState<CalendarMode>("month");
   const [activeTab, setActiveTab] = useState<BoardCalendarModuleTab>("dashboard");
-  const [anchorDate, setAnchorDate] = useState(initialDate);
-  const [selectedDateKey, setSelectedDateKey] = useState(initialDateKey);
+  const [anchorDate, setAnchorDate] = useState(todayDate);
+  const [selectedDateKey, setSelectedDateKey] = useState(todayKey);
   const [entryType, setEntryType] = useState<BoardCalendarEntryType>("meeting");
   const [entryTitle, setEntryTitle] = useState("");
   const [entryCategory, setEntryCategory] = useState("");
@@ -792,11 +790,7 @@ export function BoardCalendarWorkbench({
           </TabsContent>
 
           <TabsContent value="packages" className="mt-0">
-            <ComingSoonPanel
-              icon={PackageOpen}
-              title="Board packages are coming soon"
-              description="This area will collect agendas, minutes, reports, and approved board package files by meeting."
-            />
+            <BoardPackagesPanel data={data} onDataChange={onDataChange} />
           </TabsContent>
 
           <TabsContent value="directory" className="mt-0">
@@ -807,11 +801,7 @@ export function BoardCalendarWorkbench({
           </TabsContent>
 
           <TabsContent value="audit_log" className="mt-0">
-            <ComingSoonPanel
-              icon={ScrollText}
-              title="Audit log is coming soon"
-              description="This area will show who changed meetings, exported files, downloaded packages, or updated workflow records."
-            />
+            <BoardPackageAuditLogPanel data={data} />
           </TabsContent>
 
           <TabsContent value="settings" className="mt-0 space-y-5">
@@ -946,28 +936,6 @@ function MeetingTableField({ label, value }: { label: string; value: string }) {
       </p>
       <p className="text-slate-700">{value}</p>
     </div>
-  );
-}
-
-function ComingSoonPanel({
-  description,
-  icon: Icon,
-  title,
-}: {
-  description: string;
-  icon: typeof CalendarDays;
-  title: string;
-}) {
-  return (
-    <section className="grid min-h-[260px] place-items-center rounded-xl border bg-white p-6 text-center shadow-sm">
-      <div className="max-w-xl">
-        <span className="mx-auto grid size-14 place-items-center rounded-xl bg-olea-light text-olea-dark">
-          <Icon className="size-7" />
-        </span>
-        <h3 className="mt-4 text-xl font-semibold text-slate-950">{title}</h3>
-        <p className="mt-2 text-sm leading-6 text-slate-500">{description}</p>
-      </div>
-    </section>
   );
 }
 

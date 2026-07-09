@@ -6,6 +6,7 @@ import {
   toDateKey,
 } from "@/lib/template-renderer/calendar-view";
 import { toCalendarTimeInputValue } from "@/lib/template-renderer/calendar-time";
+import { createTemplateRecordId } from "@/lib/template-renderer/create-id";
 import type {
   FieldPath,
   TemplateFormData,
@@ -318,6 +319,7 @@ export function createBoardCalendarEntryRow(input: BoardCalendarEntryInput) {
     case "meeting":
     default:
       return {
+        id: createTemplateRecordId("meeting"),
         date: input.dateKey,
         type: input.category,
         committee: title,
@@ -533,9 +535,18 @@ function createUpdatedBoardCalendarEntryRow(
   existingRow: Record<string, unknown>,
   input: BoardCalendarEntryInput,
 ) {
-  return {
+  const nextRow = {
     ...existingRow,
     ...createBoardCalendarEntryRow(input),
+  };
+
+  if (input.type !== "meeting") {
+    return nextRow;
+  }
+
+  return {
+    ...nextRow,
+    id: getString(existingRow, "id") || createTemplateRecordId("meeting"),
   };
 }
 
