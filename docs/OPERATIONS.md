@@ -77,10 +77,14 @@ EMAIL_ENVIRONMENT
 EMAIL_TEST_RECIPIENT
 NEXT_PUBLIC_APP_URL
 CRON_SECRET
+GENERATED_DOCUMENT_RETENTION_HOURS
 ```
 
 Outside production, set `EMAIL_ENVIRONMENT` to a non-production value and set
 `EMAIL_TEST_RECIPIENT`. This prevents accidental delivery to real users.
+
+`GENERATED_DOCUMENT_RETENTION_HOURS` is optional. If unset, generated template
+exports are retained for 24 hours before cleanup.
 
 ### Native Community and Deferred Circle
 
@@ -146,6 +150,25 @@ events. Operators can also replay an event directly with the service role:
 
 ```sql
 select public.replay_integration_event('<event-id>'::uuid);
+```
+
+### Generated Document Cleanup
+
+Template PDF/DOCX exports are temporary artifacts stored in the
+`generated-documents` Supabase Storage bucket and indexed by
+`template_exports`. Vercel runs `/api/v1/generated-documents/cleanup` once per
+day at 10:00 UTC. The route requires `Authorization: Bearer $CRON_SECRET`.
+
+The cleaner deletes generated export files and their `template_exports` rows
+after `GENERATED_DOCUMENT_RETENTION_HOURS`, defaulting to 24 hours. It does not
+delete user-uploaded board package documents, organization logos, event
+recordings, or resource assets.
+
+Manual dry run:
+
+```bash
+curl -H "Authorization: Bearer $CRON_SECRET" \
+  "https://<domain>/api/v1/generated-documents/cleanup?dryRun=1"
 ```
 
 ### Automated Test Data
