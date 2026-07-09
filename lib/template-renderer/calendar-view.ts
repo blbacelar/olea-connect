@@ -187,7 +187,7 @@ export function buildCalendarEvents(data: TemplateFormData) {
     const category = getString(record, "type") || "Other / General";
     const committee = getString(record, "committee");
     const notes = getString(record, "notes");
-    const title = committee ? `${category} - ${committee}` : category;
+    const title = committee || category;
 
     events.push(
       createEvent(categoryColors, {

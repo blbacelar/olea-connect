@@ -88,6 +88,10 @@ describe("board calendar view helpers", () => {
       location: "Boardroom",
       notes: "Q2 Board Meeting",
     });
+    expect(events.find((event) => event.id === "meeting-1")).toMatchObject({
+      title: "Finance Committee",
+      category: "Committee Meeting",
+    });
     expect(events.find((event) => event.id === "annual-0")).toMatchObject({
       title: "AGM Notice issued",
       dateKey: null,
