@@ -35,6 +35,10 @@ export interface BoardPackageUploadedDocument {
   storagePath: string;
 }
 
+export type BoardPackageActionResult<Data = undefined> =
+  | (Data extends undefined ? { ok: true } : { data: Data; ok: true })
+  | { error: string; ok: false };
+
 export type BoardPackageAuditAction =
   | "document_downloaded"
   | "document_deleted"
@@ -51,58 +55,68 @@ export interface BoardPackageAuditPayload {
 
 export async function uploadBoardPackageDocument(
   formData: FormData,
-): Promise<BoardPackageUploadedDocument> {
-  const { organization } = await requireMemberContext();
-  const templateInstanceId = getRequiredFormValue(
-    formData,
-    "templateInstanceId",
-  );
-  const fileValue = formData.get("file");
+): Promise<BoardPackageActionResult<BoardPackageUploadedDocument>> {
+  try {
+    const { organization } = await requireMemberContext();
+    const templateInstanceId = getRequiredFormValue(
+      formData,
+      "templateInstanceId",
+    );
+    const fileValue = formData.get("file");
 
-  if (!(fileValue instanceof File)) {
-    throw new Error("Choose a board package file to upload.");
-  }
+    if (!(fileValue instanceof File)) {
+      throw new Error("Choose a board package file to upload.");
+    }
 
-  if (!fileValue.size) {
-    throw new Error("The selected file is empty.");
-  }
+    if (!fileValue.size) {
+      throw new Error("The selected file is empty.");
+    }
 
-  if (fileValue.size > BOARD_PACKAGE_MAX_FILE_SIZE) {
-    throw new Error("Board package documents must be 25 MB or smaller.");
-  }
+    if (fileValue.size > BOARD_PACKAGE_MAX_FILE_SIZE) {
+      throw new Error("Board package documents must be 25 MB or smaller.");
+    }
 
-  const contentType = fileValue.type || "application/octet-stream";
-  if (!allowedContentTypes.has(contentType)) {
-    throw new Error("Upload a PDF, Word, Excel, text, or image file.");
-  }
+    const contentType = fileValue.type || "application/octet-stream";
+    if (!allowedContentTypes.has(contentType)) {
+      throw new Error("Upload a PDF, Word, Excel, text, or image file.");
+    }
 
-  await assertTemplateInstanceAccess(templateInstanceId, organization.id);
+    await assertTemplateInstanceAccess(templateInstanceId, organization.id);
 
-  const meetingId = getOptionalFormValue(formData, "meetingId");
-  const storagePath = buildBoardPackageStoragePath({
-    fileName: fileValue.name,
-    meetingId,
-    organizationId: organization.id,
-    templateInstanceId,
-  });
-  const buffer = Buffer.from(await fileValue.arrayBuffer());
-  const admin = createAdminClient();
-  const { error } = await admin.storage
-    .from(BOARD_PACKAGE_DOCUMENTS_BUCKET)
-    .upload(storagePath, buffer, {
-      contentType,
-      upsert: false,
+    const meetingId = getOptionalFormValue(formData, "meetingId");
+    const storagePath = buildBoardPackageStoragePath({
+      fileName: fileValue.name,
+      meetingId,
+      organizationId: organization.id,
+      templateInstanceId,
     });
+    const buffer = Buffer.from(await fileValue.arrayBuffer());
+    const admin = createAdminClient();
+    const { error } = await admin.storage
+      .from(BOARD_PACKAGE_DOCUMENTS_BUCKET)
+      .upload(storagePath, buffer, {
+        contentType,
+        upsert: false,
+      });
 
-  if (error) throw error;
+    if (error) throw error;
 
-  return {
-    contentType,
-    fileName: fileValue.name,
-    size: fileValue.size,
-    sizeLabel: formatFileSize(fileValue.size),
-    storagePath,
-  };
+    return {
+      data: {
+        contentType,
+        fileName: fileValue.name,
+        size: fileValue.size,
+        sizeLabel: formatFileSize(fileValue.size),
+        storagePath,
+      },
+      ok: true,
+    };
+  } catch (error) {
+    return {
+      error: getBoardPackageActionError(error),
+      ok: false,
+    };
+  }
 }
 
 export async function createBoardPackageDocumentDownloadUrl({
@@ -121,41 +135,51 @@ export async function createBoardPackageDocumentDownloadUrl({
   meetingTitle?: string;
   storagePath: string;
   templateInstanceId: string;
-}) {
-  const { member, organization } = await requireMemberContext();
+}): Promise<BoardPackageActionResult<{ signedUrl: string }>> {
+  try {
+    const { member, organization } = await requireMemberContext();
 
-  if (
-    !isBoardPackageStoragePathForSession({
+    if (
+      !isBoardPackageStoragePathForSession({
+        organizationId: organization.id,
+        storagePath,
+        templateInstanceId,
+      })
+    ) {
+      throw new Error("This document does not belong to this board calendar.");
+    }
+
+    await assertTemplateInstanceAccess(templateInstanceId, organization.id);
+
+    const { data, error } = await createAdminClient()
+      .storage.from(BOARD_PACKAGE_DOCUMENTS_BUCKET)
+      .createSignedUrl(storagePath, 60, {
+        download: fileName || true,
+      });
+
+    if (error) throw error;
+
+    await writeBoardPackageAuditLog({
+      action: "document_downloaded",
+      documentId,
+      documentName: documentName || fileName,
+      meetingId,
+      meetingTitle,
+      memberId: member.id,
       organizationId: organization.id,
-      storagePath,
       templateInstanceId,
-    })
-  ) {
-    throw new Error("This document does not belong to this board calendar.");
-  }
-
-  await assertTemplateInstanceAccess(templateInstanceId, organization.id);
-
-  const { data, error } = await createAdminClient()
-    .storage.from(BOARD_PACKAGE_DOCUMENTS_BUCKET)
-    .createSignedUrl(storagePath, 60, {
-      download: fileName || true,
     });
 
-  if (error) throw error;
-
-  await writeBoardPackageAuditLog({
-    action: "document_downloaded",
-    documentId,
-    documentName: documentName || fileName,
-    meetingId,
-    meetingTitle,
-    memberId: member.id,
-    organizationId: organization.id,
-    templateInstanceId,
-  });
-
-  return data.signedUrl;
+    return {
+      data: { signedUrl: data.signedUrl },
+      ok: true,
+    };
+  } catch (error) {
+    return {
+      error: getBoardPackageActionError(error),
+      ok: false,
+    };
+  }
 }
 
 export async function deleteBoardPackageDocumentFile({
@@ -172,51 +196,69 @@ export async function deleteBoardPackageDocumentFile({
   meetingTitle?: string;
   storagePath: string;
   templateInstanceId: string;
-}) {
-  const { member, organization } = await requireMemberContext();
+}): Promise<BoardPackageActionResult> {
+  try {
+    const { member, organization } = await requireMemberContext();
 
-  if (
-    !isBoardPackageStoragePathForSession({
+    if (
+      !isBoardPackageStoragePathForSession({
+        organizationId: organization.id,
+        storagePath,
+        templateInstanceId,
+      })
+    ) {
+      throw new Error("This document does not belong to this board calendar.");
+    }
+
+    await assertTemplateInstanceAccess(templateInstanceId, organization.id);
+
+    const { error } = await createAdminClient()
+      .storage.from(BOARD_PACKAGE_DOCUMENTS_BUCKET)
+      .remove([storagePath]);
+
+    if (error) throw error;
+
+    await writeBoardPackageAuditLog({
+      action: "document_deleted",
+      documentId,
+      documentName,
+      meetingId,
+      meetingTitle,
+      memberId: member.id,
       organizationId: organization.id,
-      storagePath,
       templateInstanceId,
-    })
-  ) {
-    throw new Error("This document does not belong to this board calendar.");
+    });
+
+    return { ok: true };
+  } catch (error) {
+    return {
+      error: getBoardPackageActionError(error),
+      ok: false,
+    };
   }
-
-  await assertTemplateInstanceAccess(templateInstanceId, organization.id);
-
-  const { error } = await createAdminClient()
-    .storage.from(BOARD_PACKAGE_DOCUMENTS_BUCKET)
-    .remove([storagePath]);
-
-  if (error) throw error;
-
-  await writeBoardPackageAuditLog({
-    action: "document_deleted",
-    documentId,
-    documentName,
-    meetingId,
-    meetingTitle,
-    memberId: member.id,
-    organizationId: organization.id,
-    templateInstanceId,
-  });
 }
 
 export async function recordBoardPackageAuditEvent(
   payload: BoardPackageAuditPayload,
-) {
-  const { member, organization } = await requireMemberContext();
-  assertBoardPackageAuditAction(payload.action);
-  await assertTemplateInstanceAccess(payload.templateInstanceId, organization.id);
+): Promise<BoardPackageActionResult> {
+  try {
+    const { member, organization } = await requireMemberContext();
+    assertBoardPackageAuditAction(payload.action);
+    await assertTemplateInstanceAccess(payload.templateInstanceId, organization.id);
 
-  await writeBoardPackageAuditLog({
-    ...payload,
-    memberId: member.id,
-    organizationId: organization.id,
-  });
+    await writeBoardPackageAuditLog({
+      ...payload,
+      memberId: member.id,
+      organizationId: organization.id,
+    });
+
+    return { ok: true };
+  } catch (error) {
+    return {
+      error: getBoardPackageActionError(error),
+      ok: false,
+    };
+  }
 }
 
 async function assertTemplateInstanceAccess(
@@ -297,4 +339,28 @@ async function writeBoardPackageAuditLog({
   });
 
   if (error) throw error;
+}
+
+function getBoardPackageActionError(error: unknown) {
+  const message = error instanceof Error ? error.message : String(error);
+
+  console.error("Board package action failed", error);
+
+  if (/bucket|storage/i.test(message)) {
+    return "Board package storage is not ready yet. Please ask an administrator to apply the latest database migration and try again.";
+  }
+
+  if (/credentials|service role|configured/i.test(message)) {
+    return "Board package storage is not configured for this environment yet.";
+  }
+
+  if (/not available|does not belong|another organization|access/i.test(message)) {
+    return message;
+  }
+
+  if (/choose|empty|25 MB|PDF|Word|Excel|image|file/i.test(message)) {
+    return message;
+  }
+
+  return "We could not complete this board package action. Please try again.";
 }

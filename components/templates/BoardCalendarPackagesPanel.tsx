@@ -168,13 +168,19 @@ export function BoardPackagesPanel({
     setFormError("");
 
     try {
-      const uploadedDocument = selectedFile
+      const uploadedDocumentResult = selectedFile
         ? await uploadSelectedFile({
             file: selectedFile,
             meetingId: uploadMeeting?.id,
             templateInstanceId,
           })
         : null;
+
+      if (uploadedDocumentResult && !uploadedDocumentResult.ok) {
+        throw new Error(uploadedDocumentResult.error);
+      }
+
+      const uploadedDocument = uploadedDocumentResult?.data ?? null;
 
       onDataChange((currentData) =>
         appendBoardPackageDocument(currentData, {
@@ -222,24 +228,32 @@ export function BoardPackagesPanel({
     setDownloadError("");
 
     try {
-      const documentUrl = document.storagePath
-        ? await createBoardPackageDocumentDownloadUrl({
-            documentId: document.id,
-            documentName: document.name,
-            fileName: document.fileName || document.name,
-            meetingId: meeting?.id ?? document.meetingId,
-            meetingTitle: meeting?.title ?? "",
-            storagePath: document.storagePath,
-            templateInstanceId,
-          })
-        : document.url;
+      let documentUrl = document.url;
+
+      if (document.storagePath) {
+        const documentUrlResult = await createBoardPackageDocumentDownloadUrl({
+          documentId: document.id,
+          documentName: document.name,
+          fileName: document.fileName || document.name,
+          meetingId: meeting?.id ?? document.meetingId,
+          meetingTitle: meeting?.title ?? "",
+          storagePath: document.storagePath,
+          templateInstanceId,
+        });
+
+        if (!documentUrlResult.ok) {
+          throw new Error(documentUrlResult.error);
+        }
+
+        documentUrl = documentUrlResult.data.signedUrl;
+      }
 
       if (!documentUrl) {
         throw new Error("This document does not have a downloadable file.");
       }
 
       if (!document.storagePath && templateInstanceId) {
-        await recordBoardPackageAuditEvent({
+        const auditResult = await recordBoardPackageAuditEvent({
           action: "document_downloaded",
           documentId: document.id,
           documentName: document.name,
@@ -247,6 +261,7 @@ export function BoardPackagesPanel({
           meetingTitle: meeting?.title ?? "",
           templateInstanceId,
         });
+        if (!auditResult.ok) throw new Error(auditResult.error);
       }
 
       logDownload(document, meeting);
@@ -284,12 +299,13 @@ export function BoardPackagesPanel({
 
     try {
       if (templateInstanceId) {
-        await recordBoardPackageAuditEvent({
+        const auditResult = await recordBoardPackageAuditEvent({
           action: "package_downloaded",
           meetingId: packageTarget.id,
           meetingTitle: packageTarget.title,
           templateInstanceId,
         });
+        if (!auditResult.ok) throw new Error(auditResult.error);
       }
 
       downloadPackageManifest(packageTarget);
@@ -317,7 +333,7 @@ export function BoardPackagesPanel({
 
     try {
       if (deleteTarget.storagePath) {
-        await deleteBoardPackageDocumentFile({
+        const deleteResult = await deleteBoardPackageDocumentFile({
           documentId: deleteTarget.id,
           documentName: deleteTarget.name,
           meetingId: meeting?.id ?? deleteTarget.meetingId,
@@ -325,8 +341,9 @@ export function BoardPackagesPanel({
           storagePath: deleteTarget.storagePath,
           templateInstanceId,
         });
+        if (!deleteResult.ok) throw new Error(deleteResult.error);
       } else if (templateInstanceId) {
-        await recordBoardPackageAuditEvent({
+        const auditResult = await recordBoardPackageAuditEvent({
           action: "document_deleted",
           documentId: deleteTarget.id,
           documentName: deleteTarget.name,
@@ -334,6 +351,7 @@ export function BoardPackagesPanel({
           meetingTitle: meeting?.title ?? "",
           templateInstanceId,
         });
+        if (!auditResult.ok) throw new Error(auditResult.error);
       }
 
       onDataChange((currentData) =>
