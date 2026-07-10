@@ -25,10 +25,10 @@ export default function BrandSetupPage() {
       "",
   );
   const [primaryColor, setPrimaryColor] = useState(
-    session?.organization.brand.primaryColor ?? "#4A7C59",
+    session?.organization.brand.primaryColor ?? "#446B52",
   );
   const [secondaryColor, setSecondaryColor] = useState(
-    session?.organization.brand.secondaryColor ?? "#2D5C3E",
+    session?.organization.brand.secondaryColor ?? "#F4EFE4",
   );
   const [logoUrl, setLogoUrl] = useState<string | undefined>(
     session?.organization.brand.logoUrl,

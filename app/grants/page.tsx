@@ -61,7 +61,7 @@ function statusClass(status: string) {
 
 function RoundHero({ round }: { round: GrantRound }) {
   return (
-    <section className="relative mb-7 overflow-hidden rounded-[14px] bg-[linear-gradient(120deg,#2D5C3E_0%,#4A7C59_100%)] p-7 text-white">
+    <section className="relative mb-7 overflow-hidden rounded-[14px] bg-[linear-gradient(120deg,#173F2A_0%,#446B52_100%)] p-7 text-white">
       <Image
         src="/olea-tree.png"
         alt=""

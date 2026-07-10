@@ -110,7 +110,7 @@ export default async function DashboardPage() {
       </section>
 
       <section className="grid gap-4 lg:grid-cols-[1.3fr_1fr]">
-        <div className="relative overflow-hidden rounded-[14px] bg-[linear-gradient(120deg,#2D5C3E_0%,#4A7C59_100%)] p-6 text-white shadow-soft md:p-[26px]">
+        <div className="relative overflow-hidden rounded-[14px] bg-[linear-gradient(120deg,#173F2A_0%,#446B52_100%)] p-6 text-white shadow-soft md:p-[26px]">
           <Image
             src="/olea-tree.png"
             alt=""

@@ -19,7 +19,7 @@ export default function Image() {
       <div
         style={{
           alignItems: "stretch",
-          background: "#EEF4F0",
+          background: "#F4EFE4",
           display: "flex",
           height: "100%",
           padding: 48,
@@ -29,7 +29,7 @@ export default function Image() {
         <div
           style={{
             background: "#FFFFFF",
-            border: "1px solid #DCE5DE",
+            border: "1px solid #E5DCCB",
             borderRadius: 40,
             boxShadow: "0 24px 80px rgba(15, 45, 30, 0.12)",
             display: "flex",
@@ -44,7 +44,7 @@ export default function Image() {
               style={{
                 alignItems: "center",
                 background: "#FFF7ED",
-                border: "2px solid #F47A35",
+                border: "2px solid #D69A3A",
                 borderRadius: 28,
                 display: "flex",
                 height: 94,
@@ -63,7 +63,7 @@ export default function Image() {
             <div style={{ display: "flex", flexDirection: "column" }}>
               <div
                 style={{
-                  color: "#163F2A",
+                  color: "#173F2A",
                   fontSize: 38,
                   fontWeight: 800,
                   letterSpacing: "-0.02em",
@@ -110,7 +110,7 @@ export default function Image() {
             </div>
             <div
               style={{
-                background: "#DF7A54",
+                background: "#D69A3A",
                 borderRadius: 999,
                 height: 8,
                 marginTop: 28,
@@ -138,15 +138,15 @@ export default function Image() {
 function createLogoDataUrl() {
   const svg = `
     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 120">
-      <circle cx="60" cy="60" r="54" fill="#FFF7ED" stroke="#F47A35" stroke-width="6"/>
-      <path d="M60 91V54" stroke="#163F2A" stroke-width="6" stroke-linecap="round"/>
-      <path d="M60 58C45 56 35 45 31 31M60 58C75 56 85 45 89 31M60 67C44 67 32 75 25 88M60 67C76 67 88 75 95 88M60 48C52 42 48 35 48 25M60 48C68 42 72 35 72 25" stroke="#163F2A" stroke-width="5" stroke-linecap="round"/>
-      <circle cx="31" cy="31" r="5" fill="#F47A35"/>
-      <circle cx="48" cy="25" r="5" fill="#F47A35"/>
-      <circle cx="72" cy="25" r="5" fill="#F47A35"/>
-      <circle cx="89" cy="31" r="5" fill="#F47A35"/>
-      <circle cx="25" cy="88" r="5" fill="#F47A35"/>
-      <circle cx="95" cy="88" r="5" fill="#F47A35"/>
+      <circle cx="60" cy="60" r="54" fill="#FFF7ED" stroke="#D69A3A" stroke-width="6"/>
+      <path d="M60 91V54" stroke="#173F2A" stroke-width="6" stroke-linecap="round"/>
+      <path d="M60 58C45 56 35 45 31 31M60 58C75 56 85 45 89 31M60 67C44 67 32 75 25 88M60 67C76 67 88 75 95 88M60 48C52 42 48 35 48 25M60 48C68 42 72 35 72 25" stroke="#173F2A" stroke-width="5" stroke-linecap="round"/>
+      <circle cx="31" cy="31" r="5" fill="#D69A3A"/>
+      <circle cx="48" cy="25" r="5" fill="#D69A3A"/>
+      <circle cx="72" cy="25" r="5" fill="#D69A3A"/>
+      <circle cx="89" cy="31" r="5" fill="#D69A3A"/>
+      <circle cx="25" cy="88" r="5" fill="#D69A3A"/>
+      <circle cx="95" cy="88" r="5" fill="#D69A3A"/>
     </svg>
   `;
 

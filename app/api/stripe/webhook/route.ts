@@ -242,8 +242,8 @@ async function enqueueCircleSubscriptionAccessSync(
             brand: {
               organizationName: organization.name,
               logoInitials: "OC",
-              primaryColor: "#4A7C59",
-              secondaryColor: "#2D5C3E",
+              primaryColor: "#446B52",
+              secondaryColor: "#F4EFE4",
             },
           },
           reason: `stripe_subscription_${subscription.status}`,

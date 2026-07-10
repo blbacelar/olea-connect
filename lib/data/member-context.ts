@@ -13,8 +13,8 @@ import type {
 import { createClient } from "@/utils/supabase/server";
 import { createLogoSignedUrl } from "./brand-assets";
 
-const DEFAULT_PRIMARY_COLOR = "#4A7C59";
-const DEFAULT_SECONDARY_COLOR = "#2D5C3E";
+const DEFAULT_PRIMARY_COLOR = "#446B52";
+const DEFAULT_SECONDARY_COLOR = "#F4EFE4";
 
 function initials(value: string) {
   return (

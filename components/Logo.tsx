@@ -23,7 +23,7 @@ export function Logo({
         priority
       />
       <span className={compact ? "sr-only" : undefined}>
-        <span className="block text-[15px] font-bold leading-tight text-olea-ink">
+        <span className="block text-[15px] font-bold leading-tight text-olea-green">
           Olea Connects
         </span>
         <span className="block text-[11px] font-medium text-slate-600">

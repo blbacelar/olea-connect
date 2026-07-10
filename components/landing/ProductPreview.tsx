@@ -28,7 +28,7 @@ export function ProductPreview() {
           <span className="ml-3 h-5 flex-1 rounded-md border bg-white" />
         </div>
         <div className="grid min-h-[410px] grid-cols-[132px_1fr] sm:grid-cols-[162px_1fr]">
-          <aside className="bg-[#183D2A] p-3 text-white sm:p-4">
+          <aside className="bg-olea-dark p-3 text-white sm:p-4">
             <div className="flex items-center gap-2 border-b border-white/10 pb-4">
               <span className="grid size-7 place-items-center rounded-lg bg-white/15 text-xs font-bold">
                 O
@@ -43,7 +43,7 @@ export function ProductPreview() {
                     key={item.label}
                     className={`flex items-center gap-2 rounded-md px-2 py-2 text-[10px] sm:text-xs ${
                       item.active
-                        ? "bg-white text-[#183D2A]"
+                        ? "bg-white text-olea-dark"
                         : "text-white/70"
                     }`}
                   >
@@ -89,7 +89,7 @@ export function ProductPreview() {
                   </p>
                 </div>
               </div>
-              <div className="mt-3 rounded-lg bg-[#285D40] p-4 text-white">
+              <div className="mt-3 rounded-lg bg-olea-green p-4 text-white">
                 <div className="flex items-start justify-between gap-3">
                   <div>
                     <p className="text-[9px] font-bold uppercase tracking-widest text-emerald-200">
@@ -113,8 +113,8 @@ export function ProductPreview() {
                   </p>
                 </div>
                 <div className="flex gap-1.5">
-                  <span className="size-5 rounded-full bg-[#4A7C59]" />
-                  <span className="size-5 rounded-full bg-[#E8762C]" />
+                  <span className="size-5 rounded-full bg-olea-green" />
+                  <span className="size-5 rounded-full bg-olea-gold" />
                 </div>
               </div>
             </div>

@@ -37,8 +37,8 @@ describe("Circle provisioning payloads", () => {
           brand: {
             organizationName: "Olea Test Org",
             logoInitials: "OT",
-            primaryColor: "#4A7C59",
-            secondaryColor: "#2D5C3E",
+            primaryColor: "#446B52",
+            secondaryColor: "#F4EFE4",
           },
         },
         reason: "community_sso_access",

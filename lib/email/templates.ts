@@ -5,9 +5,9 @@ export type TransactionalEmail = {
 };
 
 const brand = {
-  green: "#285D40",
-  light: "#EEF5F0",
-  orange: "#E8762C",
+  green: "#446B52",
+  light: "#F4EFE4",
+  orange: "#D69A3A",
 };
 
 function escapeHtml(value: string) {
@@ -41,7 +41,7 @@ function layout({
 }) {
   const action =
     actionLabel && actionUrl
-      ? `<p style="margin:28px 0"><a href="${actionUrl}" style="background:${brand.green};border-radius:8px;color:#ffffff;display:inline-block;font-size:15px;font-weight:700;padding:13px 22px;text-decoration:none">${actionLabel}</a></p>`
+      ? `<p style="margin:28px 0"><a href="${actionUrl}" style="background:${brand.orange};border-radius:8px;color:#1f2937;display:inline-block;font-size:15px;font-weight:700;padding:13px 22px;text-decoration:none">${actionLabel}</a></p>`
       : "";
 
   return `<!doctype html>

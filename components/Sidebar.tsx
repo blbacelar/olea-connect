@@ -55,7 +55,7 @@ export function Sidebar() {
                   className={cn(
                     "relative flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium text-slate-600 transition-colors hover:bg-slate-100",
                     active &&
-                      "bg-olea-light font-semibold text-olea-dark shadow-[inset_3px_0_0_#4A7C59] hover:bg-olea-light",
+                      "bg-olea-light font-semibold text-olea-dark shadow-[inset_3px_0_0_#446B52] hover:bg-olea-light",
                   )}
                 >
                   <Icon className="size-5 shrink-0" strokeWidth={1.8} />
