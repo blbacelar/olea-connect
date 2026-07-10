@@ -7,12 +7,12 @@ import {
   Gift,
   LogOut,
   Menu,
-  Search,
   X,
 } from "lucide-react";
 import Link from "next/link";
 import { useState } from "react";
 
+import { GlobalCommandPalette } from "@/components/global-search/GlobalCommandPalette";
 import { Logo } from "@/components/Logo";
 import { navigationGroups } from "@/components/navigation";
 import { Button } from "@/components/ui/button";
@@ -59,17 +59,7 @@ export function Header() {
         <Logo compact />
       </div>
 
-      <div className="relative hidden w-full max-w-[360px] md:block xl:max-w-[420px]">
-        <Search className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-slate-400" />
-        <input
-          aria-label="Global search"
-          placeholder="Search templates, posts, resources"
-          className="h-10 w-full rounded-lg border bg-slate-50 pl-9 pr-16 text-sm outline-none transition focus:border-olea-green focus:ring-2 focus:ring-olea-green/20"
-        />
-        <kbd className="absolute right-2.5 top-1/2 -translate-y-1/2 rounded border bg-white px-1.5 py-0.5 font-mono text-[11px] text-slate-600">
-          ⌘K
-        </kbd>
-      </div>
+      <GlobalCommandPalette />
       <div className="flex-1" />
 
       <div className="relative">

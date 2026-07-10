@@ -78,4 +78,48 @@ export class AppShellPage {
       ),
     ).toHaveCount(0);
   }
+
+  async openGlobalSearchWithShortcut() {
+    const modifier = process.platform === "darwin" ? "Meta" : "Control";
+    await this.page.keyboard.press(`${modifier}+KeyK`);
+    await expect(
+      this.page.getByRole("dialog", { name: "Global search" }),
+    ).toBeVisible();
+    await expect(
+      this.page.getByRole("combobox", { name: "Search command palette" }),
+    ).toBeFocused();
+  }
+
+  async openGlobalSearchFromHeader() {
+    await this.page
+      .getByRole("button", { name: "Open global search" })
+      .first()
+      .click();
+    await expect(
+      this.page.getByRole("dialog", { name: "Global search" }),
+    ).toBeVisible();
+  }
+
+  async searchGlobalCommand(query: string) {
+    await this.page
+      .getByRole("combobox", { name: "Search command palette" })
+      .fill(query);
+  }
+
+  async expectGlobalSearchResult(name: string | RegExp) {
+    await expect(
+      this.page.getByRole("option", { name }),
+    ).toBeVisible();
+  }
+
+  async openActiveGlobalSearchResult() {
+    await this.page.keyboard.press("Enter");
+  }
+
+  async closeGlobalSearch() {
+    await this.page.keyboard.press("Escape");
+    await expect(
+      this.page.getByRole("dialog", { name: "Global search" }),
+    ).toHaveCount(0);
+  }
 }
