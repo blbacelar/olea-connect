@@ -69,7 +69,8 @@ test.describe("@smoke @critical security boundaries", () => {
     const protectedPaths = [
       "/dashboard",
       "/templates",
-      "/templates/board-meeting-agenda",
+      "/templates/board-self-evaluation",
+      "/templates/board-calendar-operational-workflow",
       "/team",
       "/settings/brand",
       "/grants",

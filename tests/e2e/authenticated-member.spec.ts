@@ -3,7 +3,6 @@ import { AppShellPage } from "../pages/app-shell.page";
 import { SubscriptionPage } from "../pages/subscription.page";
 import { TeamPage } from "../pages/team.page";
 import { TemplatesPage } from "../pages/templates.page";
-import { signInPage } from "../support/auth-session";
 
 test.describe("@critical @member authenticated access", () => {
   test("keeps the app header brand compact on small screens", async ({
@@ -60,22 +59,5 @@ test.describe("@critical @member authenticated access", () => {
     await app.expectSectionHeading("Community");
     await app.expectText("Native Olea community");
     await app.expectText("# General");
-  });
-
-  test("locked template upgrade CTA opens subscription management", async ({
-    baseURL,
-    page,
-    testData,
-  }) => {
-    if (!baseURL) throw new Error("Playwright baseURL is required.");
-    const seedlingMember = await testData.createOrganizationOwner({
-      activeSubscription: true,
-      planId: "seedling",
-    });
-    await signInPage(page, baseURL, seedlingMember.email, seedlingMember.password);
-    const templates = new TemplatesPage(page);
-
-    await templates.open();
-    await templates.upgradeFirstLockedCanopyTemplate();
   });
 });

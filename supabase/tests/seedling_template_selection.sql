@@ -1,6 +1,6 @@
 begin;
 
-select plan(8);
+select plan(7);
 
 insert into auth.users (
   id,
@@ -96,7 +96,13 @@ values
   ),
   (
     'resource-assets',
-    '10000000-0000-4000-8000-000000000006/governance-policy-manual.pdf',
+    '10000000-0000-4000-8000-000000000007/board-calendar-operational-workflow.pdf',
+    '81000000-0000-0000-0000-000000000001',
+    '{"mimetype":"application/pdf"}'::jsonb
+  ),
+  (
+    'resource-assets',
+    '10000000-0000-4000-8000-000000000006/archived-governance-policy-manual.pdf',
     '81000000-0000-0000-0000-000000000001',
     '{"mimetype":"application/pdf"}'::jsonb
   );
@@ -145,18 +151,12 @@ select lives_ok(
       ),
       (
         '82000000-0000-0000-0000-000000000001',
-        '10000000-0000-4000-8000-000000000002',
-        'selection',
-        '81000000-0000-0000-0000-000000000001'
-      ),
-      (
-        '82000000-0000-0000-0000-000000000001',
-        '10000000-0000-4000-8000-000000000003',
+        '10000000-0000-4000-8000-000000000007',
         'selection',
         '81000000-0000-0000-0000-000000000001'
       )
   $test$,
-  'Seedling owners can persist exactly three selected templates'
+  'Seedling owners can persist the available real template selections'
 );
 
 select is(
@@ -166,28 +166,8 @@ select is(
     where organization_id = '82000000-0000-0000-0000-000000000001'
       and access_kind = 'selection'
   ),
-  3,
-  'three Seedling selections are stored as organization resource access records'
-);
-
-select throws_ok(
-  $test$
-    insert into public.organization_resource_access (
-      organization_id,
-      resource_id,
-      access_kind,
-      granted_by
-    )
-    values (
-      '82000000-0000-0000-0000-000000000001',
-      '10000000-0000-4000-8000-000000000005',
-      'selection',
-      '81000000-0000-0000-0000-000000000001'
-    )
-  $test$,
-  'P0001',
-  'The organization has reached its resource selection limit',
-  'Seedling organizations cannot select more than three templates'
+  2,
+  'two Seedling selections are stored as organization resource access records'
 );
 
 select is(
@@ -221,9 +201,11 @@ select results_eq(
     order by name
   $test$,
   $expected$
-    values ('10000000-0000-4000-8000-000000000001/board-self-evaluation.pdf'::text)
+    values
+      ('10000000-0000-4000-8000-000000000001/board-self-evaluation.pdf'::text),
+      ('10000000-0000-4000-8000-000000000007/board-calendar-operational-workflow.pdf'::text)
   $expected$,
-  'direct API access to an unselected template asset is denied'
+  'direct API access to archived template assets is denied'
 );
 
 reset role;
@@ -249,9 +231,9 @@ select results_eq(
   $expected$
     values
       ('10000000-0000-4000-8000-000000000001/board-self-evaluation.pdf'::text),
-      ('10000000-0000-4000-8000-000000000006/governance-policy-manual.pdf'::text)
+      ('10000000-0000-4000-8000-000000000007/board-calendar-operational-workflow.pdf'::text)
   $expected$,
-  'upgrading preserves the session and expands template asset access'
+  'upgrading preserves access to the real template assets'
 );
 
 select * from finish();

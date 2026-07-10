@@ -7,10 +7,6 @@ export class TemplateEditorPage {
     await this.page.goto("/templates/board-self-evaluation");
   }
 
-  async openBoardMeetingAgenda() {
-    await this.page.goto("/templates/board-meeting-agenda");
-  }
-
   async expectTemplateHeading(name: string) {
     await expect(this.page.getByRole("heading", { name })).toBeVisible();
   }
@@ -64,38 +60,13 @@ export class TemplateEditorPage {
     await expect(this.page.getByText("100% complete")).toBeVisible();
   }
 
-  async fillBoardMeetingAgenda() {
-    await this.openBoardMeetingAgenda();
-    await this.expectTemplateHeading("Board Meeting Agenda");
-
-    await this.page.getByLabel("Meeting title").fill("June board meeting");
-    await this.page
-      .getByRole("textbox", { name: "Meeting date *" })
-      .fill("2026-06-30");
-
-    await this.addAgendaItem({
-      decisionQuestion: "Should we approve the revised budget?",
-      durationMinutes: "20",
-      owner: "Treasurer",
-      purpose: "Decision",
-      requiresDecision: true,
-      topic: "Finance update",
-    });
-    await this.addSupportingDocument({
-      name: "Budget package",
-      url: "https://example.com/budget-package",
-    });
-  }
-
   async expectAutosaved() {
     await expect(this.page.getByText(/^Saved$/)).toBeVisible({ timeout: 10_000 });
   }
 
-  async generatePdfAndDocx() {
+  async generatePdf() {
     await this.page.getByRole("button", { name: "Generate PDF" }).click();
     await expect(this.page.getByText(/\.pdf$/)).toBeVisible({ timeout: 15_000 });
-    await this.page.getByRole("button", { name: "Generate DOCX" }).click();
-    await expect(this.page.getByText(/\.docx$/)).toBeVisible({ timeout: 15_000 });
   }
 
   async downloadFirstExport() {
@@ -108,66 +79,12 @@ export class TemplateEditorPage {
     await this.page.reload();
   }
 
-  async expectBoardMeetingAgendaPersisted() {
-    await expect(this.page.getByLabel("Meeting title")).toHaveValue(
-      "June board meeting",
-    );
-    await expect(this.page.getByLabel("Topic")).toHaveValue("Finance update");
-    await expect(this.page.getByLabel("Document name")).toHaveValue("Budget package");
-  }
-
-  async reorderAgendaRows() {
-    await this.page.getByRole("button", { name: "Add row" }).first().click();
-    await this.page.getByLabel("Topic").nth(1).fill("Executive session");
-    await this.page.getByRole("button", { name: "Move Agenda item 2 up" }).click();
-    await expect(this.page.getByLabel("Topic").first()).toHaveValue(
-      "Executive session",
-    );
-  }
-
-  async removeFirstAgendaRow() {
-    await this.page.getByRole("button", { name: "Remove Agenda item 1" }).click();
-    await expect(this.page.getByLabel("Topic").first()).toHaveValue(
-      "Finance update",
-    );
-  }
-
-  private async addAgendaItem({
-    decisionQuestion,
-    durationMinutes,
-    owner,
-    purpose,
-    requiresDecision,
-    topic,
-  }: {
-    decisionQuestion: string;
-    durationMinutes: string;
-    owner: string;
-    purpose: string;
-    requiresDecision: boolean;
-    topic: string;
-  }) {
-    await this.page.getByRole("button", { name: "Add row" }).first().click();
-    await this.page.getByLabel("Topic").fill(topic);
-    await this.page.getByLabel("Owner").fill(owner);
-    await this.page.getByLabel("Duration in minutes").fill(durationMinutes);
-    await this.chooseSelectOption("Purpose", purpose);
-    if (requiresDecision) {
-      await this.page.getByLabel("Decision required").check();
-    }
-    await this.page.getByLabel("Decision question").fill(decisionQuestion);
-  }
-
-  private async addSupportingDocument({
-    name,
-    url,
-  }: {
-    name: string;
-    url: string;
-  }) {
-    await this.page.getByRole("button", { name: "Add row" }).nth(1).click();
-    await this.page.getByLabel("Document name").fill(name);
-    await this.page.getByLabel("Document URL").fill(url);
+  async expectBoardSelfEvaluationPersisted() {
+    await expect(this.page.getByLabel("Board year")).toHaveValue("2026");
+    await expect(this.page.getByLabel("Survey period")).toHaveValue("June 2026");
+    await expect(
+      this.page.getByLabel("What should the board improve over the next year?"),
+    ).toHaveValue("We should improve meeting preparation and follow-up.");
   }
 
   private async answerSelectQuestion(label: string, option: string) {

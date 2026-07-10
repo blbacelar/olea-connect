@@ -26,8 +26,7 @@ test.describe("@critical @member core member journeys", () => {
     await onboarding.expectTemplateSelection();
     await onboarding.selectSeedlingTemplates([
       "Board Self-Evaluation",
-      "Board Meeting Agenda",
-      "Director Role Description",
+      "Board Calendar & Operational Workflow",
     ]);
     await onboarding.confirmSeedlingTemplates();
     await onboarding.openTemplateSelection();
@@ -49,9 +48,7 @@ test.describe("@critical @member core member journeys", () => {
     await onboarding.expectRootsBypassesSelection();
   });
 
-  test("completes a dynamic board self-evaluation template", async ({
-    page,
-  }) => {
+  test("completes a dynamic board self-evaluation template", async ({ page }) => {
     const editor = new TemplateEditorPage(page);
     await editor.completeBoardSelfEvaluation();
     await editor.expectCompleted();

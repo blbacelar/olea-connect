@@ -30,20 +30,20 @@ test.describe("@critical dynamic template renderer", () => {
     await boardCalendar.calendar.expectEmptySchedule();
   });
 
-  test("@smoke edits repeatable agenda rows, exports files, and audits downloads", async ({
+  test("@smoke exports a real dynamic template and audits downloads", async ({
     authenticatedMember,
     page,
     testData,
   }) => {
     const editor = new TemplateEditorPage(page);
-    await editor.fillBoardMeetingAgenda();
+    await editor.completeBoardSelfEvaluation();
     await editor.expectAutosaved();
-    await editor.generatePdfAndDocx();
+    await editor.generatePdf();
 
     const countsAfterExport = await testData.getTemplateExportCounts(
       authenticatedMember.organizationId,
     );
-    expect(countsAfterExport.exports).toBe(2);
+    expect(countsAfterExport.exports).toBe(1);
 
     await editor.downloadFirstExport();
     await expect
@@ -56,8 +56,6 @@ test.describe("@critical dynamic template renderer", () => {
       .toBe(1);
 
     await editor.reload();
-    await editor.expectBoardMeetingAgendaPersisted();
-    await editor.reorderAgendaRows();
-    await editor.removeFirstAgendaRow();
+    await editor.expectBoardSelfEvaluationPersisted();
   });
 });

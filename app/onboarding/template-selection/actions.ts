@@ -11,12 +11,21 @@ export async function saveTemplateSelections(resourceIds: string[]) {
   if (organization.tier !== "seedling") {
     throw new Error("Template selection only applies to Seedling memberships.");
   }
-  if (new Set(resourceIds).size !== 3) {
-    throw new Error("Choose exactly three templates.");
-  }
   const requestedIds = [...new Set(resourceIds)];
 
   const supabase = await createClient();
+  const { count: publishedTemplateCount, error: countError } = await supabase
+    .from("resources")
+    .select("id", { count: "exact", head: true })
+    .eq("type", "template")
+    .eq("status", "published");
+  if (countError) throw countError;
+
+  const requiredSelectionCount = Math.min(3, publishedTemplateCount ?? 0);
+  if (requestedIds.length !== requiredSelectionCount) {
+    throw new Error(`Choose exactly ${requiredSelectionCount} templates.`);
+  }
+
   const { data: resources, error: resourcesError } = await supabase
     .from("resources")
     .select("id")
@@ -24,7 +33,7 @@ export async function saveTemplateSelections(resourceIds: string[]) {
     .eq("type", "template")
     .eq("status", "published");
   if (resourcesError) throw resourcesError;
-  if (resources?.length !== 3) {
+  if (resources?.length !== requiredSelectionCount) {
     throw new Error("One or more selected templates are unavailable.");
   }
 

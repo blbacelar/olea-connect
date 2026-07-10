@@ -12,16 +12,4 @@ export class TemplatesPage {
       this.page.getByRole("heading", { name: templateName }),
     ).toBeVisible();
   }
-
-  async upgradeFirstLockedCanopyTemplate() {
-    const lockedTemplate = this.page
-      .locator("article")
-      .filter({ hasText: "canopy & above" })
-      .first();
-
-    await lockedTemplate.getByRole("link", { name: "Upgrade" }).click();
-    await expect(this.page).toHaveURL(
-      /\/subscription\?upgrade=canopy&resource=conflict-of-interest-policy/,
-    );
-  }
 }

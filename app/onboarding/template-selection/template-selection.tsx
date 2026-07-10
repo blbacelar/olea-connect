@@ -28,6 +28,8 @@ function isTemplateLocked(value?: string | null) {
 
 export function TemplateSelection({ templates }: { templates: Template[] }) {
   const router = useRouter();
+  const selectionLimit = Math.min(3, templates.length);
+  const hasSelectableTemplates = selectionLimit > 0;
   const initialSelection = useMemo(
     () => templates.filter((template) => template.available).map(({ id }) => id),
     [templates],
@@ -45,7 +47,7 @@ export function TemplateSelection({ templates }: { templates: Template[] }) {
       setSelected((current) => current.filter((item) => item !== id));
       return;
     }
-    if (selected.length < 3) {
+    if (selected.length < selectionLimit) {
       setSelected((current) => [...current, id]);
     }
   };
@@ -70,32 +72,43 @@ export function TemplateSelection({ templates }: { templates: Template[] }) {
       <OnboardingHeader />
       <main className="mx-auto max-w-6xl px-4 py-10">
         <p className="text-sm font-semibold text-olea-green">Step 2 of 2</p>
-        <h1 className="mt-1 text-3xl font-bold">Choose your 3 templates</h1>
+        <h1 className="mt-1 text-3xl font-bold">
+          {hasSelectableTemplates
+            ? `Choose your ${selectionLimit} templates`
+            : "Templates are coming soon"}
+        </h1>
         <p className="mt-2 max-w-3xl leading-6 text-slate-500">
-          Your Seedling plan includes any 3 templates. These become your
-          permanent set and can be changed once per year.
+          {hasSelectableTemplates
+            ? "Your Seedling plan includes up to 3 templates. These become your permanent set and can be changed once per year."
+            : "We will let you know as soon as Seedling templates are available."}
         </p>
 
-        <div className="mt-6 max-w-md">
-          <div className="flex justify-between text-sm">
-            <span className="font-semibold">Selected: {selected.length} of 3</span>
-            <span className="text-slate-400">
-              {selected.length === 3 ? "Ready to confirm" : "Choose more"}
-            </span>
+        {hasSelectableTemplates ? (
+          <div className="mt-6 max-w-md">
+            <div className="flex justify-between text-sm">
+              <span className="font-semibold">
+                Selected: {selected.length} of {selectionLimit}
+              </span>
+              <span className="text-slate-400">
+                {selected.length === selectionLimit ? "Ready to confirm" : "Choose more"}
+              </span>
+            </div>
+            <div className="mt-2 h-2 overflow-hidden rounded-full bg-slate-200">
+              <div
+                className="h-full rounded-full bg-olea-green transition-all"
+                style={{
+                  width: `${(selected.length / selectionLimit) * 100}%`,
+                }}
+              />
+            </div>
           </div>
-          <div className="mt-2 h-2 overflow-hidden rounded-full bg-slate-200">
-            <div
-              className="h-full rounded-full bg-olea-green transition-all"
-              style={{ width: `${(selected.length / 3) * 100}%` }}
-            />
-          </div>
-        </div>
+        ) : null}
 
         {templates.length ? (
           <div className="mt-8 grid gap-4 md:grid-cols-2 xl:grid-cols-3">
             {templates.map((template) => {
               const isSelected = selected.includes(template.id);
-              const limitReached = selected.length === 3 && !isSelected;
+              const limitReached = selected.length === selectionLimit && !isSelected;
               const availableAt = formatTemplateDate(template.availableAt);
               const selectedAt = formatTemplateDate(template.selectedAt);
               const lockedUntil = formatTemplateDate(template.lockedUntil);
@@ -179,13 +192,15 @@ export function TemplateSelection({ templates }: { templates: Template[] }) {
           </p>
         ) : null}
         <div className="mt-6 flex flex-wrap items-center gap-4">
-          <Button
-            size="lg"
-            disabled={selected.length !== 3 || isPending}
-            onClick={confirm}
-          >
-            {isPending ? "Saving..." : "Confirm my 3 templates →"}
-          </Button>
+          {hasSelectableTemplates ? (
+            <Button
+              size="lg"
+              disabled={selected.length !== selectionLimit || isPending}
+              onClick={confirm}
+            >
+              {isPending ? "Saving..." : `Confirm my ${selectionLimit} templates →`}
+            </Button>
+          ) : null}
           <button
             onClick={() => router.push("/subscription")}
             className="text-sm font-semibold text-olea-green"

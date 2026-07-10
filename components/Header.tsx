@@ -24,7 +24,7 @@ import { useRouter } from "next/navigation";
 const notifications = [
   {
     title: "New template available",
-    body: "Board Meeting Agenda was added to your library.",
+    body: "Board Calendar & Operational Workflow was added to your library.",
     time: "2 hours ago",
     icon: FileText,
     tone: "bg-olea-light text-olea-green",

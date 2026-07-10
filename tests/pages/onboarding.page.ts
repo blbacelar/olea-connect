@@ -48,7 +48,7 @@ export class OnboardingPage {
 
   async expectTemplateSelection() {
     await expect(
-      this.page.getByRole("heading", { name: "Choose your 3 templates" }),
+      this.page.getByRole("heading", { name: /Choose your \d+ templates/ }),
     ).toBeVisible();
   }
 
@@ -61,7 +61,7 @@ export class OnboardingPage {
   }
 
   async confirmSeedlingTemplates() {
-    await this.page.getByRole("button", { name: "Confirm my 3 templates" }).click();
+    await this.page.getByRole("button", { name: /Confirm my \d+ templates/ }).click();
     await expect(this.page).toHaveURL("/dashboard");
   }
 
@@ -70,7 +70,7 @@ export class OnboardingPage {
   }
 
   async expectSelectionLocked(templateName: string) {
-    await expect(this.page.getByText("Selected: 3 of 3")).toBeVisible();
+    await expect(this.page.getByText(/Selected: \d+ of \d+/)).toBeVisible();
     await expect(this.page.getByText("Available").first()).toBeVisible();
     await expect(this.page.getByText("Selected").first()).toBeVisible();
     await expect(this.page.getByText("Locked until").first()).toBeVisible();

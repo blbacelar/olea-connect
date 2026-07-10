@@ -3,12 +3,12 @@ import AxeBuilder from "@axe-core/playwright";
 import { expect, test } from "../fixtures/authenticated.fixture";
 
 test.describe("@a11y dynamic template accessibility", () => {
-  test("board meeting agenda editor has no serious accessibility violations", async ({
+  test("board self-evaluation editor has no serious accessibility violations", async ({
     page,
   }) => {
-    await page.goto("/templates/board-meeting-agenda");
+    await page.goto("/templates/board-self-evaluation");
     await expect(
-      page.getByRole("heading", { name: "Board Meeting Agenda" }),
+      page.getByRole("heading", { name: "Board Self-Evaluation" }),
     ).toBeVisible();
 
     const results = await new AxeBuilder({ page })
@@ -23,7 +23,7 @@ test.describe("@a11y dynamic template accessibility", () => {
         help,
         id,
         impact,
-        nodes: nodes.length,
+        nodes: nodes.map(({ target }) => target),
       })),
     ).toEqual([]);
   });

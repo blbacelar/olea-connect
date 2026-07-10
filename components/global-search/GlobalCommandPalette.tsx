@@ -121,7 +121,7 @@ export function GlobalCommandPalette() {
         type="button"
         aria-label="Open global search"
         onClick={openPalette}
-        className="relative hidden h-10 w-full max-w-[360px] items-center rounded-lg border bg-slate-50 pl-9 pr-16 text-left text-sm text-slate-400 outline-none transition hover:border-olea-green/60 hover:bg-white focus:border-olea-green focus:ring-2 focus:ring-olea-green/20 md:flex xl:max-w-[420px]"
+        className="relative hidden h-10 w-full max-w-[360px] items-center rounded-lg border bg-slate-50 pl-9 pr-16 text-left text-sm text-slate-600 outline-none transition hover:border-olea-green/60 hover:bg-white focus:border-olea-green focus:ring-2 focus:ring-olea-green/20 md:flex xl:max-w-[420px]"
       >
         <Search className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-slate-400" />
         <span>Search templates, posts, resources</span>
