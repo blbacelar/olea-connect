@@ -27,8 +27,10 @@ import {
 import { Textarea } from "@/components/ui/textarea";
 import type {
   CommunityHome,
+  CommunityMentionCandidate,
   CommunityPost,
   CommunityPostComment,
+  CommunitySpace,
 } from "@/lib/types";
 import { cn } from "@/lib/utils";
 import { createClient } from "@/utils/supabase/client";
@@ -44,6 +46,7 @@ import {
   updateCommunityPost,
 } from "./actions";
 import { CommunityPostComposer } from "./community-post-composer";
+import { MentionPicker } from "./mention-picker";
 import {
   broadcastCommunityFeedChange,
   communityFeedBroadcastEvent,
@@ -77,6 +80,21 @@ function authorAttribution({
   authorOrganizationName: string;
 }) {
   return `${authorName} · ${authorOrganizationName}`;
+}
+
+function getMentionCandidatesForSpace({
+  candidates,
+  space,
+}: {
+  candidates: CommunityMentionCandidate[];
+  space: CommunitySpace | undefined;
+}) {
+  if (!space) return [];
+  if (!space.allowedPlanIds.length) return candidates;
+
+  return candidates.filter((candidate) =>
+    candidate.planIds.some((planId) => space.allowedPlanIds.includes(planId)),
+  );
 }
 
 type OptimisticLikeState = {
@@ -547,10 +565,12 @@ function DeleteConfirmationDialog({
 
 function PostEditForm({
   communityId,
+  mentionCandidates,
   onCancel,
   post,
 }: {
   communityId: string;
+  mentionCandidates: CommunityMentionCandidate[];
   onCancel: () => void;
   post: CommunityPost;
 }) {
@@ -595,6 +615,10 @@ function PostEditForm({
         defaultValue={post.resourceUrl ?? ""}
         placeholder="https://example.org/resource"
       />
+      <MentionPicker
+        candidates={mentionCandidates}
+        defaultSelectedUserIds={post.mentionedUserIds}
+      />
       <div className="flex flex-wrap items-center gap-2">
         <SaveButton />
         <Button type="button" variant="ghost" size="sm" onClick={onCancel}>
@@ -609,13 +633,16 @@ function PostEditForm({
 
 function CommentForm({
   communityId,
+  mentionCandidates,
   postId,
 }: {
   communityId: string;
+  mentionCandidates: CommunityMentionCandidate[];
   postId: string;
 }) {
   const router = useRouter();
   const formRef = useRef<HTMLFormElement>(null);
+  const [mentionResetKey, setMentionResetKey] = useState(0);
   const [state, formAction] = useFormState(
     createCommunityComment,
     initialActionState,
@@ -624,6 +651,7 @@ function CommentForm({
   useEffect(() => {
     if (state.status !== "success") return;
     formRef.current?.reset();
+    setMentionResetKey((current) => current + 1);
     void broadcastCommunityFeedChange(communityId).finally(() => {
       router.refresh();
     });
@@ -639,6 +667,11 @@ function CommentForm({
         required
         placeholder="Add a reply..."
         className="min-h-[84px] bg-white"
+      />
+      <MentionPicker
+        key={mentionResetKey}
+        candidates={mentionCandidates}
+        description="Mention members who should be notified about this reply."
       />
       <div className="flex flex-wrap items-center gap-3">
         <CommentSubmitButton />
@@ -671,10 +704,12 @@ function CommentSubmitButton() {
 function CommentEditor({
   comment,
   communityId,
+  mentionCandidates,
   onCancel,
 }: {
   comment: CommunityPostComment;
   communityId: string;
+  mentionCandidates: CommunityMentionCandidate[];
   onCancel: () => void;
 }) {
   const router = useRouter();
@@ -702,6 +737,11 @@ function CommentEditor({
         required
         defaultValue={comment.body}
         className="min-h-[84px] bg-white"
+      />
+      <MentionPicker
+        candidates={mentionCandidates}
+        defaultSelectedUserIds={comment.mentionedUserIds}
+        description="Mention members who should be notified about this reply."
       />
       <div className="flex flex-wrap items-center gap-2">
         <SaveButton label="Save comment" />
@@ -804,10 +844,12 @@ function CommentItem({
   comment,
   communityId,
   currentUserId,
+  mentionCandidates,
 }: {
   comment: CommunityPostComment;
   communityId: string;
   currentUserId: string;
+  mentionCandidates: CommunityMentionCandidate[];
 }) {
   const [isEditing, setIsEditing] = useState(false);
   const canEdit = comment.authorUserId === currentUserId;
@@ -837,6 +879,7 @@ function CommentItem({
         <CommentEditor
           comment={comment}
           communityId={communityId}
+          mentionCandidates={mentionCandidates}
           onCancel={() => setIsEditing(false)}
         />
       ) : (
@@ -874,10 +917,12 @@ function CommentItem({
 function PostCard({
   communityId,
   currentUserId,
+  mentionCandidates,
   post,
 }: {
   communityId: string;
   currentUserId: string;
+  mentionCandidates: CommunityMentionCandidate[];
   post: CommunityPost;
 }) {
   const [isEditing, setIsEditing] = useState(false);
@@ -912,6 +957,7 @@ function PostCard({
       {isEditing ? (
         <PostEditForm
           communityId={communityId}
+          mentionCandidates={mentionCandidates}
           post={post}
           onCancel={() => setIsEditing(false)}
         />
@@ -970,12 +1016,17 @@ function PostCard({
               comment={comment}
               communityId={communityId}
               currentUserId={currentUserId}
+              mentionCandidates={mentionCandidates}
             />
           ))}
         </div>
       ) : null}
 
-      <CommentForm communityId={communityId} postId={post.id} />
+      <CommentForm
+        communityId={communityId}
+        mentionCandidates={mentionCandidates}
+        postId={post.id}
+      />
     </article>
   );
 }
@@ -991,6 +1042,10 @@ export function CommunityFeed({ community }: { community: CommunityHome }) {
   const selectedSpace = community.spaces.find(
     (space) => space.id === selectedSpaceId,
   );
+  const mentionCandidates = getMentionCandidatesForSpace({
+    candidates: community.mentionCandidates,
+    space: selectedSpace,
+  });
   const posts = useMemo(
     () => community.posts.filter((post) => post.spaceId === selectedSpaceId),
     [community.posts, selectedSpaceId],
@@ -1076,6 +1131,7 @@ export function CommunityFeed({ community }: { community: CommunityHome }) {
           </SectionHeading>
           <CommunityPostComposer
             communityId={community.id}
+            mentionCandidates={mentionCandidates}
             selectedSpaceId={selectedSpaceId}
             selectedSpaceName={selectedSpace?.name ?? "Community"}
           />
@@ -1088,6 +1144,7 @@ export function CommunityFeed({ community }: { community: CommunityHome }) {
                 key={post.id}
                 communityId={community.id}
                 currentUserId={community.currentUserId}
+                mentionCandidates={mentionCandidates}
                 post={post}
               />
             ))}

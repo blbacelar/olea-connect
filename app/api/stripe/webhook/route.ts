@@ -85,9 +85,11 @@ async function notifyOrganizationOwners(
     type: string;
     title: string;
     body: string;
+    idempotencyKey: string;
   },
 ) {
   const supabase = createAdminClient();
+  const { idempotencyKey, ...notificationFields } = notification;
   const { data: owners, error } = await supabase
     .from("organization_members")
     .select("user_id")
@@ -100,13 +102,18 @@ async function notifyOrganizationOwners(
 
   const { error: notificationError } = await supabase
     .from("notifications")
-    .insert(
+    .upsert(
       owners.map(({ user_id }) => ({
         user_id,
         organization_id: organizationId,
         action_url: "/subscription",
-        ...notification,
+        idempotency_key: `${idempotencyKey}:${user_id}`,
+        ...notificationFields,
       })),
+      {
+        ignoreDuplicates: true,
+        onConflict: "user_id,idempotency_key",
+      },
     );
 
   if (notificationError) throw notificationError;
@@ -129,6 +136,7 @@ async function handleLifecycleNotification(
       type: "billing_payment_failed",
       title: "Payment needs attention",
       body: "Update your payment method to restore full platform access.",
+      idempotencyKey: `billing_payment_failed:${event.id}`,
     });
   } else if (event.type === "invoice.paid") {
     await notifyOrganizationOwners(organizationId, {
@@ -136,6 +144,7 @@ async function handleLifecycleNotification(
       type: "billing_payment_succeeded",
       title: "Payment received",
       body: "Your Olea Connects membership payment was successful.",
+      idempotencyKey: `billing_payment_succeeded:${event.id}`,
     });
   } else if (event.type === "customer.subscription.deleted") {
     await notifyOrganizationOwners(organizationId, {
@@ -143,6 +152,7 @@ async function handleLifecycleNotification(
       type: "billing_subscription_canceled",
       title: "Membership canceled",
       body: "Your Olea Connects membership is no longer active.",
+      idempotencyKey: `billing_subscription_canceled:${event.id}`,
     });
   } else if (
     event.type === "customer.subscription.paused" ||
@@ -153,6 +163,7 @@ async function handleLifecycleNotification(
       type: "billing_subscription_paused",
       title: "Membership paused",
       body: "Your membership is paused. Manage billing to resume access.",
+      idempotencyKey: `billing_subscription_paused:${event.id}`,
     });
   }
 }

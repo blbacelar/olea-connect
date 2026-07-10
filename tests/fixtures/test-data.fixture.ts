@@ -36,6 +36,12 @@ export type CreatedEvent = {
   startsAt: string;
 };
 
+export type CreatedNotification = {
+  id: string;
+  userId: string;
+  title: string;
+};
+
 type EventStatus =
   | "draft"
   | "scheduled"
@@ -1005,6 +1011,77 @@ export class TestDataManager {
 
     if (error) throw error;
     return data ?? [];
+  }
+
+  async clearNotifications(
+    owner: CreatedOrganizationOwner | CreatedOrganizationMember,
+  ) {
+    const { error } = await this.supabase
+      .from("notifications")
+      .delete()
+      .eq("user_id", owner.userId);
+
+    if (error) throw error;
+  }
+
+  async createNotification(
+    owner: CreatedOrganizationOwner | CreatedOrganizationMember,
+    options: {
+      actionUrl?: string;
+      body?: string;
+      idempotencyKey?: string;
+      severity?: "info" | "success" | "warning" | "critical";
+      title: string;
+      type?: string;
+    },
+  ): Promise<CreatedNotification> {
+    const { data, error } = await this.supabase
+      .from("notifications")
+      .insert({
+        user_id: owner.userId,
+        organization_id: owner.organizationId,
+        severity: options.severity ?? "info",
+        type: options.type ?? "template_available",
+        title: options.title,
+        body: options.body ?? "A QA-created notification is ready.",
+        action_url: options.actionUrl ?? "/dashboard",
+        idempotency_key:
+          options.idempotencyKey ??
+          `${owner.marker}:notification:${++this.identitySequence}`,
+      })
+      .select("id")
+      .single();
+
+    if (error) throw error;
+    const notificationId = data.id as string;
+
+    this.registerCleanup({
+      label: `notification ${notificationId}`,
+      run: async () => {
+        const { error: deleteError } = await this.supabase
+          .from("notifications")
+          .delete()
+          .eq("id", notificationId);
+        if (deleteError) throw deleteError;
+      },
+    });
+
+    return {
+      id: notificationId,
+      userId: owner.userId,
+      title: options.title,
+    };
+  }
+
+  async getNotification(notificationId: string) {
+    const { data, error } = await this.supabase
+      .from("notifications")
+      .select("id, read_at, user_id")
+      .eq("id", notificationId)
+      .maybeSingle();
+
+    if (error) throw error;
+    return data;
   }
 
   async createEventRegistration(

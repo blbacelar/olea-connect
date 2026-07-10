@@ -49,6 +49,25 @@ export interface Member {
   email: string;
 }
 
+export type NotificationSeverity = "info" | "success" | "warning" | "critical";
+
+export interface MemberNotification {
+  id: string;
+  type: string;
+  severity: NotificationSeverity;
+  title: string;
+  body: string;
+  actionUrl: string | null;
+  readAt: string | null;
+  expiresAt: string | null;
+  createdAt: string;
+}
+
+export interface NotificationSummary {
+  unreadCount: number;
+  items: MemberNotification[];
+}
+
 export interface Template {
   id: string;
   slug: string;
@@ -95,6 +114,7 @@ export interface TemplateSession {
 export interface Session {
   member: Member;
   organization: Organization;
+  notifications: NotificationSummary;
 }
 
 export interface TeamInvitation {
@@ -252,6 +272,7 @@ export interface CommunityPost {
   createdAt: string;
   updatedAt: string;
   comments: CommunityPostComment[];
+  mentionedUserIds: string[];
   likedByCurrentUser: boolean;
   likeCount: number;
 }
@@ -264,8 +285,16 @@ export interface CommunityPostComment {
   body: string;
   createdAt: string;
   updatedAt: string;
+  mentionedUserIds: string[];
   likedByCurrentUser: boolean;
   likeCount: number;
+}
+
+export interface CommunityMentionCandidate {
+  userId: string;
+  name: string;
+  organizationName: string;
+  planIds: MembershipTier[];
 }
 
 export interface CommunityEvent {
@@ -289,6 +318,7 @@ export interface CommunityHome {
   spaces: CommunitySpace[];
   posts: CommunityPost[];
   events: CommunityEvent[];
+  mentionCandidates: CommunityMentionCandidate[];
   canManage: boolean;
   currentUserId: string;
 }

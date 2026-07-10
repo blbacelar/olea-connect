@@ -30,6 +30,44 @@ export class AppShellPage {
     expect(hasHorizontalOverflow).toBe(false);
   }
 
+  async expectUnreadNotificationCount(count: number) {
+    const label =
+      count > 0 ? `Notifications (${count} unread)` : "Notifications";
+
+    await expect(
+      this.page.getByRole("button", { name: label }),
+    ).toBeVisible();
+  }
+
+  async openNotifications() {
+    await this.page.getByRole("button", { name: /Notifications/ }).click();
+    await expect(
+      this.page.getByText("Notifications").first(),
+    ).toBeVisible();
+  }
+
+  async expectNotificationVisible(title: string | RegExp) {
+    await expect(
+      this.page.getByRole("button", { name: title }),
+    ).toBeVisible();
+  }
+
+  async openNotification(title: string | RegExp) {
+    await this.page.getByRole("button", { name: title }).click();
+  }
+
+  async markAllNotificationsRead() {
+    await this.page.getByRole("button", { name: "Mark all read" }).click();
+  }
+
+  async expectNoUnreadNotifications() {
+    await expect(
+      this.page.getByRole("button", { name: "Notifications" }),
+    ).toBeVisible();
+    await this.openNotifications();
+    await expect(this.page.getByText("No unread notifications")).toBeVisible();
+  }
+
   async expectDashboardForOrganization(organizationName: string) {
     await this.openDashboard();
     await expect(

@@ -14,6 +14,22 @@ export type CommunityActionState = CreateCommunityPostState;
 
 const postKinds = ["discussion", "announcement", "resource"] as const;
 const communityModerationProvider = "community_moderation";
+const uuidPattern =
+  /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+
+type MentionTarget =
+  | {
+      communityId: string;
+      postId: string;
+      spaceId: string;
+      targetType: "post";
+    }
+  | {
+      commentId: string;
+      communityId: string;
+      spaceId: string;
+      targetType: "comment";
+    };
 
 function getText(formData: FormData, key: string) {
   return String(formData.get(key) ?? "").trim();
@@ -115,6 +131,129 @@ function normalizeResourceUrl(value: string) {
   }
 }
 
+function getMentionedUserIds(formData: FormData, currentUserId: string) {
+  return Array.from(
+    new Set(
+      formData
+        .getAll("mentionedUserIds")
+        .map((value) => String(value).trim())
+        .filter((value) => uuidPattern.test(value) && value !== currentUserId),
+    ),
+  );
+}
+
+async function filterMentionedUsersForSpace(
+  spaceId: string,
+  mentionedUserIds: string[],
+) {
+  if (!mentionedUserIds.length) return [];
+
+  const admin = createAdminClient();
+  const [
+    { data: space, error: spaceError },
+    { data: memberships, error: membershipsError },
+  ] = await Promise.all([
+    admin
+      .from("community_spaces")
+      .select(
+        "id, status, community_space_access_rules(plan_id), communities(status)",
+      )
+      .eq("id", spaceId)
+      .maybeSingle(),
+    admin
+      .from("organization_members")
+      .select("user_id, organization_id")
+      .in("user_id", mentionedUserIds)
+      .eq("status", "active"),
+  ]);
+
+  if (spaceError) throw spaceError;
+  if (membershipsError) throw membershipsError;
+  if (!space || space.status !== "active") return [];
+
+  const community = Array.isArray(space.communities)
+    ? space.communities[0]
+    : space.communities;
+  if (community?.status !== "active") return [];
+
+  const organizationIds = Array.from(
+    new Set((memberships ?? []).map((membership) => membership.organization_id)),
+  );
+  if (!organizationIds.length) return [];
+
+  const { data: subscriptions, error: subscriptionsError } = await admin
+    .from("subscriptions")
+    .select("organization_id, plan_id")
+    .in("organization_id", organizationIds)
+    .in("status", ["active", "trialing"]);
+
+  if (subscriptionsError) throw subscriptionsError;
+
+  const allowedPlanIds = new Set(
+    (space.community_space_access_rules ?? []).map((rule) => rule.plan_id),
+  );
+  const subscriptionsByOrganizationId = new Map<string, string[]>();
+  for (const subscription of subscriptions ?? []) {
+    const plans =
+      subscriptionsByOrganizationId.get(subscription.organization_id) ?? [];
+    plans.push(subscription.plan_id);
+    subscriptionsByOrganizationId.set(subscription.organization_id, plans);
+  }
+
+  const validUserIds = new Set<string>();
+  for (const membership of memberships ?? []) {
+    const plans = subscriptionsByOrganizationId.get(membership.organization_id);
+    if (!plans?.length) continue;
+
+    const hasAccess =
+      allowedPlanIds.size === 0 ||
+      plans.some((planId) => allowedPlanIds.has(planId));
+    if (hasAccess) validUserIds.add(membership.user_id);
+  }
+
+  return mentionedUserIds.filter((userId) => validUserIds.has(userId));
+}
+
+async function syncCommunityMentions({
+  actorUserId,
+  formData,
+  target,
+}: {
+  actorUserId: string;
+  formData: FormData;
+  target: MentionTarget;
+}) {
+  const mentionedUserIds = await filterMentionedUsersForSpace(
+    target.spaceId,
+    getMentionedUserIds(formData, actorUserId),
+  );
+  const supabase = await createClient();
+  const targetColumn = target.targetType === "post" ? "post_id" : "comment_id";
+  const targetId =
+    target.targetType === "post" ? target.postId : target.commentId;
+
+  const { error: deleteError } = await supabase
+    .from("community_mentions")
+    .delete()
+    .eq(targetColumn, targetId);
+
+  if (deleteError) throw deleteError;
+  if (!mentionedUserIds.length) return;
+
+  const { error: insertError } = await supabase.from("community_mentions").insert(
+    mentionedUserIds.map((mentionedUserId) => ({
+      comment_id: target.targetType === "comment" ? target.commentId : null,
+      community_id: target.communityId,
+      mentioned_by_user_id: actorUserId,
+      mentioned_user_id: mentionedUserId,
+      post_id: target.targetType === "post" ? target.postId : null,
+      space_id: target.spaceId,
+    })),
+  );
+
+  if (insertError) throw insertError;
+}
+
 function validatePostInput(formData: FormData) {
   const body = getText(formData, "body");
   const kind = validateKind(getText(formData, "kind") || "discussion");
@@ -172,6 +311,18 @@ export async function createCommunityPost(
       .single();
 
     if (error) throw error;
+    if (post?.id) {
+      await syncCommunityMentions({
+        actorUserId: member.id,
+        formData,
+        target: {
+          communityId: space.community_id,
+          postId: post.id,
+          spaceId: space.id,
+          targetType: "post",
+        },
+      });
+    }
     if (post?.id) await queueCommunityModeration({ postId: post.id, targetType: "post" });
 
     return {
@@ -250,10 +401,11 @@ export async function updateCommunityPost(
   formData: FormData,
 ): Promise<CommunityActionState> {
   try {
+    const { member } = await requireMemberContext();
     const input = validateCommunityPostUpdateInput(formData);
     const supabase = await createClient();
 
-    const { error } = await supabase
+    const { data: post, error } = await supabase
       .from("community_posts")
       .update({
         body: input.body,
@@ -261,10 +413,20 @@ export async function updateCommunityPost(
         title: input.title,
       })
       .eq("id", input.postId)
-      .select("id")
+      .select("id, community_id, space_id")
       .single();
 
     if (error) throw error;
+    await syncCommunityMentions({
+      actorUserId: member.id,
+      formData,
+      target: {
+        communityId: post.community_id,
+        postId: post.id,
+        spaceId: post.space_id,
+        targetType: "post",
+      },
+    });
     await queueCommunityModeration({ postId: input.postId, targetType: "post" });
 
     return {
@@ -327,6 +489,15 @@ export async function createCommunityComment(
     const { member } = await requireMemberContext();
     const input = validateCommentInput(formData);
     const supabase = await createClient();
+    const { data: post, error: postError } = await supabase
+      .from("community_posts")
+      .select("id, community_id, space_id")
+      .eq("id", input.postId)
+      .eq("status", "published")
+      .is("hidden_at", null)
+      .single();
+
+    if (postError) throw postError;
 
     const { data: comment, error } = await supabase
       .from("community_comments")
@@ -340,6 +511,16 @@ export async function createCommunityComment(
 
     if (error) throw error;
     if (comment?.id) {
+      await syncCommunityMentions({
+        actorUserId: member.id,
+        formData,
+        target: {
+          commentId: comment.id,
+          communityId: post.community_id,
+          spaceId: post.space_id,
+          targetType: "comment",
+        },
+      });
       await queueCommunityModeration({
         commentId: comment.id,
         targetType: "comment",
@@ -366,17 +547,36 @@ export async function updateCommunityComment(
   formData: FormData,
 ): Promise<CommunityActionState> {
   try {
+    const { member } = await requireMemberContext();
     const input = validateCommentUpdateInput(formData);
     const supabase = await createClient();
 
-    const { error } = await supabase
+    const { data: comment, error } = await supabase
       .from("community_comments")
       .update({ body: input.body })
       .eq("id", input.commentId)
-      .select("id")
+      .select("id, post_id")
       .single();
 
     if (error) throw error;
+    const { data: post, error: postError } = await supabase
+      .from("community_posts")
+      .select("id, community_id, space_id")
+      .eq("id", comment.post_id)
+      .single();
+
+    if (postError) throw postError;
+
+    await syncCommunityMentions({
+      actorUserId: member.id,
+      formData,
+      target: {
+        commentId: comment.id,
+        communityId: post.community_id,
+        spaceId: post.space_id,
+        targetType: "comment",
+      },
+    });
     await queueCommunityModeration({
       commentId: input.commentId,
       targetType: "comment",

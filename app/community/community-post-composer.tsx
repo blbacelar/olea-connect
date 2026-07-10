@@ -16,12 +16,14 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
+import type { CommunityMentionCandidate } from "@/lib/types";
 import { cn } from "@/lib/utils";
 
 import {
   createCommunityPost,
   type CreateCommunityPostState,
 } from "./actions";
+import { MentionPicker } from "./mention-picker";
 import { broadcastCommunityFeedChange } from "./realtime";
 
 const initialState: CreateCommunityPostState = {
@@ -43,10 +45,12 @@ function SubmitButton() {
 
 export function CommunityPostComposer({
   communityId,
+  mentionCandidates,
   selectedSpaceId,
   selectedSpaceName,
 }: {
   communityId: string;
+  mentionCandidates: CommunityMentionCandidate[];
   selectedSpaceId: string;
   selectedSpaceName: string;
 }) {
@@ -188,6 +192,10 @@ export function CommunityPostComposer({
               type="url"
               placeholder="https://example.org/resource"
             />
+          </div>
+
+          <div className="mt-4">
+            <MentionPicker candidates={mentionCandidates} />
           </div>
 
           <div className="mt-5 flex flex-wrap items-center gap-3">

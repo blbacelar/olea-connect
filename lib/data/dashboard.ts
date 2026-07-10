@@ -7,6 +7,7 @@ import { requireMemberContext } from "./member-context";
 export async function getDashboardSummary() {
   const { member, organization } = await requireMemberContext();
   const supabase = await createClient();
+  const now = new Date().toISOString();
   const [
     { count: completedTemplates, error: templateError },
     { data: notifications, count: unreadNotifications, error: notificationError },
@@ -22,6 +23,7 @@ export async function getDashboardSummary() {
       .select("id, title, body, action_url, created_at", { count: "exact" })
       .eq("user_id", member.id)
       .is("read_at", null)
+      .or(`expires_at.is.null,expires_at.gt.${now}`)
       .order("created_at", { ascending: false })
       .limit(3),
     supabase

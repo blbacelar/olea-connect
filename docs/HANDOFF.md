@@ -21,6 +21,7 @@ The platform also includes:
 - Board Calendar portal.
 - Grants, webinars, and native community entry points.
 - Team seats and invitations.
+- Member notifications for lifecycle events, unread state, and deep links.
 - Transactional email, webhooks, and background workers.
 - Native community foundation with deferred Circle SSO/provisioning scaffolding.
 
@@ -197,6 +198,8 @@ For human developers, mirror the same idea:
 - Supabase RLS policies and service-role usage.
 - Stripe subscription synchronization.
 - Team seat counting and invitation lifecycle.
+- Notification lifecycle triggers, idempotency keys, tenant scoping, and
+  internal-only deep links. See `docs/NOTIFICATIONS.md`.
 - Dynamic template schema validation and export generation.
 - Board Calendar workbook/session behavior.
 - Auth middleware public-route allowlist.

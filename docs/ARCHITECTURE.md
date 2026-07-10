@@ -129,6 +129,8 @@ Core domains:
 - Templates: dynamic schemas, instances, exports, downloads.
 - Brand: logo path, colors, footer contact details.
 - Team: invitations, active members, seat limits.
+- Notifications: user-scoped lifecycle messages, read state, internal deep
+  links, idempotency, and optional email outbox emission.
 - Grants: programs, rounds, applications, reviews, awards.
 - Webinars/events/community: webinars, registrations, native community spaces,
   posts, comments, reactions, managers, and Zoom-linked community events.
@@ -136,6 +138,8 @@ Core domains:
 
 Database tests live in `supabase/tests/` and should be updated when migrations
 change behavior.
+
+Notification behavior is documented in `docs/NOTIFICATIONS.md`.
 
 ## Dynamic Template Engine
 

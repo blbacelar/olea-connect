@@ -5,6 +5,7 @@ import { redirect } from "next/navigation";
 import type {
   CommunityEvent,
   CommunityHome,
+  CommunityMentionCandidate,
   CommunityPost,
   CommunityPostComment,
   CommunitySpace,
@@ -38,6 +39,12 @@ type CommunitySpaceRow = {
 type AuthorAttribution = {
   name: string;
   organizationName: string;
+};
+
+type MentionCandidateAccumulator = {
+  name: string;
+  organizationName: string;
+  planIds: Set<MembershipTier>;
 };
 
 function safeHttpsUrl(value: string | null): string | null {
@@ -85,6 +92,7 @@ function mapPost(
     updated_at: string;
   },
   comments: CommunityPostComment[],
+  mentionedUserIds: string[],
   reactions: Array<{ kind: string; user_id: string }>,
   currentUserId: string,
   authorsByUserId: Map<string, AuthorAttribution>,
@@ -105,6 +113,7 @@ function mapPost(
     createdAt: row.created_at,
     updatedAt: row.updated_at,
     comments,
+    mentionedUserIds,
     likeCount: reactions.filter((reaction) => reaction.kind === "helpful").length,
     likedByCurrentUser: reactions.some(
       (reaction) =>
@@ -121,6 +130,7 @@ function mapComment(
     created_at: string;
     updated_at: string;
   },
+  mentionedUserIds: string[],
   reactions: Array<{ kind: string; user_id: string }>,
   currentUserId: string,
   authorsByUserId: Map<string, AuthorAttribution>,
@@ -135,6 +145,7 @@ function mapComment(
     body: row.body,
     createdAt: row.created_at,
     updatedAt: row.updated_at,
+    mentionedUserIds,
     likeCount: reactions.filter((reaction) => reaction.kind === "helpful").length,
     likedByCurrentUser: reactions.some(
       (reaction) =>
@@ -167,6 +178,106 @@ function mapEvent(row: {
     recordingUrl: safeHttpsUrl(row.recording_url),
     status: row.status,
   };
+}
+
+async function getMentionCandidates(
+  currentUserId: string,
+): Promise<CommunityMentionCandidate[]> {
+  const admin = createAdminClient();
+  const { data: subscriptions, error: subscriptionsError } = await admin
+    .from("subscriptions")
+    .select("organization_id, plan_id")
+    .in("status", ["active", "trialing"]);
+
+  if (subscriptionsError) throw subscriptionsError;
+
+  const activeSubscriptions = subscriptions ?? [];
+  const activeOrganizationIds = Array.from(
+    new Set(
+      activeSubscriptions.map((subscription) => subscription.organization_id),
+    ),
+  );
+  if (!activeOrganizationIds.length) return [];
+
+  const { data: memberships, error: membershipsError } = await admin
+    .from("organization_members")
+    .select("user_id, organization_id")
+    .in("organization_id", activeOrganizationIds)
+    .eq("status", "active");
+
+  if (membershipsError) throw membershipsError;
+
+  const memberRows = memberships ?? [];
+  const userIds = Array.from(
+    new Set(
+      memberRows
+        .map((membership) => membership.user_id)
+        .filter((userId) => userId !== currentUserId),
+    ),
+  );
+  if (!userIds.length) return [];
+
+  const [{ data: profiles, error: profilesError }, { data: organizations, error: organizationsError }] =
+    await Promise.all([
+      admin.from("profiles").select("id, full_name").in("id", userIds),
+      admin
+        .from("organizations")
+        .select("id, name")
+        .in("id", activeOrganizationIds),
+    ]);
+
+  if (profilesError) throw profilesError;
+  if (organizationsError) throw organizationsError;
+
+  const profileNameByUserId = new Map(
+    (profiles ?? []).map((profile) => [profile.id, profile.full_name?.trim()]),
+  );
+  const organizationNameById = new Map(
+    (organizations ?? []).map((organization) => [
+      organization.id,
+      organization.name?.trim(),
+    ]),
+  );
+
+  const planIdsByOrganizationId = new Map<string, Set<MembershipTier>>();
+  for (const subscription of activeSubscriptions) {
+    const plans =
+      planIdsByOrganizationId.get(subscription.organization_id) ??
+      new Set<MembershipTier>();
+    plans.add(subscription.plan_id as MembershipTier);
+    planIdsByOrganizationId.set(subscription.organization_id, plans);
+  }
+
+  const candidatesByUserId = new Map<string, MentionCandidateAccumulator>();
+  for (const membership of memberRows) {
+    if (membership.user_id === currentUserId) continue;
+
+    const organizationName = organizationNameById.get(membership.organization_id);
+    const name = profileNameByUserId.get(membership.user_id);
+    const planIds = planIdsByOrganizationId.get(membership.organization_id);
+    if (!organizationName || !name || !planIds?.size) continue;
+
+    const existing = candidatesByUserId.get(membership.user_id);
+    if (existing) {
+      for (const planId of planIds) existing.planIds.add(planId);
+      continue;
+    }
+
+    candidatesByUserId.set(membership.user_id, {
+      name,
+      organizationName,
+      planIds: new Set(planIds),
+    });
+  }
+
+  return Array.from(candidatesByUserId.entries())
+    .map(([userId, candidate]) => ({
+      userId,
+      name: candidate.name,
+      organizationName: candidate.organizationName,
+      planIds: Array.from(candidate.planIds).sort() as MembershipTier[],
+    }))
+    .sort((left, right) => left.name.localeCompare(right.name));
 }
 
 export async function getCommunityHome(): Promise<CommunityHome | null> {
@@ -257,7 +368,7 @@ export async function getCommunityHome(): Promise<CommunityHome | null> {
 
   const postRows = posts ?? [];
   const postIds = postRows.map((post) => post.id);
-  const [commentsResult, reactionsResult] = postIds.length
+  const [commentsResult, reactionsResult, postMentionsResult] = postIds.length
     ? await Promise.all([
         supabase
           .from("community_comments")
@@ -269,18 +380,35 @@ export async function getCommunityHome(): Promise<CommunityHome | null> {
           .from("community_reactions")
           .select("post_id, comment_id, user_id, kind")
           .in("post_id", postIds),
+        supabase
+          .from("community_mentions")
+          .select("post_id, mentioned_user_id")
+          .in("post_id", postIds),
       ])
     : [
+        { data: [], error: null },
         { data: [], error: null },
         { data: [], error: null },
       ];
 
   if (commentsResult.error) throw commentsResult.error;
   if (reactionsResult.error) throw reactionsResult.error;
+  if (postMentionsResult.error) throw postMentionsResult.error;
+
+  const commentRows = commentsResult.data ?? [];
+  const commentIds = commentRows.map((comment) => comment.id);
+  const commentMentionsResult = commentIds.length
+    ? await supabase
+        .from("community_mentions")
+        .select("comment_id, mentioned_user_id")
+        .in("comment_id", commentIds)
+    : { data: [], error: null };
+
+  if (commentMentionsResult.error) throw commentMentionsResult.error;
 
   const authorUserIds = new Set<string>();
   for (const post of postRows) authorUserIds.add(post.author_user_id);
-  for (const comment of commentsResult.data ?? []) {
+  for (const comment of commentRows) {
     authorUserIds.add(comment.author_user_id);
   }
 
@@ -327,7 +455,10 @@ export async function getCommunityHome(): Promise<CommunityHome | null> {
     }
   }
 
+  const mentionCandidates = await getMentionCandidates(member.id);
   const commentsByPostId = new Map<string, CommunityPostComment[]>();
+  const mentionedUserIdsByPostId = new Map<string, string[]>();
+  const mentionedUserIdsByCommentId = new Map<string, string[]>();
   const reactionsByPostId = new Map<
     string,
     Array<{ kind: string; user_id: string }>
@@ -354,11 +485,27 @@ export async function getCommunityHome(): Promise<CommunityHome | null> {
     reactionsByPostId.set(reaction.post_id, postReactions);
   }
 
-  for (const comment of commentsResult.data ?? []) {
+  for (const mention of postMentionsResult.data ?? []) {
+    if (!mention.post_id) continue;
+    const mentionedUserIds = mentionedUserIdsByPostId.get(mention.post_id) ?? [];
+    mentionedUserIds.push(mention.mentioned_user_id);
+    mentionedUserIdsByPostId.set(mention.post_id, mentionedUserIds);
+  }
+
+  for (const mention of commentMentionsResult.data ?? []) {
+    if (!mention.comment_id) continue;
+    const mentionedUserIds =
+      mentionedUserIdsByCommentId.get(mention.comment_id) ?? [];
+    mentionedUserIds.push(mention.mentioned_user_id);
+    mentionedUserIdsByCommentId.set(mention.comment_id, mentionedUserIds);
+  }
+
+  for (const comment of commentRows) {
     const postComments = commentsByPostId.get(comment.post_id) ?? [];
     postComments.push(
       mapComment(
         comment,
+        mentionedUserIdsByCommentId.get(comment.id) ?? [],
         reactionsByCommentId.get(comment.id) ?? [],
         member.id,
         authorsByUserId,
@@ -377,12 +524,14 @@ export async function getCommunityHome(): Promise<CommunityHome | null> {
       mapPost(
         post,
         commentsByPostId.get(post.id) ?? [],
+        mentionedUserIdsByPostId.get(post.id) ?? [],
         reactionsByPostId.get(post.id) ?? [],
         member.id,
         authorsByUserId,
       ),
     ),
     events: (events ?? []).map(mapEvent),
+    mentionCandidates,
     canManage: Boolean(managerRows?.length),
     currentUserId: member.id,
   };

@@ -62,6 +62,11 @@ export async function getOptionalMemberContext(): Promise<Session | null> {
     { data: brand, error: brandError },
     { data: subscription, error: subscriptionError },
     { count: memberCount, error: memberCountError },
+    {
+      data: notificationRows,
+      count: unreadNotificationCount,
+      error: notificationError,
+    },
   ] = await Promise.all([
     supabase
       .from("profiles")
@@ -89,12 +94,24 @@ export async function getOptionalMemberContext(): Promise<Session | null> {
       .select("*", { count: "exact", head: true })
       .eq("organization_id", membership.organization_id)
       .eq("status", "active"),
+    supabase
+      .from("notifications")
+      .select(
+        "id, type, severity, title, body, action_url, read_at, expires_at, created_at",
+        { count: "exact" },
+      )
+      .eq("user_id", user.id)
+      .is("read_at", null)
+      .or(`expires_at.is.null,expires_at.gt.${new Date().toISOString()}`)
+      .order("created_at", { ascending: false })
+      .limit(5),
   ]);
 
   if (profileError) throw profileError;
   if (brandError) throw brandError;
   if (subscriptionError) throw subscriptionError;
   if (memberCountError) throw memberCountError;
+  if (notificationError) throw notificationError;
 
   const plan = Array.isArray(subscription?.membership_plans)
     ? subscription.membership_plans[0]
@@ -143,7 +160,22 @@ export async function getOptionalMemberContext(): Promise<Session | null> {
     email: user.email ?? "",
   };
 
-  return { member, organization };
+  const notifications = {
+    unreadCount: unreadNotificationCount ?? 0,
+    items: (notificationRows ?? []).map((notification) => ({
+      id: notification.id,
+      type: notification.type,
+      severity: notification.severity,
+      title: notification.title,
+      body: notification.body,
+      actionUrl: notification.action_url,
+      readAt: notification.read_at,
+      expiresAt: notification.expires_at,
+      createdAt: notification.created_at,
+    })),
+  };
+
+  return { member, organization, notifications };
 }
 
 export async function requireMemberContext() {

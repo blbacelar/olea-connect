@@ -1,6 +1,7 @@
 import { expect, test as base } from "@playwright/test";
 
 import { test as testWithData } from "../fixtures/test-data.fixture";
+import { AppShellPage } from "../pages/app-shell.page";
 import { CommunityPage } from "../pages/community.page";
 import { createAuthenticatedPage } from "../support/auth-session";
 
@@ -210,6 +211,115 @@ testWithData.describe("@critical native community member experience", () => {
       );
     } finally {
       await context.close();
+    }
+  });
+
+  testWithData("notifies mentioned members when a post is published", async ({
+    baseURL,
+    browser,
+    testData,
+  }) => {
+    if (!baseURL) throw new Error("Playwright baseURL is required.");
+
+    const owner = await testData.createOrganizationOwner({
+      activeSubscription: true,
+      planId: "roots",
+    });
+    const teammate = await testData.createOrganizationMember(owner);
+    const postTitle = `Mention notification post ${owner.marker}`;
+    const postBody =
+      "This post should notify the mentioned teammate without blocking publishing.";
+
+    const ownerSession = await createAuthenticatedPage(
+      browser,
+      baseURL,
+      owner.email,
+      owner.password,
+    );
+    const teammateSession = await createAuthenticatedPage(
+      browser,
+      baseURL,
+      teammate.email,
+      teammate.password,
+    );
+    const ownerCommunity = new CommunityPage(ownerSession.page);
+    const teammateShell = new AppShellPage(teammateSession.page);
+
+    try {
+      await ownerCommunity.open();
+      await ownerCommunity.selectSpace("Governance");
+      await ownerCommunity.createPost({
+        title: postTitle,
+        body: postBody,
+        kind: "discussion",
+        mentionedMemberName: teammate.fullName,
+      });
+      await ownerCommunity.expectPost(postTitle, postBody);
+
+      await teammateShell.openDashboard();
+      await teammateShell.expectUnreadNotificationCount(1);
+      await teammateShell.openNotifications();
+      await teammateShell.expectNotificationVisible("You were mentioned");
+      await teammateShell.openNotification("You were mentioned");
+      await expect(teammateSession.page).toHaveURL(/\/community\?post=/);
+    } finally {
+      await ownerSession.context.close();
+      await teammateSession.context.close();
+    }
+  });
+
+  testWithData("notifies mentioned members when a comment is published", async ({
+    baseURL,
+    browser,
+    testData,
+  }) => {
+    if (!baseURL) throw new Error("Playwright baseURL is required.");
+
+    const owner = await testData.createOrganizationOwner({
+      activeSubscription: true,
+      planId: "roots",
+    });
+    const teammate = await testData.createOrganizationMember(owner);
+    const postTitle = `Comment mention post ${owner.marker}`;
+    const commentBody =
+      "This reply should notify the mentioned teammate from the comment form.";
+    await testData.createCommunityPost(owner, {
+      title: postTitle,
+      body: "This post should support mention notifications from replies.",
+      kind: "discussion",
+      spaceSlug: "general",
+    });
+
+    const ownerSession = await createAuthenticatedPage(
+      browser,
+      baseURL,
+      owner.email,
+      owner.password,
+    );
+    const teammateSession = await createAuthenticatedPage(
+      browser,
+      baseURL,
+      teammate.email,
+      teammate.password,
+    );
+    const ownerCommunity = new CommunityPage(ownerSession.page);
+    const teammateShell = new AppShellPage(teammateSession.page);
+
+    try {
+      await ownerCommunity.open();
+      await ownerCommunity.addComment(postTitle, commentBody, {
+        mentionedMemberName: teammate.fullName,
+      });
+
+      await teammateShell.openDashboard();
+      await teammateShell.expectUnreadNotificationCount(1);
+      await teammateShell.openNotifications();
+      await teammateShell.expectNotificationVisible("You were mentioned");
+      await teammateShell.openNotification("You were mentioned");
+      await expect(teammateSession.page).toHaveURL(/\/community\?post=/);
+    } finally {
+      await ownerSession.context.close();
+      await teammateSession.context.close();
     }
   });
 
