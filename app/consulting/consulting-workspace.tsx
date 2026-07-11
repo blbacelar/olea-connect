@@ -603,6 +603,52 @@ function StaffQueue({
   );
 }
 
+function StaffWorkspaceToggle({
+  requests,
+  staffUsers,
+}: {
+  requests: ConsultingRequest[];
+  staffUsers: Array<{ id: string; name: string }>;
+}) {
+  const [isOpen, setIsOpen] = useState(false);
+  const openCount = requests.filter(
+    (request) => !["completed", "canceled"].includes(request.status),
+  ).length;
+
+  return (
+    <section className="rounded-[14px] border bg-white p-5 shadow-soft">
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+        <div>
+          <p className="flex items-center gap-2 text-sm font-semibold text-olea-green">
+            <ShieldCheck className="size-4" />
+            Admin tools
+          </p>
+          <h2 className="mt-2 text-xl font-bold text-slate-900">
+            Consulting staff workspace
+          </h2>
+          <p className="mt-1 text-sm leading-6 text-slate-500">
+            {openCount
+              ? `${openCount} open request${openCount === 1 ? "" : "s"} need staff action.`
+              : "No open consulting requests need staff action."}
+          </p>
+        </div>
+        <Button
+          type="button"
+          variant={isOpen ? "outline" : "default"}
+          onClick={() => setIsOpen((current) => !current)}
+        >
+          {isOpen ? "Hide staff workspace" : "Open staff workspace"}
+        </Button>
+      </div>
+      {isOpen ? (
+        <div className="mt-5">
+          <StaffQueue requests={requests} staffUsers={staffUsers} />
+        </div>
+      ) : null}
+    </section>
+  );
+}
+
 export function ConsultingWorkspace({
   canManageConsulting,
   hourSummary,
@@ -693,7 +739,7 @@ export function ConsultingWorkspace({
       )}
 
       {canManageConsulting ? (
-        <StaffQueue requests={staffRequests} staffUsers={staffUsers} />
+        <StaffWorkspaceToggle requests={staffRequests} staffUsers={staffUsers} />
       ) : null}
     </div>
   );
