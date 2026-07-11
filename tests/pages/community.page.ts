@@ -163,11 +163,13 @@ export class CommunityPage {
   async createPost({
     body,
     kind = "discussion",
+    mentionedMemberName,
     resourceUrl,
     title,
   }: {
     body: string;
     kind?: "announcement" | "discussion" | "resource";
+    mentionedMemberName?: string;
     resourceUrl?: string;
     title: string;
   }) {
@@ -188,6 +190,16 @@ export class CommunityPage {
 
     if (resourceUrl) {
       await this.page.getByLabel("Resource link optional").fill(resourceUrl);
+    }
+
+    if (mentionedMemberName) {
+      await this.page.getByLabel("Mention members").fill(mentionedMemberName);
+      await this.page
+        .getByRole("button", {
+          name: new RegExp(`Mention ${mentionedMemberName}`),
+        })
+        .click();
+      await expect(this.page.getByText(mentionedMemberName)).toBeVisible();
     }
 
     const publishButton = this.page.getByRole("button", { name: "Publish post" });
@@ -231,9 +243,24 @@ export class CommunityPage {
     ).toBeVisible({ timeout: 10000 });
   }
 
-  async addComment(title: string, comment: string) {
+  async addComment(
+    title: string,
+    comment: string,
+    options: { mentionedMemberName?: string } = {},
+  ) {
     const post = this.postArticle(title);
     await post.getByPlaceholder("Add a reply...").fill(comment);
+
+    if (options.mentionedMemberName) {
+      await post.getByLabel("Mention members").fill(options.mentionedMemberName);
+      await post
+        .getByRole("button", {
+          name: new RegExp(`Mention ${options.mentionedMemberName}`),
+        })
+        .click();
+      await expect(post.getByText(options.mentionedMemberName)).toBeVisible();
+    }
+
     await post.getByRole("button", { name: "Reply" }).click();
     await expect(post.getByLabel("1 comments")).toBeVisible();
     await expect(post.getByText(comment)).toBeVisible();

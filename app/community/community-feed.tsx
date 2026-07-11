@@ -27,8 +27,10 @@ import {
 import { Textarea } from "@/components/ui/textarea";
 import type {
   CommunityHome,
+  CommunityMentionCandidate,
   CommunityPost,
   CommunityPostComment,
+  CommunitySpace,
 } from "@/lib/types";
 import { cn } from "@/lib/utils";
 import { createClient } from "@/utils/supabase/client";
@@ -44,6 +46,7 @@ import {
   updateCommunityPost,
 } from "./actions";
 import { CommunityPostComposer } from "./community-post-composer";
+import { MentionPicker } from "./mention-picker";
 import {
   broadcastCommunityFeedChange,
   communityFeedBroadcastEvent,
@@ -57,6 +60,8 @@ const initialActionState: CommunityActionState = {
 };
 
 const selectedSpaceStorageKey = "olea-community-selected-space";
+
+type CreatedCommentState = NonNullable<CommunityActionState["createdComment"]>;
 
 function formatRelativeDate(value: string) {
   return new Intl.DateTimeFormat("en-CA", {
@@ -77,6 +82,21 @@ function authorAttribution({
   authorOrganizationName: string;
 }) {
   return `${authorName} · ${authorOrganizationName}`;
+}
+
+function getMentionCandidatesForSpace({
+  candidates,
+  space,
+}: {
+  candidates: CommunityMentionCandidate[];
+  space: CommunitySpace | undefined;
+}) {
+  if (!space) return [];
+  if (!space.allowedPlanIds.length) return candidates;
+
+  return candidates.filter((candidate) =>
+    candidate.planIds.some((planId) => space.allowedPlanIds.includes(planId)),
+  );
 }
 
 type OptimisticLikeState = {
@@ -342,9 +362,11 @@ function LikeButton({
 
 function DeletePostButton({
   communityId,
+  onDeleted,
   postId,
 }: {
   communityId: string;
+  onDeleted?: (postId: string) => void;
   postId: string;
 }) {
   const router = useRouter();
@@ -357,11 +379,12 @@ function DeletePostButton({
   useEffect(() => {
     if (state.status !== "success") return;
     setIsDialogOpen(false);
+    onDeleted?.(postId);
 
     void broadcastCommunityFeedChange(communityId).finally(() => {
       router.refresh();
     });
-  }, [communityId, router, state]);
+  }, [communityId, onDeleted, postId, router, state]);
 
   return (
     <>
@@ -393,9 +416,11 @@ function DeletePostButton({
 function DeleteCommentButton({
   commentId,
   communityId,
+  onDeleted,
 }: {
   commentId: string;
   communityId: string;
+  onDeleted?: (commentId: string) => void;
 }) {
   const router = useRouter();
   const [isDialogOpen, setIsDialogOpen] = useState(false);
@@ -407,11 +432,12 @@ function DeleteCommentButton({
   useEffect(() => {
     if (state.status !== "success") return;
     setIsDialogOpen(false);
+    onDeleted?.(commentId);
 
     void broadcastCommunityFeedChange(communityId).finally(() => {
       router.refresh();
     });
-  }, [communityId, router, state]);
+  }, [commentId, communityId, onDeleted, router, state]);
 
   return (
     <>
@@ -547,10 +573,12 @@ function DeleteConfirmationDialog({
 
 function PostEditForm({
   communityId,
+  mentionCandidates,
   onCancel,
   post,
 }: {
   communityId: string;
+  mentionCandidates: CommunityMentionCandidate[];
   onCancel: () => void;
   post: CommunityPost;
 }) {
@@ -595,6 +623,10 @@ function PostEditForm({
         defaultValue={post.resourceUrl ?? ""}
         placeholder="https://example.org/resource"
       />
+      <MentionPicker
+        candidates={mentionCandidates}
+        defaultSelectedUserIds={post.mentionedUserIds}
+      />
       <div className="flex flex-wrap items-center gap-2">
         <SaveButton />
         <Button type="button" variant="ghost" size="sm" onClick={onCancel}>
@@ -609,13 +641,19 @@ function PostEditForm({
 
 function CommentForm({
   communityId,
+  mentionCandidates,
+  onCreated,
   postId,
 }: {
   communityId: string;
+  mentionCandidates: CommunityMentionCandidate[];
+  onCreated?: (comment: CreatedCommentState) => void;
   postId: string;
 }) {
   const router = useRouter();
   const formRef = useRef<HTMLFormElement>(null);
+  const lastCreatedCommentIdRef = useRef<string | null>(null);
+  const [mentionResetKey, setMentionResetKey] = useState(0);
   const [state, formAction] = useFormState(
     createCommunityComment,
     initialActionState,
@@ -623,11 +661,19 @@ function CommentForm({
 
   useEffect(() => {
     if (state.status !== "success") return;
+    if (
+      state.createdComment &&
+      state.createdComment.id !== lastCreatedCommentIdRef.current
+    ) {
+      lastCreatedCommentIdRef.current = state.createdComment.id;
+      onCreated?.(state.createdComment);
+    }
     formRef.current?.reset();
+    setMentionResetKey((current) => current + 1);
     void broadcastCommunityFeedChange(communityId).finally(() => {
       router.refresh();
     });
-  }, [communityId, router, state]);
+  }, [communityId, onCreated, router, state]);
 
   return (
     <form ref={formRef} action={formAction} className="mt-4 space-y-2">
@@ -639,6 +685,11 @@ function CommentForm({
         required
         placeholder="Add a reply..."
         className="min-h-[84px] bg-white"
+      />
+      <MentionPicker
+        key={mentionResetKey}
+        candidates={mentionCandidates}
+        description="Mention members who should be notified about this reply."
       />
       <div className="flex flex-wrap items-center gap-3">
         <CommentSubmitButton />
@@ -671,10 +722,12 @@ function CommentSubmitButton() {
 function CommentEditor({
   comment,
   communityId,
+  mentionCandidates,
   onCancel,
 }: {
   comment: CommunityPostComment;
   communityId: string;
+  mentionCandidates: CommunityMentionCandidate[];
   onCancel: () => void;
 }) {
   const router = useRouter();
@@ -702,6 +755,11 @@ function CommentEditor({
         required
         defaultValue={comment.body}
         className="min-h-[84px] bg-white"
+      />
+      <MentionPicker
+        candidates={mentionCandidates}
+        defaultSelectedUserIds={comment.mentionedUserIds}
+        description="Mention members who should be notified about this reply."
       />
       <div className="flex flex-wrap items-center gap-2">
         <SaveButton label="Save comment" />
@@ -804,10 +862,14 @@ function CommentItem({
   comment,
   communityId,
   currentUserId,
+  mentionCandidates,
+  onDeleted,
 }: {
   comment: CommunityPostComment;
   communityId: string;
   currentUserId: string;
+  mentionCandidates: CommunityMentionCandidate[];
+  onDeleted?: (commentId: string) => void;
 }) {
   const [isEditing, setIsEditing] = useState(false);
   const canEdit = comment.authorUserId === currentUserId;
@@ -837,6 +899,7 @@ function CommentItem({
         <CommentEditor
           comment={comment}
           communityId={communityId}
+          mentionCandidates={mentionCandidates}
           onCancel={() => setIsEditing(false)}
         />
       ) : (
@@ -861,6 +924,7 @@ function CommentItem({
               <DeleteCommentButton
                 commentId={comment.id}
                 communityId={communityId}
+                onDeleted={onDeleted}
               />
               </>
             ) : null}
@@ -874,15 +938,64 @@ function CommentItem({
 function PostCard({
   communityId,
   currentUserId,
+  mentionCandidates,
+  onDeleted,
   post,
 }: {
   communityId: string;
   currentUserId: string;
+  mentionCandidates: CommunityMentionCandidate[];
+  onDeleted?: (postId: string) => void;
   post: CommunityPost;
 }) {
   const [isEditing, setIsEditing] = useState(false);
+  const [optimisticComments, setOptimisticComments] = useState<
+    CommunityPostComment[]
+  >([]);
+  const [optimisticallyDeletedCommentIds, setOptimisticallyDeletedCommentIds] =
+    useState<Set<string>>(() => new Set());
   const canEdit = post.authorUserId === currentUserId;
   const authorLabel = authorAttribution(post);
+  const serverCommentIds = useMemo(
+    () => new Set(post.comments.map((comment) => comment.id)),
+    [post.comments],
+  );
+  const visibleComments = [
+    ...post.comments,
+    ...optimisticComments.filter((comment) => !serverCommentIds.has(comment.id)),
+  ].filter((comment) => !optimisticallyDeletedCommentIds.has(comment.id));
+
+  function handleCommentCreated(comment: CreatedCommentState) {
+    setOptimisticComments((currentComments) => {
+      if (currentComments.some((current) => current.id === comment.id)) {
+        return currentComments;
+      }
+
+      return [
+        ...currentComments,
+        {
+          authorName: comment.authorName,
+          authorOrganizationName: comment.authorOrganizationName,
+          authorUserId: comment.authorUserId,
+          body: comment.body,
+          createdAt: comment.createdAt,
+          id: comment.id,
+          likedByCurrentUser: false,
+          likeCount: 0,
+          mentionedUserIds: comment.mentionedUserIds,
+          updatedAt: comment.createdAt,
+        },
+      ];
+    });
+  }
+
+  function handleCommentDeleted(commentId: string) {
+    setOptimisticallyDeletedCommentIds((currentCommentIds) => {
+      const nextCommentIds = new Set(currentCommentIds);
+      nextCommentIds.add(commentId);
+      return nextCommentIds;
+    });
+  }
 
   return (
     <article
@@ -912,6 +1025,7 @@ function PostCard({
       {isEditing ? (
         <PostEditForm
           communityId={communityId}
+          mentionCandidates={mentionCandidates}
           post={post}
           onCancel={() => setIsEditing(false)}
         />
@@ -946,7 +1060,11 @@ function PostCard({
                 <Pencil className="size-4" />
                 Edit post
               </Button>
-              <DeletePostButton communityId={communityId} postId={post.id} />
+              <DeletePostButton
+                communityId={communityId}
+                onDeleted={onDeleted}
+                postId={post.id}
+              />
             </div>
           ) : null}
         </>
@@ -956,26 +1074,33 @@ function PostCard({
         <LikeButton communityId={communityId} post={post} />
         <span className="inline-flex items-center gap-1 px-2 text-sm font-medium text-slate-500">
           <MessageCircle className="size-4" />
-          <span aria-label={`${post.comments.length} comments`}>
-            {post.comments.length}
+          <span aria-label={`${visibleComments.length} comments`}>
+            {visibleComments.length}
           </span>
         </span>
       </div>
 
-      {post.comments.length ? (
+      {visibleComments.length ? (
         <div className="mt-4 space-y-3 rounded-lg bg-slate-50 p-3">
-          {post.comments.map((comment) => (
+          {visibleComments.map((comment) => (
             <CommentItem
               key={comment.id}
               comment={comment}
               communityId={communityId}
               currentUserId={currentUserId}
+              mentionCandidates={mentionCandidates}
+              onDeleted={handleCommentDeleted}
             />
           ))}
         </div>
       ) : null}
 
-      <CommentForm communityId={communityId} postId={post.id} />
+      <CommentForm
+        communityId={communityId}
+        mentionCandidates={mentionCandidates}
+        onCreated={handleCommentCreated}
+        postId={post.id}
+      />
     </article>
   );
 }
@@ -984,6 +1109,8 @@ export function CommunityFeed({ community }: { community: CommunityHome }) {
   const [selectedSpaceId, setSelectedSpaceId] = useState(
     community.spaces[0]?.id ?? "",
   );
+  const [optimisticallyDeletedPostIds, setOptimisticallyDeletedPostIds] =
+    useState<Set<string>>(() => new Set());
   const postIds = useMemo(
     () => community.posts.map((post) => post.id),
     [community.posts],
@@ -991,9 +1118,18 @@ export function CommunityFeed({ community }: { community: CommunityHome }) {
   const selectedSpace = community.spaces.find(
     (space) => space.id === selectedSpaceId,
   );
+  const mentionCandidates = getMentionCandidatesForSpace({
+    candidates: community.mentionCandidates,
+    space: selectedSpace,
+  });
   const posts = useMemo(
-    () => community.posts.filter((post) => post.spaceId === selectedSpaceId),
-    [community.posts, selectedSpaceId],
+    () =>
+      community.posts.filter(
+        (post) =>
+          post.spaceId === selectedSpaceId &&
+          !optimisticallyDeletedPostIds.has(post.id),
+      ),
+    [community.posts, optimisticallyDeletedPostIds, selectedSpaceId],
   );
 
   const isRealtimeConnected = useCommunityRealtimeRefresh({
@@ -1014,6 +1150,14 @@ export function CommunityFeed({ community }: { community: CommunityHome }) {
   function handleSelectSpace(spaceId: string) {
     setSelectedSpaceId(spaceId);
     window.sessionStorage.setItem(selectedSpaceStorageKey, spaceId);
+  }
+
+  function handlePostDeleted(postId: string) {
+    setOptimisticallyDeletedPostIds((currentPostIds) => {
+      const nextPostIds = new Set(currentPostIds);
+      nextPostIds.add(postId);
+      return nextPostIds;
+    });
   }
 
   return (
@@ -1076,6 +1220,7 @@ export function CommunityFeed({ community }: { community: CommunityHome }) {
           </SectionHeading>
           <CommunityPostComposer
             communityId={community.id}
+            mentionCandidates={mentionCandidates}
             selectedSpaceId={selectedSpaceId}
             selectedSpaceName={selectedSpace?.name ?? "Community"}
           />
@@ -1088,6 +1233,8 @@ export function CommunityFeed({ community }: { community: CommunityHome }) {
                 key={post.id}
                 communityId={community.id}
                 currentUserId={community.currentUserId}
+                mentionCandidates={mentionCandidates}
+                onDeleted={handlePostDeleted}
                 post={post}
               />
             ))}

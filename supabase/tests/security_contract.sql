@@ -16,6 +16,7 @@ values
   ('community_comments', 'tenant'),
   ('community_events', 'tenant'),
   ('community_managers', 'admin'),
+  ('community_mentions', 'tenant'),
   ('community_posts', 'tenant'),
   ('community_reactions', 'self'),
   ('community_space_access_rules', 'catalog'),
