@@ -8,19 +8,23 @@ import { createClient } from "@/utils/supabase/server";
 export async function markNotificationRead(notificationId: string) {
   await requireMemberContext();
   const supabase = await createClient();
-  const { error } = await supabase.rpc("mark_notification_read", {
+  const { data, error } = await supabase.rpc("mark_notification_read", {
     target_notification_id: notificationId,
   });
 
   if (error) throw error;
-  revalidatePath("/");
+  revalidatePath("/", "layout");
+
+  return Boolean(data);
 }
 
 export async function markAllNotificationsRead() {
   await requireMemberContext();
   const supabase = await createClient();
-  const { error } = await supabase.rpc("mark_all_notifications_read");
+  const { data, error } = await supabase.rpc("mark_all_notifications_read");
 
   if (error) throw error;
-  revalidatePath("/");
+  revalidatePath("/", "layout");
+
+  return data ?? 0;
 }

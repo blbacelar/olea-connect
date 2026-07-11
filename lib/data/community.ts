@@ -65,6 +65,10 @@ function isMissingCommunitySchema(error: DataError | null) {
   );
 }
 
+function emptyQueryResult<T>() {
+  return { data: [] as T[], error: null };
+}
+
 function mapSpace(row: CommunitySpaceRow): CommunitySpace {
   return {
     id: row.id,
@@ -393,7 +397,16 @@ export async function getCommunityHome(): Promise<CommunityHome | null> {
 
   if (commentsResult.error) throw commentsResult.error;
   if (reactionsResult.error) throw reactionsResult.error;
-  if (postMentionsResult.error) throw postMentionsResult.error;
+  if (
+    postMentionsResult.error &&
+    !isMissingCommunitySchema(postMentionsResult.error)
+  ) {
+    throw postMentionsResult.error;
+  }
+
+  const postMentionRows = isMissingCommunitySchema(postMentionsResult.error)
+    ? []
+    : (postMentionsResult.data ?? []);
 
   const commentRows = commentsResult.data ?? [];
   const commentIds = commentRows.map((comment) => comment.id);
@@ -402,9 +415,20 @@ export async function getCommunityHome(): Promise<CommunityHome | null> {
         .from("community_mentions")
         .select("comment_id, mentioned_user_id")
         .in("comment_id", commentIds)
-    : { data: [], error: null };
+    : emptyQueryResult<{ comment_id: string | null; mentioned_user_id: string }>();
 
-  if (commentMentionsResult.error) throw commentMentionsResult.error;
+  if (
+    commentMentionsResult.error &&
+    !isMissingCommunitySchema(commentMentionsResult.error)
+  ) {
+    throw commentMentionsResult.error;
+  }
+
+  const commentMentionRows = isMissingCommunitySchema(
+    commentMentionsResult.error,
+  )
+    ? []
+    : (commentMentionsResult.data ?? []);
 
   const authorUserIds = new Set<string>();
   for (const post of postRows) authorUserIds.add(post.author_user_id);
@@ -485,14 +509,14 @@ export async function getCommunityHome(): Promise<CommunityHome | null> {
     reactionsByPostId.set(reaction.post_id, postReactions);
   }
 
-  for (const mention of postMentionsResult.data ?? []) {
+  for (const mention of postMentionRows) {
     if (!mention.post_id) continue;
     const mentionedUserIds = mentionedUserIdsByPostId.get(mention.post_id) ?? [];
     mentionedUserIds.push(mention.mentioned_user_id);
     mentionedUserIdsByPostId.set(mention.post_id, mentionedUserIds);
   }
 
-  for (const mention of commentMentionsResult.data ?? []) {
+  for (const mention of commentMentionRows) {
     if (!mention.comment_id) continue;
     const mentionedUserIds =
       mentionedUserIdsByCommentId.get(mention.comment_id) ?? [];

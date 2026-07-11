@@ -6,6 +6,15 @@ import { createAdminClient } from "@/utils/supabase/admin";
 import { createClient } from "@/utils/supabase/server";
 
 export type CreateCommunityPostState = {
+  createdComment?: {
+    authorName: string;
+    authorOrganizationName: string;
+    authorUserId: string;
+    body: string;
+    createdAt: string;
+    id: string;
+    mentionedUserIds: string[];
+  };
   message: string;
   status: "error" | "idle" | "success";
 };
@@ -47,6 +56,15 @@ function getActionErrorMessage(error: unknown, fallback: string) {
   }
 
   return fallback;
+}
+
+function isMissingOptionalCommunityMentions(error: unknown) {
+  if (!error || typeof error !== "object") return false;
+  const maybeError = error as { code?: string; message?: string };
+  return (
+    maybeError.code === "PGRST205" ||
+    maybeError.message?.includes("Could not find the table") === true
+  );
 }
 
 function validateKind(value: string): CommunityPost["kind"] {
@@ -237,6 +255,7 @@ async function syncCommunityMentions({
     .delete()
     .eq(targetColumn, targetId);
 
+  if (isMissingOptionalCommunityMentions(deleteError)) return;
   if (deleteError) throw deleteError;
   if (!mentionedUserIds.length) return;
 
@@ -251,6 +270,7 @@ async function syncCommunityMentions({
     })),
   );
 
+  if (isMissingOptionalCommunityMentions(insertError)) return;
   if (insertError) throw insertError;
 }
 
@@ -486,7 +506,7 @@ export async function createCommunityComment(
   formData: FormData,
 ): Promise<CommunityActionState> {
   try {
-    const { member } = await requireMemberContext();
+    const { member, organization } = await requireMemberContext();
     const input = validateCommentInput(formData);
     const supabase = await createClient();
     const { data: post, error: postError } = await supabase
@@ -506,7 +526,7 @@ export async function createCommunityComment(
         body: input.body,
         post_id: input.postId,
       })
-      .select("id")
+      .select("id, body, created_at")
       .single();
 
     if (error) throw error;
@@ -528,6 +548,17 @@ export async function createCommunityComment(
     }
 
     return {
+      createdComment: comment?.id
+        ? {
+            authorName: member.name,
+            authorOrganizationName: organization.name,
+            authorUserId: member.id,
+            body: comment.body,
+            createdAt: comment.created_at,
+            id: comment.id,
+            mentionedUserIds: getMentionedUserIds(formData, member.id),
+          }
+        : undefined,
       message: "Your comment was added. Safety checks continue in the background.",
       status: "success",
     };

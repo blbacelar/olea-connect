@@ -79,6 +79,7 @@ export function Header() {
   const [notificationsOpen, setNotificationsOpen] = useState(false);
   const [userOpen, setUserOpen] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
+  const [notificationError, setNotificationError] = useState("");
   const [isNotificationPending, setIsNotificationPending] = useState(false);
   const [notificationItems, setNotificationItems] = useState<MemberNotification[]>(
     () => session?.notifications.items ?? [],
@@ -100,6 +101,7 @@ export function Header() {
   function handleNotificationOpen(notification: MemberNotification) {
     const destination = notification.actionUrl ?? "/dashboard";
 
+    setNotificationError("");
     setNotificationsOpen(false);
     setNotificationItems((items) =>
       items.filter((item) => item.id !== notification.id),
@@ -109,6 +111,9 @@ export function Header() {
     void markNotificationRead(notification.id).catch(() => {
       setNotificationItems((items) => [notification, ...items]);
       setUnreadCount((count) => count + 1);
+      setNotificationError(
+        "We could not mark this notification as read. Please try again.",
+      );
     });
 
     router.push(destination);
@@ -116,15 +121,23 @@ export function Header() {
 
   function handleMarkAllRead() {
     const unreadItems = visibleNotifications;
+    const previousUnreadCount = unreadCount;
     if (unreadItems.length === 0) return;
 
+    setNotificationError("");
     setNotificationItems([]);
     setUnreadCount(0);
     setIsNotificationPending(true);
     void markAllNotificationsRead()
+      .then(() => {
+        router.refresh();
+      })
       .catch(() => {
         setNotificationItems(unreadItems);
-        setUnreadCount(unreadItems.length);
+        setUnreadCount(previousUnreadCount);
+        setNotificationError(
+          "We could not mark notifications as read. Please refresh and try again.",
+        );
       })
       .finally(() => {
         setIsNotificationPending(false);
@@ -178,37 +191,45 @@ export function Header() {
                 disabled={!hasUnreadNotifications || isNotificationPending}
                 onClick={handleMarkAllRead}
               >
-                Mark all read
+                {isNotificationPending ? "Marking..." : "Mark all read"}
               </button>
             </div>
+            {notificationError ? (
+              <p
+                role="alert"
+                className="border-b bg-red-50 px-4 py-2 text-xs font-medium text-red-700"
+              >
+                {notificationError}
+              </p>
+            ) : null}
             {visibleNotifications.length > 0 ? (
               visibleNotifications.map((notification) => {
-              const Icon = getNotificationIcon(notification.severity);
-              return (
-                <button
-                  key={notification.id}
-                  type="button"
-                  className="flex w-full gap-3 border-b border-slate-100 px-4 py-3 text-left transition hover:bg-slate-50"
-                  onClick={() => handleNotificationOpen(notification)}
-                >
-                  <span
-                    className={`grid size-8 shrink-0 place-items-center rounded-lg ${notificationTone[notification.severity]}`}
+                const Icon = getNotificationIcon(notification.severity);
+                return (
+                  <button
+                    key={notification.id}
+                    type="button"
+                    className="flex w-full gap-3 border-b border-slate-100 px-4 py-3 text-left transition hover:bg-slate-50"
+                    onClick={() => handleNotificationOpen(notification)}
                   >
-                    <Icon className="size-4" />
-                  </span>
-                  <div>
-                    <p className="text-[13px] font-semibold">
-                      {notification.title}
-                    </p>
-                    <p className="mt-0.5 text-xs leading-5 text-slate-500">
-                      {notification.body}
-                    </p>
-                    <p className="mt-1 text-[11px] text-slate-400">
-                      {formatNotificationTime(notification.createdAt)}
-                    </p>
-                  </div>
-                </button>
-              );
+                    <span
+                      className={`grid size-8 shrink-0 place-items-center rounded-lg ${notificationTone[notification.severity]}`}
+                    >
+                      <Icon className="size-4" />
+                    </span>
+                    <div>
+                      <p className="text-[13px] font-semibold">
+                        {notification.title}
+                      </p>
+                      <p className="mt-0.5 text-xs leading-5 text-slate-500">
+                        {notification.body}
+                      </p>
+                      <p className="mt-1 text-[11px] text-slate-400">
+                        {formatNotificationTime(notification.createdAt)}
+                      </p>
+                    </div>
+                  </button>
+                );
               })
             ) : (
               <div className="px-4 py-8 text-center">
