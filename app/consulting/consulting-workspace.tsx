@@ -256,13 +256,15 @@ function RequestForm() {
       <div className="mt-4">
         <Label htmlFor="consulting-attachments">Attachments</Label>
         <Input
+          accept=".pdf,.doc,.docx,.xls,.xlsx,.png,.jpg,.jpeg,.txt,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document,application/vnd.ms-excel,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,image/png,image/jpeg,text/plain"
           id="consulting-attachments"
           multiple
           name="attachments"
           type="file"
         />
         <p className="mt-2 text-xs text-slate-500">
-          PDF, Word, Excel, image, or text files up to 10 MB each.
+          PDF, Word, Excel, image, or plain text files up to 10 MB each. HTML
+          files are not accepted.
         </p>
       </div>
       <div className="mt-5">

@@ -48,6 +48,24 @@ const allowedAttachmentTypes = new Set([
   "image/jpeg",
   "text/plain",
 ]);
+const allowedAttachmentExtensions = new Map([
+  [".doc", "application/msword"],
+  [
+    ".docx",
+    "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+  ],
+  [".jpeg", "image/jpeg"],
+  [".jpg", "image/jpeg"],
+  [".pdf", "application/pdf"],
+  [".png", "image/png"],
+  [".txt", "text/plain"],
+  [".xls", "application/vnd.ms-excel"],
+  [
+    ".xlsx",
+    "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+  ],
+]);
+const blockedAttachmentExtensions = new Set([".htm", ".html"]);
 
 function getText(formData: FormData, key: string) {
   return String(formData.get(key) ?? "").trim();
@@ -91,30 +109,65 @@ function safeFileName(value: string) {
     .slice(0, 160) || "attachment";
 }
 
-async function uploadRequestAttachments(formData: FormData, requestId: string) {
-  const attachments = formData
+function getFileExtension(fileName: string) {
+  const normalizedName = fileName.trim().toLowerCase();
+  const extensionStart = normalizedName.lastIndexOf(".");
+  return extensionStart >= 0 ? normalizedName.slice(extensionStart) : "";
+}
+
+function getRequestAttachments(formData: FormData) {
+  return formData
     .getAll("attachments")
     .filter((value): value is File => value instanceof File && value.size > 0);
+}
 
+function getSafeAttachmentContentType(attachment: File) {
+  const extension = getFileExtension(attachment.name);
+
+  if (blockedAttachmentExtensions.has(extension)) {
+    throw new Error("HTML files are not accepted as consulting attachments.");
+  }
+
+  if (attachment.type && allowedAttachmentTypes.has(attachment.type)) {
+    return attachment.type;
+  }
+
+  if (attachment.type) {
+    throw new Error("Upload PDF, Word, Excel, image, or plain text files only.");
+  }
+
+  const extensionContentType = allowedAttachmentExtensions.get(extension);
+  if (extensionContentType) return extensionContentType;
+
+  throw new Error("Upload PDF, Word, Excel, image, or plain text files only.");
+}
+
+function validateRequestAttachments(attachments: File[]) {
+  for (const attachment of attachments) {
+    if (attachment.size > 10 * 1024 * 1024) {
+      throw new Error("Attachments must be 10 MB or smaller.");
+    }
+    getSafeAttachmentContentType(attachment);
+  }
+}
+
+async function uploadRequestAttachments(
+  attachments: File[],
+  requestId: string,
+) {
   if (!attachments.length) return;
 
   const { member, organization } = await requireMemberContext();
   const admin = createAdminClient();
 
   for (const attachment of attachments) {
-    if (attachment.size > 10 * 1024 * 1024) {
-      throw new Error("Attachments must be 10 MB or smaller.");
-    }
-    if (attachment.type && !allowedAttachmentTypes.has(attachment.type)) {
-      throw new Error("Upload PDF, Word, Excel, image, or plain text files only.");
-    }
-
     const fileName = safeFileName(attachment.name);
+    const contentType = getSafeAttachmentContentType(attachment);
     const filePath = `${organization.id}/${requestId}/${crypto.randomUUID()}-${fileName}`;
     const { error: uploadError } = await admin.storage
       .from("consulting-attachments")
       .upload(filePath, attachment, {
-        contentType: attachment.type || "application/octet-stream",
+        contentType,
         upsert: false,
       });
 
@@ -123,7 +176,7 @@ async function uploadRequestAttachments(formData: FormData, requestId: string) {
     const { error: attachmentError } = await admin
       .from("consulting_request_attachments")
       .insert({
-        content_type: attachment.type || null,
+        content_type: contentType,
         file_name: fileName,
         file_path: filePath,
         organization_id: organization.id,
@@ -145,9 +198,11 @@ export async function createConsultingRequest(
     const urgency = getText(formData, "urgency") || "standard";
     const title = getText(formData, "title");
     const description = getText(formData, "description");
+    const attachments = getRequestAttachments(formData);
 
     assertOneOf(requestTypes, type, "Choose a consulting category.");
     assertOneOf(urgencyLevels, urgency, "Choose a supported urgency.");
+    validateRequestAttachments(attachments);
 
     const supabase = await createClient();
     const { data: requestId, error } = await supabase.rpc(
@@ -164,9 +219,10 @@ export async function createConsultingRequest(
     if (!requestId) throw new Error("The consulting request could not be created.");
 
     try {
-      await uploadRequestAttachments(formData, requestId);
+      await uploadRequestAttachments(attachments, requestId);
     } catch (attachmentError) {
       console.error("Consulting request attachment upload failed", attachmentError);
+      revalidatePath("/consulting");
       return {
         message:
           "Consulting request submitted, but one or more attachments could not be uploaded. Please contact support if staff need those files.",
