@@ -11,7 +11,7 @@ import {
   X,
 } from "lucide-react";
 import Link from "next/link";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 
 import { GlobalCommandPalette } from "@/components/global-search/GlobalCommandPalette";
 import { Logo } from "@/components/Logo";
@@ -25,6 +25,7 @@ import { useSession } from "@/hooks/use-session";
 import { useRegistration } from "@/hooks/use-registration";
 import { signOut } from "@/lib/auth";
 import type { MemberNotification, NotificationSeverity } from "@/lib/types";
+import { createClient } from "@/utils/supabase/client";
 import { useRouter } from "next/navigation";
 
 const notificationTone: Record<NotificationSeverity, string> = {
@@ -71,6 +72,70 @@ function getUnreadLabel(count: number) {
   return String(count);
 }
 
+type NotificationRealtimeRow = {
+  action_url: string | null;
+  body: string;
+  created_at: string;
+  expires_at: string | null;
+  id: string;
+  read_at: string | null;
+  severity: NotificationSeverity;
+  title: string;
+  type: string;
+  user_id: string;
+};
+
+function isNotificationSeverity(value: unknown): value is NotificationSeverity {
+  return (
+    value === "info" ||
+    value === "success" ||
+    value === "warning" ||
+    value === "critical"
+  );
+}
+
+function mapNotificationRow(row: unknown): MemberNotification | null {
+  if (!row || typeof row !== "object") return null;
+  const record = row as Record<string, unknown>;
+
+  if (
+    typeof record.id !== "string" ||
+    typeof record.type !== "string" ||
+    typeof record.title !== "string" ||
+    typeof record.body !== "string" ||
+    typeof record.created_at !== "string" ||
+    !isNotificationSeverity(record.severity)
+  ) {
+    return null;
+  }
+
+  return {
+    id: record.id,
+    type: record.type,
+    severity: record.severity,
+    title: record.title,
+    body: record.body,
+    actionUrl:
+      typeof record.action_url === "string" ? record.action_url : null,
+    readAt: typeof record.read_at === "string" ? record.read_at : null,
+    expiresAt:
+      typeof record.expires_at === "string" ? record.expires_at : null,
+    createdAt: record.created_at,
+  };
+}
+
+function wasUnreadNotificationRow(row: unknown) {
+  if (!row || typeof row !== "object") return false;
+  return (row as Partial<NotificationRealtimeRow>).read_at === null;
+}
+
+function sortNotifications(items: MemberNotification[]) {
+  return [...items].sort(
+    (first, second) =>
+      new Date(second.createdAt).getTime() - new Date(first.createdAt).getTime(),
+  );
+}
+
 export function Header() {
   const router = useRouter();
   const session = useSession();
@@ -87,16 +152,102 @@ export function Header() {
   const [unreadCount, setUnreadCount] = useState(
     () => session?.notifications.unreadCount ?? 0,
   );
+  const notificationItemsRef = useRef(notificationItems);
+  const unreadCountRef = useRef(unreadCount);
   const hasUnreadNotifications = unreadCount > 0;
   const visibleNotifications = useMemo(
     () => notificationItems.filter((notification) => !notification.readAt),
     [notificationItems],
   );
 
+  function syncNotificationState(
+    nextItems: MemberNotification[],
+    nextUnreadCount: number,
+  ) {
+    notificationItemsRef.current = nextItems;
+    unreadCountRef.current = nextUnreadCount;
+    setNotificationItems(nextItems);
+    setUnreadCount(nextUnreadCount);
+  }
+
   useEffect(() => {
-    setNotificationItems(session?.notifications.items ?? []);
-    setUnreadCount(session?.notifications.unreadCount ?? 0);
+    syncNotificationState(
+      session?.notifications.items ?? [],
+      session?.notifications.unreadCount ?? 0,
+    );
   }, [session?.notifications.items, session?.notifications.unreadCount]);
+
+  useEffect(() => {
+    if (!member?.id) return;
+
+    const supabase = createClient();
+    const channel = supabase
+      .channel(`member-notifications:${member.id}`)
+      .on(
+        "postgres_changes",
+        {
+          event: "*",
+          schema: "public",
+          table: "notifications",
+          filter: `user_id=eq.${member.id}`,
+        },
+        (payload) => {
+          const currentItems = notificationItemsRef.current;
+          const currentUnreadCount = unreadCountRef.current;
+
+          if (payload.eventType === "DELETE") {
+            const oldNotification = mapNotificationRow(payload.old);
+            if (!oldNotification) return;
+            const nextItems = currentItems.filter(
+              (item) => item.id !== oldNotification.id,
+            );
+            const nextCount = wasUnreadNotificationRow(payload.old)
+              ? Math.max(0, currentUnreadCount - 1)
+              : currentUnreadCount;
+            syncNotificationState(nextItems, nextCount);
+            router.refresh();
+            return;
+          }
+
+          const notification = mapNotificationRow(payload.new);
+          if (!notification) return;
+
+          const existingNotification = currentItems.find(
+            (item) => item.id === notification.id,
+          );
+
+          if (notification.readAt) {
+            const nextItems = currentItems.filter(
+              (item) => item.id !== notification.id,
+            );
+            const nextCount =
+              existingNotification && !existingNotification.readAt
+                ? Math.max(0, currentUnreadCount - 1)
+                : currentUnreadCount;
+            syncNotificationState(nextItems, nextCount);
+            router.refresh();
+            return;
+          }
+
+          const nextItems = sortNotifications([
+            notification,
+            ...currentItems.filter((item) => item.id !== notification.id),
+          ]).slice(0, 8);
+          const nextCount =
+            !existingNotification || existingNotification.readAt
+              ? currentUnreadCount + 1
+              : currentUnreadCount;
+          syncNotificationState(nextItems, nextCount);
+          setNotificationError("");
+          router.refresh();
+        },
+      )
+      .subscribe();
+
+    return () => {
+      void supabase.removeChannel(channel);
+    };
+  }, [member?.id, router]);
 
   function handleNotificationOpen(notification: MemberNotification) {
     const destination = notification.actionUrl ?? "/dashboard";

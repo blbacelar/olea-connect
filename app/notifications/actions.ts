@@ -3,28 +3,37 @@
 import { revalidatePath } from "next/cache";
 
 import { requireMemberContext } from "@/lib/data/member-context";
-import { createClient } from "@/utils/supabase/server";
+import { createAdminClient } from "@/utils/supabase/admin";
 
 export async function markNotificationRead(notificationId: string) {
-  await requireMemberContext();
-  const supabase = await createClient();
-  const { data, error } = await supabase.rpc("mark_notification_read", {
-    target_notification_id: notificationId,
-  });
+  const { member } = await requireMemberContext();
+  const supabase = createAdminClient();
+  const { data, error } = await supabase
+    .from("notifications")
+    .update({ read_at: new Date().toISOString() })
+    .eq("id", notificationId)
+    .eq("user_id", member.id)
+    .is("read_at", null)
+    .select("id");
 
   if (error) throw error;
   revalidatePath("/", "layout");
 
-  return Boolean(data);
+  return (data?.length ?? 0) > 0;
 }
 
 export async function markAllNotificationsRead() {
-  await requireMemberContext();
-  const supabase = await createClient();
-  const { data, error } = await supabase.rpc("mark_all_notifications_read");
+  const { member } = await requireMemberContext();
+  const supabase = createAdminClient();
+  const { data, error } = await supabase
+    .from("notifications")
+    .update({ read_at: new Date().toISOString() })
+    .eq("user_id", member.id)
+    .is("read_at", null)
+    .select("id");
 
   if (error) throw error;
   revalidatePath("/", "layout");
 
-  return data ?? 0;
+  return data?.length ?? 0;
 }
