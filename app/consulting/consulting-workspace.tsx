@@ -521,10 +521,16 @@ function TimeEntryForm({ requestId }: { requestId: string }) {
           <Label htmlFor={`minutes-${requestId}`}>Minutes</Label>
           <Input id={`minutes-${requestId}`} min={1} name="minutes" type="number" />
         </div>
-        <label className="mt-7 flex h-11 items-center gap-2 rounded-md border bg-white px-3 text-sm font-semibold text-slate-600">
-          <input name="isInKind" type="checkbox" />
-          In-kind time
-        </label>
+        <div>
+          <Label htmlFor={`in-kind-${requestId}`}>Time type</Label>
+          <label
+            htmlFor={`in-kind-${requestId}`}
+            className="flex h-11 items-center gap-2 rounded-md border bg-white px-3 text-sm font-semibold text-slate-600"
+          >
+            <input id={`in-kind-${requestId}`} name="isInKind" type="checkbox" />
+            In-kind time
+          </label>
+        </div>
       </div>
       <Label htmlFor={`time-description-${requestId}`}>Work completed</Label>
       <Textarea
