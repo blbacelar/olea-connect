@@ -6,6 +6,7 @@ import {
   Gift,
   Home,
   Megaphone,
+  MessagesSquare,
   Palette,
   Users,
 } from "lucide-react";
@@ -18,6 +19,7 @@ export const navigationGroups = [
     { label: "Community", href: "/community", icon: Users },
     { label: "Grants", href: "/grants", icon: Gift },
     { label: "Webinars", href: "/webinars", icon: CalendarDays },
+    { label: "Consulting", href: "/consulting", icon: MessagesSquare },
   ],
   [
     { label: "Brand Profile", href: "/settings/brand", icon: Palette },

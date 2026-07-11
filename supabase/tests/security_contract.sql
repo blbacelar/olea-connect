@@ -23,6 +23,8 @@ values
   ('community_spaces', 'catalog'),
   ('communities', 'catalog'),
   ('consulting_engagements', 'tenant'),
+  ('consulting_request_activity', 'tenant'),
+  ('consulting_request_attachments', 'tenant'),
   ('consulting_requests', 'tenant'),
   ('consulting_time_entries', 'tenant'),
   ('event_plan_access', 'catalog'),
