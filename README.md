@@ -23,6 +23,8 @@ For a developer handoff, read these in order:
    Resend, Vercel, cron jobs, deployment, and troubleshooting.
 4. [Testing](./docs/TESTING.md) - unit, database, E2E, CI, test data isolation,
    and known Supabase Auth rate-limit constraints.
+5. [Harvest Consulting](./docs/CONSULTING.md) - consulting requests, staff
+   triage, time tracking, entitlements, and database test coverage.
 
 ## Requirements
 

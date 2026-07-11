@@ -68,6 +68,14 @@ const baseCommandItems: CommandItem[] = [
     keywords: ["events", "recordings", "zoom", "sessions"],
   },
   {
+    id: "consulting",
+    title: "Consulting",
+    description: "Submit Harvest requests, track hours, and review support activity.",
+    href: "/consulting",
+    type: "page",
+    keywords: ["harvest", "support", "consultant", "hours", "requests"],
+  },
+  {
     id: "brand-profile",
     title: "Brand Profile",
     description: "Manage your logo, colors, and report identity.",

@@ -68,6 +68,88 @@ export interface NotificationSummary {
   items: MemberNotification[];
 }
 
+export type ConsultingRequestStatus =
+  | "submitted"
+  | "accepted"
+  | "in_progress"
+  | "blocked"
+  | "completed"
+  | "canceled";
+
+export type ConsultingRequestType =
+  | "board_package"
+  | "committee_minutes"
+  | "governance_support"
+  | "strategy_call"
+  | "other";
+
+export type ConsultingRequestUrgency = "low" | "standard" | "high" | "urgent";
+
+export interface ConsultingTimeEntry {
+  id: string;
+  userId: string;
+  workDate: string;
+  minutes: number;
+  isInKind: boolean;
+  description: string;
+  createdAt: string;
+}
+
+export interface ConsultingActivityEntry {
+  id: number;
+  actorUserId: string | null;
+  eventType: string;
+  oldStatus: ConsultingRequestStatus | null;
+  newStatus: ConsultingRequestStatus | null;
+  message: string | null;
+  createdAt: string;
+}
+
+export interface ConsultingAttachment {
+  id: string;
+  fileName: string;
+  filePath: string;
+  downloadUrl: string | null;
+  contentType: string | null;
+  sizeBytes: number | null;
+  createdAt: string;
+}
+
+export interface ConsultingRequest {
+  id: string;
+  organizationId: string;
+  organizationName: string;
+  requestedBy: string;
+  requestedByName: string;
+  assignedTo: string | null;
+  assignedToName: string | null;
+  type: ConsultingRequestType;
+  urgency: ConsultingRequestUrgency;
+  status: ConsultingRequestStatus;
+  title: string;
+  description: string;
+  dueAt: string | null;
+  scheduledAt: string | null;
+  completedAt: string | null;
+  memberNotes: string | null;
+  internalNotes: string | null;
+  createdAt: string;
+  updatedAt: string;
+  attachments: ConsultingAttachment[];
+  timeEntries: ConsultingTimeEntry[];
+  activity: ConsultingActivityEntry[];
+}
+
+export interface ConsultingHourSummary {
+  includedMinutes: number;
+  inKindMinutes: number;
+  purchasedMinutes: number;
+  usedIncludedMinutes: number;
+  usedInKindMinutes: number;
+  periodStart: string | null;
+  periodEnd: string | null;
+}
+
 export interface Template {
   id: string;
   slug: string;
