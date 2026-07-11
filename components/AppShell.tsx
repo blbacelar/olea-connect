@@ -32,7 +32,7 @@ export function AppShell({ children }: { children: ReactNode }) {
   }
 
   return (
-    <div className="h-screen overflow-hidden bg-slate-100">
+    <div className="fixed inset-0 overflow-hidden bg-slate-100">
       <Sidebar />
       <div className="flex h-full min-w-0 flex-col lg:ml-60">
         <Header />
