@@ -17,6 +17,12 @@ import { createAdminClient } from "@/utils/supabase/admin";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
+export const fetchCache = "force-no-store";
+export const revalidate = 0;
+
+const noStoreHeaders = {
+  "Cache-Control": "no-store, no-cache, max-age=0, must-revalidate",
+};
 
 async function buildEmail(
   supabase: ReturnType<typeof createAdminClient>,
@@ -86,16 +92,28 @@ function isAuthorized(request: Request) {
 
 export async function GET(request: Request) {
   if (!isAuthorized(request)) {
-    return NextResponse.json({ error: "Unauthorized." }, { status: 401 });
+    return NextResponse.json(
+      { error: "Unauthorized." },
+      { headers: noStoreHeaders, status: 401 },
+    );
   }
 
   const supabase = createAdminClient();
   const { data: event, error: claimError } = await supabase.rpc(
     "claim_email_integration_event",
   );
-  if (claimError) throw claimError;
+  if (claimError) {
+    console.error("Unable to claim email integration event", claimError);
+    return NextResponse.json(
+      { error: "Email worker could not claim an event." },
+      { headers: noStoreHeaders, status: 500 },
+    );
+  }
   if (!hasClaimedEmailEvent(event)) {
-    return NextResponse.json({ processed: false });
+    return NextResponse.json(
+      { processed: false },
+      { headers: noStoreHeaders },
+    );
   }
 
   try {
@@ -129,7 +147,10 @@ export async function GET(request: Request) {
       .eq("id", event.id);
     if (updateError) throw updateError;
 
-    return NextResponse.json({ processed: true, eventId: event.id });
+    return NextResponse.json(
+      { processed: true, eventId: event.id },
+      { headers: noStoreHeaders },
+    );
   } catch (error) {
     const message = error instanceof Error ? error.message : "Unknown email error";
     await supabase
@@ -142,6 +163,11 @@ export async function GET(request: Request) {
       })
       .eq("id", event.id);
     console.error(`Unable to process email event ${event.id}`, error);
-    return NextResponse.json({ error: "Email delivery failed." }, { status: 500 });
+    return NextResponse.json(
+      { error: "Email delivery failed." },
+      { headers: noStoreHeaders, status: 500 },
+    );
   }
 }
+
+export const POST = GET;
