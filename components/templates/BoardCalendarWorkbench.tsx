@@ -634,7 +634,7 @@ export function BoardCalendarWorkbench({
           </div>
         </div>
 
-        <div className="space-y-5">
+        <div className="mt-5 space-y-5">
           <TabsContent value="dashboard" className="mt-0 space-y-5">
             <div className="grid gap-3 md:grid-cols-3">
               <SummaryCard
