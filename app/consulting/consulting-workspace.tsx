@@ -13,6 +13,14 @@ import {
 
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
@@ -553,59 +561,48 @@ function StaffQueue({
   staffUsers: Array<{ id: string; name: string }>;
 }) {
   const openRequests = useMemo(
-    () => requests.filter((request) => request.status !== "completed"),
+    () =>
+      requests.filter(
+        (request) => !["completed", "canceled"].includes(request.status),
+      ),
     [requests],
   );
 
   return (
-    <section className="rounded-[14px] border bg-white shadow-soft">
-      <div className="border-b bg-slate-50 p-5">
-        <div className="flex items-center gap-2 text-sm font-semibold text-olea-green">
-          <ShieldCheck className="size-4" />
-          Consulting staff workspace
+    <div>
+      {openRequests.length ? (
+        <div className="space-y-5">
+          {openRequests.map((request) => (
+            <article key={request.id} className="rounded-xl border bg-white p-4">
+              <div className="flex flex-wrap items-start justify-between gap-3">
+                <div>
+                  <p className="text-xs font-semibold uppercase tracking-[0.08em] text-slate-400">
+                    {request.organizationName} · {request.requestedByName}
+                  </p>
+                  <h3 className="mt-1 text-lg font-bold text-slate-900">
+                    {request.title}
+                  </h3>
+                  <p className="mt-1 text-sm leading-6 text-slate-600">
+                    {request.description}
+                  </p>
+                </div>
+                <Badge variant="outline" className={statusBadgeClass(request.status)}>
+                  {request.status.replaceAll("_", " ")}
+                </Badge>
+              </div>
+              <div className="mt-4 grid gap-4 lg:grid-cols-2">
+                <StaffUpdateForm request={request} staffUsers={staffUsers} />
+                <TimeEntryForm requestId={request.id} />
+              </div>
+            </article>
+          ))}
         </div>
-        <h2 className="mt-2 text-xl font-bold text-slate-900">
-          Triage and time tracking
-        </h2>
-        <p className="mt-1 text-sm text-slate-500">
-          Assign requests, schedule next steps, and record auditable time entries.
+      ) : (
+        <p className="rounded-lg bg-slate-50 p-5 text-sm text-slate-500">
+          No open consulting requests need staff action.
         </p>
-      </div>
-      <div className="p-5">
-        {openRequests.length ? (
-          <div className="space-y-5">
-            {openRequests.map((request) => (
-              <article key={request.id} className="rounded-xl border p-4">
-                <div className="flex flex-wrap items-start justify-between gap-3">
-                  <div>
-                    <p className="text-xs font-semibold uppercase tracking-[0.08em] text-slate-400">
-                      {request.organizationName} · {request.requestedByName}
-                    </p>
-                    <h3 className="mt-1 text-lg font-bold text-slate-900">
-                      {request.title}
-                    </h3>
-                    <p className="mt-1 text-sm leading-6 text-slate-600">
-                      {request.description}
-                    </p>
-                  </div>
-                  <Badge variant="outline" className={statusBadgeClass(request.status)}>
-                    {request.status.replaceAll("_", " ")}
-                  </Badge>
-                </div>
-                <div className="mt-4 grid gap-4 lg:grid-cols-2">
-                  <StaffUpdateForm request={request} staffUsers={staffUsers} />
-                  <TimeEntryForm requestId={request.id} />
-                </div>
-              </article>
-            ))}
-          </div>
-        ) : (
-          <p className="rounded-lg bg-slate-50 p-5 text-sm text-slate-500">
-            No open consulting requests need staff action.
-          </p>
-        )}
-      </div>
-    </section>
+      )}
+    </div>
   );
 }
 
@@ -623,34 +620,43 @@ function StaffWorkspaceToggle({
 
   return (
     <section className="rounded-[14px] border bg-white p-5 shadow-soft">
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-        <div>
-          <p className="flex items-center gap-2 text-sm font-semibold text-olea-green">
-            <ShieldCheck className="size-4" />
-            Admin tools
-          </p>
-          <h2 className="mt-2 text-xl font-bold text-slate-900">
-            Consulting staff workspace
-          </h2>
-          <p className="mt-1 text-sm leading-6 text-slate-500">
-            {openCount
-              ? `${openCount} open request${openCount === 1 ? "" : "s"} need staff action.`
-              : "No open consulting requests need staff action."}
-          </p>
+      <Dialog open={isOpen} onOpenChange={setIsOpen}>
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+          <div>
+            <p className="flex items-center gap-2 text-sm font-semibold text-olea-green">
+              <ShieldCheck className="size-4" />
+              Admin tools
+            </p>
+            <h2 className="mt-2 text-xl font-bold text-slate-900">
+              Consulting staff workspace
+            </h2>
+            <p className="mt-1 text-sm leading-6 text-slate-500">
+              {openCount
+                ? `${openCount} open request${openCount === 1 ? "" : "s"} need staff action.`
+                : "No open consulting requests need staff action."}
+            </p>
+          </div>
+          <DialogTrigger asChild>
+            <Button type="button">Open staff workspace</Button>
+          </DialogTrigger>
         </div>
-        <Button
-          type="button"
-          variant={isOpen ? "outline" : "default"}
-          onClick={() => setIsOpen((current) => !current)}
-        >
-          {isOpen ? "Hide staff workspace" : "Open staff workspace"}
-        </Button>
-      </div>
-      {isOpen ? (
-        <div className="mt-5">
-          <StaffQueue requests={requests} staffUsers={staffUsers} />
-        </div>
-      ) : null}
+        <DialogContent className="max-w-[min(1120px,calc(100vw-2rem))] p-0">
+          <DialogHeader className="border-b bg-slate-50 px-6 py-5 pr-12">
+            <p className="flex items-center gap-2 text-sm font-semibold text-olea-green">
+              <ShieldCheck className="size-4" />
+              Admin tools
+            </p>
+            <DialogTitle>Consulting staff workspace</DialogTitle>
+            <DialogDescription>
+              Assign requests, schedule next steps, and record auditable time
+              entries without mixing staff triage into the member request page.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="max-h-[calc(100svh-12rem)] overflow-y-auto p-6">
+            <StaffQueue requests={requests} staffUsers={staffUsers} />
+          </div>
+        </DialogContent>
+      </Dialog>
     </section>
   );
 }
