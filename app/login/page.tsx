@@ -10,6 +10,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useRegistration } from "@/hooks/use-registration";
 import { signIn } from "@/lib/auth";
+import { retryMembershipActivation } from "@/lib/provisioning/client";
 
 export default function LoginPage() {
   const router = useRouter();
@@ -42,6 +43,12 @@ export default function LoginPage() {
       try {
         setError("");
         await signIn(email, password, { rememberFor30Days });
+        const { result } = await retryMembershipActivation();
+        if (result.status === "completed") {
+          router.push("/onboarding/brand-setup");
+          router.refresh();
+          return;
+        }
         router.push(
           nextPath.startsWith("/") && !nextPath.startsWith("//")
             ? nextPath

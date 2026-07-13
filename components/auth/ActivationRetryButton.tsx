@@ -5,12 +5,7 @@ import { useRouter } from "next/navigation";
 import { useState, useTransition } from "react";
 
 import { Button } from "@/components/ui/button";
-import { apiRoutes } from "@/lib/api-routes";
-
-interface RetryResult {
-  status?: string;
-  error?: string;
-}
+import { retryMembershipActivation } from "@/lib/provisioning/client";
 
 export function ActivationRetryButton() {
   const router = useRouter();
@@ -21,10 +16,7 @@ export function ActivationRetryButton() {
     startTransition(async () => {
       try {
         setError("");
-        const response = await fetch(apiRoutes.provisioningRetry, {
-          method: "POST",
-        });
-        const result = (await response.json()) as RetryResult;
+        const { response, result } = await retryMembershipActivation();
 
         if (response.status === 401) {
           router.push("/login?next=/signup/success?activation=failed");

@@ -4,6 +4,8 @@ import { redirect } from "next/navigation";
 
 import { AuthCard } from "@/components/auth/AuthCard";
 import { Button } from "@/components/ui/button";
+import { attemptUserWorkspaceProvisioning } from "@/lib/stripe/registration";
+import { createAdminClient } from "@/utils/supabase/admin";
 import { createClient } from "@/utils/supabase/server";
 
 const allowedTypes = new Set<EmailOtpType>([
@@ -28,6 +30,10 @@ function getSafeType(value: string | string[] | undefined) {
     : null;
 }
 
+function shouldSkipProvisioning(next: string) {
+  return next.startsWith("/update-password");
+}
+
 async function confirmEmail(formData: FormData) {
   "use server";
 
@@ -47,6 +53,41 @@ async function confirmEmail(formData: FormData) {
 
   if (error) {
     redirect("/login?error=This authentication link is invalid or has expired.");
+  }
+
+  if (!shouldSkipProvisioning(next)) {
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+
+    if (user) {
+      let activationRedirect: string | null = null;
+
+      try {
+        const result = await attemptUserWorkspaceProvisioning(
+          createAdminClient(),
+          user.id,
+        );
+
+        if (result?.status === "completed") {
+          activationRedirect = "/onboarding/brand-setup";
+        } else if (
+          result?.status === "pending_payment" ||
+          result?.status === "pending_verification"
+        ) {
+          activationRedirect = `/signup/success?activation=${result.status}`;
+        }
+      } catch (provisioningError) {
+        console.error(
+          "Unable to complete workspace provisioning after email confirmation",
+          provisioningError,
+        );
+      }
+
+      if (activationRedirect) {
+        redirect(activationRedirect);
+      }
+    }
   }
 
   redirect(next);
