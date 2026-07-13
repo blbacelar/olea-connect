@@ -741,6 +741,10 @@ export function ConsultingWorkspace({
             </p>
           </section>
 
+          {canManageConsulting ? (
+            <StaffWorkspaceToggle requests={staffRequests} staffUsers={staffUsers} />
+          ) : null}
+
           <section className="grid gap-4 md:grid-cols-3">
             <HourCard
               label="Included support"
@@ -787,10 +791,6 @@ export function ConsultingWorkspace({
           </p>
         </section>
       )}
-
-      {canManageConsulting ? (
-        <StaffWorkspaceToggle requests={staffRequests} staffUsers={staffUsers} />
-      ) : null}
     </div>
   );
 }
