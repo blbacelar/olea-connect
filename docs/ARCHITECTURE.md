@@ -305,6 +305,15 @@ Supabase Cron calls `/api/v1/email/process` with `Authorization: Bearer
 <CRON_SECRET>`. The route claims one event transactionally and sends through
 Resend.
 
+### Board Calendar Reminder Worker
+
+Board Calendar meetings, tasks, annual notes, and AGM milestones live inside
+`template_instances.form_data`. A protected scheduled worker at
+`/api/v1/notifications/board-calendar-reminders` scans Board Calendar instances
+and creates idempotent in-app notifications for active organization members when
+calendar items are due today or tomorrow. Realtime notification subscriptions in
+the app shell surface those reminders without requiring a page refresh.
+
 ### Resend Webhook
 
 `app/api/v1/email/webhook/route.ts` validates `RESEND_WEBHOOK_SECRET` and records

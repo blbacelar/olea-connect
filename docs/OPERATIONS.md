@@ -285,6 +285,15 @@ Recommended jobs:
   - URL: `https://<domain>/api/v1/provisioning/reconcile`
   - Same auth header.
 
+- Board Calendar reminders:
+  - Method: `GET`
+  - URL: `https://<domain>/api/v1/notifications/board-calendar-reminders`
+  - Header: `Authorization: Bearer <CRON_SECRET>`
+  - Schedule: hourly or daily. The worker creates one in-app notification per
+    active workspace member for Board Calendar items due today or tomorrow.
+  - Dry run: append `?dryRun=1` to preview matched reminders without creating
+    notifications.
+
 If Supabase says `pg_net` is required, install the extension from the Supabase
 Dashboard before creating HTTP cron jobs.
 
