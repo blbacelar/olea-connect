@@ -51,17 +51,6 @@ function escapeHtml(value: string) {
   );
 }
 
-function confirmationUrl(
-  data: HookPayload["email_data"],
-  tokenHash = data.token_hash,
-) {
-  const url = new URL("/auth/v1/verify", Deno.env.get("SUPABASE_URL"));
-  url.searchParams.set("token", tokenHash);
-  url.searchParams.set("type", data.email_action_type);
-  url.searchParams.set("redirect_to", data.redirect_to || data.site_url);
-  return url.toString();
-}
-
 function layout(input: {
   title: string;
   body: string;
@@ -86,10 +75,7 @@ function layout(input: {
 
 function buildEmail(payload: HookPayload) {
   const { email_data: data } = payload;
-  const url =
-    data.email_action_type === "recovery"
-      ? appConfirmUrl(data, data.token_hash)
-      : confirmationUrl(data);
+  const url = appConfirmUrl(data, data.token_hash);
   const templates: Record<EmailAction, { subject: string; html: string; text: string }> = {
     signup: {
       subject: "Confirm your Olea Connects email",

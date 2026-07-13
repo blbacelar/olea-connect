@@ -8,6 +8,7 @@ import { createClient } from "@/utils/supabase/server";
 
 const allowedTypes = new Set<EmailOtpType>([
   "email",
+  "magiclink",
   "recovery",
   "invite",
   "email_change",

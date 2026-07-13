@@ -4,6 +4,10 @@ type EmailData = {
   site_url: string;
 };
 
+export function supabaseVerifyType(actionType: string) {
+  return actionType === "signup" ? "email" : actionType;
+}
+
 function safeNextPath(value: string | null) {
   return value?.startsWith("/") && !value.startsWith("//")
     ? value
@@ -17,7 +21,7 @@ export function appConfirmUrl(data: EmailData, tokenHash: string) {
   const url = new URL("/auth/confirm", redirectUrl.origin);
 
   url.searchParams.set("token_hash", tokenHash);
-  url.searchParams.set("type", data.email_action_type);
+  url.searchParams.set("type", supabaseVerifyType(data.email_action_type));
   url.searchParams.set("next", safeNextPath(redirectUrl.searchParams.get("next")));
 
   return url.toString();
