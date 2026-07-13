@@ -4,6 +4,7 @@ const exchangeCodeForSession = vi.fn();
 const getUser = vi.fn();
 const attemptUserWorkspaceProvisioning = vi.fn();
 const createAdminClient = vi.fn();
+const getPostActivationPath = vi.fn();
 
 vi.mock("@/utils/supabase/server", () => ({
   createClient: vi.fn(async () => ({
@@ -22,11 +23,17 @@ vi.mock("@/lib/stripe/registration", () => ({
   attemptUserWorkspaceProvisioning,
 }));
 
+vi.mock("@/lib/onboarding/post-activation", () => ({
+  getPostActivationPath,
+}));
+
 describe("auth callback", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     exchangeCodeForSession.mockResolvedValue({ error: null });
     getUser.mockResolvedValue({ data: { user: { id: "user_123" } } });
+    createAdminClient.mockReturnValue({ admin: true });
+    getPostActivationPath.mockResolvedValue("/onboarding/brand-setup");
   });
 
   it("sends password recovery links to the password update screen", async () => {
@@ -56,8 +63,33 @@ describe("auth callback", () => {
       "https://staging.oleaconnects.com/onboarding/brand-setup",
     );
     expect(attemptUserWorkspaceProvisioning).toHaveBeenCalledWith(
-      undefined,
+      { admin: true },
       "user_123",
+    );
+    expect(getPostActivationPath).toHaveBeenCalledWith(
+      { admin: true },
+      undefined,
+    );
+  });
+
+  it("redirects completed returning users to the resolved post-activation path", async () => {
+    const { GET } = await import("@/app/auth/callback/route");
+    attemptUserWorkspaceProvisioning.mockResolvedValue({
+      status: "completed",
+      organization_id: "org_123",
+    });
+    getPostActivationPath.mockResolvedValue("/dashboard");
+
+    const response = await GET(
+      new Request("https://staging.oleaconnects.com/auth/callback?code=valid-code"),
+    );
+
+    expect(response.headers.get("location")).toBe(
+      "https://staging.oleaconnects.com/dashboard",
+    );
+    expect(getPostActivationPath).toHaveBeenCalledWith(
+      { admin: true },
+      "org_123",
     );
   });
 });

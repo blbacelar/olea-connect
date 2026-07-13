@@ -4,6 +4,7 @@ import { redirect } from "next/navigation";
 
 import { AuthCard } from "@/components/auth/AuthCard";
 import { Button } from "@/components/ui/button";
+import { getPostActivationPath } from "@/lib/onboarding/post-activation";
 import { attemptUserWorkspaceProvisioning } from "@/lib/stripe/registration";
 import { createAdminClient } from "@/utils/supabase/admin";
 import { createClient } from "@/utils/supabase/server";
@@ -64,13 +65,17 @@ async function confirmEmail(formData: FormData) {
       let activationRedirect: string | null = null;
 
       try {
+        const admin = createAdminClient();
         const result = await attemptUserWorkspaceProvisioning(
-          createAdminClient(),
+          admin,
           user.id,
         );
 
         if (result?.status === "completed") {
-          activationRedirect = "/onboarding/brand-setup";
+          activationRedirect = await getPostActivationPath(
+            admin,
+            result.organization_id,
+          );
         } else if (
           result?.status === "pending_payment" ||
           result?.status === "pending_verification"

@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 
+import { getPostActivationPath } from "@/lib/onboarding/post-activation";
 import { attemptUserWorkspaceProvisioning } from "@/lib/stripe/registration";
 import { createAdminClient } from "@/utils/supabase/admin";
 import { createClient } from "@/utils/supabase/server";
@@ -20,8 +21,9 @@ export async function POST() {
   }
 
   try {
+    const admin = createAdminClient();
     const result = await attemptUserWorkspaceProvisioning(
-      createAdminClient(),
+      admin,
       user.id,
     );
 
@@ -32,7 +34,12 @@ export async function POST() {
       );
     }
 
-    return NextResponse.json(result, {
+    const nextPath =
+      result.status === "completed"
+        ? await getPostActivationPath(admin, result.organization_id)
+        : undefined;
+
+    return NextResponse.json({ ...result, nextPath }, {
       status: result.status === "failed" ? 409 : 200,
     });
   } catch (error) {

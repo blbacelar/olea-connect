@@ -3,6 +3,7 @@ import { apiRoutes } from "@/lib/api-routes";
 export interface ProvisioningRetryResult {
   status?: string;
   error?: string;
+  nextPath?: string;
 }
 
 export async function retryMembershipActivation() {

@@ -12,6 +12,12 @@ import { useRegistration } from "@/hooks/use-registration";
 import { signIn } from "@/lib/auth";
 import { retryMembershipActivation } from "@/lib/provisioning/client";
 
+const DASHBOARD_PATH = "/dashboard";
+
+function getSafePath(value: string | undefined, fallback = DASHBOARD_PATH) {
+  return value?.startsWith("/") && !value.startsWith("//") ? value : fallback;
+}
+
 export default function LoginPage() {
   const router = useRouter();
   const { registration } = useRegistration();
@@ -45,15 +51,11 @@ export default function LoginPage() {
         await signIn(email, password, { rememberFor30Days });
         const { result } = await retryMembershipActivation();
         if (result.status === "completed") {
-          router.push("/onboarding/brand-setup");
+          router.push(getSafePath(result.nextPath));
           router.refresh();
           return;
         }
-        router.push(
-          nextPath.startsWith("/") && !nextPath.startsWith("//")
-            ? nextPath
-            : "/dashboard",
-        );
+        router.push(getSafePath(nextPath));
         router.refresh();
       } catch (loginError) {
         setError(

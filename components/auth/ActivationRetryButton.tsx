@@ -7,6 +7,12 @@ import { useState, useTransition } from "react";
 import { Button } from "@/components/ui/button";
 import { retryMembershipActivation } from "@/lib/provisioning/client";
 
+function getSafePath(value: string | undefined) {
+  return value?.startsWith("/") && !value.startsWith("//")
+    ? value
+    : "/dashboard";
+}
+
 export function ActivationRetryButton() {
   const router = useRouter();
   const [error, setError] = useState("");
@@ -24,7 +30,7 @@ export function ActivationRetryButton() {
         }
 
         if (result.status === "completed") {
-          router.push("/onboarding/brand-setup");
+          router.push(getSafePath(result.nextPath));
           router.refresh();
           return;
         }

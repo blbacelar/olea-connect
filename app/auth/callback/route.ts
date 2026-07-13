@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 
+import { getPostActivationPath } from "@/lib/onboarding/post-activation";
 import { attemptUserWorkspaceProvisioning } from "@/lib/stripe/registration";
 import { createAdminClient } from "@/utils/supabase/admin";
 import { createClient } from "@/utils/supabase/server";
@@ -34,14 +35,18 @@ export async function GET(request: Request) {
         }
 
         try {
+          const admin = createAdminClient();
           const result = await attemptUserWorkspaceProvisioning(
-            createAdminClient(),
+            admin,
             user.id,
           );
 
           if (result?.status === "completed") {
             return NextResponse.redirect(
-              new URL("/onboarding/brand-setup", url.origin),
+              new URL(
+                await getPostActivationPath(admin, result.organization_id),
+                url.origin,
+              ),
             );
           }
 
