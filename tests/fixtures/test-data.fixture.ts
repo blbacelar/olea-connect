@@ -54,9 +54,35 @@ type EventStatus =
 type PlatformRole =
   | "super_admin"
   | "content_admin"
+  | "consultant"
+  | "consulting_admin"
   | "grants_admin"
   | "community_admin"
   | "finance_admin";
+
+type ConsultingRequestLookup = {
+  id: string;
+  assigned_to: string | null;
+  description: string;
+  internal_notes: string | null;
+  member_notes: string | null;
+  status: string;
+  title: string;
+};
+
+type ConsultingActivityLookup = {
+  event_type: string;
+  message: string | null;
+  new_status: string | null;
+  old_status: string | null;
+};
+
+type ConsultingTimeEntryLookup = {
+  description: string;
+  is_in_kind: boolean;
+  minutes: number;
+  work_date: string;
+};
 
 export type CreatedTemplateInstance = {
   id: string;
@@ -101,6 +127,44 @@ export class TestDataManager {
     this.cleanupTasks.push(task);
   }
 
+  private async cleanupAuthUserDependencies(userId: string) {
+    const { error: consultingAttachmentError } = await this.supabase
+      .from("consulting_request_attachments")
+      .delete()
+      .eq("uploaded_by", userId);
+    if (consultingAttachmentError) throw consultingAttachmentError;
+
+    const { error: consultingTimeError } = await this.supabase
+      .from("consulting_time_entries")
+      .delete()
+      .eq("user_id", userId);
+    if (consultingTimeError) throw consultingTimeError;
+
+    const { error: consultingAssignmentError } = await this.supabase
+      .from("consulting_requests")
+      .update({ assigned_to: null })
+      .eq("assigned_to", userId);
+    if (consultingAssignmentError) throw consultingAssignmentError;
+
+    const { error: consultingRequestError } = await this.supabase
+      .from("consulting_requests")
+      .delete()
+      .eq("requested_by", userId);
+    if (consultingRequestError) throw consultingRequestError;
+
+    const { error: notificationError } = await this.supabase
+      .from("notifications")
+      .delete()
+      .eq("user_id", userId);
+    if (notificationError) throw notificationError;
+
+    const { error: profileError } = await this.supabase
+      .from("profiles")
+      .delete()
+      .eq("id", userId);
+    if (profileError) throw profileError;
+  }
+
   async createOrganizationOwner(
     options: {
       activeSubscription?: boolean;
@@ -137,6 +201,8 @@ export class TestDataManager {
     this.registerCleanup({
       label: `auth user ${userId}`,
       run: async () => {
+        await this.cleanupAuthUserDependencies(userId);
+
         const { error } = await this.supabase.auth.admin.deleteUser(userId);
         if (error && error.status !== 404) throw error;
 
@@ -332,6 +398,8 @@ export class TestDataManager {
     this.registerCleanup({
       label: `auth user ${userId}`,
       run: async () => {
+        await this.cleanupAuthUserDependencies(userId);
+
         const { error } = await this.supabase.auth.admin.deleteUser(userId);
         if (error && error.status !== 404) throw error;
       },
@@ -998,6 +1066,51 @@ export class TestDataManager {
       .eq("user_id", userId);
     if (error) throw error;
     return count ?? 0;
+  }
+
+  async getConsultingRequestByTitle(title: string) {
+    const { data, error } = await this.supabase
+      .from("consulting_requests")
+      .select(
+        "id, assigned_to, description, internal_notes, member_notes, status, title",
+      )
+      .eq("title", title)
+      .maybeSingle();
+
+    if (error) throw error;
+    return data as ConsultingRequestLookup | null;
+  }
+
+  async getConsultingRequestCountByTitle(title: string) {
+    const { count, error } = await this.supabase
+      .from("consulting_requests")
+      .select("id", { count: "exact", head: true })
+      .eq("title", title);
+
+    if (error) throw error;
+    return count ?? 0;
+  }
+
+  async getConsultingRequestActivity(requestId: string) {
+    const { data, error } = await this.supabase
+      .from("consulting_request_activity")
+      .select("event_type, message, new_status, old_status")
+      .eq("request_id", requestId)
+      .order("created_at", { ascending: true });
+
+    if (error) throw error;
+    return (data ?? []) as ConsultingActivityLookup[];
+  }
+
+  async getConsultingTimeEntries(requestId: string) {
+    const { data, error } = await this.supabase
+      .from("consulting_time_entries")
+      .select("description, is_in_kind, minutes, work_date")
+      .eq("request_id", requestId)
+      .order("created_at", { ascending: true });
+
+    if (error) throw error;
+    return (data ?? []) as ConsultingTimeEntryLookup[];
   }
 
   async getEventEmailIntegrationEvents(eventId: string) {
