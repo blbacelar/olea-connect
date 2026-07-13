@@ -188,6 +188,45 @@ TEST_SUPABASE_SERVICE_ROLE_KEY
 
 Never point these at production.
 
+## CI/CD Release Gates
+
+Pull requests into `main` run `.github/workflows/ci.yml`, which gates linting,
+type checking, unit tests, production build, local Supabase migration reset/lint,
+database tests, data-isolation tests, browser smoke tests, and security-boundary
+tests. GitHub branch protection should require the `PR Gate` check before
+merging to the protected branch.
+
+Nightly regression runs `.github/workflows/regression.yml` every day at 09:30
+UTC. Scheduled runs explicitly check out `staging`, because that is the active
+QA branch while production development continues. Manual runs accept a `ref`
+input, so use `main`, `staging`, a release branch, or a specific SHA when
+validating a release candidate.
+
+Important GitHub Actions behavior: scheduled workflows are read from the
+repository default branch. If `.github/workflows/regression.yml` changes on
+`staging`, merge that workflow change into `main` before expecting the nightly
+schedule to use it.
+
+When nightly regression fails:
+
+1. Open the failed run and confirm the `Regression target` log line.
+2. Classify the failure as product defect, test defect, environment issue, test
+   data collision, or known provider/rate-limit instability.
+3. Reproduce with local Supabase before changing application code:
+
+   ```bash
+   bash scripts/with-local-supabase.sh npm run test:e2e
+   ```
+
+4. For focused diagnosis, run only the failing spec/project:
+
+   ```bash
+   bash scripts/with-local-supabase.sh npx playwright test <spec> --project=<project>
+   ```
+
+5. Commit the fix with the focused verification command in the PR description or
+   issue comment.
+
 ## Supabase Operations
 
 ### Link and Push Migrations

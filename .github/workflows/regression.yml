@@ -4,6 +4,12 @@ on:
   schedule:
     - cron: "30 9 * * *"
   workflow_dispatch:
+    inputs:
+      ref:
+        description: "Branch, tag, or SHA to test"
+        required: false
+        default: "staging"
+        type: string
 
 permissions:
   contents: read
@@ -17,8 +23,16 @@ jobs:
     name: Cross-browser Regression
     runs-on: ubuntu-latest
     timeout-minutes: 40
+    env:
+      REGRESSION_REF: ${{ github.event_name == 'workflow_dispatch' && inputs.ref || 'staging' }}
     steps:
       - uses: actions/checkout@v6
+        with:
+          ref: ${{ env.REGRESSION_REF }}
+      - name: Report regression target
+        run: |
+          echo "Running nightly regression against $REGRESSION_REF"
+          git --no-pager log -1 --oneline
       - uses: actions/setup-node@v6
         with:
           node-version: 22
