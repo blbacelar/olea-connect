@@ -30,6 +30,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Textarea } from "@/components/ui/textarea";
 import type {
   ConsultingHourSummary,
@@ -553,6 +554,39 @@ function TimeEntryForm({ requestId }: { requestId: string }) {
   );
 }
 
+function StaffRequestPanel({
+  request,
+  staffUsers,
+}: {
+  request: ConsultingRequest;
+  staffUsers: Array<{ id: string; name: string }>;
+}) {
+  return (
+    <article className="rounded-xl border bg-white p-4">
+      <div className="flex flex-wrap items-start justify-between gap-3">
+        <div>
+          <p className="text-xs font-semibold uppercase tracking-[0.08em] text-slate-400">
+            {request.organizationName} · {request.requestedByName}
+          </p>
+          <h3 className="mt-1 text-lg font-bold text-slate-900">
+            {request.title}
+          </h3>
+          <p className="mt-1 text-sm leading-6 text-slate-600">
+            {request.description}
+          </p>
+        </div>
+        <Badge variant="outline" className={statusBadgeClass(request.status)}>
+          {request.status.replaceAll("_", " ")}
+        </Badge>
+      </div>
+      <div className="mt-4 grid gap-4 lg:grid-cols-2">
+        <StaffUpdateForm request={request} staffUsers={staffUsers} />
+        <TimeEntryForm requestId={request.id} />
+      </div>
+    </article>
+  );
+}
+
 function StaffQueue({
   requests,
   staffUsers,
@@ -568,41 +602,45 @@ function StaffQueue({
     [requests],
   );
 
+  if (!openRequests.length) {
+    return (
+      <p className="rounded-lg bg-slate-50 p-5 text-sm text-slate-500">
+        No open consulting requests need staff action.
+      </p>
+    );
+  }
+
+  if (openRequests.length === 1) {
+    return (
+      <StaffRequestPanel request={openRequests[0]} staffUsers={staffUsers} />
+    );
+  }
+
   return (
-    <div>
-      {openRequests.length ? (
-        <div className="space-y-5">
-          {openRequests.map((request) => (
-            <article key={request.id} className="rounded-xl border bg-white p-4">
-              <div className="flex flex-wrap items-start justify-between gap-3">
-                <div>
-                  <p className="text-xs font-semibold uppercase tracking-[0.08em] text-slate-400">
-                    {request.organizationName} · {request.requestedByName}
-                  </p>
-                  <h3 className="mt-1 text-lg font-bold text-slate-900">
-                    {request.title}
-                  </h3>
-                  <p className="mt-1 text-sm leading-6 text-slate-600">
-                    {request.description}
-                  </p>
-                </div>
-                <Badge variant="outline" className={statusBadgeClass(request.status)}>
-                  {request.status.replaceAll("_", " ")}
-                </Badge>
-              </div>
-              <div className="mt-4 grid gap-4 lg:grid-cols-2">
-                <StaffUpdateForm request={request} staffUsers={staffUsers} />
-                <TimeEntryForm requestId={request.id} />
-              </div>
-            </article>
+    <Tabs defaultValue={openRequests[0].id} className="space-y-4">
+      <div className="overflow-x-auto pb-1">
+        <TabsList className="h-auto min-w-max justify-start gap-1 bg-slate-100 p-1">
+          {openRequests.map((request, index) => (
+            <TabsTrigger
+              key={request.id}
+              value={request.id}
+              className="max-w-[220px] justify-start gap-2 px-3 py-2 text-left"
+              title={request.title}
+            >
+              <span className="rounded-full bg-white/80 px-2 py-0.5 text-xs text-slate-500">
+                {index + 1}
+              </span>
+              <span className="truncate">{request.title}</span>
+            </TabsTrigger>
           ))}
-        </div>
-      ) : (
-        <p className="rounded-lg bg-slate-50 p-5 text-sm text-slate-500">
-          No open consulting requests need staff action.
-        </p>
-      )}
-    </div>
+        </TabsList>
+      </div>
+      {openRequests.map((request) => (
+        <TabsContent key={request.id} value={request.id} className="mt-0">
+          <StaffRequestPanel request={request} staffUsers={staffUsers} />
+        </TabsContent>
+      ))}
+    </Tabs>
   );
 }
 
