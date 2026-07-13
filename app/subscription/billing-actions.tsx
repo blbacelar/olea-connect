@@ -13,6 +13,14 @@ import {
 import { useEffect, useRef, useState, useTransition } from "react";
 
 import { Button } from "@/components/ui/button";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import {
   Select,
@@ -111,10 +119,20 @@ export function PlanUpgradeControls({
   const [targetPlanId, setTargetPlanId] = useState<MembershipTier>(
     upgradeOptions[0]?.id ?? currentPlanId,
   );
+  const [confirmOpen, setConfirmOpen] = useState(false);
   const [isPending, startTransition] = useTransition();
   const unavailable =
     disabled || isPending || !canManage || upgradeOptions.length === 0;
   const selectedPlan = membershipPlans.find((plan) => plan.id === targetPlanId);
+  const selectedPlanPriceLabel = selectedPlan
+    ? getPlanPriceLabel(selectedPlan.id, billingInterval)
+    : "";
+
+  const openUpgradeConfirmation = () => {
+    setError("");
+    setSuccessMessage("");
+    setConfirmOpen(true);
+  };
 
   const upgradePlan = () => {
     startTransition(async () => {
@@ -141,6 +159,7 @@ export function PlanUpgradeControls({
             result.message ??
               "Your plan upgrade was confirmed. Platform access is still syncing and should update shortly.",
           );
+          setConfirmOpen(false);
           return;
         }
 
@@ -192,13 +211,17 @@ export function PlanUpgradeControls({
                 ))}
               </SelectContent>
             </Select>
-            <Button disabled={unavailable} onClick={upgradePlan} type="button">
+            <Button
+              disabled={unavailable}
+              onClick={openUpgradeConfirmation}
+              type="button"
+            >
               {isPending ? (
                 <LoaderCircle className="size-4 animate-spin" />
               ) : (
                 <TrendingUp className="size-4" />
               )}
-              Upgrade
+              Review upgrade
             </Button>
           </div>
         ) : (
@@ -211,11 +234,84 @@ export function PlanUpgradeControls({
       {selectedPlan && upgradeOptions.length > 0 ? (
         <p className="mt-4 rounded-lg bg-emerald-50 p-3 text-sm text-emerald-900">
           Upgrade to <strong>{selectedPlan.name}</strong> for{" "}
-          {getPlanPriceLabel(selectedPlan.id, billingInterval)} /{" "}
-          {billingInterval}. Downgrades are handled by support so access changes
-          stay clean.
+          {selectedPlanPriceLabel} / {billingInterval}. Downgrades are handled
+          by support so access changes stay clean.
         </p>
       ) : null}
+
+      <Dialog
+        open={confirmOpen}
+        onOpenChange={(open) => {
+          if (!isPending) setConfirmOpen(open);
+        }}
+      >
+        <DialogContent className="max-w-lg">
+          <DialogHeader>
+            <div className="mb-2 flex size-11 items-center justify-center rounded-xl bg-amber-50 text-amber-700">
+              <TrendingUp className="size-5" />
+            </div>
+            <DialogTitle>Confirm plan upgrade</DialogTitle>
+            <DialogDescription>
+              Review this billing change before we update your membership.
+            </DialogDescription>
+          </DialogHeader>
+          {selectedPlan ? (
+            <div className="space-y-4">
+              <div className="rounded-xl border bg-slate-50 p-4">
+                <p className="text-xs font-semibold uppercase tracking-[0.08em] text-slate-400">
+                  New plan
+                </p>
+                <p className="mt-2 text-lg font-bold text-slate-900">
+                  {selectedPlan.name}
+                </p>
+                <p className="mt-1 text-sm text-slate-600">
+                  {selectedPlanPriceLabel} / {billingInterval}
+                </p>
+              </div>
+              <div className="rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm leading-6 text-amber-950">
+                The prorated difference may be billed immediately. Your access
+                will update after the billing provider confirms the subscription
+                change.
+              </div>
+              <p className="text-sm leading-6 text-slate-500">
+                This action can increase the organization&apos;s recurring
+                membership cost. Downgrades are handled by support to avoid
+                accidentally removing access.
+              </p>
+            </div>
+          ) : null}
+          {error ? (
+            <p
+              className="rounded-lg bg-red-50 p-3 text-sm font-medium text-red-700"
+              role="alert"
+            >
+              {error}
+            </p>
+          ) : null}
+          <DialogFooter>
+            <Button
+              disabled={isPending}
+              onClick={() => setConfirmOpen(false)}
+              type="button"
+              variant="outline"
+            >
+              Cancel
+            </Button>
+            <Button
+              disabled={isPending || !selectedPlan}
+              onClick={upgradePlan}
+              type="button"
+            >
+              {isPending ? (
+                <LoaderCircle className="size-4 animate-spin" />
+              ) : (
+                <TrendingUp className="size-4" />
+              )}
+              Confirm upgrade
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       {!canManage ? (
         <p className="mt-3 rounded-lg bg-slate-50 p-3 text-sm text-slate-500">
