@@ -1,6 +1,6 @@
 begin;
 
-select plan(19);
+select plan(20);
 
 insert into auth.users (
   id,
@@ -30,19 +30,6 @@ values
     now()
   ),
   (
-    '42000000-0000-0000-0000-000000000002',
-    '00000000-0000-0000-0000-000000000000',
-    'authenticated',
-    'authenticated',
-    'team-invitee@example.com',
-    '',
-    now(),
-    '{}'::jsonb,
-    '{"full_name":"Team Invitee"}'::jsonb,
-    now(),
-    now()
-  ),
-  (
     '42000000-0000-0000-0000-000000000003',
     '00000000-0000-0000-0000-000000000000',
     'authenticated',
@@ -65,6 +52,19 @@ values
     now(),
     '{}'::jsonb,
     '{"full_name":"Team Member"}'::jsonb,
+    now(),
+    now()
+  ),
+  (
+    '42000000-0000-0000-0000-000000000005',
+    '00000000-0000-0000-0000-000000000000',
+    'authenticated',
+    'authenticated',
+    'existing-account@example.com',
+    '',
+    now(),
+    '{}'::jsonb,
+    '{"full_name":"Existing Account"}'::jsonb,
     now(),
     now()
   );
@@ -144,6 +144,20 @@ select set_config(
   'request.jwt.claims',
   '{"sub":"42000000-0000-0000-0000-000000000001","role":"authenticated"}',
   true
+);
+
+select throws_ok(
+  $test$
+    select public.create_team_invitation(
+      '52000000-0000-0000-0000-000000000001',
+      'existing-account@example.com',
+      'member',
+      'existing-account-invitation-token-that-is-long-enough',
+      now() + interval '7 days'
+    )
+  $test$,
+  'This email already has an Olea Connects account. Invite a new email address, or ask support to move the existing account.',
+  'existing platform accounts cannot be invited as new team members'
 );
 
 select lives_ok(
@@ -241,6 +255,34 @@ select throws_ok(
 );
 
 reset role;
+
+insert into auth.users (
+  id,
+  instance_id,
+  aud,
+  role,
+  email,
+  encrypted_password,
+  email_confirmed_at,
+  raw_app_meta_data,
+  raw_user_meta_data,
+  created_at,
+  updated_at
+)
+values (
+  '42000000-0000-0000-0000-000000000002',
+  '00000000-0000-0000-0000-000000000000',
+  'authenticated',
+  'authenticated',
+  'team-invitee@example.com',
+  '',
+  now(),
+  '{}'::jsonb,
+  '{"full_name":"Team Invitee"}'::jsonb,
+  now(),
+  now()
+);
+
 set local role authenticated;
 select set_config(
   'request.jwt.claims',

@@ -83,6 +83,11 @@ GENERATED_DOCUMENT_RETENTION_HOURS
 Outside production, set `EMAIL_ENVIRONMENT` to a non-production value and set
 `EMAIL_TEST_RECIPIENT`. This prevents accidental delivery to real users.
 
+Set `NEXT_PUBLIC_APP_URL` per environment. Preview/staging should point to
+`https://staging.oleaconnects.com`; production should point to the public
+production URL. Transactional links, including team invitation accept links, are
+generated from this value.
+
 `GENERATED_DOCUMENT_RETENTION_HOURS` is optional. If unset, generated template
 exports are retained for 24 hours before cleanup.
 
@@ -444,6 +449,8 @@ Check:
 4. Provider quarantine/spam.
 5. SPF/DKIM/DMARC.
 6. In non-production, confirm `EMAIL_TEST_RECIPIENT`.
+7. If links point to the wrong domain, confirm `NEXT_PUBLIC_APP_URL` for that
+   Vercel environment or branch.
 
 ### E2E Fails With Auth Rate Limit
 

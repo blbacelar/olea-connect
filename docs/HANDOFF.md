@@ -115,7 +115,11 @@ components, auth, branding, and persistence:
 3. Local subscription items are synced from Stripe.
 4. Team page calculates seats reserved as active members plus pending invites.
 5. Invites are created through Supabase RPC and queued as email events.
-6. Invited user accepts the tokenized invitation.
+6. Invitations can only be created for email addresses that do not already have
+   an Olea Connects auth account. Existing account moves are a support/admin
+   operation, not a self-serve invite flow.
+7. Invited user creates or signs into the invited email address and accepts the
+   tokenized invitation.
 
 ### Billing Management
 
