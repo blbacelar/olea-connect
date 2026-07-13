@@ -13,6 +13,26 @@ import type { OrganizationRole } from "@/lib/types";
 import { createAdminClient } from "@/utils/supabase/admin";
 import { createClient } from "@/utils/supabase/server";
 
+type InviteTeamMemberResult =
+  | { ok: true }
+  | { ok: false; message: string };
+
+const expectedInviteFailures = [
+  "Enter a valid email address.",
+  "This person already belongs to the organization.",
+  "This email already has an Olea Connects account. Invite a new email address, or ask support to move the existing account.",
+  "A pending invitation already exists for this email.",
+  "Your plan has no available team seats.",
+] as const;
+
+function getSafeInviteFailureMessage(message: string) {
+  return (
+    expectedInviteFailures.find((expectedMessage) =>
+      message.includes(expectedMessage),
+    ) ?? "Unable to send this invitation. Please try again."
+  );
+}
+
 function assertManager(role: OrganizationRole) {
   if (!["owner", "admin"].includes(role)) {
     throw new Error("Only organization owners and admins can manage the team.");
@@ -22,7 +42,7 @@ function assertManager(role: OrganizationRole) {
 export async function inviteTeamMember(
   email: string,
   role: Exclude<OrganizationRole, "owner"> = "member",
-) {
+): Promise<InviteTeamMemberResult> {
   const { member, organization } = await requireMemberContext();
   assertManager(member.membershipRole);
 
@@ -37,8 +57,15 @@ export async function inviteTeamMember(
     ).toISOString(),
   });
 
-  if (error) throw new Error(error.message);
+  if (error) {
+    return {
+      ok: false,
+      message: getSafeInviteFailureMessage(error.message),
+    };
+  }
+
   revalidatePath("/team");
+  return { ok: true };
 }
 
 export async function cancelTeamInvitation(invitationId: string) {

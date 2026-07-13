@@ -60,4 +60,14 @@ test.describe("@critical @member core member journeys", () => {
     await team.inviteMember("new.member@example.com");
     await team.cancelInvitation("new.member@example.com");
   });
+
+  test("alerts when inviting an existing account", async ({
+    page,
+    testData,
+  }) => {
+    const existingAccount = await testData.createOrganizationOwner();
+    const team = new TeamPage(page);
+
+    await team.expectExistingAccountInviteAlert(existingAccount.email);
+  });
 });

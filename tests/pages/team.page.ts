@@ -21,6 +21,21 @@ export class TeamPage {
     await expect(this.page.getByText(email)).toBeVisible();
   }
 
+  async expectExistingAccountInviteAlert(email: string) {
+    await this.open();
+    await this.page.getByLabel("Team member email").fill(email);
+    await this.page.getByRole("button", { name: "Send invite" }).click();
+
+    const alert = this.page
+      .getByRole("alert")
+      .filter({ hasText: "Invite not sent" });
+    await expect(alert).toContainText("Invite not sent");
+    await expect(alert).toContainText("already registered with Olea Connects");
+    await expect(
+      this.page.getByRole("group", { name: `Invitation for ${email}` }),
+    ).toHaveCount(0);
+  }
+
   async cancelInvitation(email: string) {
     const inviteRow = this.page.getByRole("group", {
       name: `Invitation for ${email}`,

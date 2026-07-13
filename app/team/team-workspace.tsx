@@ -36,12 +36,21 @@ function memberInitials(name: string) {
     .toUpperCase();
 }
 
+function getInviteErrorMessage(message: string) {
+  if (message.includes("already has an Olea Connects account")) {
+    return "This email is already registered with Olea Connects. Invite a new email address, or contact support if this person needs to be moved into your workspace.";
+  }
+
+  return message;
+}
+
 export function TeamWorkspace({ team }: { team: TeamData }) {
   const router = useRouter();
   const [email, setEmail] = useState("");
   const [inviteRole, setInviteRole] = useState<"admin" | "member">("member");
   const [sent, setSent] = useState(false);
   const [error, setError] = useState("");
+  const [inviteError, setInviteError] = useState("");
   const [isPending, startTransition] = useTransition();
   const remainingInviteSeats = getRemainingInviteSeatCount(
     team.organization.seatLimit,
@@ -68,10 +77,30 @@ export function TeamWorkspace({ team }: { team: TeamData }) {
     const normalized = email.trim();
     if (!normalized) return;
 
-    runMutation(async () => {
-      await inviteTeamMember(normalized, inviteRole);
-      setEmail("");
-      setSent(true);
+    startTransition(async () => {
+      try {
+        setError("");
+        setInviteError("");
+        const result = await inviteTeamMember(normalized, inviteRole);
+        if (!result.ok) {
+          setSent(false);
+          setInviteError(getInviteErrorMessage(result.message));
+          return;
+        }
+
+        setEmail("");
+        setSent(true);
+        router.refresh();
+      } catch (inviteError) {
+        setSent(false);
+        setInviteError(
+          getInviteErrorMessage(
+            inviteError instanceof Error
+              ? inviteError.message
+              : "Unable to send this invitation.",
+          ),
+        );
+      }
     });
   };
 
@@ -224,10 +253,12 @@ export function TeamWorkspace({ team }: { team: TeamData }) {
               onChange={(event) => {
                 setEmail(event.currentTarget.value);
                 setSent(false);
+                setInviteError("");
               }}
               onInput={(event) => {
                 setEmail(event.currentTarget.value);
                 setSent(false);
+                setInviteError("");
               }}
               onKeyDown={(event) => {
                 if (event.key === "Enter") sendInvite();
@@ -257,6 +288,15 @@ export function TeamWorkspace({ team }: { team: TeamData }) {
               {isPending ? "Sending..." : sent ? "Invite sent" : "Send invite"}
             </Button>
           </div>
+          {inviteError ? (
+            <div
+              role="alert"
+              className="mb-3 max-w-2xl rounded-lg border border-amber-200 bg-amber-50 p-3 text-sm text-amber-900"
+            >
+              <p className="font-semibold">Invite not sent</p>
+              <p className="mt-1 leading-6">{inviteError}</p>
+            </div>
+          ) : null}
           <p className="mb-8 text-sm text-slate-500">
             {remainingInviteSeats > 0
               ? `${remainingInviteSeats} invite slot${
