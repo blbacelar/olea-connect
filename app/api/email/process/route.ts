@@ -13,6 +13,13 @@ import {
   teamInvitationEmail,
   type TransactionalEmail,
 } from "@/lib/email/templates";
+import {
+  getRequestContext,
+  logCritical,
+  logError,
+  logInfo,
+  logWarn,
+} from "@/lib/observability/logger";
 import { createAdminClient } from "@/utils/supabase/admin";
 
 export const runtime = "nodejs";
@@ -91,7 +98,13 @@ function isAuthorized(request: Request) {
 }
 
 export async function GET(request: Request) {
+  const requestContext = getRequestContext(request, {
+    component: "email_worker",
+    provider: "email",
+  });
+
   if (!isAuthorized(request)) {
+    logWarn("Email worker rejected unauthorized request", requestContext);
     return NextResponse.json(
       { error: "Unauthorized." },
       { headers: noStoreHeaders, status: 401 },
@@ -103,13 +116,14 @@ export async function GET(request: Request) {
     "claim_email_integration_event",
   );
   if (claimError) {
-    console.error("Unable to claim email integration event", claimError);
+    logCritical("Unable to claim email integration event", claimError, requestContext);
     return NextResponse.json(
       { error: "Email worker could not claim an event." },
       { headers: noStoreHeaders, status: 500 },
     );
   }
   if (!hasClaimedEmailEvent(event)) {
+    logInfo("Email worker found no queued event", requestContext);
     return NextResponse.json(
       { processed: false },
       { headers: noStoreHeaders },
@@ -117,6 +131,11 @@ export async function GET(request: Request) {
   }
 
   try {
+    const eventContext = {
+      ...requestContext,
+      eventId: event.id,
+      eventType: event.event_type,
+    };
     const { email, recipientEmail } = await buildEmail(supabase, event);
     const recipient = getEmailRecipient(recipientEmail);
     const { data, error } = await getResend().emails.send({
@@ -147,6 +166,10 @@ export async function GET(request: Request) {
       .eq("id", event.id);
     if (updateError) throw updateError;
 
+    logInfo("Email integration event processed", {
+      ...eventContext,
+      providerMessageId: data.id,
+    });
     return NextResponse.json(
       { processed: true, eventId: event.id },
       { headers: noStoreHeaders },
@@ -162,7 +185,11 @@ export async function GET(request: Request) {
         available_at: new Date(Date.now() + 5 * 60 * 1000).toISOString(),
       })
       .eq("id", event.id);
-    console.error(`Unable to process email event ${event.id}`, error);
+    logCritical("Unable to process email integration event", error, {
+      ...requestContext,
+      eventId: event.id,
+      eventType: event.event_type,
+    });
     return NextResponse.json(
       { error: "Email delivery failed." },
       { headers: noStoreHeaders, status: 500 },

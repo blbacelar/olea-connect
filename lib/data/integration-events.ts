@@ -5,7 +5,7 @@ import { createClient } from "@/utils/supabase/server";
 
 const integrationAdminRoles = ["super_admin"] as const;
 const sensitiveKeyPattern =
-  /token|secret|password|authorization|api[_-]?key|access[_-]?token|refresh[_-]?token|signature/i;
+  /token|secret|password|authorization|cookie|api[_-]?key|access[_-]?token|refresh[_-]?token|signature|payload|document|content|html|text|body|description|notes/i;
 
 export type IntegrationEventStatus =
   | "pending"
@@ -32,6 +32,24 @@ export type IntegrationEventSummary = {
   payloadPreview: unknown;
 };
 
+export type WebhookEventSummary = {
+  id: string;
+  provider: string;
+  providerEventId: string;
+  eventType: string;
+  receivedAt: string;
+  processedAt: string | null;
+  processingError: string | null;
+  attempts: number;
+  payloadPreview: unknown;
+};
+
+export type IntegrationOperationsFilters = {
+  provider?: string;
+  query?: string;
+  status?: IntegrationEventStatus | "all";
+};
+
 type IntegrationEventRow = {
   id: string;
   provider: string;
@@ -47,6 +65,18 @@ type IntegrationEventRow = {
   provider_message_id: string | null;
   last_error: string | null;
   idempotency_key: string | null;
+  payload: unknown;
+};
+
+type WebhookEventRow = {
+  id: string;
+  provider: string;
+  provider_event_id: string;
+  event_type: string;
+  received_at: string;
+  processed_at: string | null;
+  processing_error: string | null;
+  attempts: number;
   payload: unknown;
 };
 
@@ -109,20 +139,88 @@ function mapIntegrationEvent(row: IntegrationEventRow): IntegrationEventSummary 
   };
 }
 
-export async function getIntegrationOperations() {
+function mapWebhookEvent(row: WebhookEventRow): WebhookEventSummary {
+  return {
+    id: row.id,
+    provider: row.provider,
+    providerEventId: row.provider_event_id,
+    eventType: row.event_type,
+    receivedAt: row.received_at,
+    processedAt: row.processed_at,
+    processingError: row.processing_error,
+    attempts: row.attempts,
+    payloadPreview: redactPayload(row.payload),
+  };
+}
+
+function normalizeFilter(value: string | string[] | undefined) {
+  return Array.isArray(value) ? value[0]?.trim() : value?.trim();
+}
+
+function eventMatchesQuery(
+  event: IntegrationEventSummary | WebhookEventSummary,
+  query: string,
+) {
+  const searchable =
+    "aggregateId" in event
+      ? [
+          event.id,
+          event.provider,
+          event.eventType,
+          event.aggregateType,
+          event.aggregateId,
+          event.providerMessageId,
+          event.idempotencyKey,
+          event.lastError,
+        ]
+      : [
+          event.id,
+          event.provider,
+          event.providerEventId,
+          event.eventType,
+          event.processingError,
+        ];
+
+  const normalizedQuery = query.toLowerCase();
+  return searchable.some((value) =>
+    String(value ?? "").toLowerCase().includes(normalizedQuery),
+  );
+}
+
+export async function getIntegrationOperations(
+  filters: IntegrationOperationsFilters = {},
+) {
   const { admin } = await requireIntegrationAdmin();
-  const { data, error } = await admin
+  const provider = normalizeFilter(filters.provider);
+  const status = normalizeFilter(filters.status);
+  const query = normalizeFilter(filters.query)?.toLowerCase();
+
+  let integrationQuery = admin
     .from("integration_events")
     .select(
       "id, provider, event_type, aggregate_type, aggregate_id, status, attempts, available_at, created_at, updated_at, completed_at, provider_message_id, last_error, idempotency_key, payload",
     )
-    .in("provider", ["email", "attio", "quickbooks"])
+    .in("provider", ["email", "attio", "quickbooks"]);
+
+  if (provider && provider !== "all") {
+    integrationQuery = integrationQuery.eq("provider", provider);
+  }
+
+  if (status && status !== "all") {
+    integrationQuery = integrationQuery.eq("status", status);
+  }
+
+  const { data, error } = await integrationQuery
     .order("created_at", { ascending: false })
-    .limit(50);
+    .limit(100);
 
   if (error) throw error;
 
-  const events = ((data ?? []) as IntegrationEventRow[]).map(mapIntegrationEvent);
+  let events = ((data ?? []) as IntegrationEventRow[]).map(mapIntegrationEvent);
+  if (query) {
+    events = events.filter((event) => eventMatchesQuery(event, query));
+  }
+
   const counts = events.reduce<Record<IntegrationEventStatus, number>>(
     (accumulator, event) => {
       accumulator[event.status] += 1;
@@ -137,11 +235,43 @@ export async function getIntegrationOperations() {
     },
   );
 
+  let webhookQuery = admin
+    .from("webhook_events")
+    .select(
+      "id, provider, provider_event_id, event_type, received_at, processed_at, processing_error, attempts, payload",
+    )
+    .eq("provider", "stripe");
+
+  if (provider && provider !== "all" && provider !== "stripe") {
+    webhookQuery = webhookQuery.eq("provider", provider);
+  }
+
+  const { data: webhookData, error: webhookError } = await webhookQuery
+    .order("received_at", { ascending: false })
+    .limit(50);
+
+  if (webhookError) throw webhookError;
+
+  let webhookEvents = ((webhookData ?? []) as WebhookEventRow[]).map(
+    mapWebhookEvent,
+  );
+  if (query) {
+    webhookEvents = webhookEvents.filter((event) =>
+      eventMatchesQuery(event, query),
+    );
+  }
+
   return {
     counts,
     events,
+    filters: {
+      provider: provider ?? "all",
+      query: query ?? "",
+      status: status ?? "all",
+    },
     replayableEvents: events.filter((event) =>
       ["failed", "dead_letter"].includes(event.status),
     ),
+    webhookEvents,
   };
 }

@@ -201,6 +201,11 @@ The production launch evidence checklist lives in
 [Release Gates](./RELEASE_GATES.md). Update it before any production launch or
 major release.
 
+Production observability, alert routing, webhook/integration tracing,
+backup/restore, storage recovery, secret rotation, and operator access reviews
+are documented in
+[Observability and Recovery](./OBSERVABILITY_AND_RECOVERY.md).
+
 Nightly regression runs `.github/workflows/regression.yml` every day at 09:30
 UTC. Scheduled runs explicitly check out `staging`, because that is the active
 QA branch while production development continues. Manual runs accept a `ref`

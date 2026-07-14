@@ -2,6 +2,11 @@ import { createServerClient } from "@supabase/ssr";
 import { type NextRequest, NextResponse } from "next/server";
 
 import {
+  getOrCreateRequestId,
+  REQUEST_ID_HEADER,
+} from "@/lib/observability/request-id";
+
+import {
   applyAuthCookieDuration,
   AUTH_REMEMBER_COOKIE_NAME,
 } from "./auth-cookie-options";
@@ -36,7 +41,29 @@ function isPublicPath(pathname: string) {
 }
 
 export async function updateSession(request: NextRequest) {
-  let response = NextResponse.next({ request });
+  const requestHeaders = new Headers(request.headers);
+  const requestId = getOrCreateRequestId(requestHeaders);
+  requestHeaders.set(REQUEST_ID_HEADER, requestId);
+
+  function createResponse() {
+    const nextResponse = NextResponse.next({
+      request: {
+        headers: requestHeaders,
+      },
+    });
+    nextResponse.headers.set(REQUEST_ID_HEADER, requestId);
+    return nextResponse;
+  }
+
+  function copySessionCookies(target: NextResponse) {
+    response.cookies.getAll().forEach((cookie) => {
+      target.cookies.set(cookie);
+    });
+    target.headers.set(REQUEST_ID_HEADER, requestId);
+    return target;
+  }
+
+  let response = createResponse();
   const rememberFor30Days =
     request.cookies.get(AUTH_REMEMBER_COOKIE_NAME)?.value === "1";
 
@@ -53,7 +80,7 @@ export async function updateSession(request: NextRequest) {
             request.cookies.set(name, value);
           });
 
-          response = NextResponse.next({ request });
+          response = createResponse();
 
           cookiesToSet.forEach(({ name, value, options }) => {
             response.cookies.set(
@@ -84,11 +111,7 @@ export async function updateSession(request: NextRequest) {
       `${request.nextUrl.pathname}${request.nextUrl.search}`,
     );
 
-    const redirectResponse = NextResponse.redirect(loginUrl);
-    response.cookies.getAll().forEach((cookie) => {
-      redirectResponse.cookies.set(cookie);
-    });
-    return redirectResponse;
+    return copySessionCookies(NextResponse.redirect(loginUrl));
   }
 
   if (user && !publicPath && !billingRecoveryPath) {
@@ -102,11 +125,7 @@ export async function updateSession(request: NextRequest) {
       subscriptionUrl.search = "";
       subscriptionUrl.searchParams.set("billing", "required");
 
-      const redirectResponse = NextResponse.redirect(subscriptionUrl);
-      response.cookies.getAll().forEach((cookie) => {
-        redirectResponse.cookies.set(cookie);
-      });
-      return redirectResponse;
+      return copySessionCookies(NextResponse.redirect(subscriptionUrl));
     }
   }
 

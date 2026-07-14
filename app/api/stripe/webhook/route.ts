@@ -6,6 +6,13 @@ import {
   enqueueCircleMemberSync,
 } from "@/lib/circle/provisioning";
 import { enqueueSubscriptionIntegrationSyncs } from "@/lib/integrations/subscription-sync";
+import {
+  getRequestContext,
+  logCritical,
+  logError,
+  logInfo,
+  logWarn,
+} from "@/lib/observability/logger";
 import { getStripe, getWebhookSecret } from "@/lib/stripe/server";
 import {
   attemptWorkspaceProvisioning,
@@ -265,9 +272,14 @@ async function enqueueCircleSubscriptionAccessSync(
 }
 
 export async function POST(request: Request) {
+  const requestContext = getRequestContext(request, {
+    component: "stripe_webhook",
+    provider: "stripe",
+  });
   const signature = request.headers.get("stripe-signature");
 
   if (!signature) {
+    logWarn("Stripe webhook rejected without signature", requestContext);
     return NextResponse.json(
       { error: "Missing Stripe signature." },
       { status: 400 },
@@ -284,7 +296,7 @@ export async function POST(request: Request) {
       getWebhookSecret(),
     );
   } catch (error) {
-    console.error("Invalid Stripe webhook signature", error);
+    logError("Invalid Stripe webhook signature", error, requestContext);
     return NextResponse.json(
       { error: "Invalid Stripe signature." },
       { status: 400 },
@@ -293,7 +305,13 @@ export async function POST(request: Request) {
 
   try {
     const { supabase, claimed } = await claimWebhookEvent(event);
+    const eventContext = {
+      ...requestContext,
+      eventId: event.id,
+      eventType: event.type,
+    };
     if (!claimed) {
+      logInfo("Duplicate Stripe webhook ignored", eventContext);
       return NextResponse.json({ received: true, duplicate: true });
     }
 
@@ -329,9 +347,15 @@ export async function POST(request: Request) {
       .eq("provider_event_id", event.id);
 
     if (processedError) throw processedError;
+    logInfo("Stripe webhook processed", eventContext);
     return NextResponse.json({ received: true });
   } catch (error) {
-    console.error(`Unable to process Stripe event ${event.id}`, error);
+    logCritical("Unable to process Stripe webhook", error, {
+      ...requestContext,
+      eventId: event.id,
+      eventType: event.type,
+      provider: "stripe",
+    });
     const supabase = createAdminClient();
     await supabase
       .from("webhook_events")
