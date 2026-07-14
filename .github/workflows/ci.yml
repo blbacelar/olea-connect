@@ -91,10 +91,24 @@ jobs:
             test-results
           retention-days: 14
 
+  security:
+    name: Dependency Security
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - name: Block critical dependency vulnerabilities
+        run: npm run security:audit
+
   pr-gate:
     name: PR Gate
     if: always()
-    needs: [quality, database, browser]
+    needs: [quality, database, browser, security]
     runs-on: ubuntu-latest
     steps:
       - name: Require every CI job to pass
@@ -102,7 +116,9 @@ jobs:
           QUALITY_RESULT: ${{ needs.quality.result }}
           DATABASE_RESULT: ${{ needs.database.result }}
           BROWSER_RESULT: ${{ needs.browser.result }}
+          SECURITY_RESULT: ${{ needs.security.result }}
         run: |
           test "$QUALITY_RESULT" = "success"
           test "$DATABASE_RESULT" = "success"
           test "$BROWSER_RESULT" = "success"
+          test "$SECURITY_RESULT" = "success"

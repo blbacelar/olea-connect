@@ -193,8 +193,13 @@ Never point these at production.
 Pull requests into `main` run `.github/workflows/ci.yml`, which gates linting,
 type checking, unit tests, production build, local Supabase migration reset/lint,
 database tests, data-isolation tests, browser smoke tests, and security-boundary
-tests. GitHub branch protection should require the `PR Gate` check before
-merging to the protected branch.
+tests. The workflow also runs `npm run security:audit`, which blocks critical
+dependency vulnerabilities. GitHub branch protection requires the `PR Gate`
+check before merging to `main`.
+
+The production launch evidence checklist lives in
+[Release Gates](./RELEASE_GATES.md). Update it before any production launch or
+major release.
 
 Nightly regression runs `.github/workflows/regression.yml` every day at 09:30
 UTC. Scheduled runs explicitly check out `staging`, because that is the active
