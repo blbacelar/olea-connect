@@ -15,7 +15,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 
 import { GlobalCommandPalette } from "@/components/global-search/GlobalCommandPalette";
 import { Logo } from "@/components/Logo";
-import { navigationGroups } from "@/components/navigation";
+import { getNavigationGroups } from "@/components/navigation";
 import { Button } from "@/components/ui/button";
 import {
   markAllNotificationsRead,
@@ -140,6 +140,7 @@ export function Header() {
   const router = useRouter();
   const session = useSession();
   const member = session?.member;
+  const navigationGroups = getNavigationGroups(session?.platformRoles);
   const { resetRegistration } = useRegistration();
   const [notificationsOpen, setNotificationsOpen] = useState(false);
   const [userOpen, setUserOpen] = useState(false);

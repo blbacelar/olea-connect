@@ -1,6 +1,13 @@
 export type MembershipTier = "seedling" | "roots" | "canopy" | "harvest";
 export type Tier = MembershipTier;
 export type OrganizationRole = "owner" | "admin" | "member";
+export type PlatformRole =
+  | "super_admin"
+  | "community_admin"
+  | "consulting_admin"
+  | "consultant"
+  | "finance_admin"
+  | "grants_admin";
 
 export interface RegistrationState {
   tier: MembershipTier;
@@ -197,6 +204,7 @@ export interface Session {
   member: Member;
   organization: Organization;
   notifications: NotificationSummary;
+  platformRoles?: PlatformRole[];
 }
 
 export interface TeamInvitation {

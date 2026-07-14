@@ -4,7 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 
 import { Logo } from "@/components/Logo";
-import { navigationGroups } from "@/components/navigation";
+import { getNavigationGroups } from "@/components/navigation";
 import { useSession } from "@/hooks/use-session";
 import { cn } from "@/lib/utils";
 
@@ -12,6 +12,7 @@ export function Sidebar() {
   const pathname = usePathname();
   const session = useSession();
   const organization = session?.organization;
+  const navigationGroups = getNavigationGroups(session?.platformRoles);
 
   return (
     <aside className="fixed inset-y-0 left-0 z-40 hidden w-60 flex-col border-r bg-white lg:flex">

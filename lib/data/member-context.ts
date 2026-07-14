@@ -8,13 +8,27 @@ import type {
   MembershipTier,
   Organization,
   OrganizationRole,
+  PlatformRole,
   Session,
 } from "@/lib/types";
+import { createAdminClient } from "@/utils/supabase/admin";
 import { createClient } from "@/utils/supabase/server";
 import { createLogoSignedUrl } from "./brand-assets";
 
 const DEFAULT_PRIMARY_COLOR = "#446B52";
 const DEFAULT_SECONDARY_COLOR = "#F4EFE4";
+const platformRoles = [
+  "super_admin",
+  "community_admin",
+  "consulting_admin",
+  "consultant",
+  "finance_admin",
+  "grants_admin",
+] as const satisfies readonly PlatformRole[];
+
+function isPlatformRole(value: unknown): value is PlatformRole {
+  return platformRoles.includes(value as PlatformRole);
+}
 
 function initials(value: string) {
   return (
@@ -26,6 +40,23 @@ function initials(value: string) {
       .join("")
       .toUpperCase() || "OC"
   );
+}
+
+async function getPlatformRoles(userId: string): Promise<PlatformRole[]> {
+  try {
+    const { data, error } = await createAdminClient()
+      .from("platform_user_roles")
+      .select("role")
+      .eq("user_id", userId);
+
+    if (error) throw error;
+
+    return (data ?? [])
+      .map((roleRow) => roleRow.role)
+      .filter(isPlatformRole);
+  } catch {
+    return [];
+  }
 }
 
 export async function getOptionalMemberContext(): Promise<Session | null> {
@@ -62,6 +93,7 @@ export async function getOptionalMemberContext(): Promise<Session | null> {
     { data: brand, error: brandError },
     { data: subscription, error: subscriptionError },
     { count: memberCount, error: memberCountError },
+    platformRoleRows,
     {
       data: notificationRows,
       count: unreadNotificationCount,
@@ -94,6 +126,7 @@ export async function getOptionalMemberContext(): Promise<Session | null> {
       .select("*", { count: "exact", head: true })
       .eq("organization_id", membership.organization_id)
       .eq("status", "active"),
+    getPlatformRoles(user.id),
     supabase
       .from("notifications")
       .select(
@@ -175,7 +208,12 @@ export async function getOptionalMemberContext(): Promise<Session | null> {
     })),
   };
 
-  return { member, organization, notifications };
+  return {
+    member,
+    organization,
+    notifications,
+    platformRoles: platformRoleRows,
+  };
 }
 
 export async function requireMemberContext() {
