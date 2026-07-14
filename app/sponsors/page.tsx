@@ -20,6 +20,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Textarea } from "@/components/ui/textarea";
 import {
   getSponsorsData,
@@ -317,22 +318,35 @@ function SponsorManagement({
   return (
     <section className="mt-8">
       <SectionHeading>Finance administration</SectionHeading>
-      <div className="grid gap-5 xl:grid-cols-[1fr_1.2fr]">
-        <SponsorProfileForm reports={reports} />
-        <SponsorshipForms
-          grantPrograms={grantPrograms}
-          grantRounds={grantRounds}
-          packages={packages}
-          reports={reports}
-        />
-      </div>
+      <Tabs defaultValue="profile" className="rounded-xl border bg-white p-4 shadow-soft">
+        <div className="overflow-x-auto pb-1">
+          <TabsList className="h-auto min-w-max justify-start gap-1 bg-olea-light/70 p-1">
+            <TabsTrigger value="profile">Sponsor profile</TabsTrigger>
+            <TabsTrigger value="terms">Sponsorship terms</TabsTrigger>
+            <TabsTrigger value="contributions">Contribution allocation</TabsTrigger>
+          </TabsList>
+        </div>
+        <TabsContent value="profile" className="mt-5">
+          <SponsorProfileForm reports={reports} />
+        </TabsContent>
+        <TabsContent value="terms" className="mt-5">
+          <SponsorshipTermsForm packages={packages} reports={reports} />
+        </TabsContent>
+        <TabsContent value="contributions" className="mt-5">
+          <SponsorContributionForm
+            grantPrograms={grantPrograms}
+            grantRounds={grantRounds}
+            reports={reports}
+          />
+        </TabsContent>
+      </Tabs>
     </section>
   );
 }
 
 function SponsorProfileForm({ reports }: { reports: SponsorReport[] }) {
   return (
-    <form action={saveSponsorProfile} className="rounded-xl border bg-white p-5 shadow-soft">
+    <form action={saveSponsorProfile} className="rounded-xl border bg-slate-50 p-5">
       <div className="flex items-start justify-between gap-3">
         <div>
           <h2 className="font-bold text-slate-900">Sponsor profile</h2>
@@ -447,211 +461,217 @@ function SponsorProfileForm({ reports }: { reports: SponsorReport[] }) {
   );
 }
 
-function SponsorshipForms({
+function SponsorshipTermsForm({
+  packages,
+  reports,
+}: {
+  packages: SponsorshipPackageSummary[];
+  reports: SponsorReport[];
+}) {
+  return (
+    <form action={saveSponsorshipTerm} className="rounded-xl border bg-slate-50 p-5">
+      <h2 className="font-bold text-slate-900">Sponsorship terms</h2>
+      <p className="mt-1 text-sm text-slate-500">
+        Track package, term dates, committed contribution, and private finance notes.
+      </p>
+      <div className="mt-4 grid gap-4 md:grid-cols-2">
+        <label className="text-sm font-semibold text-slate-700">
+          Sponsor
+          <select
+            className="mt-2 h-11 w-full rounded-md border border-input bg-white px-3 text-sm"
+            name="sponsorId"
+            required
+          >
+            <option value="">Choose sponsor</option>
+            {reports.map((sponsor) => (
+              <option key={sponsor.id} value={sponsor.id}>
+                {sponsor.name}
+              </option>
+            ))}
+          </select>
+        </label>
+        <label className="text-sm font-semibold text-slate-700">
+          Package
+          <select
+            className="mt-2 h-11 w-full rounded-md border border-input bg-white px-3 text-sm"
+            name="packageId"
+            required
+          >
+            <option value="">Choose package</option>
+            {packages.map((item) => (
+              <option key={item.id} value={item.id}>
+                {item.name} · {formatMoney(item.annualPriceCents)}
+              </option>
+            ))}
+          </select>
+        </label>
+        <label className="text-sm font-semibold text-slate-700">
+          Status
+          <select
+            className="mt-2 h-11 w-full rounded-md border border-input bg-white px-3 text-sm"
+            name="status"
+            defaultValue="draft"
+          >
+            <option value="draft">Draft</option>
+            <option value="proposed">Proposed</option>
+            <option value="active">Active</option>
+            <option value="completed">Completed</option>
+            <option value="canceled">Canceled</option>
+          </select>
+        </label>
+        <label className="text-sm font-semibold text-slate-700">
+          Contract amount
+          <Input name="contractAmount" placeholder="12000" required />
+        </label>
+        <label className="text-sm font-semibold text-slate-700">
+          Starts on
+          <Input name="startsOn" type="date" required />
+        </label>
+        <label className="text-sm font-semibold text-slate-700">
+          Ends on
+          <Input name="endsOn" type="date" required />
+        </label>
+        <label className="text-sm font-semibold text-slate-700">
+          Olea Gives commitment
+          <Input name="committedContribution" placeholder="3000" />
+        </label>
+        <label className="text-sm font-semibold text-slate-700">
+          Category exclusivity
+          <Input name="categoryExclusivity" placeholder="Governance tools" />
+        </label>
+      </div>
+      <div className="mt-4 grid gap-4 md:grid-cols-2">
+        <label className="text-sm font-semibold text-slate-700">
+          Recognition public name
+          <Input name="recognitionPublicName" />
+        </label>
+        <label className="text-sm font-semibold text-slate-700">
+          Recognition notes
+          <Input name="recognitionNotes" />
+        </label>
+      </div>
+      <label className="mt-4 block text-sm font-semibold text-slate-700">
+        Private terms
+        <Textarea name="privateTerms" />
+      </label>
+      <label className="mt-4 block text-sm font-semibold text-slate-700">
+        Financial notes
+        <Textarea name="financialNotes" />
+      </label>
+      <Button className="mt-5" type="submit">
+        Save sponsorship terms
+      </Button>
+    </form>
+  );
+}
+
+function SponsorContributionForm({
   grantPrograms,
   grantRounds,
-  packages,
   reports,
 }: {
   grantPrograms: Array<{ id: string; name: string; slug: string }>;
   grantRounds: SponsorGrantRoundOption[];
-  packages: SponsorshipPackageSummary[];
   reports: SponsorReport[];
 }) {
   const sponsorships = reports.flatMap((sponsor) => sponsor.sponsorships);
 
   return (
-    <div className="space-y-5">
-      <form action={saveSponsorshipTerm} className="rounded-xl border bg-white p-5 shadow-soft">
-        <h2 className="font-bold text-slate-900">Sponsorship terms</h2>
-        <p className="mt-1 text-sm text-slate-500">
-          Track package, term dates, committed contribution, and private finance notes.
-        </p>
-        <div className="mt-4 grid gap-4 md:grid-cols-2">
-          <label className="text-sm font-semibold text-slate-700">
-            Sponsor
-            <select
-              className="mt-2 h-11 w-full rounded-md border border-input bg-white px-3 text-sm"
-              name="sponsorId"
-              required
-            >
-              <option value="">Choose sponsor</option>
-              {reports.map((sponsor) => (
-                <option key={sponsor.id} value={sponsor.id}>
-                  {sponsor.name}
-                </option>
-              ))}
-            </select>
-          </label>
-          <label className="text-sm font-semibold text-slate-700">
-            Package
-            <select
-              className="mt-2 h-11 w-full rounded-md border border-input bg-white px-3 text-sm"
-              name="packageId"
-              required
-            >
-              <option value="">Choose package</option>
-              {packages.map((item) => (
-                <option key={item.id} value={item.id}>
-                  {item.name} · {formatMoney(item.annualPriceCents)}
-                </option>
-              ))}
-            </select>
-          </label>
-          <label className="text-sm font-semibold text-slate-700">
-            Status
-            <select
-              className="mt-2 h-11 w-full rounded-md border border-input bg-white px-3 text-sm"
-              name="status"
-              defaultValue="draft"
-            >
-              <option value="draft">Draft</option>
-              <option value="proposed">Proposed</option>
-              <option value="active">Active</option>
-              <option value="completed">Completed</option>
-              <option value="canceled">Canceled</option>
-            </select>
-          </label>
-          <label className="text-sm font-semibold text-slate-700">
-            Contract amount
-            <Input name="contractAmount" placeholder="12000" required />
-          </label>
-          <label className="text-sm font-semibold text-slate-700">
-            Starts on
-            <Input name="startsOn" type="date" required />
-          </label>
-          <label className="text-sm font-semibold text-slate-700">
-            Ends on
-            <Input name="endsOn" type="date" required />
-          </label>
-          <label className="text-sm font-semibold text-slate-700">
-            Olea Gives commitment
-            <Input name="committedContribution" placeholder="3000" />
-          </label>
-          <label className="text-sm font-semibold text-slate-700">
-            Category exclusivity
-            <Input name="categoryExclusivity" placeholder="Governance tools" />
-          </label>
-        </div>
-        <div className="mt-4 grid gap-4 md:grid-cols-2">
-          <label className="text-sm font-semibold text-slate-700">
-            Recognition public name
-            <Input name="recognitionPublicName" />
-          </label>
-          <label className="text-sm font-semibold text-slate-700">
-            Recognition notes
-            <Input name="recognitionNotes" />
-          </label>
-        </div>
-        <label className="mt-4 block text-sm font-semibold text-slate-700">
-          Private terms
-          <Textarea name="privateTerms" />
+    <form action={saveSponsorContribution} className="rounded-xl border bg-slate-50 p-5">
+      <h2 className="font-bold text-slate-900">Contribution allocation</h2>
+      <p className="mt-1 text-sm text-slate-500">
+        Record contributions and connect allocations to grant programs.
+      </p>
+      <div className="mt-4 grid gap-4 md:grid-cols-2">
+        <label className="text-sm font-semibold text-slate-700">
+          Sponsorship
+          <select
+            className="mt-2 h-11 w-full rounded-md border border-input bg-white px-3 text-sm"
+            name="sponsorshipId"
+            required
+          >
+            <option value="">Choose sponsorship</option>
+            {sponsorships.map((sponsorship) => (
+              <option key={sponsorship.id} value={sponsorship.id}>
+                {sponsorship.sponsorName} · {sponsorship.packageName}
+              </option>
+            ))}
+          </select>
         </label>
-        <label className="mt-4 block text-sm font-semibold text-slate-700">
-          Financial notes
-          <Textarea name="financialNotes" />
+        <label className="text-sm font-semibold text-slate-700">
+          Status
+          <select
+            className="mt-2 h-11 w-full rounded-md border border-input bg-white px-3 text-sm"
+            name="status"
+            defaultValue="pledged"
+          >
+            <option value="pledged">Pledged</option>
+            <option value="invoiced">Invoiced</option>
+            <option value="received">Received</option>
+            <option value="allocated">Allocated</option>
+          </select>
         </label>
-        <Button className="mt-5" type="submit">
-          Save sponsorship terms
-        </Button>
-      </form>
-
-      <form action={saveSponsorContribution} className="rounded-xl border bg-white p-5 shadow-soft">
-        <h2 className="font-bold text-slate-900">Contribution allocation</h2>
-        <p className="mt-1 text-sm text-slate-500">
-          Record contributions and connect allocations to grant programs.
-        </p>
-        <div className="mt-4 grid gap-4 md:grid-cols-2">
-          <label className="text-sm font-semibold text-slate-700">
-            Sponsorship
-            <select
-              className="mt-2 h-11 w-full rounded-md border border-input bg-white px-3 text-sm"
-              name="sponsorshipId"
-              required
-            >
-              <option value="">Choose sponsorship</option>
-              {sponsorships.map((sponsorship) => (
-                <option key={sponsorship.id} value={sponsorship.id}>
-                  {sponsorship.sponsorName} · {sponsorship.packageName}
-                </option>
-              ))}
-            </select>
-          </label>
-          <label className="text-sm font-semibold text-slate-700">
-            Status
-            <select
-              className="mt-2 h-11 w-full rounded-md border border-input bg-white px-3 text-sm"
-              name="status"
-              defaultValue="pledged"
-            >
-              <option value="pledged">Pledged</option>
-              <option value="invoiced">Invoiced</option>
-              <option value="received">Received</option>
-              <option value="allocated">Allocated</option>
-            </select>
-          </label>
-          <label className="text-sm font-semibold text-slate-700">
-            Amount
-            <Input name="amount" placeholder="5000" required />
-          </label>
-          <label className="text-sm font-semibold text-slate-700">
-            Pledged on
-            <Input name="pledgedOn" type="date" />
-          </label>
-          <label className="text-sm font-semibold text-slate-700">
-            Received on
-            <Input name="receivedOn" type="date" />
-          </label>
-          <label className="text-sm font-semibold text-slate-700">
-            Allocated on
-            <Input name="allocatedOn" type="date" />
-          </label>
-          <label className="text-sm font-semibold text-slate-700">
-            QuickBooks transaction ID
-            <Input name="quickbooksTransactionId" />
-          </label>
-          <label className="text-sm font-semibold text-slate-700">
-            Grant program
-            <select
-              className="mt-2 h-11 w-full rounded-md border border-input bg-white px-3 text-sm"
-              name="grantProgramId"
-            >
-              <option value="">No allocation yet</option>
-              {grantPrograms.map((program) => (
-                <option key={program.id} value={program.id}>
-                  {program.name}
-                </option>
-              ))}
-            </select>
-          </label>
-          <label className="text-sm font-semibold text-slate-700">
-            Grant round
-            <select
-              className="mt-2 h-11 w-full rounded-md border border-input bg-white px-3 text-sm"
-              name="grantRoundId"
-            >
-              <option value="">No specific round</option>
-              {grantRounds.map((round) => (
-                <option key={round.id} value={round.id}>
-                  {round.name} · {round.status}
-                </option>
-              ))}
-            </select>
-          </label>
-          <label className="text-sm font-semibold text-slate-700">
-            Allocation amount
-            <Input name="allocationAmount" placeholder="5000" />
-          </label>
-        </div>
-        <label className="mt-4 block text-sm font-semibold text-slate-700">
-          Notes
-          <Textarea name="notes" />
+        <label className="text-sm font-semibold text-slate-700">
+          Amount
+          <Input name="amount" placeholder="5000" required />
         </label>
-        <Button className="mt-5" type="submit">
-          Save contribution
-        </Button>
-      </form>
-    </div>
+        <label className="text-sm font-semibold text-slate-700">
+          Pledged on
+          <Input name="pledgedOn" type="date" />
+        </label>
+        <label className="text-sm font-semibold text-slate-700">
+          Received on
+          <Input name="receivedOn" type="date" />
+        </label>
+        <label className="text-sm font-semibold text-slate-700">
+          Allocated on
+          <Input name="allocatedOn" type="date" />
+        </label>
+        <label className="text-sm font-semibold text-slate-700">
+          QuickBooks transaction ID
+          <Input name="quickbooksTransactionId" />
+        </label>
+        <label className="text-sm font-semibold text-slate-700">
+          Grant program
+          <select
+            className="mt-2 h-11 w-full rounded-md border border-input bg-white px-3 text-sm"
+            name="grantProgramId"
+          >
+            <option value="">No allocation yet</option>
+            {grantPrograms.map((program) => (
+              <option key={program.id} value={program.id}>
+                {program.name}
+              </option>
+            ))}
+          </select>
+        </label>
+        <label className="text-sm font-semibold text-slate-700">
+          Grant round
+          <select
+            className="mt-2 h-11 w-full rounded-md border border-input bg-white px-3 text-sm"
+            name="grantRoundId"
+          >
+            <option value="">No specific round</option>
+            {grantRounds.map((round) => (
+              <option key={round.id} value={round.id}>
+                {round.name} · {round.status}
+              </option>
+            ))}
+          </select>
+        </label>
+        <label className="text-sm font-semibold text-slate-700">
+          Allocation amount
+          <Input name="allocationAmount" placeholder="5000" />
+        </label>
+      </div>
+      <label className="mt-4 block text-sm font-semibold text-slate-700">
+        Notes
+        <Textarea name="notes" />
+      </label>
+      <Button className="mt-5" type="submit">
+        Save contribution
+      </Button>
+    </form>
   );
 }
 
