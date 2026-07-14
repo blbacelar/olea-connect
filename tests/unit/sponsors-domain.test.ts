@@ -2,10 +2,13 @@ import { describe, expect, it } from "vitest";
 
 import {
   canViewPrivateSponsorFinancials,
+  normalizeOptionalEmail,
   normalizeOptionalHttpUrl,
+  normalizeOptionalPhone,
   normalizeSponsorSlug,
   parseCurrencyToCents,
   summarizeContributionReconciliation,
+  validateOptionalHttpUrl,
 } from "@/lib/sponsors/domain";
 
 describe("sponsor domain rules", () => {
@@ -55,5 +58,33 @@ describe("sponsor domain rules", () => {
     );
     expect(normalizeOptionalHttpUrl("javascript:alert(1)")).toBeNull();
     expect(normalizeOptionalHttpUrl("not a url")).toBeNull();
+  });
+
+  it("validates sponsor contact emails and phone numbers", () => {
+    expect(normalizeOptionalEmail("  Partner@Example.org ")).toBe(
+      "partner@example.org",
+    );
+    expect(normalizeOptionalEmail(null)).toBeNull();
+    expect(() => normalizeOptionalEmail("not an email")).toThrow(
+      "Email must be a valid email address.",
+    );
+
+    expect(normalizeOptionalPhone("+1 (555) 555-5555")).toBe(
+      "+1 (555) 555-5555",
+    );
+    expect(normalizeOptionalPhone(null)).toBeNull();
+    expect(() => normalizeOptionalPhone("123")).toThrow(
+      "Phone must be a valid phone number.",
+    );
+  });
+
+  it("throws actionable validation errors for unsafe sponsor URLs", () => {
+    expect(validateOptionalHttpUrl("https://example.org")).toBe(
+      "https://example.org/",
+    );
+    expect(validateOptionalHttpUrl(null)).toBeNull();
+    expect(() => validateOptionalHttpUrl("ftp://example.org", "Website")).toThrow(
+      "Website must be a valid http or https URL.",
+    );
   });
 });

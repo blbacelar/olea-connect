@@ -69,3 +69,41 @@ export function normalizeOptionalHttpUrl(value: string | null) {
     return null;
   }
 }
+
+export function validateOptionalHttpUrl(value: string | null, label = "URL") {
+  if (!value) return null;
+
+  const normalized = normalizeOptionalHttpUrl(value);
+  if (!normalized) {
+    throw new Error(`${label} must be a valid http or https URL.`);
+  }
+
+  return normalized;
+}
+
+export function normalizeOptionalEmail(value: string | null, label = "Email") {
+  if (!value) return null;
+
+  const normalized = value.trim().toLowerCase();
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(normalized)) {
+    throw new Error(`${label} must be a valid email address.`);
+  }
+
+  return normalized;
+}
+
+export function normalizeOptionalPhone(value: string | null, label = "Phone") {
+  if (!value) return null;
+
+  const normalized = value.replace(/\s+/g, " ").trim();
+  const digits = normalized.replace(/\D/g, "");
+  const hasPhoneShape = /^\+?[\d().\-\s]{7,}(?:\s*(?:x|ext)\.?\s*\d{1,6})?$/i.test(
+    normalized,
+  );
+
+  if (!hasPhoneShape || digits.length < 7 || digits.length > 20) {
+    throw new Error(`${label} must be a valid phone number.`);
+  }
+
+  return normalized;
+}
