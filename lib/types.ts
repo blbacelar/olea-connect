@@ -294,6 +294,105 @@ export interface GrantApplicationSummary {
   }>;
 }
 
+export type SponsorStatus = "prospect" | "active" | "paused" | "former" | "declined";
+export type SponsorshipStatus =
+  | "draft"
+  | "proposed"
+  | "active"
+  | "completed"
+  | "canceled";
+export type ContributionStatus = "pledged" | "invoiced" | "received" | "allocated";
+
+export interface SponsorDirectoryProfile {
+  id: string;
+  name: string;
+  slug: string;
+  category: string | null;
+  websiteUrl: string | null;
+  logoPath: string | null;
+  shortDescription: string | null;
+  directoryDescription: string | null;
+  directoryEmail: string | null;
+  directoryPhone: string | null;
+}
+
+export interface SponsorshipPackageSummary {
+  id: string;
+  name: string;
+  annualPriceCents: number;
+  oleaGivesContributionCents: number;
+  currency: string;
+  categoryExclusivity: boolean;
+  benefits: string[];
+  isActive: boolean;
+}
+
+export interface SponsorContactSummary {
+  id: string;
+  fullName: string;
+  title: string | null;
+  email: string | null;
+  phone: string | null;
+  isPrimary: boolean;
+}
+
+export interface SponsorAllocationSummary {
+  amountCents: number;
+  grantProgramName: string;
+  grantProgramSlug: string;
+  grantRoundName: string | null;
+}
+
+export interface SponsorContributionSummary {
+  id: string;
+  status: ContributionStatus;
+  amountCents: number;
+  currency: string;
+  pledgedOn: string;
+  receivedOn: string | null;
+  allocatedOn: string | null;
+  quickbooksTransactionId: string | null;
+  notes: string | null;
+  allocations: SponsorAllocationSummary[];
+  allocatedAmountCents: number;
+}
+
+export interface SponsorshipReport {
+  id: string;
+  sponsorId: string;
+  sponsorName: string;
+  packageId: string;
+  packageName: string;
+  status: SponsorshipStatus;
+  startsOn: string;
+  endsOn: string;
+  contractAmountCents: number;
+  committedContributionCents: number;
+  currency: string;
+  categoryExclusivity: string | null;
+  recognitionPreferences: Record<string, unknown>;
+  privateTerms: string | null;
+  financialNotes: string | null;
+  contributionAmountCents: number;
+  allocatedAmountCents: number;
+  unallocatedAmountCents: number;
+  isReconciled: boolean;
+  contributions: SponsorContributionSummary[];
+}
+
+export interface SponsorReport {
+  id: string;
+  name: string;
+  slug: string;
+  status: SponsorStatus;
+  category: string | null;
+  websiteUrl: string | null;
+  shortDescription: string | null;
+  directoryVisible: boolean;
+  contacts: SponsorContactSummary[];
+  sponsorships: SponsorshipReport[];
+}
+
 export interface Webinar {
   id: string;
   slug: string;

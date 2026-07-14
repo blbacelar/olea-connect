@@ -35,6 +35,10 @@ test.describe("@smoke @critical platform UI coverage gate", () => {
     await app.expectPageHeading("/grants", /Olea Gives|Grants/i);
     await app.expectNoServerError();
 
+    await app.expectPageHeading("/sponsors", "Sponsors & Olea Gives");
+    await app.expectSectionHeading("Approved sponsor profiles");
+    await app.expectNoServerError();
+
     await app.expectPageHeading("/webinars", "Webinars");
     await app.expectText(/Upcoming|No upcoming webinars/);
     await app.expectNoServerError();

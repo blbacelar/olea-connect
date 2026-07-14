@@ -9,6 +9,10 @@ function navigationLabelsFor(roles: Parameters<typeof getNavigationGroups>[0]) {
 }
 
 describe("application navigation", () => {
+  it("shows member sponsor directory navigation to regular members", () => {
+    expect(navigationLabelsFor([])).toContain("Sponsors");
+  });
+
   it("hides operator navigation from regular members", () => {
     expect(navigationLabelsFor([])).not.toContain("Operations");
   });

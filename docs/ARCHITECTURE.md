@@ -27,7 +27,7 @@ Browser
 - Public marketing/auth routes: `/`, `/login`, `/signup`, `/reset-password`,
   `/verify-email`, `/update-password`, `/auth/*`.
 - Member routes: `/dashboard`, `/templates`, `/team`, `/subscription`,
-  `/settings/brand`, `/grants`, `/webinars`, `/community`, `/help`,
+  `/settings/brand`, `/grants`, `/sponsors`, `/webinars`, `/community`, `/help`,
   `/whats-new`.
 - API routes: Stripe, email, deferred Circle, and provisioning workers.
 
@@ -132,6 +132,9 @@ Core domains:
 - Notifications: user-scoped lifecycle messages, read state, internal deep
   links, idempotency, and optional email outbox emission.
 - Grants: programs, rounds, applications, reviews, awards.
+- Sponsors: member-visible approved sponsor directory, sponsorship packages,
+  sponsor contacts, contributions, Olea Gives allocations, and finance-only
+  private terms/reporting notes.
 - Webinars/events/community: webinars, registrations, native community spaces,
   posts, comments, reactions, managers, and Zoom-linked community events.
 - Integrations: webhook events, integration events, audit logs.

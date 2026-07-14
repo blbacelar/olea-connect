@@ -60,6 +60,14 @@ const baseCommandItems: CommandItem[] = [
     keywords: ["funding", "olea gives", "applications"],
   },
   {
+    id: "sponsors",
+    title: "Sponsors",
+    description: "Browse approved sponsors and Olea Gives contribution reporting.",
+    href: "/sponsors",
+    type: "resource",
+    keywords: ["partners", "olea gives", "contributions", "funding"],
+  },
+  {
     id: "webinars",
     title: "Webinars",
     description: "See upcoming sessions, Zoom links, and recordings.",
