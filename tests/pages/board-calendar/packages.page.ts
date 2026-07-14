@@ -39,7 +39,7 @@ export class BoardCalendarPackagesPage extends BoardCalendarBasePage {
     if (sizeLabel) {
       await dialog.getByLabel("Size or version label").fill(sizeLabel);
     }
-    await dialog.getByLabel("Secure document link").fill(url);
+    await dialog.getByLabel(/External document link/).fill(url);
 
     const confidentialCheckbox = dialog.getByLabel(
       "Require confidentiality acknowledgement before opening",
@@ -86,6 +86,15 @@ export class BoardCalendarPackagesPage extends BoardCalendarBasePage {
       name: "Download board package?",
     });
     await expect(dialog).toBeVisible();
+    const confidentialityAcknowledgement = dialog.getByLabel(
+      /I acknowledge this board package includes confidential materials/,
+    );
+    if (await confidentialityAcknowledgement.count()) {
+      await confidentialityAcknowledgement.check();
+    }
+    await expect(
+      dialog.getByRole("button", { name: "Download package" }),
+    ).toBeEnabled();
     await dialog.getByRole("button", { name: "Download package" }).click();
     await expect(dialog).toHaveCount(0);
     await this.waitForSaved();

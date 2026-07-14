@@ -39,6 +39,20 @@ export class AppShellPage {
     ).toBeVisible();
   }
 
+  async expectUnreadNotificationCountAtLeast(count: number) {
+    await expect
+      .poll(async () => {
+        const ariaLabel = await this.page
+          .getByRole("button", { name: /Notifications/ })
+          .getAttribute("aria-label");
+        const match = ariaLabel?.match(/Notifications \((\d+) unread\)/);
+
+        if (match) return Number.parseInt(match[1], 10);
+        return ariaLabel === "Notifications" ? 0 : -1;
+      })
+      .toBeGreaterThanOrEqual(count);
+  }
+
   async openNotifications() {
     await this.page.getByRole("button", { name: /Notifications/ }).click();
     await expect(

@@ -239,8 +239,8 @@ export function BoardCalendarSetupPanel({
   }
 
   function addTaskRule() {
-    updateTaskRules([
-      ...taskRules,
+    updateTaskRulesFromCurrent((currentRules) => [
+      ...currentRules,
       {
         label: "",
         days_before: 14,

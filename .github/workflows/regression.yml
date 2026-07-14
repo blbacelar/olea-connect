@@ -19,10 +19,10 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  regression:
-    name: Cross-browser Regression
+  unit:
+    name: Unit Regression
     runs-on: ubuntu-latest
-    timeout-minutes: 40
+    timeout-minutes: 10
     env:
       REGRESSION_REF: ${{ github.event_name == 'workflow_dispatch' && inputs.ref || 'staging' }}
     steps:
@@ -39,17 +39,80 @@ jobs:
           cache: npm
       - run: npm ci
       - run: npm run test:unit
-      - run: npx playwright install --with-deps
+
+  database:
+    name: Database Regression
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      REGRESSION_REF: ${{ github.event_name == 'workflow_dispatch' && inputs.ref || 'staging' }}
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          ref: ${{ env.REGRESSION_REF }}
+      - name: Report regression target
+        run: |
+          echo "Running nightly regression against $REGRESSION_REF"
+          git --no-pager log -1 --oneline
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
       - name: Run regression against local Supabase
         run: |
           bash scripts/with-local-supabase.sh bash -c '
             npm run test:db &&
-            npm run test:e2e
+            npm run test:e2e:data
           '
       - uses: actions/upload-artifact@v7
         if: failure()
         with:
-          name: nightly-regression-report
+          name: nightly-database-regression-report
+          path: |
+            playwright-report
+            test-results
+          retention-days: 14
+
+  browser:
+    name: Cross-browser Regression (${{ matrix.project }})
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    strategy:
+      fail-fast: false
+      matrix:
+        project: [chromium, firefox, webkit, mobile-chrome]
+    env:
+      REGRESSION_REF: ${{ github.event_name == 'workflow_dispatch' && inputs.ref || 'staging' }}
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          ref: ${{ env.REGRESSION_REF }}
+      - name: Report regression target
+        run: |
+          echo "Running nightly regression against $REGRESSION_REF"
+          git --no-pager log -1 --oneline
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - name: Install browser dependencies
+        run: |
+          if [ "${{ matrix.project }}" = "mobile-chrome" ]; then
+            npx playwright install --with-deps chromium
+          else
+            npx playwright install --with-deps "${{ matrix.project }}"
+          fi
+      - name: Run critical and accessibility coverage
+        run: |
+          bash scripts/with-local-supabase.sh npx playwright test tests/e2e tests/accessibility \
+            --project=${{ matrix.project }} \
+            --grep "@critical|@a11y"
+      - uses: actions/upload-artifact@v7
+        if: failure()
+        with:
+          name: nightly-browser-${{ matrix.project }}-report
           path: |
             playwright-report
             test-results

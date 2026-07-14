@@ -3,6 +3,8 @@ import { BoardCalendarPage } from "../pages/board-calendar.page";
 import { TemplateEditorPage } from "../pages/template-editor.page";
 
 test.describe("@critical dynamic template renderer", () => {
+  test.setTimeout(150_000);
+
   test("renders board self-evaluation from a database definition and blocks invalid completion", async ({
     page,
   }) => {

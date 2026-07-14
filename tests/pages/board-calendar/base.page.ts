@@ -139,7 +139,10 @@ export class BoardCalendarBasePage {
   }
 
   async expectSessionPersisted() {
-    await expect(this.page).toHaveURL(/session=(?!new)[^&]+/);
+    await this.waitForSaved();
+    await expect(this.page).toHaveURL(/session=(?!new)[^&]+/, {
+      timeout: 20_000,
+    });
   }
 
   async startNewWorkbook() {

@@ -186,8 +186,9 @@ export function BoardCalendarWorkbench({
     updater: (currentData: TemplateFormData) => TemplateFormData,
   ) => void;
 }) {
-  const events = useMemo(() => buildCalendarEvents(data), [data]);
-  const categoryColors = useMemo(() => buildCategoryColors(data), [data]);
+  const syncedData = useMemo(() => syncBoardCalendarGeneratedTasks(data), [data]);
+  const events = useMemo(() => buildCalendarEvents(syncedData), [syncedData]);
+  const categoryColors = useMemo(() => buildCategoryColors(syncedData), [syncedData]);
   const eventsByDate = useMemo(() => groupEventsByDate(events), [events]);
   const configuredYear = getTemplateYear(data);
   const configuredMonth = getTemplateMonthIndex(data);

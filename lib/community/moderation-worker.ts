@@ -67,7 +67,7 @@ async function processPostModeration(
     .from("community_posts")
     .select("id, title, body, resource_url, status, hidden_at")
     .eq("id", postId)
-    .single();
+    .maybeSingle();
 
   if (error) throw error;
   if (!post || post.status !== "published" || post.hidden_at) return;
@@ -93,7 +93,7 @@ async function processCommentModeration(
       "id, body, hidden_at, community_posts!inner(id, title, status, hidden_at)",
     )
     .eq("id", commentId)
-    .single();
+    .maybeSingle();
 
   if (error) throw error;
   if (!comment || comment.hidden_at) return;

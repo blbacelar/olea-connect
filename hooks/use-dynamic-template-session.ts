@@ -21,6 +21,7 @@ export function useDynamicTemplateSession({
   enableCompletionFlow = true,
   initialSession,
   onSaved,
+  preserveSameResourceRefresh = false,
   saveSession,
 }: {
   enableCompletionFlow?: boolean;
@@ -30,6 +31,7 @@ export function useDynamicTemplateSession({
     previousSession: DynamicTemplateSession,
     hasNewerLocalEdits: boolean,
   ) => void;
+  preserveSameResourceRefresh?: boolean;
   saveSession: (payload: TemplateSavePayload) => Promise<DynamicTemplateSession>;
 }) {
   const [session, setSession] = useState(initialSession);
@@ -41,7 +43,6 @@ export function useDynamicTemplateSession({
   const sessionRef = useRef(initialSession);
   const initialSessionKey = `${initialSession.id || "new"}:${initialSession.resourceId}:${initialSession.lastSavedAt}`;
   const previousInitialSessionKey = useRef(initialSessionKey);
-  sessionRef.current = session;
 
   const validationErrors = useMemo(
     () =>
@@ -73,8 +74,36 @@ export function useDynamicTemplateSession({
       !currentSession.id &&
       !initialSession.id &&
       currentSession.resourceId === initialSession.resourceId;
+    const isNewlyPersistedActiveSession =
+      !currentSession.id &&
+      Boolean(initialSession.id) &&
+      currentSession.resourceId === initialSession.resourceId;
+    const isSameResourceRefresh =
+      preserveSameResourceRefresh &&
+      currentSession.resourceId === initialSession.resourceId &&
+      currentSession.organizationId === initialSession.organizationId &&
+      (currentSession.id === initialSession.id ||
+        (!currentSession.id && Boolean(initialSession.id)));
 
-    if ((isSameSavedSession || isSameDraftSession) && saveState !== "saved") {
+    if (
+      isSameSavedSession ||
+      isSameDraftSession ||
+      isNewlyPersistedActiveSession ||
+      isSameResourceRefresh
+    ) {
+      if (saveState !== "saved") return;
+
+      setSession((current) => {
+        const nextSession = {
+          ...current,
+          id: initialSession.id || current.id,
+          lastSavedAt: initialSession.lastSavedAt,
+        };
+
+        sessionRef.current = nextSession;
+        return nextSession;
+      });
+      setSaveError("");
       return;
     }
 
@@ -82,21 +111,27 @@ export function useDynamicTemplateSession({
     setSession(initialSession);
     setSaveError("");
     setSaveState("saved");
-  }, [initialSession, initialSessionKey, saveState]);
+  }, [
+    initialSession,
+    initialSessionKey,
+    preserveSameResourceRefresh,
+    saveState,
+  ]);
 
   const updateValue = (path: FieldPath, value: TemplateValue) => {
     editVersion.current += 1;
-    setSession((current) => {
-      const formData = setValue(current.formData, path, value);
+    const current = sessionRef.current;
+    const formData = setValue(current.formData, path, value);
+    const nextSession = {
+      ...current,
+      completionPercent: enableCompletionFlow
+        ? calculateCompletionPercent(current.schemaSnapshot, formData)
+        : current.completionPercent,
+      formData,
+    };
 
-      return {
-        ...current,
-        completionPercent: enableCompletionFlow
-          ? calculateCompletionPercent(current.schemaSnapshot, formData)
-          : current.completionPercent,
-        formData,
-      };
-    });
+    sessionRef.current = nextSession;
+    setSession(nextSession);
     setSaveState("unsaved");
   };
 
@@ -104,25 +139,30 @@ export function useDynamicTemplateSession({
     updater: (currentData: TemplateFormData) => TemplateFormData,
   ) => {
     editVersion.current += 1;
-    setSession((current) => {
-      const formData = updater(current.formData);
-      return {
-        ...current,
-        completionPercent: enableCompletionFlow
-          ? calculateCompletionPercent(current.schemaSnapshot, formData)
-          : current.completionPercent,
-        formData,
-      };
-    });
+    const current = sessionRef.current;
+    const formData = updater(current.formData);
+    const nextSession = {
+      ...current,
+      completionPercent: enableCompletionFlow
+        ? calculateCompletionPercent(current.schemaSnapshot, formData)
+        : current.completionPercent,
+      formData,
+    };
+
+    sessionRef.current = nextSession;
+    setSession(nextSession);
     setSaveState("unsaved");
   };
 
   const updateTitle = (title: string) => {
     editVersion.current += 1;
-    setSession((current) => ({
-      ...current,
+    const nextSession = {
+      ...sessionRef.current,
       title,
-    }));
+    };
+
+    sessionRef.current = nextSession;
+    setSession(nextSession);
     setSaveState("unsaved");
   };
 
@@ -147,9 +187,12 @@ export function useDynamicTemplateSession({
       const saved = await saveSession(payload);
       const hasNewerLocalEdits = editVersion.current !== savedEditVersion;
 
-      setSession((current) =>
-        mergeSavedSession(current, saved, hasNewerLocalEdits),
-      );
+      setSession((current) => {
+        const nextSession = mergeSavedSession(current, saved, hasNewerLocalEdits);
+
+        sessionRef.current = nextSession;
+        return nextSession;
+      });
       onSaved?.(saved, sessionSnapshot, hasNewerLocalEdits);
       setSaveError("");
       setSaveState(hasNewerLocalEdits ? "unsaved" : "saved");
@@ -240,5 +283,11 @@ export function mergeSavedSession(
     };
   }
 
-  return { ...current, ...saved, slug: current.slug };
+  return {
+    ...current,
+    ...saved,
+    formData: current.formData,
+    schemaSnapshot: current.schemaSnapshot,
+    slug: current.slug,
+  };
 }

@@ -98,7 +98,7 @@ export function ProductPreview() {
                     <p className="mt-1 text-sm font-bold">
                       Quarterly grant applications
                     </p>
-                    <p className="mt-1 text-[10px] leading-4 text-white/70">
+                    <p className="mt-1 text-[10px] leading-4 text-white/90">
                       Simple, one-page applications for $500 capacity grants.
                     </p>
                   </div>

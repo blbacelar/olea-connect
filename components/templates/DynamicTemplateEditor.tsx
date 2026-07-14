@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect } from "react";
 import { AlertCircle, Check, Clock, LoaderCircle, Save } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -87,15 +88,29 @@ export function DynamicTemplateEditor({
   } = useDynamicTemplateSession({
     enableCompletionFlow: !calendarEnabled,
     initialSession: data.session,
-    onSaved: (saved, previousSession) => {
-      if (!previousSession.id && saved.id) {
+    onSaved: (saved, previousSession, hasNewerLocalEdits) => {
+      if (!previousSession.id && saved.id && !hasNewerLocalEdits) {
         const savedSessionUrl = `${editorBasePath}?session=${saved.id}`;
 
-        window.history.replaceState(null, "", savedSessionUrl);
+        router.replace(savedSessionUrl, { scroll: false });
       }
     },
+    preserveSameResourceRefresh: calendarEnabled,
     saveSession,
   });
+
+  useEffect(() => {
+    if (!session.id || saveState !== "saved") return;
+    if (typeof window === "undefined") return;
+
+    const currentUrl = new URL(window.location.href);
+    if (currentUrl.searchParams.get("session") === session.id) return;
+
+    currentUrl.searchParams.set("session", session.id);
+    router.replace(`${currentUrl.pathname}${currentUrl.search}`, {
+      scroll: false,
+    });
+  }, [router, saveState, session.id]);
 
   const errorsByPath = new Map(
     validationErrors.map((error) => [error.path, error.message]),

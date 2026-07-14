@@ -26,7 +26,7 @@ describe("dynamic template session autosave merging", () => {
     });
   });
 
-  it("accepts the saved snapshot when there are no newer local edits", () => {
+  it("accepts saved metadata without replacing the current form data", () => {
     const saved = createSession({
       formData: { title: "Budget review" },
       id: "saved-session",
@@ -41,7 +41,7 @@ describe("dynamic template session autosave merging", () => {
     });
 
     expect(mergeSavedSession(current, saved, false)).toMatchObject({
-      formData: { title: "Budget review" },
+      formData: { title: "Budget revi" },
       id: "saved-session",
       lastSavedAt: "2026-06-25T10:00:00.000Z",
       title: "Saved title",

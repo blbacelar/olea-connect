@@ -18,6 +18,7 @@ export class BoardCalendarWorkflowsPage extends BoardCalendarBasePage {
   }
 
   async updateTask(index: number, status: string, notes: string) {
+    await this.chooseWorkspaceView("Staff task list");
     await this.panel.getByRole("button", { name: `Edit task ${index}` }).click();
     const dialog = this.page.getByRole("dialog", { name: "Edit workflow task" });
     await expect(dialog).toBeVisible();
@@ -28,6 +29,7 @@ export class BoardCalendarWorkflowsPage extends BoardCalendarBasePage {
   }
 
   async expectTaskDetails(index: number, status: string, notes: string) {
+    await this.chooseWorkspaceView("Staff task list");
     const row = this.panel.locator("tbody tr").nth(index - 1);
     await expect(row).toContainText(status);
     await expect(row).toContainText("Has notes");

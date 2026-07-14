@@ -241,7 +241,7 @@ test.describe("@critical Board Calendar & Operational Workflow", () => {
         "Briefing packet drafted.",
       );
       await boardCalendar.workflows.filterByStatus("In Progress");
-      await boardCalendar.workflows.expectTaskVisible("Send save-the-date");
+      await boardCalendar.workflows.expectTaskVisible("Prepare board briefing");
       await boardCalendar.workflows.expectTaskHidden("Send action summary");
       await boardCalendar.workflows.clearFilters();
       await boardCalendar.saveNowAndWaitForPost();

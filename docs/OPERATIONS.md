@@ -202,6 +202,13 @@ QA branch while production development continues. Manual runs accept a `ref`
 input, so use `main`, `staging`, a release branch, or a specific SHA when
 validating a release candidate.
 
+The nightly workflow is intentionally split into parallel release signals:
+unit regression, local Supabase database/data-isolation regression, and
+cross-browser Playwright coverage for tests tagged `@critical` or `@a11y` across
+Chromium, Firefox, WebKit, and mobile Chrome. Do not replace this with an
+unfiltered `npm run test:e2e` across all projects unless the timeout budget and
+failure triage process are updated at the same time.
+
 Important GitHub Actions behavior: scheduled workflows are read from the
 repository default branch. If `.github/workflows/regression.yml` changes on
 `staging`, merge that workflow change into `main` before expecting the nightly
@@ -215,7 +222,9 @@ When nightly regression fails:
 3. Reproduce with local Supabase before changing application code:
 
    ```bash
-   bash scripts/with-local-supabase.sh npm run test:e2e
+   bash scripts/with-local-supabase.sh npx playwright test tests/e2e tests/accessibility \
+     --project=chromium \
+     --grep "@critical|@a11y"
    ```
 
 4. For focused diagnosis, run only the failing spec/project:

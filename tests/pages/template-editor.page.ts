@@ -65,8 +65,15 @@ export class TemplateEditorPage {
   }
 
   async generatePdf() {
-    await this.page.getByRole("button", { name: "Generate PDF" }).click();
-    await expect(this.page.getByText(/\.pdf$/)).toBeVisible({ timeout: 15_000 });
+    const generateButton = this.page.getByRole("button", { name: "Generate PDF" });
+    await expect(generateButton).toBeEnabled({ timeout: 20_000 });
+    await generateButton.click();
+
+    const downloadButton = this.page.getByRole("button", { name: "Download" }).first();
+    await expect(downloadButton).toBeVisible({ timeout: 90_000 });
+    await expect(this.page.locator("p").filter({ hasText: /\.pdf$/ }).first()).toBeVisible({
+      timeout: 10_000,
+    });
   }
 
   async downloadFirstExport() {

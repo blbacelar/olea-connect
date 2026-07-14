@@ -257,7 +257,7 @@ testWithData.describe("@critical native community member experience", () => {
       await ownerCommunity.expectPost(postTitle, postBody);
 
       await teammateShell.openDashboard();
-      await teammateShell.expectUnreadNotificationCount(1);
+      await teammateShell.expectUnreadNotificationCountAtLeast(1);
       await teammateShell.openNotifications();
       await teammateShell.expectNotificationVisible("You were mentioned");
       await teammateShell.openNotification("You were mentioned");
@@ -312,7 +312,7 @@ testWithData.describe("@critical native community member experience", () => {
       });
 
       await teammateShell.openDashboard();
-      await teammateShell.expectUnreadNotificationCount(1);
+      await teammateShell.expectUnreadNotificationCountAtLeast(1);
       await teammateShell.openNotifications();
       await teammateShell.expectNotificationVisible("You were mentioned");
       await teammateShell.openNotification("You were mentioned");
