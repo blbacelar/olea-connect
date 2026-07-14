@@ -126,7 +126,7 @@ export class AppShellPage {
   async expectNoServerError() {
     await expect(
       this.page.getByText(
-        /An error occurred in the Server Components render|Application error|Internal Server Error/i,
+        /An error occurred in the Server Components render|Application error|Internal Server Error|We could not load this workspace/i,
       ),
     ).toHaveCount(0);
   }
