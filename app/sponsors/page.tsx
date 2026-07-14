@@ -11,6 +11,7 @@ import { PageHeader } from "@/components/PageHeader";
 import { SectionHeading } from "@/components/SectionHeading";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { FormSelect } from "@/components/ui/form-select";
 import { Input } from "@/components/ui/input";
 import {
   Table,
@@ -26,6 +27,7 @@ import {
   getSponsorsData,
   type SponsorGrantRoundOption,
 } from "@/lib/data/sponsors";
+import { FORM_SELECT_EMPTY_VALUE } from "@/lib/forms/constants";
 import type {
   SponsorDirectoryProfile,
   SponsorReport,
@@ -358,17 +360,18 @@ function SponsorProfileForm({ reports }: { reports: SponsorReport[] }) {
       </div>
       <label className="mt-4 block text-sm font-semibold text-slate-700">
         Existing sponsor
-        <select
-          className="mt-2 h-11 w-full rounded-md border border-input bg-white px-3 text-sm"
+        <FormSelect
+          defaultValue={FORM_SELECT_EMPTY_VALUE}
           name="sponsorId"
-        >
-          <option value="">Create new sponsor</option>
-          {reports.map((sponsor) => (
-            <option key={sponsor.id} value={sponsor.id}>
-              {sponsor.name}
-            </option>
-          ))}
-        </select>
+          placeholder="Create new sponsor"
+          options={[
+            { label: "Create new sponsor", value: FORM_SELECT_EMPTY_VALUE },
+            ...reports.map((sponsor) => ({
+              label: sponsor.name,
+              value: sponsor.id,
+            })),
+          ]}
+        />
       </label>
       <div className="mt-4 grid gap-4 md:grid-cols-2">
         <label className="text-sm font-semibold text-slate-700">
@@ -381,17 +384,18 @@ function SponsorProfileForm({ reports }: { reports: SponsorReport[] }) {
         </label>
         <label className="text-sm font-semibold text-slate-700">
           Status
-          <select
-            className="mt-2 h-11 w-full rounded-md border border-input bg-white px-3 text-sm"
+          <FormSelect
             name="status"
             defaultValue="prospect"
-          >
-            <option value="prospect">Prospect</option>
-            <option value="active">Active</option>
-            <option value="paused">Paused</option>
-            <option value="former">Former</option>
-            <option value="declined">Declined</option>
-          </select>
+            placeholder="Choose status"
+            options={[
+              { label: "Prospect", value: "prospect" },
+              { label: "Active", value: "active" },
+              { label: "Paused", value: "paused" },
+              { label: "Former", value: "former" },
+              { label: "Declined", value: "declined" },
+            ]}
+          />
         </label>
         <label className="text-sm font-semibold text-slate-700">
           Category
@@ -477,47 +481,42 @@ function SponsorshipTermsForm({
       <div className="mt-4 grid gap-4 md:grid-cols-2">
         <label className="text-sm font-semibold text-slate-700">
           Sponsor
-          <select
-            className="mt-2 h-11 w-full rounded-md border border-input bg-white px-3 text-sm"
+          <FormSelect
             name="sponsorId"
             required
-          >
-            <option value="">Choose sponsor</option>
-            {reports.map((sponsor) => (
-              <option key={sponsor.id} value={sponsor.id}>
-                {sponsor.name}
-              </option>
-            ))}
-          </select>
+            placeholder="Choose sponsor"
+            options={reports.map((sponsor) => ({
+              label: sponsor.name,
+              value: sponsor.id,
+            }))}
+          />
         </label>
         <label className="text-sm font-semibold text-slate-700">
           Package
-          <select
-            className="mt-2 h-11 w-full rounded-md border border-input bg-white px-3 text-sm"
+          <FormSelect
             name="packageId"
             required
-          >
-            <option value="">Choose package</option>
-            {packages.map((item) => (
-              <option key={item.id} value={item.id}>
-                {item.name} · {formatMoney(item.annualPriceCents)}
-              </option>
-            ))}
-          </select>
+            placeholder="Choose package"
+            options={packages.map((item) => ({
+              label: `${item.name} · ${formatMoney(item.annualPriceCents)}`,
+              value: item.id,
+            }))}
+          />
         </label>
         <label className="text-sm font-semibold text-slate-700">
           Status
-          <select
-            className="mt-2 h-11 w-full rounded-md border border-input bg-white px-3 text-sm"
+          <FormSelect
             name="status"
             defaultValue="draft"
-          >
-            <option value="draft">Draft</option>
-            <option value="proposed">Proposed</option>
-            <option value="active">Active</option>
-            <option value="completed">Completed</option>
-            <option value="canceled">Canceled</option>
-          </select>
+            placeholder="Choose status"
+            options={[
+              { label: "Draft", value: "draft" },
+              { label: "Proposed", value: "proposed" },
+              { label: "Active", value: "active" },
+              { label: "Completed", value: "completed" },
+              { label: "Canceled", value: "canceled" },
+            ]}
+          />
         </label>
         <label className="text-sm font-semibold text-slate-700">
           Contract amount
@@ -585,31 +584,29 @@ function SponsorContributionForm({
       <div className="mt-4 grid gap-4 md:grid-cols-2">
         <label className="text-sm font-semibold text-slate-700">
           Sponsorship
-          <select
-            className="mt-2 h-11 w-full rounded-md border border-input bg-white px-3 text-sm"
+          <FormSelect
             name="sponsorshipId"
             required
-          >
-            <option value="">Choose sponsorship</option>
-            {sponsorships.map((sponsorship) => (
-              <option key={sponsorship.id} value={sponsorship.id}>
-                {sponsorship.sponsorName} · {sponsorship.packageName}
-              </option>
-            ))}
-          </select>
+            placeholder="Choose sponsorship"
+            options={sponsorships.map((sponsorship) => ({
+              label: `${sponsorship.sponsorName} · ${sponsorship.packageName}`,
+              value: sponsorship.id,
+            }))}
+          />
         </label>
         <label className="text-sm font-semibold text-slate-700">
           Status
-          <select
-            className="mt-2 h-11 w-full rounded-md border border-input bg-white px-3 text-sm"
+          <FormSelect
             name="status"
             defaultValue="pledged"
-          >
-            <option value="pledged">Pledged</option>
-            <option value="invoiced">Invoiced</option>
-            <option value="received">Received</option>
-            <option value="allocated">Allocated</option>
-          </select>
+            placeholder="Choose status"
+            options={[
+              { label: "Pledged", value: "pledged" },
+              { label: "Invoiced", value: "invoiced" },
+              { label: "Received", value: "received" },
+              { label: "Allocated", value: "allocated" },
+            ]}
+          />
         </label>
         <label className="text-sm font-semibold text-slate-700">
           Amount
@@ -633,31 +630,33 @@ function SponsorContributionForm({
         </label>
         <label className="text-sm font-semibold text-slate-700">
           Grant program
-          <select
-            className="mt-2 h-11 w-full rounded-md border border-input bg-white px-3 text-sm"
+          <FormSelect
+            defaultValue={FORM_SELECT_EMPTY_VALUE}
             name="grantProgramId"
-          >
-            <option value="">No allocation yet</option>
-            {grantPrograms.map((program) => (
-              <option key={program.id} value={program.id}>
-                {program.name}
-              </option>
-            ))}
-          </select>
+            placeholder="No allocation yet"
+            options={[
+              { label: "No allocation yet", value: FORM_SELECT_EMPTY_VALUE },
+              ...grantPrograms.map((program) => ({
+                label: program.name,
+                value: program.id,
+              })),
+            ]}
+          />
         </label>
         <label className="text-sm font-semibold text-slate-700">
           Grant round
-          <select
-            className="mt-2 h-11 w-full rounded-md border border-input bg-white px-3 text-sm"
+          <FormSelect
+            defaultValue={FORM_SELECT_EMPTY_VALUE}
             name="grantRoundId"
-          >
-            <option value="">No specific round</option>
-            {grantRounds.map((round) => (
-              <option key={round.id} value={round.id}>
-                {round.name} · {round.status}
-              </option>
-            ))}
-          </select>
+            placeholder="No specific round"
+            options={[
+              { label: "No specific round", value: FORM_SELECT_EMPTY_VALUE },
+              ...grantRounds.map((round) => ({
+                label: `${round.name} · ${round.status}`,
+                value: round.id,
+              })),
+            ]}
+          />
         </label>
         <label className="text-sm font-semibold text-slate-700">
           Allocation amount

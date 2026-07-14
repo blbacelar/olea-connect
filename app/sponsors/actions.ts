@@ -2,6 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 
+import { FORM_SELECT_EMPTY_VALUE } from "@/lib/forms/constants";
 import {
   normalizeOptionalHttpUrl,
   normalizeSponsorSlug,
@@ -23,6 +24,11 @@ const contributionStatuses = ["pledged", "invoiced", "received", "allocated"] as
 
 function text(formData: FormData, key: string) {
   return String(formData.get(key) ?? "").trim();
+}
+
+function selectText(formData: FormData, key: string) {
+  const value = text(formData, key);
+  return value === FORM_SELECT_EMPTY_VALUE ? "" : value;
 }
 
 function nullableText(formData: FormData, key: string) {
@@ -102,7 +108,7 @@ async function writeSponsorAudit({
 
 export async function saveSponsorProfile(formData: FormData) {
   const { admin, userId } = await requireSponsorManager();
-  const sponsorId = text(formData, "sponsorId");
+  const sponsorId = selectText(formData, "sponsorId");
   const name = text(formData, "name");
   const status = text(formData, "status") || "prospect";
   const slug = normalizeSponsorSlug(text(formData, "slug") || name);
@@ -252,8 +258,8 @@ export async function saveSponsorContribution(formData: FormData) {
 
   if (error) throw error;
 
-  const grantProgramId = text(formData, "grantProgramId");
-  const grantRoundId = text(formData, "grantRoundId");
+  const grantProgramId = selectText(formData, "grantProgramId");
+  const grantRoundId = selectText(formData, "grantRoundId");
   const allocationAmountCents = parseCurrencyToCents(text(formData, "allocationAmount"));
 
   if (grantRoundId && !grantProgramId) {

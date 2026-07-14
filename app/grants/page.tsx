@@ -12,6 +12,7 @@ import { EmptyPanel } from "@/components/EmptyPanel";
 import { PageHeader } from "@/components/PageHeader";
 import { SectionHeading } from "@/components/SectionHeading";
 import { Button } from "@/components/ui/button";
+import { FormSelect } from "@/components/ui/form-select";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { getGrantsData } from "@/lib/data/grants";
@@ -131,17 +132,15 @@ function ApplicationForm({
       <div className="grid gap-4 md:grid-cols-2">
         <label className="text-sm font-semibold text-slate-700">
           Focus area
-          <select
-            className="mt-2 h-11 w-full rounded-md border border-input bg-white px-3.5 text-sm"
+          <FormSelect
             defaultValue={application?.focusArea ?? "operational_capacity"}
             name="focusArea"
-          >
-            {grantFocusAreas.map((focusArea) => (
-              <option key={focusArea} value={focusArea}>
-                {grantFocusAreaLabels[focusArea]}
-              </option>
-            ))}
-          </select>
+            placeholder="Choose focus area"
+            options={grantFocusAreas.map((focusArea) => ({
+              label: grantFocusAreaLabels[focusArea],
+              value: focusArea,
+            }))}
+          />
         </label>
         <label className="text-sm font-semibold text-slate-700">
           Requested amount
@@ -416,15 +415,17 @@ function AdminBoard({
               </label>
               <label className="text-sm font-semibold text-slate-700">
                 Decision
-                <select
-                  className="mt-2 h-11 w-full rounded-md border border-input bg-white px-3.5 text-sm"
+                <FormSelect
+                  defaultValue="in_review"
                   name="decision"
-                >
-                  <option value="in_review">In review</option>
-                  <option value="shortlisted">Shortlist</option>
-                  <option value="approved">Approve</option>
-                  <option value="declined">Decline</option>
-                </select>
+                  placeholder="Choose decision"
+                  options={[
+                    { label: "In review", value: "in_review" },
+                    { label: "Shortlist", value: "shortlisted" },
+                    { label: "Approve", value: "approved" },
+                    { label: "Decline", value: "declined" },
+                  ]}
+                />
               </label>
               <div className="md:col-span-4">
                 <Button size="sm" type="submit">
@@ -444,16 +445,17 @@ function AdminBoard({
                 <input name="awardId" type="hidden" value={application.award.id} />
                 <label className="text-sm font-semibold text-emerald-950">
                   Payment status
-                  <select
-                    className="mt-2 h-11 w-full rounded-md border border-input bg-white px-3.5 text-sm"
+                  <FormSelect
                     defaultValue={application.award.status}
                     name="awardStatus"
-                  >
-                    <option value="approved">Approved</option>
-                    <option value="scheduled">Scheduled</option>
-                    <option value="paid">Paid</option>
-                    <option value="canceled">Canceled</option>
-                  </select>
+                    placeholder="Choose payment status"
+                    options={[
+                      { label: "Approved", value: "approved" },
+                      { label: "Scheduled", value: "scheduled" },
+                      { label: "Paid", value: "paid" },
+                      { label: "Canceled", value: "canceled" },
+                    ]}
+                  />
                 </label>
                 <label className="text-sm font-semibold text-emerald-950">
                   Payment reference
