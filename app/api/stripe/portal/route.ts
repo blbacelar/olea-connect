@@ -131,7 +131,7 @@ function assertPlanUpgradeAllowed(
 }
 
 function getBillingCycle(interval: "month" | "year"): RegistrationState["billingCycle"] {
-  return interval === "year" ? "annual" : "monthly";
+  return interval === "year" ? "annual" : "quarterly";
 }
 
 function isMembershipItem(item: Stripe.SubscriptionItem) {

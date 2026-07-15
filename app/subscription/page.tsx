@@ -47,6 +47,10 @@ function formatDate(value: string) {
   }).format(new Date(value));
 }
 
+function formatBillingInterval(interval: "month" | "year") {
+  return interval === "year" ? "year" : "quarter";
+}
+
 function getSeatAddedMessage(quantityValue?: string) {
   const quantity = Number(quantityValue);
   const normalizedQuantity =
@@ -240,7 +244,7 @@ export default async function SubscriptionPage({
             </p>
             <p className="mt-1 text-[13.5px] text-slate-500">
               {formatMoney(billing.amountCents, billing.currency)} /{" "}
-              {billing.billingInterval}
+              {formatBillingInterval(billing.billingInterval)}
             </p>
           </div>
           <div>
@@ -340,7 +344,7 @@ export default async function SubscriptionPage({
             {billing.seatQuantity} paid seat add-on
             {billing.seatQuantity === 1 ? "" : "s"} at{" "}
             {formatMoney(billing.seatUnitAmountCents, billing.seatCurrency)} /
-            month.
+            {formatBillingInterval(billing.billingInterval)}.
           </p>
           <SeatManagementControls
             canManage={canManage}
@@ -357,7 +361,7 @@ export default async function SubscriptionPage({
             seatPriceLabel={`${formatMoney(
               billing.seatUnitAmountCents,
               billing.seatCurrency,
-            )} / month`}
+            )} / ${formatBillingInterval(billing.billingInterval)}`}
           />
         </section>
 
@@ -372,7 +376,7 @@ export default async function SubscriptionPage({
                 Cycle
               </dt>
               <dd className="mt-2 font-semibold capitalize text-slate-800">
-                {billing.billingInterval === "year" ? "Annual" : "Monthly"}
+                {billing.billingInterval === "year" ? "Annual" : "Quarterly"}
               </dd>
             </div>
             <div className="rounded-xl bg-slate-50 p-4">

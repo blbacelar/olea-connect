@@ -29,7 +29,7 @@ function makeSubscriptionItem({
         ...(planId ? { plan_id: planId } : {}),
       },
       recurring: { interval: itemType === "membership" ? "month" : null },
-      unit_amount: itemType === "membership" ? 9900 : 1000,
+      unit_amount: itemType === "membership" ? 80000 : 1500,
     },
   };
 }
@@ -232,7 +232,7 @@ describe("Stripe subscription synchronization", () => {
               id: "price_without_plan_metadata",
               metadata: { item_type: "membership" },
               recurring: { interval: "month" },
-              unit_amount: 9900,
+              unit_amount: 80000,
             },
           },
         ],

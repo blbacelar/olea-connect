@@ -97,11 +97,15 @@ function getPlanPriceLabel(planId: MembershipTier, interval: "month" | "year") {
   const plan = membershipPlans.find((item) => item.id === planId);
   if (!plan) return "";
 
-  const amount = interval === "year" ? plan.annualPrice : plan.monthlyPrice;
+  const amount = interval === "year" ? plan.annualPrice : plan.quarterlyPrice;
   return new Intl.NumberFormat("en-CA", {
     currency: "CAD",
     style: "currency",
   }).format(amount);
+}
+
+function getBillingIntervalLabel(interval: "month" | "year") {
+  return interval === "year" ? "year" : "quarter";
 }
 
 export function PlanUpgradeControls({
@@ -206,7 +210,7 @@ export function PlanUpgradeControls({
                 {upgradeOptions.map((plan) => (
                   <SelectItem key={plan.id} value={plan.id}>
                     {plan.name} - {getPlanPriceLabel(plan.id, billingInterval)} /{" "}
-                    {billingInterval}
+                    {getBillingIntervalLabel(billingInterval)}
                   </SelectItem>
                 ))}
               </SelectContent>
@@ -234,8 +238,8 @@ export function PlanUpgradeControls({
       {selectedPlan && upgradeOptions.length > 0 ? (
         <p className="mt-4 rounded-lg bg-emerald-50 p-3 text-sm text-emerald-900">
           Upgrade to <strong>{selectedPlan.name}</strong> for{" "}
-          {selectedPlanPriceLabel} / {billingInterval}. Downgrades are handled
-          by support so access changes stay clean.
+          {selectedPlanPriceLabel} / {getBillingIntervalLabel(billingInterval)}.
+          Downgrades are handled by support so access changes stay clean.
         </p>
       ) : null}
 

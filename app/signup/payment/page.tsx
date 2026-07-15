@@ -42,9 +42,13 @@ export default function SignupPaymentPage() {
   const price =
     registration.billingCycle === "annual"
       ? plan.annualPrice
-      : plan.monthlyPrice;
+      : plan.quarterlyPrice;
+  const foundingPrice =
+    registration.billingCycle === "annual"
+      ? plan.foundingAnnualPrice
+      : plan.foundingQuarterlyPrice;
   const billingPeriod =
-    registration.billingCycle === "annual" ? "year" : "month";
+    registration.billingCycle === "annual" ? "year" : "quarter";
 
   useEffect(() => {
     if (
@@ -164,23 +168,22 @@ export default function SignupPaymentPage() {
                 /{billingPeriod}
               </span>
             </p>
-            {registration.billingCycle === "annual" ? (
-              <p className="mt-1 text-xs font-semibold text-olea-green">
-                Pay for 10 months and receive 12
-              </p>
-            ) : null}
+            <p className="mt-1 text-xs font-semibold text-olea-green">
+              Founding Year 1: ${foundingPrice.toLocaleString()}/{billingPeriod}
+            </p>
             <div className="my-5 border-t" />
             <p className="font-semibold text-olea-dark">
               Membership starts immediately
             </p>
             <p className="mt-1 text-sm leading-6 text-slate-500">
-              Your selected billing amount is charged when you activate your
-              membership. Any applicable tax is shown before you confirm.
+              Your selected annual or quarterly billing amount is charged
+              upfront when you activate your membership. GST/PST is calculated
+              from your billing province.
             </p>
             <ul className="mt-5 space-y-2 text-sm text-slate-600">
-              <li>✓ Cancel any time</li>
+              <li>✓ 30-day notice before renewal</li>
               <li>✓ Prices in Canadian dollars</li>
-              <li>✓ Immediate platform access after verification</li>
+              <li>✓ {plan.seats}</li>
             </ul>
           </aside>
         </div>

@@ -14,7 +14,7 @@ const membershipTiers: MembershipTier[] = [
   "canopy",
   "harvest",
 ];
-const billingCycles: BillingCycle[] = ["monthly", "annual"];
+const billingCycles: BillingCycle[] = ["quarterly", "annual"];
 
 export function getStripe() {
   const secretKey = process.env.STRIPE_SECRET_KEY;
@@ -49,8 +49,10 @@ export function getStripeSeatPriceIdForInterval(interval: "month" | "year") {
   const key =
     interval === "year"
       ? "STRIPE_PRICE_SEAT_YEARLY"
-      : "STRIPE_PRICE_SEAT_MONTHLY";
-  const priceId = process.env[key];
+      : "STRIPE_PRICE_SEAT_QUARTERLY";
+  const priceId =
+    process.env[key] ??
+    (interval === "month" ? process.env.STRIPE_PRICE_SEAT_MONTHLY : undefined);
 
   if (!priceId) {
     throw new Error(`${key} is not configured.`);
@@ -61,6 +63,7 @@ export function getStripeSeatPriceIdForInterval(interval: "month" | "year") {
 
 function getOptionalStripeSeatPriceIds() {
   return [
+    process.env.STRIPE_PRICE_SEAT_QUARTERLY,
     process.env.STRIPE_PRICE_SEAT_MONTHLY,
     process.env.STRIPE_PRICE_SEAT_YEARLY,
   ].filter(Boolean) as string[];

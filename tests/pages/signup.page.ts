@@ -3,7 +3,7 @@ import { expect, type Page } from "@playwright/test";
 export class SignupPage {
   constructor(private readonly page: Page) {}
 
-  async openAccount(tier = "roots", billing = "monthly") {
+  async openAccount(tier = "roots", billing = "quarterly") {
     await this.page.goto(`/signup/account?tier=${tier}&billing=${billing}`);
     await expect(
       this.page.getByRole("heading", { name: "Create your account" }),
@@ -60,9 +60,11 @@ export class SignupPage {
   }
 
   async expectPaymentStep({
+    billingPeriod,
     planHeading,
     price,
   }: {
+    billingPeriod: string;
     planHeading: string;
     price: string;
   }) {
@@ -74,6 +76,9 @@ export class SignupPage {
       this.page.getByRole("heading", { name: planHeading }),
     ).toBeVisible();
     await expect(this.page.getByText(price)).toBeVisible();
+    await expect(
+      this.page.getByText(billingPeriod, { exact: true }),
+    ).toBeVisible();
   }
 
   async goBackToPlans() {

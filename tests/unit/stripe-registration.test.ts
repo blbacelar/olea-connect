@@ -131,7 +131,7 @@ describe("Stripe registration recovery", () => {
         provisioning_request_id: "req_123",
         user_id: "user_123",
         plan_id: "seedling",
-        billing_cycle: "monthly",
+        billing_cycle: "quarterly",
       },
       subscription: makeSubscription(),
     });
@@ -210,7 +210,7 @@ describe("Stripe registration recovery", () => {
         provisioning_request_id: "req_123",
         user_id: "user_123",
         plan_id: "seedling",
-        billing_cycle: "monthly",
+        billing_cycle: "quarterly",
       },
       subscription: subscriptionWithoutMetadata,
     });
@@ -219,7 +219,7 @@ describe("Stripe registration recovery", () => {
         provisioning_request_id: "req_123",
         user_id: "user_123",
         plan_id: "seedling",
-        billing_cycle: "monthly",
+        billing_cycle: "quarterly",
       }),
     );
     const { client } = makeSupabaseMock([
@@ -241,7 +241,7 @@ describe("Stripe registration recovery", () => {
         provisioning_request_id: "req_123",
         user_id: "user_123",
         plan_id: "seedling",
-        billing_cycle: "monthly",
+        billing_cycle: "quarterly",
       },
     });
   });

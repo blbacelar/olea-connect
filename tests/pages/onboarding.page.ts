@@ -18,7 +18,7 @@ export class OnboardingPage {
           key,
           JSON.stringify({
             tier: storedTier,
-            billingCycle: "monthly",
+            billingCycle: "quarterly",
             organizationName: storedOrganizationName,
             fullName: "QA Owner",
             email: "",

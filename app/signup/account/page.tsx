@@ -27,14 +27,17 @@ export default function SignupAccountPage() {
     const billingCycle = searchParams.get("billing");
     const updates: {
       tier?: MembershipTier;
-      billingCycle?: "monthly" | "annual";
+      billingCycle?: "quarterly" | "annual";
     } = {};
 
     if (tier && membershipPlans.some((plan) => plan.id === tier)) {
       updates.tier = tier;
     }
-    if (billingCycle === "monthly" || billingCycle === "annual") {
-      updates.billingCycle = billingCycle;
+    if (billingCycle === "quarterly" || billingCycle === "monthly") {
+      updates.billingCycle = "quarterly";
+    }
+    if (billingCycle === "annual") {
+      updates.billingCycle = "annual";
     }
     if (updates.tier || updates.billingCycle) {
       updateRegistration(updates);

@@ -23,8 +23,9 @@ test.describe("@smoke @critical membership signup", () => {
     await expect(signup.continueToPayment).toBeEnabled();
     await signup.continueToPaymentStep();
     await signup.expectPaymentStep({
+      billingPeriod: "/year",
       planHeading: "🌱 Seedling",
-      price: "$440/year",
+      price: "$800",
     });
   });
 

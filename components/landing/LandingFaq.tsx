@@ -9,39 +9,44 @@ const faqs = [
       "Registered nonprofits, societies, charities, and community organizations at any size or stage are welcome. Resources are written primarily for a Canadian context, while international members can also join.",
   },
   {
-    question: "Does every plan include the community?",
+    question: "How does billing work?",
     answer:
-      "Yes. Every member has full access to the private peer community, weekly grant alerts, virtual networking, sponsor-led learning, and community channels from day one. Plans differ by resource-library depth and included learning access.",
+      "Memberships are billed annually or quarterly, paid upfront in Canadian dollars, and renew on your signup anniversary. Prices are shown before tax; GST/PST is calculated during checkout by province.",
   },
   {
-    question: "How does automatic template branding work?",
+    question: "Is there a free trial?",
     answer:
-      "During setup, you upload your logo, choose your colours, and confirm your organization name. Eligible templates then render with that identity automatically, ready to download, print, and use.",
+      "No. Olea Connects does not offer a free trial. The founding-member offer gives the first 50 organizations 15% off Year 1 instead.",
   },
   {
-    question: "Can membership be included in a grant budget?",
+    question: "What is the founding-member offer?",
     answer:
-      "Yes. Olea Connects membership can fit under organizational capacity building, a category supported by many Canadian foundations and government funders. Olea can provide a letter confirming membership and included value.",
+      "The first 50 paid organizations receive 15% off their first year. After Year 1, the membership renews at the regular tier price.",
   },
   {
-    question: "Can we upgrade, cancel, or pause?",
+    question: "How many seats are included?",
     answer:
-      "You can upgrade without losing your profile, community access, or template history. Memberships can be cancelled, and organizations facing a genuine funding gap can request a pause of up to 60 days.",
+      "Seedling includes 5 seats, Roots includes 10, Canopy includes 15, and Harvest includes 20. Additional seats are $15 CAD each on any tier.",
   },
   {
-    question: "What is the Olea Gives Fund?",
+    question: "Can we upgrade or downgrade?",
     answer:
-      "It is a sponsor-funded grant program for current members. Quarterly $500 grants support operational capacity, governance, program rollout, or communications, with a simple one-page application.",
+      "Upgrades are available anytime and charge the price difference immediately while keeping the renewal date unchanged. Downgrades happen at renewal and require 30 days' notice.",
   },
   {
-    question: "Is content available in French?",
+    question: "Can we cancel?",
     answer:
-      "Core governance templates and ebooks are available in English and French, and the French-language library will continue to grow.",
+      "Yes. Cancellation requires 30 days' notice before renewal. Membership fees are non-refundable, and cancelled organizations have a 30-day grace period to download their data.",
   },
   {
-    question: "What makes Harvest different?",
+    question: "How do referrals work?",
     answer:
-      "Harvest combines the complete Canopy library with CEO-delivered fractional administration: five monthly support hours, two in-kind hours, board packages, committee minutes, and a monthly strategy call. It is limited to eight clients.",
+      "Every organization receives a referral code. Referral credit is earned only after the referred organization completes its first successful payment; self-referrals are blocked.",
+  },
+  {
+    question: "Are coaching and admin support included?",
+    answer:
+      "Coaching, admin support, and board retreat facilitation are available as add-ons. Canopy and Harvest members receive 10% off coaching and admin packages.",
   },
 ];
 
@@ -52,7 +57,7 @@ export function LandingFaq() {
         <SectionIntro
           eyebrow="Frequently asked questions"
           title="A few things you may be wondering."
-          description="Straight answers about membership, access, branding, and support."
+          description="Straight answers about pricing, billing, seats, referrals, and support."
           centered
         />
         <div className="mt-10 divide-y rounded-2xl border bg-white px-5 md:px-7">

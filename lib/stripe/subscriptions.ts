@@ -17,7 +17,7 @@ const membershipTiers: MembershipTier[] = [
   "harvest",
 ];
 const billingCycles: RegistrationState["billingCycle"][] = [
-  "monthly",
+  "quarterly",
   "annual",
 ];
 

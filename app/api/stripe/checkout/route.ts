@@ -15,7 +15,7 @@ export const runtime = "nodejs";
 
 const tiers: MembershipTier[] = ["seedling", "roots", "canopy", "harvest"];
 const billingCycles: RegistrationState["billingCycle"][] = [
-  "monthly",
+  "quarterly",
   "annual",
 ];
 

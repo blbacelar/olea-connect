@@ -137,9 +137,12 @@ export async function getBillingSummary(): Promise<BillingSummary | null> {
     (total, item) => total + item.quantity,
     0,
   );
-  const seatUnitAmountCents = seatItems[0]?.unit_amount_cents ?? 1000;
+  const seatUnitAmountCents = seatItems[0]?.unit_amount_cents ?? 1500;
   const seatCurrency =
     seatItems[0]?.currency ?? plan?.currency ?? "CAD";
+  // The legacy DB column is named monthly_price_cents, but current plans bill
+  // quarterly or annually. Until the storage column is renamed, month means
+  // the quarterly upfront catalog price.
   const amountCents =
     subscription.billing_interval === "year"
       ? (plan?.annual_price_cents ?? 0)

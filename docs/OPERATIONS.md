@@ -50,15 +50,15 @@ NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY
 STRIPE_SECRET_KEY
 STRIPE_WEBHOOK_SECRET
 STRIPE_BILLING_PORTAL_CONFIGURATION_ID
-STRIPE_PRICE_SEEDLING_MONTHLY
+STRIPE_PRICE_SEEDLING_QUARTERLY
 STRIPE_PRICE_SEEDLING_ANNUAL
-STRIPE_PRICE_ROOTS_MONTHLY
+STRIPE_PRICE_ROOTS_QUARTERLY
 STRIPE_PRICE_ROOTS_ANNUAL
-STRIPE_PRICE_CANOPY_MONTHLY
+STRIPE_PRICE_CANOPY_QUARTERLY
 STRIPE_PRICE_CANOPY_ANNUAL
-STRIPE_PRICE_HARVEST_MONTHLY
+STRIPE_PRICE_HARVEST_QUARTERLY
 STRIPE_PRICE_HARVEST_ANNUAL
-STRIPE_PRICE_SEAT_MONTHLY
+STRIPE_PRICE_SEAT_QUARTERLY
 STRIPE_PRICE_SEAT_YEARLY
 ```
 
@@ -361,11 +361,11 @@ Dashboard before creating HTTP cron jobs.
 
 The app expects recurring CAD prices for:
 
-- Seedling monthly and annual.
-- Roots monthly and annual.
-- Canopy monthly and annual.
-- Harvest monthly and annual.
-- Paid seat monthly and yearly.
+- Seedling quarterly and annual.
+- Roots quarterly and annual.
+- Canopy quarterly and annual.
+- Harvest quarterly and annual.
+- Paid seat quarterly and yearly.
 
 Paid seats are limited in the app to 1-3 seats per add-seat action.
 

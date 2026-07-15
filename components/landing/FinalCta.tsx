@@ -31,7 +31,7 @@ export function FinalCta() {
             </Link>
           </Button>
           <p className="mt-4 text-xs text-white/70">
-            Memberships start at $44 CAD per month.
+            Memberships start at $800 CAD/year or $200 CAD/quarter.
           </p>
         </div>
       </div>

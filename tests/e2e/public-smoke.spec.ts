@@ -25,10 +25,10 @@ test.describe("@smoke @critical public entry points", () => {
       "/signup/account?tier=roots&billing=annual",
     );
 
-    await page.getByRole("button", { name: "Monthly" }).click();
+    await page.getByRole("button", { name: "Quarterly" }).click();
     await expect(rootsLink).toHaveAttribute(
       "href",
-      "/signup/account?tier=roots&billing=monthly",
+      "/signup/account?tier=roots&billing=quarterly",
     );
   });
 

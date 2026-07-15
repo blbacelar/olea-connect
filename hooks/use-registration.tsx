@@ -15,7 +15,7 @@ const STORAGE_KEY = "olea-registration-demo";
 
 const initialState: RegistrationState = {
   tier: "roots",
-  billingCycle: "monthly",
+  billingCycle: "annual",
   organizationName: "",
   fullName: "",
   email: "",
@@ -25,6 +25,22 @@ const initialState: RegistrationState = {
   brandComplete: false,
   selectedTemplateIds: [],
 };
+
+function normalizeStoredRegistration(stored: unknown): RegistrationState {
+  if (!stored || typeof stored !== "object") return initialState;
+
+  const candidate = stored as Partial<RegistrationState> & {
+    billingCycle?: string;
+  };
+  const billingCycle =
+    candidate.billingCycle === "annual" ? "annual" : "quarterly";
+
+  return {
+    ...initialState,
+    ...candidate,
+    billingCycle,
+  };
+}
 
 interface RegistrationContextValue {
   registration: RegistrationState;
@@ -45,7 +61,12 @@ export function RegistrationProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     const stored = window.localStorage.getItem(STORAGE_KEY);
     if (stored) {
-      setRegistration({ ...initialState, ...JSON.parse(stored) });
+      try {
+        setRegistration(normalizeStoredRegistration(JSON.parse(stored)));
+      } catch {
+        window.localStorage.removeItem(STORAGE_KEY);
+        setRegistration(initialState);
+      }
     }
     setHydrated(true);
   }, []);

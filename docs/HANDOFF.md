@@ -89,7 +89,7 @@ components, auth, branding, and persistence:
 - Event/category colors are managed inline while adding or editing an entry.
   The separate `colour_key` template data still exists as the backing store,
   but users should not have to manage it as a separate workbook tab.
-- Monthly, annual, operational workflow, staff task list, and AGM planning views
+- Monthly calendar, annual, operational workflow, staff task list, and AGM planning views
   are generated from the same normalized event/setup data.
 - Staff task rows are generated from meeting dates plus Setup task rules.
   User-editable staff fields, such as responsible, status, notes, and done, are

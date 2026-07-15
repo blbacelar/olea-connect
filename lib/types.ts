@@ -11,7 +11,7 @@ export type PlatformRole =
 
 export interface RegistrationState {
   tier: MembershipTier;
-  billingCycle: "monthly" | "annual";
+  billingCycle: "quarterly" | "annual";
   organizationName: string;
   fullName: string;
   email: string;

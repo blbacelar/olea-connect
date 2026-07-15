@@ -249,7 +249,7 @@ describe("Stripe billing portal route", () => {
     expect(routeMocks.syncStripeSubscription).toHaveBeenCalled();
   });
 
-  it("upgrades the membership item to a higher monthly plan", async () => {
+  it("upgrades the membership item to a higher quarterly plan", async () => {
     const { POST } = await import("@/app/api/stripe/portal/route");
     routeMocks.stripeSubscriptionRetrieve.mockResolvedValue(
       makeSubscription({
@@ -259,7 +259,7 @@ describe("Stripe billing portal route", () => {
             {
               id: "si_membership",
               price: {
-                id: "price_roots_monthly",
+                id: "price_roots_quarterly",
                 metadata: { item_type: "membership", plan_id: "roots" },
               },
               quantity: 1,
@@ -285,7 +285,7 @@ describe("Stripe billing portal route", () => {
     expect(response.status).toBe(200);
     expect(routeMocks.getStripePriceId).toHaveBeenCalledWith(
       "canopy",
-      "monthly",
+      "quarterly",
     );
     expect(routeMocks.stripeSubscriptionUpdate).toHaveBeenCalledWith(
       "sub_123",
@@ -293,7 +293,7 @@ describe("Stripe billing portal route", () => {
         items: [
           {
             id: "si_membership",
-            price: "price_canopy_monthly",
+            price: "price_canopy_quarterly",
             quantity: 1,
           },
         ],
