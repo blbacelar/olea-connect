@@ -1,4 +1,4 @@
-import { test } from "../fixtures/authenticated.fixture";
+import { expect, test } from "../fixtures/authenticated.fixture";
 import { AppShellPage } from "../pages/app-shell.page";
 import { TemplatesPage } from "../pages/templates.page";
 
@@ -54,5 +54,38 @@ test.describe("@smoke @critical platform UI coverage gate", () => {
     await app.expectPageHeading("/whats-new", "What's new");
     await app.expectText("Product updates, new resources");
     await app.expectNoServerError();
+  });
+
+  test("shows sponsor finance administration before member sponsor content for finance admins", async ({
+    authenticatedMember,
+    page,
+    testData,
+  }) => {
+    await testData.assignPlatformRole(
+      authenticatedMember.userId,
+      "finance_admin",
+    );
+
+    await page.goto("/sponsors");
+    await expect(
+      page.getByRole("heading", { name: "Sponsors & Olea Gives", level: 1 }),
+    ).toBeVisible();
+
+    const financeAdministration = page.getByText("Finance administration", {
+      exact: true,
+    });
+    const memberDirectory = page.getByText("Member directory", { exact: true });
+
+    await expect(financeAdministration).toBeVisible();
+    await expect(memberDirectory).toBeVisible();
+
+    const financeTop = await financeAdministration.evaluate(
+      (element) => element.getBoundingClientRect().top,
+    );
+    const directoryTop = await memberDirectory.evaluate(
+      (element) => element.getBoundingClientRect().top,
+    );
+
+    expect(financeTop).toBeLessThan(directoryTop);
   });
 });

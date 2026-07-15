@@ -7,8 +7,9 @@ import {
   normalizeOptionalEmail,
   normalizeOptionalPhone,
   normalizeSponsorSlug,
-  parseCurrencyToCents,
+  validateCurrencyToCents,
   validateOptionalHttpUrl,
+  validateOptionalCurrencyToCents,
 } from "@/lib/sponsors/domain";
 import { createAdminClient } from "@/utils/supabase/admin";
 import { createClient } from "@/utils/supabase/server";
@@ -19,7 +20,13 @@ export type SponsorActionState = {
 };
 
 const sponsorManagerRoles = ["super_admin", "finance_admin"] as const;
-const sponsorStatuses = ["prospect", "active", "paused", "former", "declined"] as const;
+const sponsorStatuses = [
+  "prospect",
+  "active",
+  "paused",
+  "former",
+  "declined",
+] as const;
 const sponsorshipStatuses = [
   "draft",
   "proposed",
@@ -27,7 +34,12 @@ const sponsorshipStatuses = [
   "completed",
   "canceled",
 ] as const;
-const contributionStatuses = ["pledged", "invoiced", "received", "allocated"] as const;
+const contributionStatuses = [
+  "pledged",
+  "invoiced",
+  "received",
+  "allocated",
+] as const;
 
 function text(formData: FormData, key: string) {
   return String(formData.get(key) ?? "").trim();
@@ -89,7 +101,9 @@ async function requireSponsorManager() {
 
   if (error) throw error;
   if (!role) {
-    throw new Error("Only finance or platform administrators can manage sponsors.");
+    throw new Error(
+      "Only finance or platform administrators can manage sponsors.",
+    );
   }
 
   const { data: membership, error: membershipError } = await admin
@@ -200,13 +214,15 @@ export async function saveSponsorProfile(
       let primaryContactId = contactId || null;
 
       if (!primaryContactId) {
-        const { data: existingPrimaryContact, error: existingPrimaryContactError } =
-          await admin
-            .from("sponsor_contacts")
-            .select("id")
-            .eq("sponsor_id", sponsor.id)
-            .eq("is_primary", true)
-            .maybeSingle();
+        const {
+          data: existingPrimaryContact,
+          error: existingPrimaryContactError,
+        } = await admin
+          .from("sponsor_contacts")
+          .select("id")
+          .eq("sponsor_id", sponsor.id)
+          .eq("is_primary", true)
+          .maybeSingle();
 
         if (existingPrimaryContactError) throw existingPrimaryContactError;
         primaryContactId = existingPrimaryContact?.id ?? null;
@@ -222,7 +238,10 @@ export async function saveSponsorProfile(
       };
 
       const contactQuery = primaryContactId
-        ? admin.from("sponsor_contacts").update(contactValues).eq("id", primaryContactId)
+        ? admin
+            .from("sponsor_contacts")
+            .update(contactValues)
+            .eq("id", primaryContactId)
         : admin.from("sponsor_contacts").insert(contactValues);
       const { error: contactError } = await contactQuery;
 
@@ -240,12 +259,17 @@ export async function saveSponsorProfile(
     revalidatePath("/sponsors");
 
     return {
-      message: sponsorId ? "Sponsor profile updated." : "Sponsor profile created.",
+      message: sponsorId
+        ? "Sponsor profile updated."
+        : "Sponsor profile created.",
       status: "success",
     };
   } catch (error) {
     return {
-      message: getActionErrorMessage(error, "Sponsor profile could not be saved."),
+      message: getActionErrorMessage(
+        error,
+        "Sponsor profile could not be saved.",
+      ),
       status: "error",
     };
   }
@@ -261,15 +285,23 @@ export async function saveSponsorshipTerm(
     const sponsorId = text(formData, "sponsorId");
     const status = text(formData, "status") || "draft";
 
-    assertChoice(sponsorshipStatuses, status, "Choose a supported sponsorship status.");
+    assertChoice(
+      sponsorshipStatuses,
+      status,
+      "Choose a supported sponsorship status.",
+    );
     if (!sponsorId) throw new Error("Choose a sponsor.");
 
     const values = {
       category_exclusivity: nullableText(formData, "categoryExclusivity"),
-      committed_contribution_cents: parseCurrencyToCents(
+      committed_contribution_cents: validateOptionalCurrencyToCents(
         text(formData, "committedContribution"),
+        "Olea Gives commitment",
       ),
-      contract_amount_cents: parseCurrencyToCents(text(formData, "contractAmount")),
+      contract_amount_cents: validateCurrencyToCents(
+        text(formData, "contractAmount"),
+        "Contract amount",
+      ),
       currency: "CAD",
       ends_on: text(formData, "endsOn"),
       financial_notes: nullableText(formData, "financialNotes"),
@@ -288,10 +320,6 @@ export async function saveSponsorshipTerm(
     if (!values.starts_on || !values.ends_on) {
       throw new Error("Start and end dates are required.");
     }
-    if (values.contract_amount_cents <= 0) {
-      throw new Error("Contract amount must be greater than zero.");
-    }
-
     const query = sponsorshipId
       ? admin.from("sponsorships").update(values).eq("id", sponsorshipId)
       : admin.from("sponsorships").insert({ ...values, created_by: userId });
@@ -311,12 +339,17 @@ export async function saveSponsorshipTerm(
     revalidatePath("/sponsors");
 
     return {
-      message: sponsorshipId ? "Sponsorship terms updated." : "Sponsorship terms saved.",
+      message: sponsorshipId
+        ? "Sponsorship terms updated."
+        : "Sponsorship terms saved.",
       status: "success",
     };
   } catch (error) {
     return {
-      message: getActionErrorMessage(error, "Sponsorship terms could not be saved."),
+      message: getActionErrorMessage(
+        error,
+        "Sponsorship terms could not be saved.",
+      ),
       status: "error",
     };
   }
@@ -332,27 +365,35 @@ export async function saveSponsorContribution(
     const sponsorshipId = text(formData, "sponsorshipId");
     const status = text(formData, "status") || "pledged";
 
-    assertChoice(contributionStatuses, status, "Choose a supported contribution status.");
+    assertChoice(
+      contributionStatuses,
+      status,
+      "Choose a supported contribution status.",
+    );
     if (!sponsorshipId) throw new Error("Choose a sponsorship term.");
 
     const values = {
-      allocated_on: status === "allocated" ? text(formData, "allocatedOn") || null : null,
-      amount_cents: parseCurrencyToCents(text(formData, "amount")),
+      allocated_on:
+        status === "allocated" ? text(formData, "allocatedOn") || null : null,
+      amount_cents: validateCurrencyToCents(text(formData, "amount"), "Amount"),
       currency: "CAD",
       notes: nullableText(formData, "notes"),
-      pledged_on: text(formData, "pledgedOn") || new Date().toISOString().slice(0, 10),
-      quickbooks_transaction_id: nullableText(formData, "quickbooksTransactionId"),
+      pledged_on:
+        text(formData, "pledgedOn") || new Date().toISOString().slice(0, 10),
+      quickbooks_transaction_id: nullableText(
+        formData,
+        "quickbooksTransactionId",
+      ),
       received_on: text(formData, "receivedOn") || null,
       sponsorship_id: sponsorshipId,
       status,
     };
 
-    if (values.amount_cents <= 0) {
-      throw new Error("Contribution amount must be greater than zero.");
-    }
-
     const query = contributionId
-      ? admin.from("sponsor_contributions").update(values).eq("id", contributionId)
+      ? admin
+          .from("sponsor_contributions")
+          .update(values)
+          .eq("id", contributionId)
       : admin.from("sponsor_contributions").insert(values);
     const { data: contribution, error } = await query.select("id").single();
 
@@ -360,7 +401,10 @@ export async function saveSponsorContribution(
 
     const grantProgramId = selectText(formData, "grantProgramId");
     const grantRoundId = selectText(formData, "grantRoundId");
-    const allocationAmountCents = parseCurrencyToCents(text(formData, "allocationAmount"));
+    const allocationAmountCents = validateOptionalCurrencyToCents(
+      text(formData, "allocationAmount"),
+      "Allocation amount",
+    );
 
     if (grantRoundId && !grantProgramId) {
       throw new Error("Choose a grant program before choosing a grant round.");
@@ -376,7 +420,9 @@ export async function saveSponsorContribution(
 
         if (roundError) throw roundError;
         if (round.program_id !== grantProgramId) {
-          throw new Error("Grant round must belong to the selected grant program.");
+          throw new Error(
+            "Grant round must belong to the selected grant program.",
+          );
         }
       }
 

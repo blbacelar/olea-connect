@@ -55,7 +55,11 @@ function statusClass(status: string) {
   return "border-slate-200 bg-slate-50 text-slate-700";
 }
 
-function SponsorDirectory({ sponsors }: { sponsors: SponsorDirectoryProfile[] }) {
+function SponsorDirectory({
+  sponsors,
+}: {
+  sponsors: SponsorDirectoryProfile[];
+}) {
   if (!sponsors.length) {
     return (
       <EmptyPanel
@@ -82,7 +86,10 @@ function SponsorDirectory({ sponsors }: { sponsors: SponsorDirectoryProfile[] })
                 </p>
               ) : null}
             </div>
-            <Badge variant="outline" className="border-green-200 bg-green-50 text-green-700">
+            <Badge
+              variant="outline"
+              className="border-green-200 bg-green-50 text-green-700"
+            >
               Active
             </Badge>
           </div>
@@ -125,7 +132,9 @@ function ReportingSummary({ reports }: { reports: SponsorReport[] }) {
           >
             <div className="flex flex-wrap items-start justify-between gap-3">
               <div>
-                <p className="text-lg font-bold text-slate-900">{sponsor.name}</p>
+                <p className="text-lg font-bold text-slate-900">
+                  {sponsor.name}
+                </p>
                 <p className="mt-1 text-sm text-slate-500">
                   {sponsor.contacts.length
                     ? `Contacts: ${sponsor.contacts
@@ -178,7 +187,8 @@ function SponsorshipReportCard({
             {sponsorship.packageName}
           </p>
           <p className="mt-1 text-sm text-slate-500">
-            {formatDate(sponsorship.startsOn)} to {formatDate(sponsorship.endsOn)}
+            {formatDate(sponsorship.startsOn)} to{" "}
+            {formatDate(sponsorship.endsOn)}
           </p>
           {recognitionName ? (
             <p className="mt-1 text-sm text-slate-500">
@@ -192,7 +202,10 @@ function SponsorshipReportCard({
       </div>
 
       <div className="mt-4 grid gap-3 md:grid-cols-4">
-        <Metric label="Contract" value={formatMoney(sponsorship.contractAmountCents)} />
+        <Metric
+          label="Contract"
+          value={formatMoney(sponsorship.contractAmountCents)}
+        />
         <Metric
           label="Committed to Olea Gives"
           value={formatMoney(sponsorship.committedContributionCents)}
@@ -218,7 +231,9 @@ function SponsorshipReportCard({
             <p className="mt-2">Terms: {sponsorship.privateTerms}</p>
           ) : null}
           {sponsorship.financialNotes ? (
-            <p className="mt-1">Financial notes: {sponsorship.financialNotes}</p>
+            <p className="mt-1">
+              Financial notes: {sponsorship.financialNotes}
+            </p>
           ) : null}
         </div>
       ) : null}
@@ -256,9 +271,7 @@ function SponsorshipReportCard({
                                 allocation.grantRoundName
                                   ? ` · ${allocation.grantRoundName}`
                                   : ""
-                              }: ${formatMoney(
-                                allocation.amountCents,
-                              )}`,
+                              }: ${formatMoney(allocation.amountCents)}`,
                           )
                           .join("; ")
                       : "Not allocated"}
@@ -293,8 +306,14 @@ function Metric({
 }
 
 export default async function SponsorsPage() {
-  const { canManageSponsors, directorySponsors, grantPrograms, grantRounds, packages, reports } =
-    await getSponsorsData();
+  const {
+    canManageSponsors,
+    directorySponsors,
+    grantPrograms,
+    grantRounds,
+    packages,
+    reports,
+  } = await getSponsorsData();
 
   return (
     <div>
@@ -303,7 +322,18 @@ export default async function SponsorsPage() {
         description="Browse approved sponsor profiles and track how sponsor contributions flow into Olea Gives grants."
       />
 
-      <section className="rounded-xl border bg-white p-5 shadow-soft">
+      {canManageSponsors ? (
+        <SponsorManagement
+          grantPrograms={grantPrograms}
+          grantRounds={grantRounds}
+          packages={packages}
+          reports={reports}
+        />
+      ) : null}
+
+      <section
+        className={`${canManageSponsors ? "mt-8 " : ""}rounded-xl border bg-white p-5 shadow-soft`}
+      >
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div>
             <p className="text-xs font-semibold uppercase tracking-[0.16em] text-olea-green">
@@ -313,7 +343,10 @@ export default async function SponsorsPage() {
               Approved sponsor profiles
             </h2>
           </div>
-          <Badge variant="outline" className="border-green-200 bg-green-50 text-green-700">
+          <Badge
+            variant="outline"
+            className="border-green-200 bg-green-50 text-green-700"
+          >
             <CheckCircle2 className="mr-1 size-3" />
             Active and approved only
           </Badge>
@@ -325,15 +358,6 @@ export default async function SponsorsPage() {
 
       <ReportingSummary reports={reports} />
 
-      {canManageSponsors ? (
-        <SponsorManagement
-          grantPrograms={grantPrograms}
-          grantRounds={grantRounds}
-          packages={packages}
-          reports={reports}
-        />
-      ) : null}
-
       <section className="mt-8 grid gap-4 md:grid-cols-2">
         <div className="rounded-xl border bg-white p-5 shadow-soft">
           <p className="flex items-center gap-2 text-sm font-semibold text-olea-green">
@@ -341,8 +365,8 @@ export default async function SponsorsPage() {
             Reconciliation rule
           </p>
           <p className="mt-2 text-sm leading-6 text-slate-500">
-            Contribution totals are compared against grant-program allocations so
-            finance can spot unallocated sponsor dollars before reporting.
+            Contribution totals are compared against grant-program allocations
+            so finance can spot unallocated sponsor dollars before reporting.
           </p>
         </div>
         <div className="rounded-xl border bg-white p-5 shadow-soft">

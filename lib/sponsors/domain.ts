@@ -48,14 +48,55 @@ export function normalizeSponsorSlug(value: string) {
     .replace(/-{2,}/g, "-");
 }
 
+export const SPONSOR_CURRENCY_PATTERN_SOURCE =
+  "(?:CAD\\s*)?\\$?(?:\\d+|\\d{1,3}(?:,\\d{3})+)(?:\\.\\d{1,2})?";
+
+const currencyFormatPattern = new RegExp(
+  `^${SPONSOR_CURRENCY_PATTERN_SOURCE}$`,
+  "i",
+);
+
 export function parseCurrencyToCents(value: string) {
-  const normalized = value.replace(/[$,\s]/g, "");
+  const normalizedInput = value.trim();
+  if (!normalizedInput) return 0;
+  if (!currencyFormatPattern.test(normalizedInput)) return 0;
+
+  const normalized = normalizedInput.replace(/CAD|[$,\s]/gi, "");
   if (!normalized) return 0;
 
   const amount = Number(normalized);
-  if (!Number.isFinite(amount)) return 0;
+  if (!Number.isFinite(amount) || amount < 0) return 0;
 
   return Math.round(amount * 100);
+}
+
+export function validateCurrencyToCents(value: string, label = "Amount") {
+  const normalizedInput = value.trim();
+  if (!normalizedInput) {
+    throw new Error(`${label} is required.`);
+  }
+
+  const cents = parseCurrencyToCents(normalizedInput);
+  if (cents <= 0) {
+    throw new Error(`${label} must be a valid CAD amount like $1,200.00.`);
+  }
+
+  return cents;
+}
+
+export function validateOptionalCurrencyToCents(
+  value: string,
+  label = "Amount",
+) {
+  const normalizedInput = value.trim();
+  if (!normalizedInput) return 0;
+
+  const cents = parseCurrencyToCents(normalizedInput);
+  if (cents <= 0) {
+    throw new Error(`${label} must be a valid CAD amount like $1,200.00.`);
+  }
+
+  return cents;
 }
 
 export function normalizeOptionalHttpUrl(value: string | null) {
@@ -97,9 +138,8 @@ export function normalizeOptionalPhone(value: string | null, label = "Phone") {
 
   const normalized = value.replace(/\s+/g, " ").trim();
   const digits = normalized.replace(/\D/g, "");
-  const hasPhoneShape = /^\+?[\d().\-\s]{7,}(?:\s*(?:x|ext)\.?\s*\d{1,6})?$/i.test(
-    normalized,
-  );
+  const hasPhoneShape =
+    /^\+?[\d().\-\s]{7,}(?:\s*(?:x|ext)\.?\s*\d{1,6})?$/i.test(normalized);
 
   if (!hasPhoneShape || digits.length < 7 || digits.length > 20) {
     throw new Error(`${label} must be a valid phone number.`);

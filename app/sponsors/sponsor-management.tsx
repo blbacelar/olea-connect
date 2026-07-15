@@ -11,6 +11,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Textarea } from "@/components/ui/textarea";
 import type { SponsorGrantRoundOption } from "@/lib/data/sponsors";
 import { FORM_SELECT_EMPTY_VALUE } from "@/lib/forms/constants";
+import { SPONSOR_CURRENCY_PATTERN_SOURCE } from "@/lib/sponsors/domain";
 import type { SponsorReport, SponsorshipPackageSummary } from "@/lib/types";
 
 import {
@@ -42,7 +43,9 @@ function SponsorFormNotice({ state }: { state: SponsorActionState }) {
       : "border-red-200 bg-red-50 text-red-700";
 
   return (
-    <div className={`mt-4 rounded-lg border px-4 py-3 text-sm font-semibold ${tone}`}>
+    <div
+      className={`mt-4 rounded-lg border px-4 py-3 text-sm font-semibold ${tone}`}
+    >
       {state.message}
     </div>
   );
@@ -55,6 +58,27 @@ function SponsorSubmitButton({ children }: { children: string }) {
     <Button className="mt-5" disabled={pending} type="submit">
       {pending ? "Saving..." : children}
     </Button>
+  );
+}
+
+function SponsorCurrencyInput({
+  name,
+  placeholder = "$1,200.00",
+  required = false,
+}: {
+  name: string;
+  placeholder?: string;
+  required?: boolean;
+}) {
+  return (
+    <Input
+      name={name}
+      inputMode="decimal"
+      pattern={SPONSOR_CURRENCY_PATTERN_SOURCE}
+      placeholder={placeholder}
+      required={required}
+      title="Use a CAD amount like $1,200.00."
+    />
   );
 }
 
@@ -126,7 +150,10 @@ function SponsorProfileForm({ reports }: { reports: SponsorReport[] }) {
       </label>
       <label className="mt-4 block text-sm font-semibold text-slate-700">
         Short description
-        <Input name="shortDescription" placeholder="One-line directory summary" />
+        <Input
+          name="shortDescription"
+          placeholder="One-line directory summary"
+        />
       </label>
       <label className="mt-4 block text-sm font-semibold text-slate-700">
         Directory description
@@ -138,7 +165,11 @@ function SponsorProfileForm({ reports }: { reports: SponsorReport[] }) {
       <div className="mt-4 grid gap-4 md:grid-cols-2">
         <label className="text-sm font-semibold text-slate-700">
           Directory email
-          <Input name="directoryEmail" type="email" placeholder="sponsor@example.org" />
+          <Input
+            name="directoryEmail"
+            type="email"
+            placeholder="sponsor@example.org"
+          />
         </label>
         <label className="text-sm font-semibold text-slate-700">
           Directory phone
@@ -160,7 +191,11 @@ function SponsorProfileForm({ reports }: { reports: SponsorReport[] }) {
           </label>
           <label className="text-sm font-semibold text-slate-700">
             Email
-            <Input name="primaryContactEmail" type="email" placeholder="name@example.org" />
+            <Input
+              name="primaryContactEmail"
+              type="email"
+              placeholder="name@example.org"
+            />
           </label>
           <label className="text-sm font-semibold text-slate-700">
             Title
@@ -209,7 +244,8 @@ function SponsorshipTermsForm({
     <form action={formAction} className="rounded-xl border bg-slate-50 p-5">
       <h2 className="font-bold text-slate-900">Sponsorship terms</h2>
       <p className="mt-1 text-sm text-slate-500">
-        Track package, term dates, committed contribution, and private finance notes.
+        Track package, term dates, committed contribution, and private finance
+        notes.
       </p>
       <SponsorFormNotice state={state} />
       <div className="mt-4 grid gap-4 md:grid-cols-2">
@@ -254,7 +290,11 @@ function SponsorshipTermsForm({
         </label>
         <label className="text-sm font-semibold text-slate-700">
           Contract amount
-          <Input name="contractAmount" placeholder="12000" required />
+          <SponsorCurrencyInput
+            name="contractAmount"
+            placeholder="$12,000.00"
+            required
+          />
         </label>
         <label className="text-sm font-semibold text-slate-700">
           Starts on
@@ -266,7 +306,10 @@ function SponsorshipTermsForm({
         </label>
         <label className="text-sm font-semibold text-slate-700">
           Olea Gives commitment
-          <Input name="committedContribution" placeholder="3000" />
+          <SponsorCurrencyInput
+            name="committedContribution"
+            placeholder="$3,000.00"
+          />
         </label>
         <label className="text-sm font-semibold text-slate-700">
           Category exclusivity
@@ -347,7 +390,11 @@ function SponsorContributionForm({
         </label>
         <label className="text-sm font-semibold text-slate-700">
           Amount
-          <Input name="amount" placeholder="5000" required />
+          <SponsorCurrencyInput
+            name="amount"
+            placeholder="$5,000.00"
+            required
+          />
         </label>
         <label className="text-sm font-semibold text-slate-700">
           Pledged on
@@ -397,7 +444,10 @@ function SponsorContributionForm({
         </label>
         <label className="text-sm font-semibold text-slate-700">
           Allocation amount
-          <Input name="allocationAmount" placeholder="5000" />
+          <SponsorCurrencyInput
+            name="allocationAmount"
+            placeholder="$5,000.00"
+          />
         </label>
       </div>
       <label className="mt-4 block text-sm font-semibold text-slate-700">
@@ -423,12 +473,17 @@ export function SponsorManagement({
   return (
     <section className="mt-8">
       <SectionHeading>Finance administration</SectionHeading>
-      <Tabs defaultValue="profile" className="rounded-xl border bg-white p-4 shadow-soft">
+      <Tabs
+        defaultValue="profile"
+        className="rounded-xl border bg-white p-4 shadow-soft"
+      >
         <div className="overflow-x-auto pb-1">
           <TabsList className="h-auto min-w-max justify-start gap-1 bg-olea-light/70 p-1">
             <TabsTrigger value="profile">Sponsor profile</TabsTrigger>
             <TabsTrigger value="terms">Sponsorship terms</TabsTrigger>
-            <TabsTrigger value="contributions">Contribution allocation</TabsTrigger>
+            <TabsTrigger value="contributions">
+              Contribution allocation
+            </TabsTrigger>
           </TabsList>
         </div>
         <TabsContent value="profile" className="mt-5">

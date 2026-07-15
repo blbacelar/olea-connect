@@ -9,6 +9,8 @@ import {
   parseCurrencyToCents,
   summarizeContributionReconciliation,
   validateOptionalHttpUrl,
+  validateCurrencyToCents,
+  validateOptionalCurrencyToCents,
 } from "@/lib/sponsors/domain";
 
 describe("sponsor domain rules", () => {
@@ -50,6 +52,28 @@ describe("sponsor domain rules", () => {
     );
     expect(parseCurrencyToCents("$1,234.56")).toBe(123_456);
     expect(parseCurrencyToCents("not money")).toBe(0);
+    expect(parseCurrencyToCents("12.345")).toBe(0);
+    expect(parseCurrencyToCents("-10")).toBe(0);
+  });
+
+  it("throws actionable validation errors for invalid sponsor currency fields", () => {
+    expect(validateCurrencyToCents("$12,000.00", "Contract amount")).toBe(
+      1_200_000,
+    );
+    expect(validateOptionalCurrencyToCents("", "Allocation amount")).toBe(0);
+    expect(
+      validateOptionalCurrencyToCents("CAD $500", "Allocation amount"),
+    ).toBe(50_000);
+
+    expect(() => validateCurrencyToCents("", "Contract amount")).toThrow(
+      "Contract amount is required.",
+    );
+    expect(() => validateCurrencyToCents("12.345", "Contract amount")).toThrow(
+      "Contract amount must be a valid CAD amount like $1,200.00.",
+    );
+    expect(() =>
+      validateOptionalCurrencyToCents("not money", "Allocation amount"),
+    ).toThrow("Allocation amount must be a valid CAD amount like $1,200.00.");
   });
 
   it("only accepts safe http or https sponsor URLs", () => {
@@ -83,8 +107,8 @@ describe("sponsor domain rules", () => {
       "https://example.org/",
     );
     expect(validateOptionalHttpUrl(null)).toBeNull();
-    expect(() => validateOptionalHttpUrl("ftp://example.org", "Website")).toThrow(
-      "Website must be a valid http or https URL.",
-    );
+    expect(() =>
+      validateOptionalHttpUrl("ftp://example.org", "Website"),
+    ).toThrow("Website must be a valid http or https URL.");
   });
 });
