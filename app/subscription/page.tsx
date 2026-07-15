@@ -4,11 +4,39 @@ import { DemoActionButton } from "@/components/DemoActionButton";
 import { PageHeader } from "@/components/PageHeader";
 import { SectionHeading } from "@/components/SectionHeading";
 import { Button } from "@/components/ui/button";
+import { getPlan } from "@/lib/plans";
+
+const currencyFormatter = new Intl.NumberFormat("en-CA", {
+  style: "currency",
+  currency: "CAD",
+});
+
+const currentPlan = getPlan("roots");
+const upgradePlan = getPlan("canopy");
+const currentBillingCycle = "annual";
+const currentPlanPrice =
+  currentBillingCycle === "annual"
+    ? currentPlan.annualPrice
+    : currentPlan.quarterlyPrice;
+const currentBillingPeriod =
+  currentBillingCycle === "annual" ? "year" : "quarter";
 
 const billingHistory = [
-  ["June 10, 2026", "Roots Quarterly", "$800.00"],
-  ["March 10, 2026", "Roots Quarterly", "$800.00"],
-  ["December 10, 2025", "Roots Quarterly", "$800.00"],
+  [
+    "July 10, 2026",
+    `${currentPlan.name} Annual`,
+    currencyFormatter.format(currentPlan.annualPrice),
+  ],
+  [
+    "July 10, 2025",
+    `${currentPlan.name} Annual`,
+    currencyFormatter.format(currentPlan.annualPrice),
+  ],
+  [
+    "July 10, 2024",
+    `${currentPlan.name} Annual`,
+    currencyFormatter.format(currentPlan.annualPrice),
+  ],
 ];
 
 export default function SubscriptionPage() {
@@ -26,17 +54,18 @@ export default function SubscriptionPage() {
               Current plan
             </p>
             <p className="mt-2 flex items-center gap-2 text-lg font-bold">
-              🌿 Roots
+              {currentPlan.icon} {currentPlan.name}
             </p>
             <p className="mt-1 text-[13.5px] text-slate-500">
-              $800.00 / quarter
+              {currencyFormatter.format(currentPlanPrice)} /{" "}
+              {currentBillingPeriod}
             </p>
           </div>
           <div>
             <p className="text-xs font-semibold uppercase tracking-[0.05em] text-slate-400">
               Next billing date
             </p>
-            <p className="mt-2 text-lg font-semibold">July 10, 2026</p>
+            <p className="mt-2 text-lg font-semibold">July 10, 2027</p>
           </div>
           <div>
             <p className="text-xs font-semibold uppercase tracking-[0.05em] text-slate-400">
@@ -57,11 +86,13 @@ export default function SubscriptionPage() {
       <section className="mb-6 flex flex-wrap items-center justify-between gap-5 rounded-[14px] border border-[#CFE6D6] bg-[linear-gradient(120deg,#E8F0EA_0%,#FFFFFF_100%)] p-6">
         <div className="max-w-[520px]">
           <h2 className="text-[17px] font-bold text-olea-dark">
-            🌳 Upgrade to Canopy
+            {upgradePlan.icon} Upgrade to {upgradePlan.name}
           </h2>
           <p className="mt-2 text-sm leading-6 text-slate-600">
             Unlock board evaluation, ED/CEO 360 review, strategic planning, and
-            15 included seats for $1,500/quarter or $6,000/year.
+            {upgradePlan.seats.toLowerCase()} for{" "}
+            {currencyFormatter.format(upgradePlan.quarterlyPrice)}/quarter or{" "}
+            {currencyFormatter.format(upgradePlan.annualPrice)}/year.
           </p>
         </div>
         <DemoActionButton message="Your Canopy upgrade checkout is ready.">
