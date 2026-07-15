@@ -7,6 +7,7 @@ import {
   decimalNumberPattern,
   defaultQuarterAssignments,
   formatNumber,
+  nextSortOrderAfter,
   parseOptionalNumber,
   parseRequiredNumber,
   suggestRagStatus,
@@ -86,5 +87,17 @@ describe("KPI dashboard domain helpers", () => {
     expect(() =>
       parseRequiredNumber(formData, "targetNumber", "Target number"),
     ).toThrow("Target number must be a positive number with up to 2 decimals.");
+  });
+
+  it("generates sort orders that stay inside Postgres integer limits", () => {
+    expect(nextSortOrderAfter(undefined)).toBe(1);
+    expect(nextSortOrderAfter(null)).toBe(1);
+    expect(nextSortOrderAfter(0)).toBe(1);
+    expect(nextSortOrderAfter(41)).toBe(42);
+    expect(nextSortOrderAfter(1.5)).toBe(1);
+    expect(nextSortOrderAfter(-1)).toBe(1);
+    expect(() => nextSortOrderAfter(2147483647)).toThrow(
+      "Sort order limit reached.",
+    );
   });
 });

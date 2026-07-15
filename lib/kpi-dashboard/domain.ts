@@ -15,6 +15,7 @@ export const monthOptions = [
 
 export const decimalNumberPattern = String.raw`\d+(\.\d{1,2})?`;
 const decimalNumberRegex = new RegExp(`^${decimalNumberPattern}$`);
+const postgresIntegerMax = 2147483647;
 
 export const ragStatuses = ["green", "amber", "red", "na"] as const;
 export type RagStatus = (typeof ragStatuses)[number];
@@ -194,6 +195,15 @@ export function parseOptionalNumber(
     throw new Error(`${label} must be a positive number with up to 2 decimals.`);
   }
   return Number(rawValue);
+}
+
+export function nextSortOrderAfter(currentMax: number | null | undefined) {
+  if (currentMax === null || currentMax === undefined) return 1;
+  if (!Number.isInteger(currentMax) || currentMax < 0) return 1;
+  if (currentMax >= postgresIntegerMax) {
+    throw new Error("Sort order limit reached.");
+  }
+  return currentMax + 1;
 }
 
 export function parseRagStatus(value: FormDataEntryValue | null): RagStatus {

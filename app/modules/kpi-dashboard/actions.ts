@@ -7,6 +7,7 @@ import { requireKpiDashboardForOrganization } from "@/lib/data/kpi-dashboard";
 import {
   defaultQuarterAssignments,
   monthOptions,
+  nextSortOrderAfter,
   parseMilestoneStatus,
   parseOptionalNumber,
   parseOptionalText,
@@ -22,6 +23,7 @@ import { createAdminClient } from "@/utils/supabase/admin";
 const KPI_PATH = "/modules/kpi-dashboard";
 const uuidPattern =
   /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+type SortableKpiTable = "kpi_definitions" | "kpi_milestones" | "kpi_risks";
 
 function getFormString(formData: FormData, key: string) {
   return String(formData.get(key) ?? "").trim();
@@ -61,6 +63,23 @@ function parseOptionalDate(formData: FormData, key: string, label: string) {
     throw new Error(`${label} must use YYYY-MM-DD format.`);
   }
   return value;
+}
+
+async function getNextSortOrder(
+  supabase: ReturnType<typeof createAdminClient>,
+  table: SortableKpiTable,
+  dashboardId: string,
+) {
+  const { data, error } = await supabase
+    .from(table)
+    .select("sort_order")
+    .eq("dashboard_id", dashboardId)
+    .order("sort_order", { ascending: false })
+    .limit(1)
+    .maybeSingle<{ sort_order: number }>();
+
+  if (error) throw error;
+  return nextSortOrderAfter(data?.sort_order);
 }
 
 export async function updateKpiDashboardSettings(formData: FormData) {
@@ -180,7 +199,14 @@ export async function createKpiDefinition(formData: FormData) {
     120,
   );
 
-  const { error } = await createAdminClient().from("kpi_definitions").insert({
+  const supabase = createAdminClient();
+  const sortOrder = await getNextSortOrder(
+    supabase,
+    "kpi_definitions",
+    dashboard.id,
+  );
+
+  const { error } = await supabase.from("kpi_definitions").insert({
     dashboard_id: dashboard.id,
     domain,
     name,
@@ -189,7 +215,7 @@ export async function createKpiDefinition(formData: FormData) {
     target_number: targetNumber,
     baseline_number: baselineNumber,
     outcome_area: outcomeArea,
-    sort_order: Date.now(),
+    sort_order: sortOrder,
   });
 
   if (error) throw error;
@@ -271,14 +297,21 @@ export async function createKpiMilestone(formData: FormData) {
   const status = parseMilestoneStatus(formData.get("status"));
   const notes = parseOptionalText(formData, "notes", "Notes", 1200);
 
-  const { error } = await createAdminClient().from("kpi_milestones").insert({
+  const supabase = createAdminClient();
+  const sortOrder = await getNextSortOrder(
+    supabase,
+    "kpi_milestones",
+    dashboard.id,
+  );
+
+  const { error } = await supabase.from("kpi_milestones").insert({
     dashboard_id: dashboard.id,
     title,
     owner,
     due_date: dueDate,
     status,
     notes,
-    sort_order: Date.now(),
+    sort_order: sortOrder,
   });
 
   if (error) throw error;
@@ -305,14 +338,17 @@ export async function createKpiRisk(formData: FormData) {
   const owner = parseOptionalText(formData, "owner", "Owner", 100);
   const ragStatus = parseRagStatus(formData.get("ragStatus"));
 
-  const { error } = await createAdminClient().from("kpi_risks").insert({
+  const supabase = createAdminClient();
+  const sortOrder = await getNextSortOrder(supabase, "kpi_risks", dashboard.id);
+
+  const { error } = await supabase.from("kpi_risks").insert({
     dashboard_id: dashboard.id,
     area,
     description,
     mitigation,
     owner,
     rag_status: ragStatus,
-    sort_order: Date.now(),
+    sort_order: sortOrder,
   });
 
   if (error) throw error;
