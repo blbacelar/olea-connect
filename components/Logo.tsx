@@ -11,7 +11,7 @@ export function Logo({
   return (
     <Link
       href={href}
-      aria-label="Olea Connects dashboard"
+      aria-label="Olea Connects Governance branded dashboard"
       className="inline-flex shrink-0 items-center gap-3"
     >
       <Image

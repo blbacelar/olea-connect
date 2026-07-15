@@ -70,9 +70,9 @@ export function ProductPreview() {
               <p className="text-[10px] font-bold uppercase tracking-wider text-olea-green">
                 Good morning, Sarah
               </p>
-              <h3 className="mt-1 text-lg font-bold sm:text-xl">
+              <h2 className="mt-1 text-lg font-bold sm:text-xl">
                 Your nonprofit home base
-              </h3>
+              </h2>
               <div className="mt-4 grid grid-cols-2 gap-2.5">
                 <div className="rounded-lg border bg-white p-3">
                   <FileText className="size-4 text-olea-green" />

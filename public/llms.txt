@@ -1,0 +1,27 @@
+# Olea Connects
+
+Olea Connects is a governance, learning, community, funding, and reporting platform for nonprofit organizations.
+
+## Primary pages
+
+- Homepage: https://staging.oleaconnects.com/
+- Pricing: https://staging.oleaconnects.com/#pricing
+- FAQ: https://staging.oleaconnects.com/#faq
+- Login: https://staging.oleaconnects.com/login
+
+## Product areas
+
+- Dashboard: https://staging.oleaconnects.com/dashboard
+- Templates: https://staging.oleaconnects.com/templates
+- Board Calendar: https://staging.oleaconnects.com/modules/board-calendar
+- KPI Dashboard: https://staging.oleaconnects.com/modules/kpi-dashboard
+- Community: https://staging.oleaconnects.com/community
+- Webinars: https://staging.oleaconnects.com/webinars
+- Grants: https://staging.oleaconnects.com/grants
+- Consulting: https://staging.oleaconnects.com/consulting
+
+## Notes for AI agents
+
+- Public marketing content is available without authentication.
+- Member workspace pages require an authenticated Olea Connects account.
+- Do not submit forms or create records unless explicitly instructed by the user.
