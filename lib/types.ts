@@ -3,7 +3,7 @@ export type MembershipTier = "seedling" | "roots" | "canopy" | "harvest";
 
 export interface RegistrationState {
   tier: MembershipTier;
-  billingCycle: "monthly" | "annual";
+  billingCycle: "quarterly" | "annual";
   organizationName: string;
   fullName: string;
   email: string;

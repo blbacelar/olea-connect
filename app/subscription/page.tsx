@@ -6,9 +6,9 @@ import { SectionHeading } from "@/components/SectionHeading";
 import { Button } from "@/components/ui/button";
 
 const billingHistory = [
-  ["June 10, 2026", "Roots Monthly", "$99.00"],
-  ["May 10, 2026", "Roots Monthly", "$99.00"],
-  ["April 10, 2026", "Roots Monthly", "$99.00"],
+  ["June 10, 2026", "Roots Quarterly", "$800.00"],
+  ["March 10, 2026", "Roots Quarterly", "$800.00"],
+  ["December 10, 2025", "Roots Quarterly", "$800.00"],
 ];
 
 export default function SubscriptionPage() {
@@ -29,7 +29,7 @@ export default function SubscriptionPage() {
               🌿 Roots
             </p>
             <p className="mt-1 text-[13.5px] text-slate-500">
-              $99.00 / month
+              $800.00 / quarter
             </p>
           </div>
           <div>
@@ -60,8 +60,8 @@ export default function SubscriptionPage() {
             🌳 Upgrade to Canopy
           </h2>
           <p className="mt-2 text-sm leading-6 text-slate-600">
-            Unlock the full template library, monthly webinars, and funder AMAs
-            for $199/month.
+            Unlock board evaluation, ED/CEO 360 review, strategic planning, and
+            15 included seats for $1,500/quarter or $6,000/year.
           </p>
         </div>
         <DemoActionButton message="Your Canopy upgrade checkout is ready.">

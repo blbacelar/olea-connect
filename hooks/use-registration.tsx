@@ -15,7 +15,7 @@ const STORAGE_KEY = "olea-registration-demo";
 
 const initialState: RegistrationState = {
   tier: "roots",
-  billingCycle: "monthly",
+  billingCycle: "annual",
   organizationName: "",
   fullName: "",
   email: "",

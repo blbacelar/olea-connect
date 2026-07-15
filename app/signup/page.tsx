@@ -26,12 +26,12 @@ export default function SignupPlanPage() {
     );
     const updates: {
       tier?: MembershipTier;
-      billingCycle?: "monthly" | "annual";
+      billingCycle?: "quarterly" | "annual";
     } = {};
     if (tier && membershipPlans.some((plan) => plan.id === tier)) {
       updates.tier = tier;
     }
-    if (billingCycle === "monthly" || billingCycle === "annual") {
+    if (billingCycle === "quarterly" || billingCycle === "annual") {
       updates.billingCycle = billingCycle;
     }
     if (updates.tier || updates.billingCycle) {
@@ -52,7 +52,7 @@ export default function SignupPlanPage() {
         </p>
 
         <div className="mx-auto mt-7 flex w-fit rounded-lg border bg-white p-1">
-          {(["monthly", "annual"] as const).map((cycle) => (
+          {(["quarterly", "annual"] as const).map((cycle) => (
             <button
               key={cycle}
               onClick={() => updateRegistration({ billingCycle: cycle })}
@@ -64,7 +64,7 @@ export default function SignupPlanPage() {
               )}
             >
               {cycle}
-              {cycle === "annual" ? " · 2 months free" : ""}
+              {cycle === "annual" ? " · best value" : ""}
             </button>
           ))}
         </div>
@@ -74,8 +74,8 @@ export default function SignupPlanPage() {
             const selected = registration.tier === plan.id;
             const price =
               registration.billingCycle === "annual"
-                ? Math.round(plan.annualPrice / 12)
-                : plan.monthlyPrice;
+                ? plan.annualPrice
+                : plan.quarterlyPrice;
             return (
               <button
                 key={plan.id}
@@ -94,10 +94,17 @@ export default function SignupPlanPage() {
                   {plan.icon} {plan.name}
                 </p>
                 <p className="mt-4 text-3xl font-bold">
-                  ${price}
+                  ${price.toLocaleString()}
                   <span className="text-sm font-normal text-slate-400">
-                    /mo
+                    /{registration.billingCycle === "annual" ? "year" : "quarter"}
                   </span>
+                </p>
+                <p className="mt-1 text-xs font-semibold text-olea-green">
+                  Founding Year 1: $
+                  {(registration.billingCycle === "annual"
+                    ? plan.foundingAnnualPrice
+                    : plan.foundingQuarterlyPrice
+                  ).toLocaleString()}
                 </p>
                 <p className="mt-1 text-sm text-slate-500">{plan.seats}</p>
                 <ul className="mt-5 space-y-2 text-sm text-slate-600">

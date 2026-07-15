@@ -55,7 +55,7 @@ export function TeamWorkspace({
               className="border-olea-green text-olea-green"
             >
               <Plus className="size-4" />
-              Add a seat — $10/mo
+              Add a seat — $15
             </DemoActionButton>
           </div>
         }

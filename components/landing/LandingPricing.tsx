@@ -19,9 +19,14 @@ export function LandingPricing() {
         <SectionIntro
           eyebrow="Membership"
           title="Choose the support that fits today."
-          description="There is no wrong place to start. Every tier includes the full Olea community; your resource library grows with your plan."
+          description="Annual or quarterly memberships are paid upfront. Founding members receive 15% off Year 1 for the first 50 organizations."
           centered
         />
+        <div className="mx-auto mt-6 max-w-3xl rounded-2xl border border-olea-green/20 bg-white p-4 text-center text-sm leading-6 text-slate-600 shadow-sm">
+          <strong className="text-olea-dark">Founding member offer:</strong>{" "}
+          first 50 organizations save 15% in Year 1. Prices below show regular
+          rates and founding rates.
+        </div>
         <div className="mt-8 flex justify-center">
           <div className="inline-flex rounded-lg border bg-white p-1 shadow-sm">
             <button
@@ -32,7 +37,7 @@ export function LandingPricing() {
                 !annual ? "bg-olea-green text-white" : "text-slate-500",
               )}
             >
-              Monthly
+              Quarterly
             </button>
             <button
               type="button"
@@ -44,14 +49,17 @@ export function LandingPricing() {
             >
               Annual
               <span className="ml-2 rounded-full bg-olea-orange px-2 py-0.5 text-[10px] text-white">
-                2 months free
+                Best for renewal planning
               </span>
             </button>
           </div>
         </div>
         <div className="mt-10 grid gap-5 md:grid-cols-2 xl:grid-cols-4">
           {membershipPlans.map((plan) => {
-            const price = annual ? plan.annualPrice : plan.monthlyPrice;
+            const price = annual ? plan.annualPrice : plan.quarterlyPrice;
+            const foundingPrice = annual
+              ? plan.foundingAnnualPrice
+              : plan.foundingQuarterlyPrice;
             return (
               <Card
                 key={plan.id}
@@ -77,13 +85,12 @@ export function LandingPricing() {
                     ${price.toLocaleString()}
                   </span>
                   <span className="pb-1 text-sm text-slate-400">
-                    /{annual ? "year" : "month"}
+                    /{annual ? "year" : "quarter"}
                   </span>
                 </div>
                 <p className="mt-2 text-xs font-semibold text-olea-green">
-                  {annual
-                    ? `$${Math.round(plan.annualPrice / 12).toLocaleString()} effective monthly · CAD`
-                    : "Billed monthly · CAD"}
+                  Founding Year 1: ${foundingPrice.toLocaleString()}
+                  /{annual ? "year" : "quarter"} · CAD
                 </p>
                 <p className="mt-5 min-h-12 text-sm leading-6 text-slate-500">
                   {plan.summary}
@@ -109,7 +116,7 @@ export function LandingPricing() {
                 >
                   <Link
                     href={`/signup/account?tier=${plan.id}&billing=${
-                      annual ? "annual" : "monthly"
+                      annual ? "annual" : "quarterly"
                     }`}
                   >
                     Choose {plan.name}
@@ -120,8 +127,8 @@ export function LandingPricing() {
           })}
         </div>
         <p className="mt-7 text-center text-sm text-slate-500">
-          Need breathing room? Members facing a genuine funding gap can request
-          a pause of up to 60 days.
+          Prices are shown before tax. GST/PST is calculated during secure
+          checkout by province. Additional seats are $15 CAD each.
         </p>
       </div>
     </section>

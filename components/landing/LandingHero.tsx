@@ -6,8 +6,8 @@ import { Button } from "@/components/ui/button";
 
 const assurances = [
   "Join in about 5 minutes",
-  "Plans from $44 CAD",
-  "Cancel anytime",
+  "Plans from $800/year",
+  "Quarterly billing available",
 ];
 
 export function LandingHero() {
