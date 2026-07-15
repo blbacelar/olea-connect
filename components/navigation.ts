@@ -1,4 +1,5 @@
 import {
+  BarChart3,
   CalendarDays,
   CircleHelp,
   CreditCard,
@@ -29,6 +30,7 @@ export const navigationGroups: NavigationItem[][] = [
     { label: "Dashboard", href: "/dashboard", icon: Home },
     { label: "Templates", href: "/templates", icon: FileText, dot: true },
     { label: "Board Calendar", href: "/modules/board-calendar", icon: CalendarDays },
+    { label: "KPI Dashboard", href: "/modules/kpi-dashboard", icon: BarChart3 },
     { label: "Community", href: "/community", icon: Users },
     { label: "Grants", href: "/grants", icon: Gift },
     { label: "Sponsors", href: "/sponsors", icon: Handshake },

@@ -1,0 +1,363 @@
+"use server";
+
+import { revalidatePath } from "next/cache";
+import { redirect } from "next/navigation";
+
+import { requireKpiDashboardForOrganization } from "@/lib/data/kpi-dashboard";
+import {
+  defaultQuarterAssignments,
+  monthOptions,
+  parseMilestoneStatus,
+  parseOptionalNumber,
+  parseOptionalText,
+  parseRagStatus,
+  parseRequiredNumber,
+  parseRequiredText,
+  validateQuarterAssignments,
+  type QuarterMonthAssignment,
+  type QuarterNumber,
+} from "@/lib/kpi-dashboard/domain";
+import { createAdminClient } from "@/utils/supabase/admin";
+
+const KPI_PATH = "/modules/kpi-dashboard";
+const uuidPattern =
+  /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+
+function getFormString(formData: FormData, key: string) {
+  return String(formData.get(key) ?? "").trim();
+}
+
+function assertUuid(value: string, label: string) {
+  if (!uuidPattern.test(value)) throw new Error(`${label} is invalid.`);
+  return value;
+}
+
+async function requireDashboardFromForm(formData: FormData) {
+  const dashboardId = assertUuid(getFormString(formData, "dashboardId"), "Dashboard");
+  const { dashboard } = await requireKpiDashboardForOrganization();
+  if (dashboard.id !== dashboardId) {
+    throw new Error("This dashboard does not belong to the current workspace.");
+  }
+  return dashboard;
+}
+
+function finish(tab: string) {
+  revalidatePath(KPI_PATH);
+  redirect(`${KPI_PATH}?tab=${tab}`);
+}
+
+function parseYear(formData: FormData) {
+  const year = Number(getFormString(formData, "reportingYear"));
+  if (!Number.isInteger(year) || year < 2000 || year > 2100) {
+    throw new Error("Reporting year must be between 2000 and 2100.");
+  }
+  return year;
+}
+
+function parseOptionalDate(formData: FormData, key: string, label: string) {
+  const value = getFormString(formData, key);
+  if (!value) return null;
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(value)) {
+    throw new Error(`${label} must use YYYY-MM-DD format.`);
+  }
+  return value;
+}
+
+export async function updateKpiDashboardSettings(formData: FormData) {
+  const dashboard = await requireDashboardFromForm(formData);
+  const title = parseRequiredText(formData, "title", "Dashboard title", 140);
+  const organizationName = parseRequiredText(
+    formData,
+    "organizationName",
+    "Organization name",
+    140,
+  );
+  const reportingYear = parseYear(formData);
+  const financialYearEnd = parseOptionalDate(
+    formData,
+    "financialYearEnd",
+    "Financial year end",
+  );
+
+  const { error } = await createAdminClient()
+    .from("kpi_dashboards")
+    .update({
+      title,
+      organization_name: organizationName,
+      reporting_year: reportingYear,
+      financial_year_end: financialYearEnd,
+    })
+    .eq("id", dashboard.id);
+
+  if (error) throw error;
+  finish("setup");
+}
+
+export async function updateKpiQuarterSettings(formData: FormData) {
+  const dashboard = await requireDashboardFromForm(formData);
+  const assignments: QuarterMonthAssignment[] = monthOptions.map((month, index) => {
+    const rawQuarter = Number(getFormString(formData, `month_${month.value}`));
+    return {
+      monthNumber: month.value,
+      quarter: rawQuarter as QuarterNumber,
+      sortOrder: index + 1,
+    };
+  });
+  const validationErrors = validateQuarterAssignments(assignments);
+  if (validationErrors.length > 0) {
+    throw new Error(validationErrors.join(" "));
+  }
+
+  const supabase = createAdminClient();
+  const { error: deleteError } = await supabase
+    .from("kpi_quarter_settings")
+    .delete()
+    .eq("dashboard_id", dashboard.id);
+
+  if (deleteError) throw deleteError;
+
+  const { error: insertError } = await supabase
+    .from("kpi_quarter_settings")
+    .insert(
+      assignments.map((assignment) => ({
+        dashboard_id: dashboard.id,
+        quarter: assignment.quarter,
+        month_number: assignment.monthNumber,
+        sort_order: assignment.sortOrder,
+      })),
+    );
+
+  if (insertError) throw insertError;
+  finish("settings");
+}
+
+export async function resetKpiQuarterSettings(formData: FormData) {
+  const dashboard = await requireDashboardFromForm(formData);
+  const supabase = createAdminClient();
+  const { error: deleteError } = await supabase
+    .from("kpi_quarter_settings")
+    .delete()
+    .eq("dashboard_id", dashboard.id);
+
+  if (deleteError) throw deleteError;
+
+  const { error: insertError } = await supabase
+    .from("kpi_quarter_settings")
+    .insert(
+      defaultQuarterAssignments().map((assignment) => ({
+        dashboard_id: dashboard.id,
+        quarter: assignment.quarter,
+        month_number: assignment.monthNumber,
+        sort_order: assignment.sortOrder,
+      })),
+    );
+
+  if (insertError) throw insertError;
+  finish("settings");
+}
+
+export async function createKpiDefinition(formData: FormData) {
+  const dashboard = await requireDashboardFromForm(formData);
+  const domain = parseRequiredText(formData, "domain", "Domain", 80);
+  const name = parseRequiredText(formData, "name", "KPI name", 140);
+  const owner = parseOptionalText(formData, "owner", "Owner", 100);
+  const targetDisplay = parseRequiredText(
+    formData,
+    "targetDisplay",
+    "Target display",
+    60,
+  );
+  const targetNumber = parseRequiredNumber(formData, "targetNumber", "Target number");
+  const baselineNumber = parseOptionalNumber(
+    formData,
+    "baselineNumber",
+    "Baseline number",
+  );
+  const outcomeArea = parseOptionalText(
+    formData,
+    "outcomeArea",
+    "Outcome/funder tag",
+    120,
+  );
+
+  const { error } = await createAdminClient().from("kpi_definitions").insert({
+    dashboard_id: dashboard.id,
+    domain,
+    name,
+    owner,
+    target_display: targetDisplay,
+    target_number: targetNumber,
+    baseline_number: baselineNumber,
+    outcome_area: outcomeArea,
+    sort_order: Date.now(),
+  });
+
+  if (error) throw error;
+  finish("setup");
+}
+
+export async function archiveKpiDefinition(formData: FormData) {
+  await requireDashboardFromForm(formData);
+  const kpiId = assertUuid(getFormString(formData, "kpiId"), "KPI");
+  const { error } = await createAdminClient()
+    .from("kpi_definitions")
+    .update({ active: false })
+    .eq("id", kpiId);
+
+  if (error) throw error;
+  finish("setup");
+}
+
+export async function saveKpiQuarterResult(formData: FormData) {
+  await requireDashboardFromForm(formData);
+  const kpiId = assertUuid(getFormString(formData, "kpiId"), "KPI");
+  const quarter = Number(getFormString(formData, "quarter"));
+  if (![1, 2, 3, 4].includes(quarter)) {
+    throw new Error("Quarter is invalid.");
+  }
+
+  const currentValue = parseOptionalNumber(
+    formData,
+    "currentValue",
+    "Current value",
+  );
+  const ragStatus = parseRagStatus(formData.get("ragStatus"));
+  const contextNotes = parseOptionalText(
+    formData,
+    "contextNotes",
+    "Context notes",
+    1200,
+  );
+
+  const { error } = await createAdminClient().from("kpi_quarter_results").upsert(
+    {
+      kpi_id: kpiId,
+      quarter,
+      current_value: currentValue,
+      rag_status: ragStatus,
+      context_notes: contextNotes,
+    },
+    { onConflict: "kpi_id,quarter" },
+  );
+
+  if (error) throw error;
+  finish(`q${quarter}`);
+}
+
+export async function saveKpiBoardAssessment(formData: FormData) {
+  await requireDashboardFromForm(formData);
+  const kpiId = assertUuid(getFormString(formData, "kpiId"), "KPI");
+  const fullYearRag = parseRagStatus(formData.get("fullYearRag"));
+  const boardNotes = parseOptionalText(formData, "boardNotes", "Board notes", 1200);
+
+  const { error } = await createAdminClient().from("kpi_board_assessments").upsert(
+    {
+      kpi_id: kpiId,
+      full_year_rag: fullYearRag,
+      board_notes: boardNotes,
+    },
+    { onConflict: "kpi_id" },
+  );
+
+  if (error) throw error;
+  finish("board");
+}
+
+export async function createKpiMilestone(formData: FormData) {
+  const dashboard = await requireDashboardFromForm(formData);
+  const title = parseRequiredText(formData, "title", "Milestone title", 160);
+  const owner = parseOptionalText(formData, "owner", "Owner", 100);
+  const dueDate = parseOptionalDate(formData, "dueDate", "Due date");
+  const status = parseMilestoneStatus(formData.get("status"));
+  const notes = parseOptionalText(formData, "notes", "Notes", 1200);
+
+  const { error } = await createAdminClient().from("kpi_milestones").insert({
+    dashboard_id: dashboard.id,
+    title,
+    owner,
+    due_date: dueDate,
+    status,
+    notes,
+    sort_order: Date.now(),
+  });
+
+  if (error) throw error;
+  finish("milestones");
+}
+
+export async function deleteKpiMilestone(formData: FormData) {
+  await requireDashboardFromForm(formData);
+  const milestoneId = assertUuid(getFormString(formData, "milestoneId"), "Milestone");
+  const { error } = await createAdminClient()
+    .from("kpi_milestones")
+    .delete()
+    .eq("id", milestoneId);
+
+  if (error) throw error;
+  finish("milestones");
+}
+
+export async function createKpiRisk(formData: FormData) {
+  const dashboard = await requireDashboardFromForm(formData);
+  const area = parseRequiredText(formData, "area", "Risk area", 100);
+  const description = parseRequiredText(formData, "description", "Risk", 600);
+  const mitigation = parseOptionalText(formData, "mitigation", "Mitigation", 1200);
+  const owner = parseOptionalText(formData, "owner", "Owner", 100);
+  const ragStatus = parseRagStatus(formData.get("ragStatus"));
+
+  const { error } = await createAdminClient().from("kpi_risks").insert({
+    dashboard_id: dashboard.id,
+    area,
+    description,
+    mitigation,
+    owner,
+    rag_status: ragStatus,
+    sort_order: Date.now(),
+  });
+
+  if (error) throw error;
+  finish("milestones");
+}
+
+export async function deleteKpiRisk(formData: FormData) {
+  await requireDashboardFromForm(formData);
+  const riskId = assertUuid(getFormString(formData, "riskId"), "Risk");
+  const { error } = await createAdminClient()
+    .from("kpi_risks")
+    .delete()
+    .eq("id", riskId);
+
+  if (error) throw error;
+  finish("milestones");
+}
+
+export async function saveKpiAnnualSummary(formData: FormData) {
+  const dashboard = await requireDashboardFromForm(formData);
+  const payload = {
+    dashboard_id: dashboard.id,
+    overview: parseOptionalText(formData, "overview", "Overview", 2000),
+    achievements: parseOptionalText(formData, "achievements", "Achievements", 2000),
+    challenges: parseOptionalText(formData, "challenges", "Challenges", 2000),
+    stakeholder_story: parseOptionalText(
+      formData,
+      "stakeholderStory",
+      "Stakeholder story",
+      2000,
+    ),
+    financial_context: parseOptionalText(
+      formData,
+      "financialContext",
+      "Financial context",
+      2000,
+    ),
+    risk_response: parseOptionalText(formData, "riskResponse", "Risk response", 2000),
+    next_steps: parseOptionalText(formData, "nextSteps", "Next steps", 2000),
+  };
+
+  const { error } = await createAdminClient()
+    .from("kpi_annual_summaries")
+    .upsert(payload, { onConflict: "dashboard_id" });
+
+  if (error) throw error;
+  finish("annual");
+}

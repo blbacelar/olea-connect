@@ -39,6 +39,15 @@ test.describe("@smoke @critical platform UI coverage gate", () => {
     await app.expectSectionHeading("Approved sponsor profiles");
     await app.expectNoServerError();
 
+    await app.expectPageHeading(
+      "/modules/kpi-dashboard",
+      "KPI Dashboard and Board Reporting",
+    );
+    await app.expectText("Setup & Branding");
+    await app.expectText("Q1 Tracker");
+    await app.expectText("Annual Summary");
+    await app.expectNoServerError();
+
     await app.expectPageHeading("/webinars", "Webinars");
     await app.expectSectionHeading("Upcoming");
     await app.expectNoServerError();

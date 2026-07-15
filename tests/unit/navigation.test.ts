@@ -13,6 +13,10 @@ describe("application navigation", () => {
     expect(navigationLabelsFor([])).toContain("Sponsors");
   });
 
+  it("shows the KPI dashboard module to regular members", () => {
+    expect(navigationLabelsFor([])).toContain("KPI Dashboard");
+  });
+
   it("hides operator navigation from regular members", () => {
     expect(navigationLabelsFor([])).not.toContain("Operations");
   });
