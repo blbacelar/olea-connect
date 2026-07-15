@@ -89,7 +89,7 @@ export default function SubscriptionPage() {
             {upgradePlan.icon} Upgrade to {upgradePlan.name}
           </h2>
           <p className="mt-2 text-sm leading-6 text-slate-600">
-            Unlock board evaluation, ED/CEO 360 review, strategic planning, and
+            Unlock board evaluation, ED/CEO 360 review, strategic planning, and{" "}
             {upgradePlan.seats.toLowerCase()} for{" "}
             {currencyFormatter.format(upgradePlan.quarterlyPrice)}/quarter or{" "}
             {currencyFormatter.format(upgradePlan.annualPrice)}/year.
