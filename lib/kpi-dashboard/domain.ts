@@ -13,6 +13,9 @@ export const monthOptions = [
   { label: "December", value: 12 },
 ] as const;
 
+export const decimalNumberPattern = String.raw`\d+(\.\d{1,2})?`;
+const decimalNumberRegex = new RegExp(`^${decimalNumberPattern}$`);
+
 export const ragStatuses = ["green", "amber", "red", "na"] as const;
 export type RagStatus = (typeof ragStatuses)[number];
 
@@ -174,7 +177,7 @@ export function parseRequiredNumber(
 ) {
   const rawValue = String(formData.get(key) ?? "").trim().replace(/,/g, "");
   if (!rawValue) throw new Error(`${label} is required.`);
-  if (!/^\d+(\.\d{1,2})?$/.test(rawValue)) {
+  if (!decimalNumberRegex.test(rawValue)) {
     throw new Error(`${label} must be a positive number with up to 2 decimals.`);
   }
   return Number(rawValue);
@@ -187,7 +190,7 @@ export function parseOptionalNumber(
 ) {
   const rawValue = String(formData.get(key) ?? "").trim().replace(/,/g, "");
   if (!rawValue) return null;
-  if (!/^\d+(\.\d{1,2})?$/.test(rawValue)) {
+  if (!decimalNumberRegex.test(rawValue)) {
     throw new Error(`${label} must be a positive number with up to 2 decimals.`);
   }
   return Number(rawValue);

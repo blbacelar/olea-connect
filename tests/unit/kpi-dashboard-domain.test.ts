@@ -4,8 +4,11 @@ import {
   calculatePercentToTarget,
   calculateTrend,
   calculateVariance,
+  decimalNumberPattern,
   defaultQuarterAssignments,
   formatNumber,
+  parseOptionalNumber,
+  parseRequiredNumber,
   suggestRagStatus,
   validateQuarterAssignments,
 } from "@/lib/kpi-dashboard/domain";
@@ -48,5 +51,40 @@ describe("KPI dashboard domain helpers", () => {
     expect(formatNumber(1500000)).toBe("1,500,000");
     expect(formatNumber(12.5)).toBe("12.50");
     expect(formatNumber(null)).toBe("—");
+  });
+
+  it("uses a browser-compatible decimal pattern for KPI number inputs", () => {
+    const pattern = new RegExp(`^${decimalNumberPattern}$`);
+
+    expect(decimalNumberPattern).toBe(String.raw`\d+(\.\d{1,2})?`);
+    expect(pattern.test("65")).toBe(true);
+    expect(pattern.test("65.00")).toBe(true);
+    expect(pattern.test("1500000.5")).toBe(true);
+    expect(pattern.test("$65")).toBe(false);
+    expect(pattern.test("65.000")).toBe(false);
+  });
+
+  it("parses KPI number fields after display formatting", () => {
+    const required = new FormData();
+    required.set("targetNumber", "1,500,000.50");
+
+    const optional = new FormData();
+    optional.set("baselineNumber", "65.00");
+
+    expect(parseRequiredNumber(required, "targetNumber", "Target number")).toBe(
+      1500000.5,
+    );
+    expect(parseOptionalNumber(optional, "baselineNumber", "Baseline number")).toBe(
+      65,
+    );
+  });
+
+  it("rejects KPI number fields with unsupported formats", () => {
+    const formData = new FormData();
+    formData.set("targetNumber", "65.000");
+
+    expect(() =>
+      parseRequiredNumber(formData, "targetNumber", "Target number"),
+    ).toThrow("Target number must be a positive number with up to 2 decimals.");
   });
 });

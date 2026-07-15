@@ -40,6 +40,7 @@ import {
   calculatePercentToTarget,
   calculateTrend,
   calculateVariance,
+  decimalNumberPattern,
   formatNumber,
   formatPercent,
   milestoneLabels,
@@ -326,9 +327,10 @@ function SetupTab({ data }: { data: KpiDashboardData }) {
                 className="mt-2"
                 inputMode="decimal"
                 name="targetNumber"
-                pattern="\\d+(\\.\\d{1,2})?"
+                pattern={decimalNumberPattern}
                 placeholder="70 or 1500000"
                 required
+                title="Enter numbers only, with up to 2 decimal places."
               />
               <FieldHint>Numbers only, up to 2 decimals. No currency symbols.</FieldHint>
             </label>
@@ -338,8 +340,9 @@ function SetupTab({ data }: { data: KpiDashboardData }) {
                 className="mt-2"
                 inputMode="decimal"
                 name="baselineNumber"
-                pattern="\\d+(\\.\\d{1,2})?"
+                pattern={decimalNumberPattern}
                 placeholder="Optional"
+                title="Enter numbers only, with up to 2 decimal places."
               />
             </label>
             <div className="flex items-end">
@@ -523,8 +526,9 @@ function QuarterTrackerTab({
                         defaultValue={result?.currentValue ?? ""}
                         inputMode="decimal"
                         name="currentValue"
-                        pattern="\\d+(\\.\\d{1,2})?"
+                        pattern={decimalNumberPattern}
                         placeholder="Numbers only"
+                        title="Enter numbers only, with up to 2 decimal places."
                       />
                     </label>
                     <label className="block text-sm font-semibold">
