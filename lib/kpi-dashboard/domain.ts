@@ -150,9 +150,13 @@ export function parseRequiredText(
   key: string,
   label: string,
   maxLength: number,
+  minLength = 1,
 ) {
   const value = String(formData.get(key) ?? "").trim();
   if (!value) throw new Error(`${label} is required.`);
+  if (value.length < minLength) {
+    throw new Error(`${label} must be at least ${minLength} characters.`);
+  }
   if (value.length > maxLength) {
     throw new Error(`${label} must be ${maxLength} characters or fewer.`);
   }
@@ -210,7 +214,7 @@ export function nextSortOrderAfter(currentMax: number | null | undefined) {
 export function parseRagStatus(value: FormDataEntryValue | null): RagStatus {
   const status = String(value ?? "na");
   if (ragStatuses.includes(status as RagStatus)) return status as RagStatus;
-  return "na";
+  throw new Error("Choose a supported RAG status.");
 }
 
 export function parseMilestoneStatus(
@@ -220,5 +224,5 @@ export function parseMilestoneStatus(
   if (milestoneStatuses.includes(status as MilestoneStatus)) {
     return status as MilestoneStatus;
   }
-  return "not_started";
+  throw new Error("Choose a supported milestone status.");
 }

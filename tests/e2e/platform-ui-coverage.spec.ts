@@ -55,6 +55,8 @@ test.describe("@smoke @critical platform UI coverage gate", () => {
     authenticatedMember,
     page,
   }) => {
+    test.setTimeout(90_000);
+
     const app = new AppShellPage(page);
     const templates = new TemplatesPage(page);
 
@@ -135,9 +137,13 @@ test.describe("@smoke @critical platform UI coverage gate", () => {
       .getByLabel("Notes / actions")
       .fill("Submitted from the quarter tracker.");
     await addKpiDialog.getByRole("button", { name: "Add KPI" }).click();
+    const createdKpiRow = page
+      .getByRole("row")
+      .filter({ hasText: kpiName })
+      .first();
+    await expect(createdKpiRow).toBeVisible({ timeout: 15000 });
+    await page.keyboard.press("Escape");
     await expect(addKpiDialog).toBeHidden();
-    const createdKpiRow = page.getByRole("row").filter({ hasText: kpiName });
-    await expect(createdKpiRow).toBeVisible();
     const actionCell = createdKpiRow.getByRole("cell").last();
     await expect(
       page.getByRole("columnheader", { name: "Actions" }),
@@ -217,6 +223,99 @@ test.describe("@smoke @critical platform UI coverage gate", () => {
     await expect(
       boardRow.getByRole("combobox", { name: `Full-year RAG for ${kpiName}` }),
     ).toBeVisible();
+    await page.getByRole("tab", { name: "Milestones & Risks" }).click();
+    await expect(page.getByRole("heading", { name: "Milestones" })).toBeVisible();
+    await expect(
+      page.getByRole("heading", { name: "Risk register" }),
+    ).toBeVisible();
+
+    const milestoneTitle = `AGM confirmed ${Date.now()}`;
+    await page.getByRole("button", { name: "Add milestone" }).click();
+    const addMilestoneDialog = page.getByRole("dialog", { name: "Add milestone" });
+    await expect(addMilestoneDialog).toBeVisible();
+    await addMilestoneDialog.getByLabel("Milestone title").fill(milestoneTitle);
+    await addMilestoneDialog.getByLabel("Owner").fill("Board Chair");
+    await addMilestoneDialog.getByLabel("Due date").fill("2026-10-15");
+    await addMilestoneDialog.getByLabel("Notes").fill("Created by platform E2E.");
+    await addMilestoneDialog.getByRole("button", { name: "Add milestone" }).click();
+    const milestoneRow = page
+      .getByRole("row")
+      .filter({ hasText: milestoneTitle })
+      .first();
+    await expect(milestoneRow).toContainText("Board Chair", { timeout: 15000 });
+    await expect(milestoneRow).toContainText("2026-10-15");
+    await expect(milestoneRow).toContainText("Not Started");
+    await page.keyboard.press("Escape");
+    await expect(addMilestoneDialog).toBeHidden();
+
+    await milestoneRow
+      .getByRole("button", { name: `Edit milestone ${milestoneTitle}` })
+      .click();
+    const editMilestoneDialog = page.getByRole("dialog", {
+      name: "Edit milestone",
+    });
+    await expect(editMilestoneDialog).toBeVisible();
+    await editMilestoneDialog.getByLabel("Owner").fill("Executive Director");
+    await editMilestoneDialog.getByLabel("Milestone status").click();
+    await page.getByRole("option", { name: "Complete" }).click();
+    await editMilestoneDialog
+      .getByRole("button", { name: "Update milestone" })
+      .click();
+    await expect(milestoneRow).toContainText("Executive Director");
+    await expect(milestoneRow).toContainText("Complete");
+    await page.keyboard.press("Escape");
+    await expect(editMilestoneDialog).toBeHidden();
+
+    const riskArea = `Finance risk ${Date.now()}`;
+    await page.getByRole("button", { name: "Add risk" }).click();
+    const addRiskDialog = page.getByRole("dialog", { name: "Add risk" });
+    await expect(addRiskDialog).toBeVisible();
+    await addRiskDialog.getByLabel("Risk area").fill(riskArea);
+    await addRiskDialog
+      .getByLabel("Risk description")
+      .fill("Funding renewal may arrive later than expected.");
+    await addRiskDialog
+      .getByLabel("Mitigation")
+      .fill("Maintain monthly funder check-ins.");
+    await addRiskDialog.getByLabel("Owner").fill("Treasurer");
+    await addRiskDialog.getByLabel("Risk RAG status").click();
+    await page.getByRole("option", { name: "Amber" }).click();
+    await addRiskDialog.getByRole("button", { name: "Add risk" }).click();
+    const riskRow = page.getByRole("row").filter({ hasText: riskArea }).first();
+    await expect(riskRow).toContainText("Treasurer", { timeout: 15000 });
+    await expect(riskRow).toContainText("Funding renewal");
+    await expect(riskRow).toContainText("AMBER");
+    await page.keyboard.press("Escape");
+    await expect(addRiskDialog).toBeHidden();
+
+    await riskRow.getByRole("button", { name: `Edit risk ${riskArea}` }).click();
+    const editRiskDialog = page.getByRole("dialog", { name: "Edit risk" });
+    await expect(editRiskDialog).toBeVisible();
+    await editRiskDialog.getByLabel("Owner").fill("Finance Lead");
+    await editRiskDialog.getByRole("button", { name: "Update risk" }).click();
+    await expect(riskRow).toContainText("Finance Lead");
+    await page.keyboard.press("Escape");
+    await expect(editRiskDialog).toBeHidden();
+
+    await riskRow.getByRole("button", { name: `Delete risk ${riskArea}` }).click();
+    const deleteRiskDialog = page.getByRole("dialog", {
+      name: "Delete this risk?",
+    });
+    await expect(deleteRiskDialog).toBeVisible();
+    await deleteRiskDialog.getByRole("button", { name: "Delete risk" }).click();
+    await expect(riskRow).toHaveCount(0);
+
+    await milestoneRow
+      .getByRole("button", { name: `Delete milestone ${milestoneTitle}` })
+      .click();
+    const deleteMilestoneDialog = page.getByRole("dialog", {
+      name: "Delete this milestone?",
+    });
+    await expect(deleteMilestoneDialog).toBeVisible();
+    await deleteMilestoneDialog
+      .getByRole("button", { name: "Delete milestone" })
+      .click();
+    await expect(milestoneRow).toHaveCount(0);
     await app.expectNoServerError();
 
     await app.expectPageHeading("/webinars", "Webinars");

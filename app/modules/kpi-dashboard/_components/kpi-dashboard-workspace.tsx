@@ -14,12 +14,8 @@ import * as React from "react";
 
 import {
   archiveKpiDefinition,
-  createKpiMilestone,
-  createKpiRisk,
   createKpiTrackerEntry,
-  deleteKpiMilestone,
   deleteKpiQuarterResult,
-  deleteKpiRisk,
   resetKpiQuarterSettings,
   saveKpiAnnualSummary,
   saveKpiBoardAssessment,
@@ -27,6 +23,12 @@ import {
   updateKpiDashboardSettings,
   updateKpiQuarterSettings,
 } from "@/app/modules/kpi-dashboard/actions";
+import {
+  DeleteMilestoneDialogAction,
+  DeleteRiskDialogAction,
+  MilestoneDialogAction,
+  RiskDialogAction,
+} from "@/app/modules/kpi-dashboard/_components/milestones-risks-actions";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -63,7 +65,10 @@ import {
 } from "@/components/ui/table";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Textarea } from "@/components/ui/textarea";
-import type { KpiDashboardData, KpiDefinition } from "@/lib/data/kpi-dashboard";
+import type {
+  KpiDashboardData,
+  KpiDefinition,
+} from "@/lib/data/kpi-dashboard";
 import {
   calculatePercentToTarget,
   calculateTrend,
@@ -72,7 +77,6 @@ import {
   formatNumber,
   formatPercent,
   milestoneLabels,
-  milestoneStatuses,
   monthOptions,
   positiveDecimalNumberPattern,
   ragLabels,
@@ -1223,166 +1227,145 @@ function BoardDashboardTab({ data }: { data: KpiDashboardData }) {
   );
 }
 
+function TruncatedTableText({ children }: { children: React.ReactNode }) {
+  return (
+    <p className="max-w-[340px] truncate text-sm text-slate-500">
+      {children || "—"}
+    </p>
+  );
+}
+
 function MilestonesAndRisksTab({ data }: { data: KpiDashboardData }) {
   return (
-    <div className="grid gap-5 xl:grid-cols-2">
+    <div className="space-y-5">
       <Card>
         <CardHeader>
-          <CardTitle>Add milestone</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <form action={createKpiMilestone} className="space-y-4">
-            <HiddenDashboard dashboardId={data.dashboard.id} />
-            <Input maxLength={160} minLength={2} name="title" placeholder="Milestone" required />
-            <div className="grid gap-4 sm:grid-cols-2">
-              <Input maxLength={100} name="owner" placeholder="Owner" />
-              <Input name="dueDate" type="date" />
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+            <div>
+              <CardTitle>Milestones</CardTitle>
+              <CardDescription>
+                Track completion milestones and board reporting checkpoints.
+              </CardDescription>
             </div>
-            <SelectField
-              defaultValue="not_started"
-              name="status"
-              options={milestoneStatuses.map((status) => ({
-                label: milestoneLabels[status],
-                value: status,
-              }))}
-              placeholder="Choose status"
-            />
-            <Textarea maxLength={1200} name="notes" placeholder="Notes" />
-            <SubmitButton pendingText="Adding milestone...">
-              Add milestone
-            </SubmitButton>
-          </form>
-        </CardContent>
-      </Card>
-      <Card>
-        <CardHeader>
-          <CardTitle>Add risk</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <form action={createKpiRisk} className="space-y-4">
-            <HiddenDashboard dashboardId={data.dashboard.id} />
-            <Input maxLength={100} minLength={2} name="area" placeholder="Risk area" required />
-            <Textarea
-              maxLength={600}
-              minLength={3}
-              name="description"
-              placeholder="Risk description"
-              required
-            />
-            <Textarea maxLength={1200} name="mitigation" placeholder="Mitigation" />
-            <div className="grid gap-4 sm:grid-cols-2">
-              <Input maxLength={100} name="owner" placeholder="Owner" />
-              <SelectField
-                defaultValue="na"
-                name="ragStatus"
-                options={ragStatuses.map((status) => ({
-                  label: ragLabels[status],
-                  value: status,
-                }))}
-                placeholder="Choose RAG"
-              />
-            </div>
-            <SubmitButton pendingText="Adding risk...">Add risk</SubmitButton>
-          </form>
-        </CardContent>
-      </Card>
-      <Card>
-        <CardHeader>
-          <CardTitle>Milestones</CardTitle>
+            <MilestoneDialogAction dashboardId={data.dashboard.id} />
+          </div>
         </CardHeader>
         <CardContent>
           {data.milestones.length === 0 ? (
             <EmptyState>No milestones yet.</EmptyState>
           ) : (
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Milestone</TableHead>
-                  <TableHead>Due</TableHead>
-                  <TableHead>Status</TableHead>
-                  <TableHead>Action</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {data.milestones.map((milestone) => (
-                  <TableRow key={milestone.id}>
-                    <TableCell>
-                      <p className="font-semibold">{milestone.title}</p>
-                      <p className="text-xs text-slate-500">{milestone.owner || "—"}</p>
-                    </TableCell>
-                    <TableCell>{milestone.dueDate ?? "—"}</TableCell>
-                    <TableCell>{milestoneLabels[milestone.status]}</TableCell>
-                    <TableCell>
-                      <form action={deleteKpiMilestone}>
-                        <HiddenDashboard dashboardId={data.dashboard.id} />
-                        <input
-                          type="hidden"
-                          name="milestoneId"
-                          value={milestone.id}
-                        />
-                        <SubmitButton
-                          pendingText="Deleting..."
-                          size="sm"
-                          variant="outline"
-                        >
-                          Delete
-                        </SubmitButton>
-                      </form>
-                    </TableCell>
+            <div className="overflow-x-auto rounded-xl border">
+              <Table>
+                <caption className="sr-only">
+                  KPI dashboard milestone list with owner, due date, status, notes, and
+                  row actions.
+                </caption>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Milestone</TableHead>
+                    <TableHead>Owner</TableHead>
+                    <TableHead>Due</TableHead>
+                    <TableHead>Status</TableHead>
+                    <TableHead>Notes</TableHead>
+                    <TableHead className="text-right">Actions</TableHead>
                   </TableRow>
-                ))}
-              </TableBody>
-            </Table>
+                </TableHeader>
+                <TableBody>
+                  {data.milestones.map((milestone) => (
+                    <TableRow key={milestone.id}>
+                      <TableCell className="font-semibold">
+                        {milestone.title}
+                      </TableCell>
+                      <TableCell>{milestone.owner || "—"}</TableCell>
+                      <TableCell>{milestone.dueDate ?? "—"}</TableCell>
+                      <TableCell>{milestoneLabels[milestone.status]}</TableCell>
+                      <TableCell>
+                        <TruncatedTableText>{milestone.notes}</TruncatedTableText>
+                      </TableCell>
+                      <TableCell>
+                        <div className="flex justify-end gap-2">
+                          <MilestoneDialogAction
+                            dashboardId={data.dashboard.id}
+                            milestone={milestone}
+                          />
+                          <DeleteMilestoneDialogAction
+                            dashboardId={data.dashboard.id}
+                            milestone={milestone}
+                          />
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </div>
           )}
         </CardContent>
       </Card>
       <Card>
         <CardHeader>
-          <CardTitle>Risk register</CardTitle>
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+            <div>
+              <CardTitle>Risk register</CardTitle>
+              <CardDescription>
+                Capture board-visible risks, mitigations, ownership, and RAG
+                status.
+              </CardDescription>
+            </div>
+            <RiskDialogAction dashboardId={data.dashboard.id} />
+          </div>
         </CardHeader>
         <CardContent>
           {data.risks.length === 0 ? (
             <EmptyState>No risks yet.</EmptyState>
           ) : (
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Area</TableHead>
-                  <TableHead>Risk</TableHead>
-                  <TableHead>RAG</TableHead>
-                  <TableHead>Action</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {data.risks.map((risk) => (
-                  <TableRow key={risk.id}>
-                    <TableCell className="font-semibold">{risk.area}</TableCell>
-                    <TableCell>
-                      <p>{risk.description}</p>
-                      <p className="text-xs text-slate-500">
-                        Mitigation: {risk.mitigation || "—"}
-                      </p>
-                    </TableCell>
-                    <TableCell>
-                      <RagBadge status={risk.ragStatus} />
-                    </TableCell>
-                    <TableCell>
-                      <form action={deleteKpiRisk}>
-                        <HiddenDashboard dashboardId={data.dashboard.id} />
-                        <input type="hidden" name="riskId" value={risk.id} />
-                        <SubmitButton
-                          pendingText="Deleting..."
-                          size="sm"
-                          variant="outline"
-                        >
-                          Delete
-                        </SubmitButton>
-                      </form>
-                    </TableCell>
+            <div className="overflow-x-auto rounded-xl border">
+              <Table>
+                <caption className="sr-only">
+                  KPI dashboard risk register with area, risk, mitigation, owner, RAG
+                  status, and row actions.
+                </caption>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Area</TableHead>
+                    <TableHead>Risk</TableHead>
+                    <TableHead>Mitigation</TableHead>
+                    <TableHead>Owner</TableHead>
+                    <TableHead>RAG</TableHead>
+                    <TableHead className="text-right">Actions</TableHead>
                   </TableRow>
-                ))}
-              </TableBody>
-            </Table>
+                </TableHeader>
+                <TableBody>
+                  {data.risks.map((risk) => (
+                    <TableRow key={risk.id}>
+                      <TableCell className="font-semibold">{risk.area}</TableCell>
+                      <TableCell>
+                        <TruncatedTableText>{risk.description}</TruncatedTableText>
+                      </TableCell>
+                      <TableCell>
+                        <TruncatedTableText>{risk.mitigation}</TruncatedTableText>
+                      </TableCell>
+                      <TableCell>{risk.owner || "—"}</TableCell>
+                      <TableCell>
+                        <RagBadge status={risk.ragStatus} />
+                      </TableCell>
+                      <TableCell>
+                        <div className="flex justify-end gap-2">
+                          <RiskDialogAction
+                            dashboardId={data.dashboard.id}
+                            risk={risk}
+                          />
+                          <DeleteRiskDialogAction
+                            dashboardId={data.dashboard.id}
+                            risk={risk}
+                          />
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </div>
           )}
         </CardContent>
       </Card>

@@ -24,6 +24,10 @@ const KPI_PATH = "/modules/kpi-dashboard";
 const uuidPattern =
   /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 type SortableKpiTable = "kpi_definitions" | "kpi_milestones" | "kpi_risks";
+export type KpiDialogActionState = {
+  message: string;
+  status: "error" | "idle" | "success";
+};
 
 function getFormString(formData: FormData, key: string) {
   return String(formData.get(key) ?? "").trim();
@@ -63,6 +67,16 @@ function finish(tab: string) {
   redirect(`${KPI_PATH}?tab=${tab}`);
 }
 
+function toDialogError(error: unknown) {
+  if (error instanceof Error) return error.message;
+  return "We could not save this item. Please try again.";
+}
+
+function dialogSuccess(message: string): KpiDialogActionState {
+  revalidatePath(KPI_PATH);
+  return { message, status: "success" };
+}
+
 function parseYear(formData: FormData) {
   const year = Number(getFormString(formData, "reportingYear"));
   if (!Number.isInteger(year) || year < 2000 || year > 2100) {
@@ -76,6 +90,10 @@ function parseOptionalDate(formData: FormData, key: string, label: string) {
   if (!value) return null;
   if (!/^\d{4}-\d{2}-\d{2}$/.test(value)) {
     throw new Error(`${label} must use YYYY-MM-DD format.`);
+  }
+  const parsedDate = new Date(`${value}T00:00:00.000Z`);
+  if (Number.isNaN(parsedDate.getTime()) || parsedDate.toISOString().slice(0, 10) !== value) {
+    throw new Error(`${label} must be a valid date.`);
   }
   return value;
 }
@@ -425,9 +443,9 @@ export async function saveKpiBoardAssessment(formData: FormData) {
   finish("board");
 }
 
-export async function createKpiMilestone(formData: FormData) {
+async function insertKpiMilestone(formData: FormData) {
   const dashboard = await requireDashboardFromForm(formData);
-  const title = parseRequiredText(formData, "title", "Milestone title", 160);
+  const title = parseRequiredText(formData, "title", "Milestone title", 160, 3);
   const owner = parseOptionalText(formData, "owner", "Owner", 100);
   const dueDate = parseOptionalDate(formData, "dueDate", "Due date");
   const status = parseMilestoneStatus(formData.get("status"));
@@ -451,25 +469,75 @@ export async function createKpiMilestone(formData: FormData) {
   });
 
   if (error) throw error;
+}
+
+async function changeKpiMilestone(formData: FormData) {
+  const dashboard = await requireDashboardFromForm(formData);
+  const milestoneId = assertUuid(
+    getFormString(formData, "milestoneId"),
+    "Milestone",
+  );
+  const title = parseRequiredText(formData, "title", "Milestone title", 160, 3);
+  const owner = parseOptionalText(formData, "owner", "Owner", 100);
+  const dueDate = parseOptionalDate(formData, "dueDate", "Due date");
+  const status = parseMilestoneStatus(formData.get("status"));
+  const notes = parseOptionalText(formData, "notes", "Notes", 1200);
+
+  const { data, error } = await createAdminClient()
+    .from("kpi_milestones")
+    .update({
+      title,
+      owner,
+      due_date: dueDate,
+      status,
+      notes,
+    })
+    .eq("id", milestoneId)
+    .eq("dashboard_id", dashboard.id)
+    .select("id")
+    .maybeSingle<{ id: string }>();
+
+  if (error) throw error;
+  if (!data) throw new Error("Milestone not found.");
+}
+
+async function removeKpiMilestone(formData: FormData) {
+  const dashboard = await requireDashboardFromForm(formData);
+  const milestoneId = assertUuid(
+    getFormString(formData, "milestoneId"),
+    "Milestone",
+  );
+  const { data, error } = await createAdminClient()
+    .from("kpi_milestones")
+    .delete()
+    .eq("id", milestoneId)
+    .eq("dashboard_id", dashboard.id)
+    .select("id")
+    .maybeSingle<{ id: string }>();
+
+  if (error) throw error;
+  if (!data) throw new Error("Milestone not found.");
+}
+
+export async function createKpiMilestone(formData: FormData) {
+  await insertKpiMilestone(formData);
+  finish("milestones");
+}
+
+export async function updateKpiMilestone(formData: FormData) {
+  await changeKpiMilestone(formData);
   finish("milestones");
 }
 
 export async function deleteKpiMilestone(formData: FormData) {
-  await requireDashboardFromForm(formData);
-  const milestoneId = assertUuid(getFormString(formData, "milestoneId"), "Milestone");
-  const { error } = await createAdminClient()
-    .from("kpi_milestones")
-    .delete()
-    .eq("id", milestoneId);
-
-  if (error) throw error;
+  await removeKpiMilestone(formData);
   finish("milestones");
 }
 
-export async function createKpiRisk(formData: FormData) {
+async function insertKpiRisk(formData: FormData) {
   const dashboard = await requireDashboardFromForm(formData);
-  const area = parseRequiredText(formData, "area", "Risk area", 100);
-  const description = parseRequiredText(formData, "description", "Risk", 600);
+  const area = parseRequiredText(formData, "area", "Risk area", 100, 2);
+  const description = parseRequiredText(formData, "description", "Risk", 600, 3);
   const mitigation = parseOptionalText(formData, "mitigation", "Mitigation", 1200);
   const owner = parseOptionalText(formData, "owner", "Owner", 100);
   const ragStatus = parseRagStatus(formData.get("ragStatus"));
@@ -488,19 +556,140 @@ export async function createKpiRisk(formData: FormData) {
   });
 
   if (error) throw error;
+}
+
+async function changeKpiRisk(formData: FormData) {
+  const dashboard = await requireDashboardFromForm(formData);
+  const riskId = assertUuid(getFormString(formData, "riskId"), "Risk");
+  const area = parseRequiredText(formData, "area", "Risk area", 100, 2);
+  const description = parseRequiredText(formData, "description", "Risk", 600, 3);
+  const mitigation = parseOptionalText(
+    formData,
+    "mitigation",
+    "Mitigation",
+    1200,
+  );
+  const owner = parseOptionalText(formData, "owner", "Owner", 100);
+  const ragStatus = parseRagStatus(formData.get("ragStatus"));
+
+  const { data, error } = await createAdminClient()
+    .from("kpi_risks")
+    .update({
+      area,
+      description,
+      mitigation,
+      owner,
+      rag_status: ragStatus,
+    })
+    .eq("id", riskId)
+    .eq("dashboard_id", dashboard.id)
+    .select("id")
+    .maybeSingle<{ id: string }>();
+
+  if (error) throw error;
+  if (!data) throw new Error("Risk not found.");
+}
+
+async function removeKpiRisk(formData: FormData) {
+  const dashboard = await requireDashboardFromForm(formData);
+  const riskId = assertUuid(getFormString(formData, "riskId"), "Risk");
+  const { data, error } = await createAdminClient()
+    .from("kpi_risks")
+    .delete()
+    .eq("id", riskId)
+    .eq("dashboard_id", dashboard.id)
+    .select("id")
+    .maybeSingle<{ id: string }>();
+
+  if (error) throw error;
+  if (!data) throw new Error("Risk not found.");
+}
+
+export async function createKpiRisk(formData: FormData) {
+  await insertKpiRisk(formData);
+  finish("milestones");
+}
+
+export async function updateKpiRisk(formData: FormData) {
+  await changeKpiRisk(formData);
   finish("milestones");
 }
 
 export async function deleteKpiRisk(formData: FormData) {
-  await requireDashboardFromForm(formData);
-  const riskId = assertUuid(getFormString(formData, "riskId"), "Risk");
-  const { error } = await createAdminClient()
-    .from("kpi_risks")
-    .delete()
-    .eq("id", riskId);
-
-  if (error) throw error;
+  await removeKpiRisk(formData);
   finish("milestones");
+}
+
+export async function createKpiMilestoneDialog(
+  _previousState: KpiDialogActionState,
+  formData: FormData,
+): Promise<KpiDialogActionState> {
+  try {
+    await insertKpiMilestone(formData);
+    return dialogSuccess("Milestone added.");
+  } catch (error) {
+    return { message: toDialogError(error), status: "error" };
+  }
+}
+
+export async function updateKpiMilestoneDialog(
+  _previousState: KpiDialogActionState,
+  formData: FormData,
+): Promise<KpiDialogActionState> {
+  try {
+    await changeKpiMilestone(formData);
+    return dialogSuccess("Milestone updated.");
+  } catch (error) {
+    return { message: toDialogError(error), status: "error" };
+  }
+}
+
+export async function deleteKpiMilestoneDialog(
+  _previousState: KpiDialogActionState,
+  formData: FormData,
+): Promise<KpiDialogActionState> {
+  try {
+    await removeKpiMilestone(formData);
+    return dialogSuccess("Milestone deleted.");
+  } catch (error) {
+    return { message: toDialogError(error), status: "error" };
+  }
+}
+
+export async function createKpiRiskDialog(
+  _previousState: KpiDialogActionState,
+  formData: FormData,
+): Promise<KpiDialogActionState> {
+  try {
+    await insertKpiRisk(formData);
+    return dialogSuccess("Risk added.");
+  } catch (error) {
+    return { message: toDialogError(error), status: "error" };
+  }
+}
+
+export async function updateKpiRiskDialog(
+  _previousState: KpiDialogActionState,
+  formData: FormData,
+): Promise<KpiDialogActionState> {
+  try {
+    await changeKpiRisk(formData);
+    return dialogSuccess("Risk updated.");
+  } catch (error) {
+    return { message: toDialogError(error), status: "error" };
+  }
+}
+
+export async function deleteKpiRiskDialog(
+  _previousState: KpiDialogActionState,
+  formData: FormData,
+): Promise<KpiDialogActionState> {
+  try {
+    await removeKpiRisk(formData);
+    return dialogSuccess("Risk deleted.");
+  } catch (error) {
+    return { message: toDialogError(error), status: "error" };
+  }
 }
 
 export async function saveKpiAnnualSummary(formData: FormData) {
