@@ -30,9 +30,17 @@ export class BoardCalendarBasePage {
 
   async expectModuleChrome() {
     await expect(
-      this.page.getByRole("heading", { name: "Board Calendar", exact: true }),
+      this.page.getByRole("heading", {
+        name: "Board Calendar & Operational Workflow",
+      }),
     ).toBeVisible();
+    await expect(
+      this.page.getByRole("heading", { name: "Board Calendar", exact: true }),
+    ).toHaveCount(0);
     await expect(this.page.getByText("Board portal").first()).toBeVisible();
+    await expect(
+      this.page.getByRole("link", { name: "Back to resources" }),
+    ).toBeVisible();
     await expect(
       this.page.getByRole("heading", { name: "Header information" }),
     ).toHaveCount(0);

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, type ReactNode } from "react";
 import { AlertCircle, Check, Clock, LoaderCircle, Save } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -50,6 +50,7 @@ export function DynamicTemplateEditor({
   data,
   generateExport,
   createDownloadUrl,
+  headerAction,
 }: {
   basePath?: string;
   data: DynamicTemplateEditorData;
@@ -64,6 +65,7 @@ export function DynamicTemplateEditor({
     format: TemplateExportFormat;
   }) => Promise<TemplateExportRecord>;
   createDownloadUrl: (exportId: string) => Promise<string>;
+  headerAction?: ReactNode;
 }) {
   const router = useRouter();
   const editorBasePath = basePath ?? `/templates/${data.template.slug}`;
@@ -146,23 +148,26 @@ export function DynamicTemplateEditor({
           </p>
         </div>
 
-        {!calendarEnabled && saveNow && complete ? (
-          <div className="flex flex-wrap items-center gap-3">
-            <SaveStateLabel state={saveState} />
-            <Button variant="outline" onClick={() => void saveNow()}>
-              <Save className="size-4" />
-              Save now
-            </Button>
-            <Button onClick={complete} disabled={isCompleting}>
-              {isCompleting ? (
-                <LoaderCircle className="size-4 animate-spin" />
-              ) : (
-                <Check className="size-4" />
-              )}
-              Mark complete
-            </Button>
-          </div>
-        ) : null}
+        <div className="flex flex-wrap items-center gap-3">
+          {headerAction}
+          {!calendarEnabled && saveNow && complete ? (
+            <>
+              <SaveStateLabel state={saveState} />
+              <Button variant="outline" onClick={() => void saveNow()}>
+                <Save className="size-4" />
+                Save now
+              </Button>
+              <Button onClick={complete} disabled={isCompleting}>
+                {isCompleting ? (
+                  <LoaderCircle className="size-4 animate-spin" />
+                ) : (
+                  <Check className="size-4" />
+                )}
+                Mark complete
+              </Button>
+            </>
+          ) : null}
+        </div>
       </div>
 
       {!calendarEnabled ? (
