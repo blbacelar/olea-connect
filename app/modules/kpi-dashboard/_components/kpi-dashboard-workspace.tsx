@@ -101,12 +101,14 @@ function HiddenDashboard({ dashboardId }: { dashboardId: string }) {
 
 function SelectField({
   ariaLabel,
+  className,
   defaultValue,
   name,
   options,
   placeholder,
 }: {
   ariaLabel?: string;
+  className?: string;
   defaultValue?: string;
   name: string;
   options: Array<{ label: string; value: string }>;
@@ -116,7 +118,7 @@ function SelectField({
     <Select name={name} defaultValue={defaultValue}>
       <SelectTrigger
         aria-label={ariaLabel ?? placeholder}
-        className="h-11 bg-white"
+        className={["h-11 bg-white", className].filter(Boolean).join(" ")}
       >
         <SelectValue placeholder={placeholder} />
       </SelectTrigger>
@@ -565,6 +567,7 @@ function AddQuarterResultDialog({
             <label className="block text-sm font-semibold">
               RAG status
               <SelectField
+                className="mt-2"
                 defaultValue="na"
                 name="ragStatus"
                 options={ragStatuses.map((status) => ({
@@ -999,6 +1002,7 @@ function QuarterTrackerTab({
                                   <label className="block text-sm font-semibold">
                                     RAG status
                                     <SelectField
+                                      className="mt-2"
                                       defaultValue={result?.ragStatus ?? "na"}
                                       name="ragStatus"
                                       options={ragStatuses.map((status) => ({
