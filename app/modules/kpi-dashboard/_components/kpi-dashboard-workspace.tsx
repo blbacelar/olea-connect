@@ -10,6 +10,7 @@ import {
   Trash2,
 } from "lucide-react";
 import Link from "next/link";
+import * as React from "react";
 
 import {
   archiveKpiDefinition,
@@ -184,6 +185,56 @@ function getQuarterMonths(data: KpiDashboardData, quarter: QuarterNumber) {
     .filter(Boolean);
 
   return monthNames.length > 0 ? monthNames.join(", ") : "No months assigned";
+}
+
+function getQuarterPeriodLabel(data: KpiDashboardData, quarter: QuarterNumber) {
+  const quarterMonths = data.quarters
+    .filter((assignment) => assignment.quarter === quarter)
+    .sort((a, b) => a.sortOrder - b.sortOrder)
+    .flatMap((assignment) => {
+      const month = monthOptions.find(
+        (option) => option.value === assignment.monthNumber,
+      );
+
+      return month
+        ? [{ label: month.label.slice(0, 3), monthNumber: month.value }]
+        : [];
+    });
+
+  if (quarterMonths.length === 0) return `Q${quarter}`;
+  if (quarterMonths.length === 1) return `Q${quarter} · ${quarterMonths[0].label}`;
+
+  const isContiguous = quarterMonths.every((month, index) => {
+    if (index === 0) return true;
+    const previous = quarterMonths[index - 1].monthNumber;
+    const expected = previous === 12 ? 1 : previous + 1;
+    return month.monthNumber === expected;
+  });
+
+  if (!isContiguous) {
+    return `Q${quarter} · ${quarterMonths.map((month) => month.label).join(", ")}`;
+  }
+
+  return `Q${quarter} · ${quarterMonths[0].label} – ${quarterMonths.at(-1)?.label}`;
+}
+
+function getLatestQuarterResult(data: KpiDashboardData, kpiId: string) {
+  for (const quarter of [...quarterValues].reverse()) {
+    const result = getResult(data, kpiId, quarter);
+    if (result !== undefined && result.currentValue !== null) {
+      return { quarter, result };
+    }
+  }
+
+  return null;
+}
+
+function VarianceValue({ value }: { value: number | null }) {
+  return (
+    <span className={cn("font-semibold", value === null && "text-slate-500")}>
+      {formatNumber(value)}
+    </span>
+  );
 }
 
 function TrendText({
@@ -955,74 +1006,216 @@ function BoardDashboardTab({ data }: { data: KpiDashboardData }) {
       <KpiSummaryCards data={data} />
       <Card>
         <CardHeader>
-          <CardTitle>Board dashboard</CardTitle>
-          <p className="text-sm text-slate-600">
-            Quarterly values are pulled from tracker tabs. The Board sets the
-            full-year RAG and notes.
-          </p>
+          <CardTitle>Full-year KPI results by quarter</CardTitle>
+          <CardDescription>
+            Quarterly results pull from the tracker tabs. The Board reviews the
+            trend, progress, and variance before setting the full-year RAG.
+          </CardDescription>
         </CardHeader>
         <CardContent>
           {data.kpis.length === 0 ? (
             <EmptyState>No KPIs yet.</EmptyState>
           ) : (
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>KPI</TableHead>
-                  <TableHead>Q1</TableHead>
-                  <TableHead>Q2</TableHead>
-                  <TableHead>Q3</TableHead>
-                  <TableHead>Q4</TableHead>
-                  <TableHead>Variance</TableHead>
-                  <TableHead>Full-year RAG</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {data.kpis.map((kpi) => {
-                  const q4Value = getResult(data, kpi.id, 4)?.currentValue ?? null;
-                  const variance = calculateVariance(q4Value, kpi.targetNumber);
-                  const assessment = getAssessment(data, kpi.id);
-                  return (
-                    <TableRow key={kpi.id}>
-                      <TableCell>
-                        <p className="font-semibold">{kpi.name}</p>
-                        <p className="text-xs text-slate-500">{kpi.domain}</p>
-                      </TableCell>
+            <div className="space-y-3">
+              <p className="text-sm text-slate-600">
+                RAG key: GREEN = on target, AMBER = needs attention, RED = off
+                track, N/A = not enough data. Trend compares each quarter with
+                the prior quarter when data is available.
+              </p>
+              <div className="overflow-x-auto rounded-xl border">
+                <Table className="min-w-[1680px]">
+                  <caption className="sr-only">
+                    Full-year KPI results by quarter
+                  </caption>
+                  <TableHeader>
+                    <TableRow className="bg-slate-700 hover:bg-slate-700">
+                      <TableHead
+                        rowSpan={2}
+                        scope="col"
+                        className="border-r text-white"
+                      >
+                        Domain
+                      </TableHead>
+                      <TableHead
+                        rowSpan={2}
+                        scope="col"
+                        className="border-r text-white"
+                      >
+                        KPI
+                      </TableHead>
+                      <TableHead
+                        rowSpan={2}
+                        scope="col"
+                        className="border-r text-white"
+                      >
+                        Outcome
+                      </TableHead>
+                      <TableHead
+                        rowSpan={2}
+                        scope="col"
+                        className="border-r text-white"
+                      >
+                        Target
+                      </TableHead>
                       {quarterValues.map((quarter) => (
-                        <TableCell key={quarter}>
-                          {formatNumber(getResult(data, kpi.id, quarter)?.currentValue)}
-                        </TableCell>
+                        <TableHead
+                          key={quarter}
+                          colSpan={3}
+                          scope="colgroup"
+                          className="border-r text-white"
+                        >
+                          {getQuarterPeriodLabel(data, quarter)}
+                        </TableHead>
                       ))}
-                      <TableCell>{formatNumber(variance)}</TableCell>
-                      <TableCell className="min-w-[260px]">
-                        <form action={saveKpiBoardAssessment} className="space-y-2">
-                          <HiddenDashboard dashboardId={data.dashboard.id} />
-                          <input type="hidden" name="kpiId" value={kpi.id} />
-                          <SelectField
-                            defaultValue={assessment?.fullYearRag ?? "na"}
-                            name="fullYearRag"
-                            options={ragStatuses.map((status) => ({
-                              label: ragLabels[status],
-                              value: status,
-                            }))}
-                            placeholder="Choose status"
-                          />
-                          <Textarea
-                            defaultValue={assessment?.boardNotes ?? ""}
-                            maxLength={1200}
-                            name="boardNotes"
-                            placeholder="Board context or override rationale"
-                          />
-                          <SubmitButton pendingText="Saving..." size="sm">
-                            Save
-                          </SubmitButton>
-                        </form>
-                      </TableCell>
+                      <TableHead
+                        rowSpan={2}
+                        scope="col"
+                        className="border-r text-white"
+                      >
+                        Progress % to target
+                      </TableHead>
+                      <TableHead
+                        rowSpan={2}
+                        scope="col"
+                        className="border-r text-white"
+                      >
+                        Variance vs target
+                      </TableHead>
+                      <TableHead rowSpan={2} scope="col" className="text-white">
+                        Full-year RAG
+                      </TableHead>
                     </TableRow>
-                  );
-                })}
-              </TableBody>
-            </Table>
+                    <TableRow className="bg-slate-700 hover:bg-slate-700">
+                      {quarterValues.flatMap((quarter) => [
+                        <TableHead
+                          key={`q${quarter}-result`}
+                          scope="col"
+                          className="border-r text-white"
+                        >
+                          <span className="sr-only">Q{quarter} </span>
+                          Result
+                        </TableHead>,
+                        <TableHead
+                          key={`q${quarter}-trend`}
+                          scope="col"
+                          className="border-r text-white"
+                        >
+                          <span className="sr-only">Q{quarter} </span>
+                          Trend
+                        </TableHead>,
+                        <TableHead
+                          key={`q${quarter}-rag`}
+                          scope="col"
+                          className="border-r text-white"
+                        >
+                          <span className="sr-only">Q{quarter} </span>
+                          RAG
+                        </TableHead>,
+                      ])}
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {data.kpis.map((kpi) => {
+                      const latestQuarterResult = getLatestQuarterResult(
+                        data,
+                        kpi.id,
+                      );
+                      const latestValue =
+                        latestQuarterResult?.result.currentValue ?? null;
+                      const progress = calculatePercentToTarget(
+                        latestValue,
+                        kpi.targetNumber,
+                      );
+                      const variance = calculateVariance(
+                        latestValue,
+                        kpi.targetNumber,
+                      );
+                      const assessment = getAssessment(data, kpi.id);
+
+                      return (
+                        <TableRow key={kpi.id}>
+                          <TableCell className="border-r font-semibold">
+                            {kpi.domain}
+                          </TableCell>
+                          <TableCell className="border-r font-semibold">
+                            {kpi.name}
+                          </TableCell>
+                          <TableCell className="border-r">
+                            {kpi.outcomeArea || "—"}
+                          </TableCell>
+                          <TableCell className="border-r">
+                            {kpi.targetDisplay || formatNumber(kpi.targetNumber)}
+                          </TableCell>
+                          {quarterValues.map((quarter) => {
+                            const result = getResult(data, kpi.id, quarter);
+                            const previousResult =
+                              quarter === 1
+                                ? null
+                                : getResult(
+                                    data,
+                                    kpi.id,
+                                    (quarter - 1) as QuarterNumber,
+                                  );
+                            const trend = calculateTrend(
+                              result?.currentValue ?? null,
+                              previousResult?.currentValue ?? null,
+                            );
+
+                            return (
+                              <React.Fragment key={quarter}>
+                                <TableCell className="border-r">
+                                  {formatNumber(result?.currentValue)}
+                                </TableCell>
+                                <TableCell className="border-r">
+                                  <TrendText trend={trend} />
+                                </TableCell>
+                                <TableCell className="border-r">
+                                  <RagBadge status={result?.ragStatus ?? "na"} />
+                                </TableCell>
+                              </React.Fragment>
+                            );
+                          })}
+                          <TableCell className="border-r font-semibold">
+                            <span>{formatPercent(progress)}</span>
+                            {latestQuarterResult ? (
+                              <span className="mt-1 block text-xs font-normal text-slate-500">
+                                Latest: Q{latestQuarterResult.quarter}
+                              </span>
+                            ) : null}
+                          </TableCell>
+                          <TableCell className="border-r">
+                            <VarianceValue value={variance} />
+                          </TableCell>
+                          <TableCell className="min-w-[220px]">
+                            <form
+                              action={saveKpiBoardAssessment}
+                              className="flex items-center gap-2"
+                            >
+                              <HiddenDashboard dashboardId={data.dashboard.id} />
+                              <input type="hidden" name="kpiId" value={kpi.id} />
+                              <SelectField
+                                ariaLabel={`Full-year RAG for ${kpi.name}`}
+                                className="w-[130px]"
+                                defaultValue={assessment?.fullYearRag ?? "na"}
+                                name="fullYearRag"
+                                options={ragStatuses.map((status) => ({
+                                  label: ragLabels[status],
+                                  value: status,
+                                }))}
+                                placeholder="Choose status"
+                              />
+                              <SubmitButton pendingText="Saving..." size="sm">
+                                Save
+                              </SubmitButton>
+                            </form>
+                          </TableCell>
+                        </TableRow>
+                      );
+                    })}
+                  </TableBody>
+                </Table>
+              </div>
+            </div>
           )}
         </CardContent>
       </Card>

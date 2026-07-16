@@ -183,6 +183,40 @@ test.describe("@smoke @critical platform UI coverage gate", () => {
     await expect(
       page.getByRole("columnheader", { name: "Auto-RAG" }),
     ).toBeVisible();
+    await page.getByRole("tab", { name: "Board Dashboard" }).click();
+    await expect(
+      page.getByRole("heading", { name: "Full-year KPI results by quarter" }),
+    ).toBeVisible();
+    await expect(
+      page.getByText(
+        "RAG key: GREEN = on target, AMBER = needs attention, RED = off track",
+      ),
+    ).toBeVisible();
+    await expect(
+      page.getByRole("columnheader", { name: "Domain" }),
+    ).toBeVisible();
+    await expect(
+      page.getByRole("columnheader", { name: "Outcome" }),
+    ).toBeVisible();
+    await expect(
+      page.getByRole("columnheader", { name: "Progress % to target" }),
+    ).toBeVisible();
+    await expect(
+      page.getByRole("columnheader", { name: "Q1 Result" }),
+    ).toBeVisible();
+    await expect(
+      page.getByRole("columnheader", { name: "Variance vs target" }),
+    ).toBeVisible();
+    await expect(
+      page.getByRole("columnheader", { name: "Full-year RAG" }),
+    ).toBeVisible();
+    const boardRow = page.getByRole("row").filter({ hasText: kpiName }).last();
+    await expect(boardRow).toContainText("Programs");
+    await expect(boardRow).toContainText("90%");
+    await expect(boardRow).toContainText("Latest: Q1");
+    await expect(
+      boardRow.getByRole("combobox", { name: `Full-year RAG for ${kpiName}` }),
+    ).toBeVisible();
     await app.expectNoServerError();
 
     await app.expectPageHeading("/webinars", "Webinars");

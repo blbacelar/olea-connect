@@ -406,16 +406,20 @@ export async function deleteKpiQuarterResult(formData: FormData) {
 export async function saveKpiBoardAssessment(formData: FormData) {
   const { kpiId } = await requireKpiFromForm(formData);
   const fullYearRag = parseRagStatus(formData.get("fullYearRag"));
-  const boardNotes = parseOptionalText(formData, "boardNotes", "Board notes", 1200);
+  const shouldUpdateBoardNotes = formData.has("boardNotes");
+  const boardNotes = shouldUpdateBoardNotes
+    ? parseOptionalText(formData, "boardNotes", "Board notes", 1200)
+    : undefined;
 
-  const { error } = await createAdminClient().from("kpi_board_assessments").upsert(
-    {
-      kpi_id: kpiId,
-      full_year_rag: fullYearRag,
-      board_notes: boardNotes,
-    },
-    { onConflict: "kpi_id" },
-  );
+  const payload = {
+    kpi_id: kpiId,
+    full_year_rag: fullYearRag,
+    ...(shouldUpdateBoardNotes ? { board_notes: boardNotes } : {}),
+  };
+
+  const { error } = await createAdminClient()
+    .from("kpi_board_assessments")
+    .upsert(payload, { onConflict: "kpi_id" });
 
   if (error) throw error;
   finish("board");
