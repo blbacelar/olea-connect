@@ -224,6 +224,7 @@ test.describe("@smoke @critical platform UI coverage gate", () => {
       boardRow.getByRole("combobox", { name: `Full-year RAG for ${kpiName}` }),
     ).toBeVisible();
     await page.getByRole("tab", { name: "Milestones & Risks" }).click();
+    await expect(page).toHaveURL(/\/modules\/kpi-dashboard\?tab=milestones/);
     await expect(page.getByRole("heading", { name: "Milestones" })).toBeVisible();
     await expect(
       page.getByRole("heading", { name: "Risk register" }),
@@ -238,6 +239,10 @@ test.describe("@smoke @critical platform UI coverage gate", () => {
     await addMilestoneDialog.getByLabel("Due date").fill("2026-10-15");
     await addMilestoneDialog.getByLabel("Notes").fill("Created by platform E2E.");
     await addMilestoneDialog.getByRole("button", { name: "Add milestone" }).click();
+    await expect(page).toHaveURL(/\/modules\/kpi-dashboard\?tab=milestones/);
+    await expect(
+      page.getByRole("tab", { name: "Milestones & Risks" }),
+    ).toHaveAttribute("data-state", "active");
     const milestoneRow = page
       .getByRole("row")
       .filter({ hasText: milestoneTitle })

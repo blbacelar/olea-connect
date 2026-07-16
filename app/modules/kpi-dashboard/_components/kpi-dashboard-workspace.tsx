@@ -1470,16 +1470,21 @@ export function KpiDashboardWorkspace({
           <TabsList className="h-auto min-w-max justify-start gap-1 bg-olea-light/70 p-1">
             {tabOptions.map((tab) => (
               <TabsTrigger
+                asChild
                 className="data-[state=active]:bg-white data-[state=active]:text-olea-green"
                 key={tab.value}
                 value={tab.value}
               >
-                {tab.value === "settings" && <Settings className="mr-2 h-4 w-4" />}
-                {tab.value === "board" && <BarChart3 className="mr-2 h-4 w-4" />}
-                {tab.value === "milestones" && (
-                  <ClipboardList className="mr-2 h-4 w-4" />
-                )}
-                {tab.label}
+                <Link href={`/modules/kpi-dashboard?tab=${tab.value}`}>
+                  {tab.value === "settings" && (
+                    <Settings className="mr-2 h-4 w-4" />
+                  )}
+                  {tab.value === "board" && <BarChart3 className="mr-2 h-4 w-4" />}
+                  {tab.value === "milestones" && (
+                    <ClipboardList className="mr-2 h-4 w-4" />
+                  )}
+                  {tab.label}
+                </Link>
               </TabsTrigger>
             ))}
           </TabsList>
