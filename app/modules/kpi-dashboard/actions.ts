@@ -296,6 +296,11 @@ export async function createKpiTrackerEntry(formData: FormData) {
 
 export async function updateKpiDefinition(formData: FormData) {
   const { dashboard, kpiId } = await requireKpiFromForm(formData);
+  const quarter = Number(getFormString(formData, "quarter"));
+  if (![1, 2, 3, 4].includes(quarter)) {
+    throw new Error("Quarter is invalid.");
+  }
+
   const domain = parseRequiredText(formData, "domain", "Domain", 80);
   const name = parseRequiredText(formData, "name", "KPI name", 140);
   const owner = parseOptionalText(formData, "owner", "Owner", 100);
@@ -333,11 +338,16 @@ export async function updateKpiDefinition(formData: FormData) {
     .eq("dashboard_id", dashboard.id);
 
   if (error) throw error;
-  finish("setup");
+  finish(`q${quarter}`);
 }
 
 export async function archiveKpiDefinition(formData: FormData) {
   const { dashboard, kpiId } = await requireKpiFromForm(formData);
+  const quarter = Number(getFormString(formData, "quarter"));
+  if (![1, 2, 3, 4].includes(quarter)) {
+    throw new Error("Quarter is invalid.");
+  }
+
   const { error } = await createAdminClient()
     .from("kpi_definitions")
     .update({ active: false })
@@ -345,7 +355,7 @@ export async function archiveKpiDefinition(formData: FormData) {
     .eq("dashboard_id", dashboard.id);
 
   if (error) throw error;
-  finish("setup");
+  finish(`q${quarter}`);
 }
 
 export async function saveKpiQuarterResult(formData: FormData) {

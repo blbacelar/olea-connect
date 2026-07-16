@@ -47,14 +47,18 @@ test.describe("@smoke @critical platform UI coverage gate", () => {
     await app.expectText("Q1 Tracker");
     await app.expectText("Annual Summary");
     await expect(
-      page.getByRole("heading", { name: "KPI definitions" }),
+      page.getByRole("heading", { name: "Dashboard setup" }),
     ).toBeVisible();
-    await expect(page.getByRole("button", { name: "Dashboard setup" })).toBeVisible();
-    await expect(page.getByRole("button", { name: "Add KPI" })).toHaveCount(0);
-    await page.getByRole("button", { name: "Dashboard setup" }).click();
-    await expect(page.getByRole("dialog", { name: "Dashboard setup" })).toBeVisible();
     await expect(page.getByLabel("Organization name")).toBeVisible();
-    await page.keyboard.press("Escape");
+    await expect(page.getByRole("heading", { name: "KPI definitions" })).toHaveCount(
+      0,
+    );
+    await expect(page.getByRole("button", { name: "Dashboard setup" })).toHaveCount(
+      0,
+    );
+    await expect(page.getByRole("button", { name: "Add KPI" })).toHaveCount(0);
+    await expect(page.getByRole("button", { name: /Edit KPI/i })).toHaveCount(0);
+    await expect(page.getByRole("button", { name: /Archive KPI/i })).toHaveCount(0);
     await page.getByRole("tab", { name: "Q1 Tracker" }).click();
     await expect(
       page.getByRole("heading", { name: /KPI Staff Tracker — Q1/i }),
@@ -84,9 +88,26 @@ test.describe("@smoke @critical platform UI coverage gate", () => {
       .fill("Submitted from the quarter tracker.");
     await addKpiDialog.getByRole("button", { name: "Add KPI" }).click();
     await expect(addKpiDialog).toBeHidden();
+    const createdKpiRow = page.getByRole("row").filter({ hasText: kpiName });
+    await expect(createdKpiRow).toBeVisible();
     await expect(
-      page.getByRole("cell", { exact: true, name: kpiName }),
+      createdKpiRow.getByRole("button", {
+        name: `Edit KPI definition for ${kpiName}`,
+      }),
     ).toBeVisible();
+    await expect(
+      createdKpiRow.getByRole("button", { name: `Archive KPI ${kpiName}` }),
+    ).toBeVisible();
+    await createdKpiRow
+      .getByRole("button", { name: `Edit KPI definition for ${kpiName}` })
+      .click();
+    await expect(
+      page.getByRole("dialog", { name: "Edit KPI definition" }),
+    ).toBeVisible();
+    await expect(page.getByRole("dialog").getByLabel("KPI name")).toHaveValue(
+      kpiName,
+    );
+    await page.keyboard.press("Escape");
     await expect(
       page.getByRole("columnheader", { name: "Current value" }),
     ).toBeVisible();

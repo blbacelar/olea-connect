@@ -309,221 +309,18 @@ function DashboardSetupForm({ data }: { data: KpiDashboardData }) {
   );
 }
 
-function EditKpiForm({
-  dashboardId,
-  kpi,
-}: {
-  dashboardId: string;
-  kpi: KpiDefinition;
-}) {
-  return (
-    <form action={updateKpiDefinition} className="grid gap-4 lg:grid-cols-2">
-      <HiddenDashboard dashboardId={dashboardId} />
-      <input type="hidden" name="kpiId" value={kpi.id} />
-      <label className="block text-sm font-semibold">
-        Domain
-        <Input
-          className="mt-2"
-          defaultValue={kpi.domain}
-          maxLength={80}
-          minLength={2}
-          name="domain"
-          placeholder="Programs, Finance, People..."
-          required
-        />
-      </label>
-      <label className="block text-sm font-semibold">
-        KPI name
-        <Input
-          className="mt-2"
-          defaultValue={kpi.name}
-          maxLength={140}
-          minLength={2}
-          name="name"
-          placeholder="Client satisfaction"
-          required
-        />
-      </label>
-      <label className="block text-sm font-semibold">
-        Owner
-        <Input
-          className="mt-2"
-          defaultValue={kpi.owner}
-          maxLength={100}
-          name="owner"
-          placeholder="Executive Director"
-        />
-      </label>
-      <label className="block text-sm font-semibold">
-        Outcome/funder tag
-        <Input
-          className="mt-2"
-          defaultValue={kpi.outcomeArea}
-          maxLength={120}
-          name="outcomeArea"
-          placeholder="Strategic goal or funder report"
-        />
-      </label>
-      <label className="block text-sm font-semibold">
-        Target as displayed
-        <Input
-          className="mt-2"
-          defaultValue={kpi.targetDisplay}
-          maxLength={60}
-          name="targetDisplay"
-          placeholder=">= 70% or $1.5M"
-          required
-        />
-      </label>
-      <label className="block text-sm font-semibold">
-        Target as number
-          <Input
-            className="mt-2"
-            defaultValue={kpi.targetNumber}
-            inputMode="decimal"
-            name="targetNumber"
-            pattern={positiveDecimalNumberPattern}
-            placeholder="70 or 1500000"
-            required
-            title="Enter a number greater than zero, with up to 2 decimal places."
-          />
-        <FieldHint>Numbers only, up to 2 decimals. No currency symbols.</FieldHint>
-      </label>
-      <label className="block text-sm font-semibold">
-        Baseline number
-        <Input
-          className="mt-2"
-          defaultValue={kpi.baselineNumber ?? ""}
-          inputMode="decimal"
-          name="baselineNumber"
-          pattern={decimalNumberPattern}
-          placeholder="Optional"
-          title="Enter numbers only, with up to 2 decimal places."
-        />
-      </label>
-      <div className="flex items-end">
-        <SubmitButton className="w-full" pendingText="Saving KPI...">
-          Save KPI
-        </SubmitButton>
-      </div>
-    </form>
-  );
-}
-
-function KpiDefinitionsTable({ data }: { data: KpiDashboardData }) {
-  if (data.kpis.length === 0) {
-    return (
-      <EmptyState>
-        Add your first KPI from a Q1-Q4 tracker tab when you are ready.
-        Nothing is prefilled.
-      </EmptyState>
-    );
-  }
-
-  return (
-    <Table>
-      <TableHeader>
-        <TableRow>
-          <TableHead>Domain</TableHead>
-          <TableHead>Name</TableHead>
-          <TableHead>Owner</TableHead>
-          <TableHead>Target</TableHead>
-          <TableHead>Baseline</TableHead>
-          <TableHead>Action</TableHead>
-        </TableRow>
-      </TableHeader>
-      <TableBody>
-        {data.kpis.map((kpi) => (
-          <TableRow key={kpi.id}>
-            <TableCell className="font-semibold">{kpi.domain}</TableCell>
-            <TableCell>{kpi.name}</TableCell>
-            <TableCell>{kpi.owner || "—"}</TableCell>
-            <TableCell>
-              {kpi.targetDisplay}{" "}
-              <span className="text-slate-500">
-                ({formatNumber(kpi.targetNumber)})
-              </span>
-            </TableCell>
-            <TableCell>{formatNumber(kpi.baselineNumber)}</TableCell>
-            <TableCell>
-              <div className="flex flex-wrap gap-2">
-                <Dialog>
-                  <DialogTrigger asChild>
-                    <Button
-                      aria-label={`Edit KPI ${kpi.name}`}
-                      size="sm"
-                      variant="outline"
-                    >
-                      <Pencil className="h-4 w-4" />
-                      Edit
-                    </Button>
-                  </DialogTrigger>
-                  <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-4xl">
-                    <DialogHeader>
-                      <DialogTitle>Edit KPI</DialogTitle>
-                      <DialogDescription>
-                        Update this KPI definition. Tracker calculations will use
-                        the new target number after saving.
-                      </DialogDescription>
-                    </DialogHeader>
-                    <EditKpiForm dashboardId={data.dashboard.id} kpi={kpi} />
-                  </DialogContent>
-                </Dialog>
-                <form action={archiveKpiDefinition}>
-                  <HiddenDashboard dashboardId={data.dashboard.id} />
-                  <input type="hidden" name="kpiId" value={kpi.id} />
-                  <SubmitButton
-                    aria-label={`Archive KPI ${kpi.name}`}
-                    pendingText="Archiving..."
-                    size="sm"
-                    variant="outline"
-                  >
-                    <Archive className="h-4 w-4" />
-                    Archive
-                  </SubmitButton>
-                </form>
-              </div>
-            </TableCell>
-          </TableRow>
-        ))}
-      </TableBody>
-    </Table>
-  );
-}
-
 function SetupTab({ data }: { data: KpiDashboardData }) {
   return (
     <Card>
-      <CardHeader className="gap-4 sm:flex-row sm:items-start sm:justify-between">
-        <div>
-          <CardTitle>KPI definitions</CardTitle>
-          <CardDescription className="mt-2">
-            Review and edit KPI definitions created from the Q1-Q4 tracker tabs.
-            Dashboard setup opens only when you need to update report context.
-          </CardDescription>
-        </div>
-        <div className="flex flex-col gap-2 sm:flex-row">
-          <Dialog>
-            <DialogTrigger asChild>
-              <Button variant="outline">
-                <Settings className="h-4 w-4" />
-                Dashboard setup
-              </Button>
-            </DialogTrigger>
-            <DialogContent className="max-w-3xl">
-              <DialogHeader>
-                <DialogTitle>Dashboard setup</DialogTitle>
-                <DialogDescription>
-                  Update organization, report title, year, and fiscal year details.
-                </DialogDescription>
-              </DialogHeader>
-              <DashboardSetupForm data={data} />
-            </DialogContent>
-          </Dialog>
-        </div>
+      <CardHeader>
+        <CardTitle>Dashboard setup</CardTitle>
+        <CardDescription className="mt-2">
+          Update organization, report title, reporting year, and fiscal year
+          details. KPIs are added from the Q1-Q4 tracker tabs.
+        </CardDescription>
       </CardHeader>
       <CardContent>
-        <KpiDefinitionsTable data={data} />
+        <DashboardSetupForm data={data} />
       </CardContent>
     </Card>
   );
@@ -798,6 +595,174 @@ function AddQuarterResultDialog({
   );
 }
 
+function EditKpiDefinitionDialog({
+  dashboardId,
+  kpi,
+  quarter,
+}: {
+  dashboardId: string;
+  kpi: KpiDefinition;
+  quarter: QuarterNumber;
+}) {
+  return (
+    <Dialog>
+      <DialogTrigger asChild>
+        <Button
+          aria-label={`Edit KPI definition for ${kpi.name}`}
+          size="sm"
+          variant="outline"
+        >
+          <Pencil className="h-4 w-4" />
+          Edit KPI
+        </Button>
+      </DialogTrigger>
+      <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-4xl">
+        <DialogHeader>
+          <DialogTitle>Edit KPI definition</DialogTitle>
+          <DialogDescription>
+            Update the KPI target, owner, and reporting context. Quarterly
+            results stay connected to this row.
+          </DialogDescription>
+        </DialogHeader>
+        <form action={updateKpiDefinition} className="grid gap-4 lg:grid-cols-2">
+          <HiddenDashboard dashboardId={dashboardId} />
+          <input type="hidden" name="kpiId" value={kpi.id} />
+          <input type="hidden" name="quarter" value={quarter} />
+          <label className="block text-sm font-semibold">
+            Domain
+            <Input
+              className="mt-2"
+              defaultValue={kpi.domain}
+              maxLength={80}
+              minLength={2}
+              name="domain"
+              placeholder="Programs, Finance, People..."
+              required
+            />
+          </label>
+          <label className="block text-sm font-semibold">
+            KPI name
+            <Input
+              className="mt-2"
+              defaultValue={kpi.name}
+              maxLength={140}
+              minLength={2}
+              name="name"
+              placeholder="Client satisfaction"
+              required
+            />
+          </label>
+          <label className="block text-sm font-semibold">
+            Owner
+            <Input
+              className="mt-2"
+              defaultValue={kpi.owner}
+              maxLength={100}
+              name="owner"
+              placeholder="Executive Director"
+            />
+          </label>
+          <label className="block text-sm font-semibold">
+            Outcome/funder tag
+            <Input
+              className="mt-2"
+              defaultValue={kpi.outcomeArea}
+              maxLength={120}
+              name="outcomeArea"
+              placeholder="Strategic goal or funder report"
+            />
+          </label>
+          <label className="block text-sm font-semibold">
+            Target as displayed
+            <Input
+              className="mt-2"
+              defaultValue={kpi.targetDisplay}
+              maxLength={60}
+              name="targetDisplay"
+              placeholder=">= 70% or $1.5M"
+              required
+            />
+          </label>
+          <label className="block text-sm font-semibold">
+            Target as number
+            <Input
+              className="mt-2"
+              defaultValue={kpi.targetNumber}
+              inputMode="decimal"
+              name="targetNumber"
+              pattern={positiveDecimalNumberPattern}
+              placeholder="70 or 1500000"
+              required
+              title="Enter a number greater than zero, with up to 2 decimal places."
+            />
+            <FieldHint>Numbers only, up to 2 decimals. No currency symbols.</FieldHint>
+          </label>
+          <label className="block text-sm font-semibold">
+            Baseline number
+            <Input
+              className="mt-2"
+              defaultValue={kpi.baselineNumber ?? ""}
+              inputMode="decimal"
+              name="baselineNumber"
+              pattern={decimalNumberPattern}
+              placeholder="Optional"
+              title="Enter numbers only, with up to 2 decimal places."
+            />
+          </label>
+          <div className="flex items-end">
+            <SubmitButton className="w-full" pendingText="Saving KPI...">
+              Save KPI
+            </SubmitButton>
+          </div>
+        </form>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+function ArchiveKpiDefinitionDialog({
+  dashboardId,
+  kpi,
+  quarter,
+}: {
+  dashboardId: string;
+  kpi: KpiDefinition;
+  quarter: QuarterNumber;
+}) {
+  return (
+    <Dialog>
+      <DialogTrigger asChild>
+        <Button
+          aria-label={`Archive KPI ${kpi.name}`}
+          size="sm"
+          variant="outline"
+        >
+          <Archive className="h-4 w-4" />
+          Archive
+        </Button>
+      </DialogTrigger>
+      <DialogContent className="sm:max-w-lg">
+        <DialogHeader>
+          <DialogTitle>Archive this KPI?</DialogTitle>
+          <DialogDescription>
+            &quot;{kpi.name}&quot; will be removed from all quarter tracker tabs
+            and board reporting calculations. Existing historical records stay
+            in the database for audit purposes.
+          </DialogDescription>
+        </DialogHeader>
+        <form action={archiveKpiDefinition} className="flex flex-wrap gap-3">
+          <HiddenDashboard dashboardId={dashboardId} />
+          <input type="hidden" name="kpiId" value={kpi.id} />
+          <input type="hidden" name="quarter" value={quarter} />
+          <SubmitButton pendingText="Archiving..." variant="destructive">
+            Archive KPI
+          </SubmitButton>
+        </form>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
 function QuarterTrackerTab({
   data,
   quarter,
@@ -903,6 +868,18 @@ function QuarterTrackerTab({
                     <TableCell>
                       <div className="font-semibold text-slate-950">
                         {kpi.name}
+                      </div>
+                      <div className="mt-3 flex flex-wrap gap-2">
+                        <EditKpiDefinitionDialog
+                          dashboardId={data.dashboard.id}
+                          kpi={kpi}
+                          quarter={quarter}
+                        />
+                        <ArchiveKpiDefinitionDialog
+                          dashboardId={data.dashboard.id}
+                          kpi={kpi}
+                          quarter={quarter}
+                        />
                       </div>
                     </TableCell>
                     <TableCell>{kpi.owner || "—"}</TableCell>
