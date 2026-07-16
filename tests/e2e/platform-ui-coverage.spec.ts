@@ -90,14 +90,29 @@ test.describe("@smoke @critical platform UI coverage gate", () => {
     await expect(addKpiDialog).toBeHidden();
     const createdKpiRow = page.getByRole("row").filter({ hasText: kpiName });
     await expect(createdKpiRow).toBeVisible();
+    const actionCell = createdKpiRow.getByRole("cell").last();
     await expect(
-      createdKpiRow.getByRole("button", {
+      page.getByRole("columnheader", { name: "Actions" }),
+    ).toBeVisible();
+    await expect(
+      actionCell.getByRole("button", {
         name: `Edit KPI definition for ${kpiName}`,
       }),
     ).toBeVisible();
     await expect(
-      createdKpiRow.getByRole("button", { name: `Archive KPI ${kpiName}` }),
+      actionCell.getByRole("button", { name: `Archive KPI ${kpiName}` }),
     ).toBeVisible();
+    await expect(
+      actionCell.getByRole("button", {
+        name: `Edit Q1 result for ${kpiName}`,
+      }),
+    ).toBeVisible();
+    await expect(
+      actionCell.getByRole("button", {
+        name: `Clear Q1 result for ${kpiName}`,
+      }),
+    ).toBeVisible();
+    await expect(actionCell).not.toContainText(/Edit KPI|Archive|Edit|Clear/);
     await createdKpiRow
       .getByRole("button", { name: `Edit KPI definition for ${kpiName}` })
       .click();

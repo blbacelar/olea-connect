@@ -609,11 +609,11 @@ function EditKpiDefinitionDialog({
       <DialogTrigger asChild>
         <Button
           aria-label={`Edit KPI definition for ${kpi.name}`}
-          size="sm"
+          size="icon"
+          title="Edit KPI definition"
           variant="outline"
         >
           <Pencil className="h-4 w-4" />
-          Edit KPI
         </Button>
       </DialogTrigger>
       <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-4xl">
@@ -734,11 +734,11 @@ function ArchiveKpiDefinitionDialog({
       <DialogTrigger asChild>
         <Button
           aria-label={`Archive KPI ${kpi.name}`}
-          size="sm"
+          size="icon"
+          title="Archive KPI"
           variant="outline"
         >
           <Archive className="h-4 w-4" />
-          Archive
         </Button>
       </DialogTrigger>
       <DialogContent className="sm:max-w-lg">
@@ -791,7 +791,7 @@ function QuarterTrackerTab({
       </CardHeader>
       <CardContent>
         <div className="overflow-x-auto rounded-xl border">
-          <Table className="min-w-[1320px]">
+          <Table className="min-w-[1400px]">
             <TableHeader>
               <TableRow className="bg-olea-green text-white hover:bg-olea-green">
                 <TableHead className="text-white">Domain</TableHead>
@@ -820,8 +820,9 @@ function QuarterTrackerTab({
                   Auto-RAG
                 </TableHead>
                 <TableHead className="bg-amber-50 text-slate-800">
-                  Notes / actions
+                  Notes
                 </TableHead>
+                <TableHead className="text-right text-white">Actions</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -829,7 +830,7 @@ function QuarterTrackerTab({
                 <TableRow>
                   <TableCell
                     className="h-28 text-center text-slate-600"
-                    colSpan={12}
+                    colSpan={13}
                   >
                     Use the Add KPI button above to create the first Q{quarter}
                     tracker row.
@@ -869,18 +870,6 @@ function QuarterTrackerTab({
                       <div className="font-semibold text-slate-950">
                         {kpi.name}
                       </div>
-                      <div className="mt-3 flex flex-wrap gap-2">
-                        <EditKpiDefinitionDialog
-                          dashboardId={data.dashboard.id}
-                          kpi={kpi}
-                          quarter={quarter}
-                        />
-                        <ArchiveKpiDefinitionDialog
-                          dashboardId={data.dashboard.id}
-                          kpi={kpi}
-                          quarter={quarter}
-                        />
-                      </div>
                     </TableCell>
                     <TableCell>{kpi.owner || "—"}</TableCell>
                     <TableCell>
@@ -911,22 +900,33 @@ function QuarterTrackerTab({
                       <RagBadge status={autoRag} />
                     </TableCell>
                     <TableCell className="bg-amber-50/70">
-                      <div className="flex items-center justify-between gap-3">
-                        <span className="max-w-[220px] truncate text-sm text-slate-700">
-                          {result?.contextNotes || "—"}
-                        </span>
-                        <div className="flex flex-wrap gap-2">
-                          <Dialog>
-                            <DialogTrigger asChild>
-                              <Button
-                                aria-label={`Edit Q${quarter} result for ${kpi.name}`}
-                                size="sm"
-                                variant="outline"
-                              >
-                                <Pencil className="h-4 w-4" />
-                                Edit
-                              </Button>
-                            </DialogTrigger>
+                      <span className="block max-w-[260px] truncate text-sm text-slate-700">
+                        {result?.contextNotes || "—"}
+                      </span>
+                    </TableCell>
+                    <TableCell>
+                      <div className="flex justify-end gap-2">
+                        <EditKpiDefinitionDialog
+                          dashboardId={data.dashboard.id}
+                          kpi={kpi}
+                          quarter={quarter}
+                        />
+                        <ArchiveKpiDefinitionDialog
+                          dashboardId={data.dashboard.id}
+                          kpi={kpi}
+                          quarter={quarter}
+                        />
+                        <Dialog>
+                          <DialogTrigger asChild>
+                            <Button
+                              aria-label={`Edit Q${quarter} result for ${kpi.name}`}
+                              size="icon"
+                              title={`Edit Q${quarter} result`}
+                              variant="outline"
+                            >
+                              <Pencil className="h-4 w-4" />
+                            </Button>
+                          </DialogTrigger>
                             <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-3xl">
                               <DialogHeader>
                                 <DialogTitle>
@@ -1032,55 +1032,48 @@ function QuarterTrackerTab({
                               </form>
                             </DialogContent>
                           </Dialog>
-                          {result ? (
-                            <Dialog>
-                              <DialogTrigger asChild>
-                                <Button
-                                  aria-label={`Clear Q${quarter} result for ${kpi.name}`}
-                                  size="sm"
-                                  variant="outline"
+                        {result ? (
+                          <Dialog>
+                            <DialogTrigger asChild>
+                              <Button
+                                aria-label={`Clear Q${quarter} result for ${kpi.name}`}
+                                size="icon"
+                                title={`Clear Q${quarter} result`}
+                                variant="outline"
+                              >
+                                <Trash2 className="h-4 w-4" />
+                              </Button>
+                            </DialogTrigger>
+                            <DialogContent className="sm:max-w-lg">
+                              <DialogHeader>
+                                <DialogTitle>Clear Q{quarter} result?</DialogTitle>
+                                <DialogDescription>
+                                  This removes the current value, RAG status, and
+                                  notes for &quot;{kpi.name}&quot; in Q{quarter}.
+                                  The KPI definition stays in place.
+                                </DialogDescription>
+                              </DialogHeader>
+                              <form
+                                action={deleteKpiQuarterResult}
+                                className="flex flex-wrap gap-3"
+                              >
+                                <HiddenDashboard dashboardId={data.dashboard.id} />
+                                <input type="hidden" name="kpiId" value={kpi.id} />
+                                <input
+                                  type="hidden"
+                                  name="quarter"
+                                  value={quarter}
+                                />
+                                <SubmitButton
+                                  pendingText="Clearing..."
+                                  variant="destructive"
                                 >
-                                  <Trash2 className="h-4 w-4" />
-                                  Clear
-                                </Button>
-                              </DialogTrigger>
-                              <DialogContent className="sm:max-w-lg">
-                                <DialogHeader>
-                                  <DialogTitle>
-                                    Clear Q{quarter} result?
-                                  </DialogTitle>
-                                  <DialogDescription>
-                                    This removes the current value, RAG status,
-                                    and notes for &quot;{kpi.name}&quot; in Q{quarter}.
-                                    The KPI definition stays in place.
-                                  </DialogDescription>
-                                </DialogHeader>
-                                <form
-                                  action={deleteKpiQuarterResult}
-                                  className="flex flex-wrap gap-3"
-                                >
-                                  <HiddenDashboard dashboardId={data.dashboard.id} />
-                                  <input
-                                    type="hidden"
-                                    name="kpiId"
-                                    value={kpi.id}
-                                  />
-                                  <input
-                                    type="hidden"
-                                    name="quarter"
-                                    value={quarter}
-                                  />
-                                  <SubmitButton
-                                    pendingText="Clearing..."
-                                    variant="destructive"
-                                  >
-                                    Clear result
-                                  </SubmitButton>
-                                </form>
-                              </DialogContent>
-                            </Dialog>
-                          ) : null}
-                        </div>
+                                  Clear result
+                                </SubmitButton>
+                              </form>
+                            </DialogContent>
+                          </Dialog>
+                        ) : null}
                       </div>
                     </TableCell>
                   </TableRow>
