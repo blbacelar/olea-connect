@@ -46,6 +46,35 @@ test.describe("@smoke @critical platform UI coverage gate", () => {
     await app.expectText("Setup & Branding");
     await app.expectText("Q1 Tracker");
     await app.expectText("Annual Summary");
+    await expect(
+      page.getByRole("heading", { name: "KPI definitions" }),
+    ).toBeVisible();
+    await expect(page.getByRole("button", { name: "Dashboard setup" })).toBeVisible();
+    await expect(page.getByRole("button", { name: "Add KPI" })).toBeVisible();
+    await page.getByRole("button", { name: "Dashboard setup" }).click();
+    await expect(page.getByRole("dialog", { name: "Dashboard setup" })).toBeVisible();
+    await expect(page.getByLabel("Organization name")).toBeVisible();
+    await page.keyboard.press("Escape");
+    await page.getByRole("button", { name: "Add KPI" }).click();
+    await expect(page.getByRole("dialog", { name: "Add a KPI" })).toBeVisible();
+    await expect(page.getByLabel("KPI name")).toBeVisible();
+    await page.keyboard.press("Escape");
+    await page.getByRole("tab", { name: "Q1 Tracker" }).click();
+    await expect(
+      page.getByRole("heading", { name: /KPI Staff Tracker — Q1/i }),
+    ).toBeVisible();
+    await expect(
+      page.getByText("Pale yellow fields are edited through the row modal"),
+    ).toBeVisible();
+    await expect(
+      page.getByRole("columnheader", { name: "Current value" }),
+    ).toBeVisible();
+    await expect(
+      page.getByRole("columnheader", { name: "Variance vs target" }),
+    ).toBeVisible();
+    await expect(
+      page.getByRole("columnheader", { name: "Auto-RAG" }),
+    ).toBeVisible();
     await app.expectNoServerError();
 
     await app.expectPageHeading("/webinars", "Webinars");

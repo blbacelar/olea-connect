@@ -1,4 +1,12 @@
-import { Archive, BarChart3, ClipboardList, Save, Settings } from "lucide-react";
+import {
+  Archive,
+  BarChart3,
+  ClipboardList,
+  Pencil,
+  Plus,
+  Save,
+  Settings,
+} from "lucide-react";
 
 import {
   archiveKpiDefinition,
@@ -16,7 +24,21 @@ import {
 } from "@/app/modules/kpi-dashboard/actions";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import {
   Select,
@@ -25,6 +47,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { SubmitButton } from "@/components/ui/submit-button";
 import {
   Table,
   TableBody,
@@ -35,7 +58,7 @@ import {
 } from "@/components/ui/table";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Textarea } from "@/components/ui/textarea";
-import type { KpiDashboardData, KpiDefinition } from "@/lib/data/kpi-dashboard";
+import type { KpiDashboardData } from "@/lib/data/kpi-dashboard";
 import {
   calculatePercentToTarget,
   calculateTrend,
@@ -151,6 +174,25 @@ function getQuarterMonths(data: KpiDashboardData, quarter: QuarterNumber) {
   return monthNames.length > 0 ? monthNames.join(", ") : "No months assigned";
 }
 
+function TrendText({
+  trend,
+}: {
+  trend: ReturnType<typeof calculateTrend>;
+}) {
+  const trendCopy = {
+    improving: { label: "Improving", className: "text-green-700" },
+    declining: { label: "Declining", className: "text-red-700" },
+    stable: { label: "Stable", className: "text-amber-700" },
+    not_available: { label: "—", className: "text-slate-500" },
+  }[trend];
+
+  return (
+    <span className={cn("font-semibold", trendCopy.className)}>
+      {trendCopy.label}
+    </span>
+  );
+}
+
 function KpiSummaryCards({ data }: { data: KpiDashboardData }) {
   const fullYearStatuses = data.kpis.map(
     (kpi) => getAssessment(data, kpi.id)?.fullYearRag ?? "na",
@@ -199,211 +241,260 @@ function KpiSummaryCards({ data }: { data: KpiDashboardData }) {
   );
 }
 
+function DashboardSetupForm({ data }: { data: KpiDashboardData }) {
+  return (
+    <form action={updateKpiDashboardSettings} className="space-y-4">
+      <HiddenDashboard dashboardId={data.dashboard.id} />
+      <label className="block text-sm font-semibold">
+        Organization name
+        <Input
+          className="mt-2"
+          defaultValue={data.dashboard.organizationName}
+          maxLength={140}
+          name="organizationName"
+          required
+        />
+      </label>
+      <label className="block text-sm font-semibold">
+        Dashboard title
+        <Input
+          className="mt-2"
+          defaultValue={data.dashboard.title}
+          maxLength={140}
+          minLength={3}
+          name="title"
+          required
+        />
+      </label>
+      <div className="grid gap-4 sm:grid-cols-2">
+        <label className="block text-sm font-semibold">
+          Reporting year
+          <Input
+            className="mt-2"
+            defaultValue={data.dashboard.reportingYear}
+            inputMode="numeric"
+            max={2100}
+            min={2000}
+            name="reportingYear"
+            pattern="[0-9]{4}"
+            required
+            type="number"
+          />
+          <FieldHint>Use a four-digit year, for example 2026.</FieldHint>
+        </label>
+        <label className="block text-sm font-semibold">
+          Financial year end
+          <Input
+            className="mt-2"
+            defaultValue={data.dashboard.financialYearEnd ?? ""}
+            name="financialYearEnd"
+            type="date"
+          />
+        </label>
+      </div>
+      <SubmitButton pendingText="Saving setup...">
+        <Save className="h-4 w-4" />
+        Save setup
+      </SubmitButton>
+    </form>
+  );
+}
+
+function AddKpiForm({ dashboardId }: { dashboardId: string }) {
+  return (
+    <form action={createKpiDefinition} className="grid gap-4 lg:grid-cols-2">
+      <HiddenDashboard dashboardId={dashboardId} />
+      <label className="block text-sm font-semibold">
+        Domain
+        <Input
+          className="mt-2"
+          maxLength={80}
+          minLength={2}
+          name="domain"
+          placeholder="Programs, Finance, People..."
+          required
+        />
+      </label>
+      <label className="block text-sm font-semibold">
+        KPI name
+        <Input
+          className="mt-2"
+          maxLength={140}
+          minLength={2}
+          name="name"
+          placeholder="Client satisfaction"
+          required
+        />
+      </label>
+      <label className="block text-sm font-semibold">
+        Owner
+        <Input
+          className="mt-2"
+          maxLength={100}
+          name="owner"
+          placeholder="Executive Director"
+        />
+      </label>
+      <label className="block text-sm font-semibold">
+        Outcome/funder tag
+        <Input
+          className="mt-2"
+          maxLength={120}
+          name="outcomeArea"
+          placeholder="Strategic goal or funder report"
+        />
+      </label>
+      <label className="block text-sm font-semibold">
+        Target as displayed
+        <Input
+          className="mt-2"
+          maxLength={60}
+          name="targetDisplay"
+          placeholder=">= 70% or $1.5M"
+          required
+        />
+      </label>
+      <label className="block text-sm font-semibold">
+        Target as number
+        <Input
+          className="mt-2"
+          inputMode="decimal"
+          name="targetNumber"
+          pattern={decimalNumberPattern}
+          placeholder="70 or 1500000"
+          required
+          title="Enter numbers only, with up to 2 decimal places."
+        />
+        <FieldHint>Numbers only, up to 2 decimals. No currency symbols.</FieldHint>
+      </label>
+      <label className="block text-sm font-semibold">
+        Baseline number
+        <Input
+          className="mt-2"
+          inputMode="decimal"
+          name="baselineNumber"
+          pattern={decimalNumberPattern}
+          placeholder="Optional"
+          title="Enter numbers only, with up to 2 decimal places."
+        />
+      </label>
+      <div className="flex items-end">
+        <SubmitButton className="w-full" pendingText="Adding KPI...">
+          Add KPI
+        </SubmitButton>
+      </div>
+    </form>
+  );
+}
+
+function KpiDefinitionsTable({ data }: { data: KpiDashboardData }) {
+  if (data.kpis.length === 0) {
+    return (
+      <EmptyState>
+        Add your first KPI when you are ready. Nothing is prefilled.
+      </EmptyState>
+    );
+  }
+
+  return (
+    <Table>
+      <TableHeader>
+        <TableRow>
+          <TableHead>Domain</TableHead>
+          <TableHead>Name</TableHead>
+          <TableHead>Owner</TableHead>
+          <TableHead>Target</TableHead>
+          <TableHead>Baseline</TableHead>
+          <TableHead>Action</TableHead>
+        </TableRow>
+      </TableHeader>
+      <TableBody>
+        {data.kpis.map((kpi) => (
+          <TableRow key={kpi.id}>
+            <TableCell className="font-semibold">{kpi.domain}</TableCell>
+            <TableCell>{kpi.name}</TableCell>
+            <TableCell>{kpi.owner || "—"}</TableCell>
+            <TableCell>
+              {kpi.targetDisplay}{" "}
+              <span className="text-slate-500">
+                ({formatNumber(kpi.targetNumber)})
+              </span>
+            </TableCell>
+            <TableCell>{formatNumber(kpi.baselineNumber)}</TableCell>
+            <TableCell>
+              <form action={archiveKpiDefinition}>
+                <HiddenDashboard dashboardId={data.dashboard.id} />
+                <input type="hidden" name="kpiId" value={kpi.id} />
+                <SubmitButton
+                  pendingText="Archiving..."
+                  size="sm"
+                  variant="outline"
+                >
+                  <Archive className="h-4 w-4" />
+                  Archive
+                </SubmitButton>
+              </form>
+            </TableCell>
+          </TableRow>
+        ))}
+      </TableBody>
+    </Table>
+  );
+}
+
 function SetupTab({ data }: { data: KpiDashboardData }) {
   return (
-    <div className="grid gap-5 xl:grid-cols-[0.9fr_1.1fr]">
-      <Card>
-        <CardHeader>
-          <CardTitle>Dashboard setup</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <form action={updateKpiDashboardSettings} className="space-y-4">
-            <HiddenDashboard dashboardId={data.dashboard.id} />
-            <label className="block text-sm font-semibold">
-              Organization name
-              <Input
-                className="mt-2"
-                defaultValue={data.dashboard.organizationName}
-                maxLength={140}
-                name="organizationName"
-                required
-              />
-            </label>
-            <label className="block text-sm font-semibold">
-              Dashboard title
-              <Input
-                className="mt-2"
-                defaultValue={data.dashboard.title}
-                maxLength={140}
-                minLength={3}
-                name="title"
-                required
-              />
-            </label>
-            <div className="grid gap-4 sm:grid-cols-2">
-              <label className="block text-sm font-semibold">
-                Reporting year
-                <Input
-                  className="mt-2"
-                  defaultValue={data.dashboard.reportingYear}
-                  inputMode="numeric"
-                  max={2100}
-                  min={2000}
-                  name="reportingYear"
-                  pattern="[0-9]{4}"
-                  required
-                  type="number"
-                />
-                <FieldHint>Use a four-digit year, for example 2026.</FieldHint>
-              </label>
-              <label className="block text-sm font-semibold">
-                Financial year end
-                <Input
-                  className="mt-2"
-                  defaultValue={data.dashboard.financialYearEnd ?? ""}
-                  name="financialYearEnd"
-                  type="date"
-                />
-              </label>
-            </div>
-            <Button type="submit">
-              <Save className="h-4 w-4" />
-              Save setup
-            </Button>
-          </form>
-        </CardContent>
-      </Card>
-
-      <Card>
-        <CardHeader>
-          <CardTitle>Add a KPI</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <form action={createKpiDefinition} className="grid gap-4 lg:grid-cols-2">
-            <HiddenDashboard dashboardId={data.dashboard.id} />
-            <label className="block text-sm font-semibold">
-              Domain
-              <Input
-                className="mt-2"
-                maxLength={80}
-                minLength={2}
-                name="domain"
-                placeholder="Programs, Finance, People..."
-                required
-              />
-            </label>
-            <label className="block text-sm font-semibold">
-              KPI name
-              <Input
-                className="mt-2"
-                maxLength={140}
-                minLength={2}
-                name="name"
-                placeholder="Client satisfaction"
-                required
-              />
-            </label>
-            <label className="block text-sm font-semibold">
-              Owner
-              <Input
-                className="mt-2"
-                maxLength={100}
-                name="owner"
-                placeholder="Executive Director"
-              />
-            </label>
-            <label className="block text-sm font-semibold">
-              Outcome/funder tag
-              <Input
-                className="mt-2"
-                maxLength={120}
-                name="outcomeArea"
-                placeholder="Strategic goal or funder report"
-              />
-            </label>
-            <label className="block text-sm font-semibold">
-              Target as displayed
-              <Input
-                className="mt-2"
-                maxLength={60}
-                name="targetDisplay"
-                placeholder=">= 70% or $1.5M"
-                required
-              />
-            </label>
-            <label className="block text-sm font-semibold">
-              Target as number
-              <Input
-                className="mt-2"
-                inputMode="decimal"
-                name="targetNumber"
-                pattern={decimalNumberPattern}
-                placeholder="70 or 1500000"
-                required
-                title="Enter numbers only, with up to 2 decimal places."
-              />
-              <FieldHint>Numbers only, up to 2 decimals. No currency symbols.</FieldHint>
-            </label>
-            <label className="block text-sm font-semibold">
-              Baseline number
-              <Input
-                className="mt-2"
-                inputMode="decimal"
-                name="baselineNumber"
-                pattern={decimalNumberPattern}
-                placeholder="Optional"
-                title="Enter numbers only, with up to 2 decimal places."
-              />
-            </label>
-            <div className="flex items-end">
-              <Button className="w-full" type="submit">
+    <Card>
+      <CardHeader className="gap-4 sm:flex-row sm:items-start sm:justify-between">
+        <div>
+          <CardTitle>KPI definitions</CardTitle>
+          <CardDescription className="mt-2">
+            Manage the KPI list for this dashboard. Setup and KPI creation open only
+            when you need them.
+          </CardDescription>
+        </div>
+        <div className="flex flex-col gap-2 sm:flex-row">
+          <Dialog>
+            <DialogTrigger asChild>
+              <Button variant="outline">
+                <Settings className="h-4 w-4" />
+                Dashboard setup
+              </Button>
+            </DialogTrigger>
+            <DialogContent className="max-w-3xl">
+              <DialogHeader>
+                <DialogTitle>Dashboard setup</DialogTitle>
+                <DialogDescription>
+                  Update organization, report title, year, and fiscal year details.
+                </DialogDescription>
+              </DialogHeader>
+              <DashboardSetupForm data={data} />
+            </DialogContent>
+          </Dialog>
+          <Dialog>
+            <DialogTrigger asChild>
+              <Button>
+                <Plus className="h-4 w-4" />
                 Add KPI
               </Button>
-            </div>
-          </form>
-        </CardContent>
-      </Card>
-
-      <Card className="xl:col-span-2">
-        <CardHeader>
-          <CardTitle>KPI definitions</CardTitle>
-        </CardHeader>
-        <CardContent>
-          {data.kpis.length === 0 ? (
-            <EmptyState>Add your first KPI above. Nothing is prefilled.</EmptyState>
-          ) : (
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Domain</TableHead>
-                  <TableHead>Name</TableHead>
-                  <TableHead>Owner</TableHead>
-                  <TableHead>Target</TableHead>
-                  <TableHead>Baseline</TableHead>
-                  <TableHead>Action</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {data.kpis.map((kpi) => (
-                  <TableRow key={kpi.id}>
-                    <TableCell className="font-semibold">{kpi.domain}</TableCell>
-                    <TableCell>{kpi.name}</TableCell>
-                    <TableCell>{kpi.owner || "—"}</TableCell>
-                    <TableCell>
-                      {kpi.targetDisplay}{" "}
-                      <span className="text-slate-500">
-                        ({formatNumber(kpi.targetNumber)})
-                      </span>
-                    </TableCell>
-                    <TableCell>{formatNumber(kpi.baselineNumber)}</TableCell>
-                    <TableCell>
-                      <form action={archiveKpiDefinition}>
-                        <HiddenDashboard dashboardId={data.dashboard.id} />
-                        <input type="hidden" name="kpiId" value={kpi.id} />
-                        <Button size="sm" variant="outline" type="submit">
-                          <Archive className="h-4 w-4" />
-                          Archive
-                        </Button>
-                      </form>
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          )}
-        </CardContent>
-      </Card>
-    </div>
+            </DialogTrigger>
+            <DialogContent className="max-w-4xl">
+              <DialogHeader>
+                <DialogTitle>Add a KPI</DialogTitle>
+                <DialogDescription>
+                  Define the KPI, its target, and the optional baseline that will
+                  feed the tracker tabs.
+                </DialogDescription>
+              </DialogHeader>
+              <AddKpiForm dashboardId={data.dashboard.id} />
+            </DialogContent>
+          </Dialog>
+        </div>
+      </CardHeader>
+      <CardContent>
+        <KpiDefinitionsTable data={data} />
+      </CardContent>
+    </Card>
   );
 }
 
@@ -445,17 +536,17 @@ function SettingsTab({ data }: { data: KpiDashboardData }) {
             })}
           </div>
           <div className="mt-5 flex flex-wrap gap-3">
-            <Button type="submit">
+            <SubmitButton pendingText="Saving settings...">
               <Save className="h-4 w-4" />
               Save quarter settings
-            </Button>
-            <Button
+            </SubmitButton>
+            <SubmitButton
               formAction={resetKpiQuarterSettings}
-              type="submit"
+              pendingText="Resetting..."
               variant="outline"
             >
               Reset to calendar quarters
-            </Button>
+            </SubmitButton>
           </div>
         </form>
       </CardContent>
@@ -473,15 +564,62 @@ function QuarterTrackerTab({
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Q{quarter} tracker</CardTitle>
-        <p className="text-sm text-slate-600">{getQuarterMonths(data, quarter)}</p>
+        <CardTitle>KPI Staff Tracker — Q{quarter}</CardTitle>
+        <CardDescription>{getQuarterMonths(data, quarter)}</CardDescription>
+        <p className="text-sm text-slate-600">
+          Staff enter quarterly results from this table. Pale yellow fields are
+          edited through the row modal; grey cells are calculated automatically
+          from the KPI target and prior quarter.
+        </p>
       </CardHeader>
       <CardContent>
-        {data.kpis.length === 0 ? (
-          <EmptyState>Add KPIs in Setup & Branding before entering results.</EmptyState>
-        ) : (
-          <div className="space-y-4">
-            {data.kpis.map((kpi) => {
+        <div className="overflow-x-auto rounded-xl border">
+          <Table className="min-w-[1320px]">
+            <TableHeader>
+              <TableRow className="bg-olea-green text-white hover:bg-olea-green">
+                <TableHead className="text-white">Domain</TableHead>
+                <TableHead className="text-white">KPI</TableHead>
+                <TableHead className="text-white">Owner</TableHead>
+                <TableHead className="text-white">Target</TableHead>
+                <TableHead className="bg-amber-50 text-slate-800">
+                  Current value
+                </TableHead>
+                <TableHead className="bg-slate-100 text-slate-800">
+                  Prior quarter
+                </TableHead>
+                <TableHead className="bg-amber-50 text-slate-800">
+                  RAG status
+                </TableHead>
+                <TableHead className="bg-slate-100 text-slate-800">
+                  Trend
+                </TableHead>
+                <TableHead className="bg-slate-100 text-slate-800">
+                  % to target
+                </TableHead>
+                <TableHead className="bg-slate-100 text-slate-800">
+                  Variance vs target
+                </TableHead>
+                <TableHead className="bg-slate-100 text-slate-800">
+                  Auto-RAG
+                </TableHead>
+                <TableHead className="bg-amber-50 text-slate-800">
+                  Notes / actions
+                </TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {data.kpis.length === 0 ? (
+                <TableRow>
+                  <TableCell
+                    className="h-28 text-center text-slate-600"
+                    colSpan={12}
+                  >
+                    Add KPIs in Setup & Branding before entering quarterly
+                    results.
+                  </TableCell>
+                </TableRow>
+              ) : null}
+              {data.kpis.map((kpi) => {
               const result = getResult(data, kpi.id, quarter);
               const percent = calculatePercentToTarget(
                 result?.currentValue ?? null,
@@ -499,74 +637,160 @@ function QuarterTrackerTab({
                 result?.currentValue ?? null,
                 kpi.targetNumber,
               );
+              const variance = calculateVariance(
+                result?.currentValue ?? null,
+                kpi.targetNumber,
+              );
+              const previousValue = previousResult?.currentValue ?? null;
 
               return (
-                <form
-                  action={saveKpiQuarterResult}
-                  className="rounded-xl border bg-white p-4"
-                  key={kpi.id}
-                >
-                  <HiddenDashboard dashboardId={data.dashboard.id} />
-                  <input type="hidden" name="kpiId" value={kpi.id} />
-                  <input type="hidden" name="quarter" value={quarter} />
-                  <div className="grid gap-4 lg:grid-cols-[1fr_180px_150px_150px_auto] lg:items-end">
-                    <div>
-                      <p className="text-xs font-semibold uppercase tracking-[0.12em] text-slate-500">
-                        {kpi.domain}
-                      </p>
-                      <h3 className="mt-1 text-lg font-bold">{kpi.name}</h3>
-                      <p className="text-sm text-slate-600">
-                        Target: {kpi.targetDisplay}
-                      </p>
+                <TableRow key={kpi.id}>
+                  <TableCell className="font-semibold text-slate-700">
+                    {kpi.domain}
+                  </TableCell>
+                  <TableCell>
+                    <div className="font-semibold text-slate-950">{kpi.name}</div>
+                  </TableCell>
+                  <TableCell>{kpi.owner}</TableCell>
+                  <TableCell>
+                    <span className="font-semibold">{kpi.targetDisplay}</span>
+                    <div className="text-xs text-slate-500">
+                      Number: {formatNumber(kpi.targetNumber)}
                     </div>
-                    <label className="block text-sm font-semibold">
-                      Current value
-                      <Input
-                        className="mt-2"
-                        defaultValue={result?.currentValue ?? ""}
-                        inputMode="decimal"
-                        name="currentValue"
-                        pattern={decimalNumberPattern}
-                        placeholder="Numbers only"
-                        title="Enter numbers only, with up to 2 decimal places."
-                      />
-                    </label>
-                    <label className="block text-sm font-semibold">
-                      RAG
-                      <SelectField
-                        defaultValue={result?.ragStatus ?? "na"}
-                        name="ragStatus"
-                        options={ragStatuses.map((status) => ({
-                          label: ragLabels[status],
-                          value: status,
-                        }))}
-                        placeholder="Choose status"
-                      />
-                    </label>
-                    <div className="space-y-2 text-sm">
-                      <div>
-                        Auto-RAG: <RagBadge status={autoRag} />
-                      </div>
-                      <div>% target: {formatPercent(percent)}</div>
-                      <div>Trend: {trend.replace("_", " ")}</div>
+                  </TableCell>
+                  <TableCell className="bg-amber-50/70 font-semibold">
+                    {formatNumber(result?.currentValue)}
+                  </TableCell>
+                  <TableCell className="bg-slate-50">
+                    {formatNumber(previousValue)}
+                  </TableCell>
+                  <TableCell className="bg-amber-50/70">
+                    <RagBadge status={result?.ragStatus ?? "na"} />
+                  </TableCell>
+                  <TableCell className="bg-slate-50">
+                    <TrendText trend={trend} />
+                  </TableCell>
+                  <TableCell className="bg-slate-50">
+                    {formatPercent(percent)}
+                  </TableCell>
+                  <TableCell className="bg-slate-50">
+                    {formatNumber(variance)}
+                  </TableCell>
+                  <TableCell className="bg-slate-50">
+                    <RagBadge status={autoRag} />
+                  </TableCell>
+                  <TableCell className="bg-amber-50/70">
+                    <div className="flex items-center justify-between gap-3">
+                      <span className="max-w-[220px] truncate text-sm text-slate-700">
+                        {result?.contextNotes || "—"}
+                      </span>
+                      <Dialog>
+                        <DialogTrigger asChild>
+                          <Button
+                            aria-label={`Edit Q${quarter} result for ${kpi.name}`}
+                            size="sm"
+                            variant="outline"
+                          >
+                            <Pencil className="h-4 w-4" />
+                            Edit
+                          </Button>
+                        </DialogTrigger>
+                        <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-2xl">
+                          <DialogHeader>
+                            <DialogTitle>
+                              Q{quarter} result: {kpi.name}
+                            </DialogTitle>
+                            <DialogDescription>
+                              Enter staff results for this quarter. Calculated
+                              values will update after saving.
+                            </DialogDescription>
+                          </DialogHeader>
+                          <form
+                            action={saveKpiQuarterResult}
+                            className="space-y-4"
+                          >
+                            <HiddenDashboard dashboardId={data.dashboard.id} />
+                            <input type="hidden" name="kpiId" value={kpi.id} />
+                            <input
+                              type="hidden"
+                              name="quarter"
+                              value={quarter}
+                            />
+                            <div className="grid gap-3 rounded-lg bg-slate-50 p-4 sm:grid-cols-2">
+                              <div>
+                                <p className="text-xs font-semibold uppercase tracking-[0.12em] text-slate-500">
+                                  Domain
+                                </p>
+                                <p className="font-semibold">{kpi.domain}</p>
+                              </div>
+                              <div>
+                                <p className="text-xs font-semibold uppercase tracking-[0.12em] text-slate-500">
+                                  Target
+                                </p>
+                                <p className="font-semibold">
+                                  {kpi.targetDisplay}
+                                </p>
+                              </div>
+                            </div>
+                            <label className="block text-sm font-semibold">
+                              Current value
+                              <Input
+                                className="mt-2 bg-amber-50"
+                                defaultValue={result?.currentValue ?? ""}
+                                inputMode="decimal"
+                                name="currentValue"
+                                pattern={decimalNumberPattern}
+                                placeholder="Numbers only"
+                                title="Enter numbers only, with up to 2 decimal places."
+                              />
+                              <FieldHint>
+                                Use numbers only, with up to 2 decimals. Do not
+                                include currency symbols or percent signs.
+                              </FieldHint>
+                            </label>
+                            <label className="block text-sm font-semibold">
+                              RAG status
+                              <SelectField
+                                defaultValue={result?.ragStatus ?? "na"}
+                                name="ragStatus"
+                                options={ragStatuses.map((status) => ({
+                                  label: ragLabels[status],
+                                  value: status,
+                                }))}
+                                placeholder="Choose status"
+                              />
+                              <FieldHint>
+                                Auto-RAG suggests {ragLabels[autoRag]}, but staff
+                                can override when context warrants.
+                              </FieldHint>
+                            </label>
+                            <label className="block text-sm font-semibold">
+                              Notes / actions
+                              <Textarea
+                                className="mt-2 bg-amber-50"
+                                defaultValue={result?.contextNotes ?? ""}
+                                maxLength={1200}
+                                name="contextNotes"
+                                placeholder="Achievements, issues, data quality notes..."
+                              />
+                              <FieldHint>
+                                Keep notes concise. Maximum 1,200 characters.
+                              </FieldHint>
+                            </label>
+                            <SubmitButton pendingText="Saving result...">
+                              Save result
+                            </SubmitButton>
+                          </form>
+                        </DialogContent>
+                      </Dialog>
                     </div>
-                    <Button type="submit">Save result</Button>
-                  </div>
-                  <label className="mt-4 block text-sm font-semibold">
-                    Context notes
-                    <Textarea
-                      className="mt-2"
-                      defaultValue={result?.contextNotes ?? ""}
-                      maxLength={1200}
-                      name="contextNotes"
-                      placeholder="Achievements, issues, data quality notes..."
-                    />
-                  </label>
-                </form>
+                  </TableCell>
+                </TableRow>
               );
-            })}
-          </div>
-        )}
+              })}
+            </TableBody>
+          </Table>
+        </div>
       </CardContent>
     </Card>
   );
@@ -636,9 +860,9 @@ function BoardDashboardTab({ data }: { data: KpiDashboardData }) {
                             name="boardNotes"
                             placeholder="Board context or override rationale"
                           />
-                          <Button size="sm" type="submit">
+                          <SubmitButton pendingText="Saving..." size="sm">
                             Save
-                          </Button>
+                          </SubmitButton>
                         </form>
                       </TableCell>
                     </TableRow>
@@ -678,7 +902,9 @@ function MilestonesAndRisksTab({ data }: { data: KpiDashboardData }) {
               placeholder="Choose status"
             />
             <Textarea maxLength={1200} name="notes" placeholder="Notes" />
-            <Button type="submit">Add milestone</Button>
+            <SubmitButton pendingText="Adding milestone...">
+              Add milestone
+            </SubmitButton>
           </form>
         </CardContent>
       </Card>
@@ -710,7 +936,7 @@ function MilestonesAndRisksTab({ data }: { data: KpiDashboardData }) {
                 placeholder="Choose RAG"
               />
             </div>
-            <Button type="submit">Add risk</Button>
+            <SubmitButton pendingText="Adding risk...">Add risk</SubmitButton>
           </form>
         </CardContent>
       </Card>
@@ -748,9 +974,13 @@ function MilestonesAndRisksTab({ data }: { data: KpiDashboardData }) {
                           name="milestoneId"
                           value={milestone.id}
                         />
-                        <Button size="sm" variant="outline" type="submit">
+                        <SubmitButton
+                          pendingText="Deleting..."
+                          size="sm"
+                          variant="outline"
+                        >
                           Delete
-                        </Button>
+                        </SubmitButton>
                       </form>
                     </TableCell>
                   </TableRow>
@@ -794,9 +1024,13 @@ function MilestonesAndRisksTab({ data }: { data: KpiDashboardData }) {
                       <form action={deleteKpiRisk}>
                         <HiddenDashboard dashboardId={data.dashboard.id} />
                         <input type="hidden" name="riskId" value={risk.id} />
-                        <Button size="sm" variant="outline" type="submit">
+                        <SubmitButton
+                          pendingText="Deleting..."
+                          size="sm"
+                          variant="outline"
+                        >
                           Delete
-                        </Button>
+                        </SubmitButton>
                       </form>
                     </TableCell>
                   </TableRow>
@@ -844,10 +1078,10 @@ function AnnualSummaryTab({ data }: { data: KpiDashboardData }) {
               />
             </label>
           ))}
-          <Button type="submit">
+          <SubmitButton pendingText="Saving summary...">
             <Save className="h-4 w-4" />
             Save annual summary
-          </Button>
+          </SubmitButton>
         </form>
       </CardContent>
     </Card>
