@@ -1,4 +1,5 @@
 import {
+  ArrowLeft,
   Archive,
   BarChart3,
   ClipboardList,
@@ -8,6 +9,7 @@ import {
   Settings,
   Trash2,
 } from "lucide-react";
+import Link from "next/link";
 
 import {
   archiveKpiDefinition,
@@ -1254,21 +1256,34 @@ export function KpiDashboardWorkspace({
     <div className="space-y-5">
       <Card className="border-olea-green/15 bg-gradient-to-br from-white to-olea-light/50 shadow-soft">
         <CardContent className="p-5">
-          <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
-            <div>
-              <p className="text-xs font-bold uppercase tracking-[0.16em] text-olea-green">
-                KPI Dashboard
-              </p>
-              <h2 className="mt-2 text-3xl font-bold text-slate-950">
-                {data.dashboard.title}
-              </h2>
-              <p className="mt-2 text-slate-600">
-                {data.dashboard.organizationName} · Reporting year{" "}
-                {data.dashboard.reportingYear}
-              </p>
-            </div>
-            <div className="rounded-full bg-white px-4 py-2 text-sm font-semibold text-slate-600 shadow-sm">
-              {data.kpis.length} KPI{data.kpis.length === 1 ? "" : "s"} tracked
+          <div className="space-y-5">
+            <Button asChild className="w-full sm:w-auto" variant="outline">
+              <Link href="/templates">
+                <ArrowLeft className="h-4 w-4" />
+                Back to resources
+              </Link>
+            </Button>
+            <div className="flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
+              <div>
+                <p className="text-xs font-bold uppercase tracking-[0.16em] text-olea-green">
+                  Board reporting
+                </p>
+                <h1 className="mt-2 text-3xl font-bold text-slate-950 md:text-4xl">
+                  {data.dashboard.title}
+                </h1>
+                <p className="mt-3 max-w-4xl text-lg leading-8 text-slate-600">
+                  Define KPIs, customize reporting quarters, capture quarterly
+                  results, and prepare board-ready annual reporting from one
+                  connected workspace.
+                </p>
+                <p className="mt-3 text-slate-600">
+                  {data.dashboard.organizationName} · Reporting year{" "}
+                  {data.dashboard.reportingYear}
+                </p>
+              </div>
+              <div className="rounded-full bg-white px-4 py-2 text-sm font-semibold text-slate-600 shadow-sm">
+                {data.kpis.length} KPI{data.kpis.length === 1 ? "" : "s"} tracked
+              </div>
             </div>
           </div>
         </CardContent>
