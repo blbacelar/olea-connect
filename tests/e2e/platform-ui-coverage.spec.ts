@@ -96,7 +96,7 @@ test.describe("@smoke @critical platform UI coverage gate", () => {
     ).toBeVisible();
     await expect(
       actionCell.getByRole("button", {
-        name: `Edit KPI definition for ${kpiName}`,
+        name: `Edit KPI and Q1 result for ${kpiName}`,
       }),
     ).toBeVisible();
     await expect(
@@ -106,7 +106,7 @@ test.describe("@smoke @critical platform UI coverage gate", () => {
       actionCell.getByRole("button", {
         name: `Edit Q1 result for ${kpiName}`,
       }),
-    ).toBeVisible();
+    ).toHaveCount(0);
     await expect(
       actionCell.getByRole("button", {
         name: `Clear Q1 result for ${kpiName}`,
@@ -114,13 +114,16 @@ test.describe("@smoke @critical platform UI coverage gate", () => {
     ).toBeVisible();
     await expect(actionCell).not.toContainText(/Edit KPI|Archive|Edit|Clear/);
     await createdKpiRow
-      .getByRole("button", { name: `Edit KPI definition for ${kpiName}` })
+      .getByRole("button", { name: `Edit KPI and Q1 result for ${kpiName}` })
       .click();
     await expect(
-      page.getByRole("dialog", { name: "Edit KPI definition" }),
+      page.getByRole("dialog", { name: `Edit KPI: ${kpiName}` }),
     ).toBeVisible();
     await expect(page.getByRole("dialog").getByLabel("KPI name")).toHaveValue(
       kpiName,
+    );
+    await expect(page.getByRole("dialog").getByLabel("Current value")).toHaveValue(
+      "72",
     );
     await page.keyboard.press("Escape");
     await expect(

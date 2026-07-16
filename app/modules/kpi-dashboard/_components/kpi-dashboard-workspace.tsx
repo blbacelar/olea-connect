@@ -21,7 +21,6 @@ import {
   saveKpiAnnualSummary,
   saveKpiBoardAssessment,
   saveKpiQuarterResult,
-  updateKpiDefinition,
   updateKpiDashboardSettings,
   updateKpiQuarterSettings,
 } from "@/app/modules/kpi-dashboard/actions";
@@ -437,6 +436,94 @@ function CalculatedTrackerFields({
   );
 }
 
+function KpiDefinitionFields({ kpi }: { kpi?: KpiDefinition }) {
+  return (
+    <div className="grid gap-4 lg:grid-cols-2">
+      <label className="block text-sm font-semibold">
+        Domain
+        <Input
+          className="mt-2"
+          defaultValue={kpi?.domain ?? ""}
+          maxLength={80}
+          minLength={2}
+          name="domain"
+          placeholder="Programs, Finance, People..."
+          required
+        />
+      </label>
+      <label className="block text-sm font-semibold">
+        KPI name
+        <Input
+          className="mt-2"
+          defaultValue={kpi?.name ?? ""}
+          maxLength={140}
+          minLength={2}
+          name="name"
+          placeholder="Client satisfaction"
+          required
+        />
+      </label>
+      <label className="block text-sm font-semibold">
+        Owner
+        <Input
+          className="mt-2"
+          defaultValue={kpi?.owner ?? ""}
+          maxLength={100}
+          name="owner"
+          placeholder="Executive Director"
+        />
+      </label>
+      <label className="block text-sm font-semibold">
+        Outcome/funder tag
+        <Input
+          className="mt-2"
+          defaultValue={kpi?.outcomeArea ?? ""}
+          maxLength={120}
+          name="outcomeArea"
+          placeholder="Strategic goal or funder report"
+        />
+      </label>
+      <label className="block text-sm font-semibold">
+        Target as displayed
+        <Input
+          className="mt-2"
+          defaultValue={kpi?.targetDisplay ?? ""}
+          maxLength={60}
+          name="targetDisplay"
+          placeholder=">= 70% or $1.5M"
+          required
+        />
+      </label>
+      <label className="block text-sm font-semibold">
+        Target as number
+        <Input
+          className="mt-2"
+          defaultValue={kpi?.targetNumber ?? ""}
+          inputMode="decimal"
+          name="targetNumber"
+          pattern={positiveDecimalNumberPattern}
+          placeholder="70 or 1500000"
+          required
+          title="Enter a number greater than zero, with up to 2 decimal places."
+        />
+        <FieldHint>Number greater than zero, up to 2 decimals. No currency symbols.</FieldHint>
+      </label>
+      <label className="block text-sm font-semibold">
+        Baseline number
+        <Input
+          className="mt-2"
+          defaultValue={kpi?.baselineNumber ?? ""}
+          inputMode="decimal"
+          name="baselineNumber"
+          pattern={decimalNumberPattern}
+          placeholder="Optional"
+          title="Enter numbers only, with up to 2 decimal places."
+        />
+      </label>
+    </div>
+  );
+}
+
 function AddQuarterResultDialog({
   dashboardId,
   quarter,
@@ -463,84 +550,7 @@ function AddQuarterResultDialog({
         <form action={createKpiTrackerEntry} className="space-y-5">
           <HiddenDashboard dashboardId={dashboardId} />
           <input type="hidden" name="quarter" value={quarter} />
-          <div className="grid gap-4 lg:grid-cols-2">
-            <label className="block text-sm font-semibold">
-              Domain
-              <Input
-                className="mt-2"
-                maxLength={80}
-                minLength={2}
-                name="domain"
-                placeholder="Programs, Finance, People..."
-                required
-              />
-            </label>
-            <label className="block text-sm font-semibold">
-              KPI name
-              <Input
-                className="mt-2"
-                maxLength={140}
-                minLength={2}
-                name="name"
-                placeholder="Client satisfaction"
-                required
-              />
-            </label>
-            <label className="block text-sm font-semibold">
-              Owner
-              <Input
-                className="mt-2"
-                maxLength={100}
-                name="owner"
-                placeholder="Executive Director"
-              />
-            </label>
-            <label className="block text-sm font-semibold">
-              Outcome/funder tag
-              <Input
-                className="mt-2"
-                maxLength={120}
-                name="outcomeArea"
-                placeholder="Strategic goal or funder report"
-              />
-            </label>
-            <label className="block text-sm font-semibold">
-              Target as displayed
-              <Input
-                className="mt-2"
-                maxLength={60}
-                name="targetDisplay"
-                placeholder=">= 70% or $1.5M"
-                required
-              />
-            </label>
-            <label className="block text-sm font-semibold">
-              Target as number
-              <Input
-                className="mt-2"
-                inputMode="decimal"
-                name="targetNumber"
-                pattern={positiveDecimalNumberPattern}
-                placeholder="70 or 1500000"
-                required
-                title="Enter a number greater than zero, with up to 2 decimal places."
-              />
-              <FieldHint>
-                Number greater than zero, up to 2 decimals. No currency symbols.
-              </FieldHint>
-            </label>
-            <label className="block text-sm font-semibold">
-              Baseline number
-              <Input
-                className="mt-2"
-                inputMode="decimal"
-                name="baselineNumber"
-                pattern={decimalNumberPattern}
-                placeholder="Optional"
-                title="Enter numbers only, with up to 2 decimal places."
-              />
-            </label>
-          </div>
+          <KpiDefinitionFields />
           <div className="rounded-lg bg-slate-50 p-4 text-sm text-slate-600">
             <p className="font-semibold text-slate-900">Calculated fields</p>
             <p className="mt-1">
@@ -592,131 +602,6 @@ function AddQuarterResultDialog({
             <FieldHint>Keep notes concise. Maximum 1,200 characters.</FieldHint>
           </label>
           <SubmitButton pendingText="Adding KPI...">Add KPI</SubmitButton>
-        </form>
-      </DialogContent>
-    </Dialog>
-  );
-}
-
-function EditKpiDefinitionDialog({
-  dashboardId,
-  kpi,
-  quarter,
-}: {
-  dashboardId: string;
-  kpi: KpiDefinition;
-  quarter: QuarterNumber;
-}) {
-  return (
-    <Dialog>
-      <DialogTrigger asChild>
-        <Button
-          aria-label={`Edit KPI definition for ${kpi.name}`}
-          size="icon"
-          title="Edit KPI definition"
-          variant="outline"
-        >
-          <Pencil className="h-4 w-4" />
-        </Button>
-      </DialogTrigger>
-      <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-4xl">
-        <DialogHeader>
-          <DialogTitle>Edit KPI definition</DialogTitle>
-          <DialogDescription>
-            Update the KPI target, owner, and reporting context. Quarterly
-            results stay connected to this row.
-          </DialogDescription>
-        </DialogHeader>
-        <form action={updateKpiDefinition} className="grid gap-4 lg:grid-cols-2">
-          <HiddenDashboard dashboardId={dashboardId} />
-          <input type="hidden" name="kpiId" value={kpi.id} />
-          <input type="hidden" name="quarter" value={quarter} />
-          <label className="block text-sm font-semibold">
-            Domain
-            <Input
-              className="mt-2"
-              defaultValue={kpi.domain}
-              maxLength={80}
-              minLength={2}
-              name="domain"
-              placeholder="Programs, Finance, People..."
-              required
-            />
-          </label>
-          <label className="block text-sm font-semibold">
-            KPI name
-            <Input
-              className="mt-2"
-              defaultValue={kpi.name}
-              maxLength={140}
-              minLength={2}
-              name="name"
-              placeholder="Client satisfaction"
-              required
-            />
-          </label>
-          <label className="block text-sm font-semibold">
-            Owner
-            <Input
-              className="mt-2"
-              defaultValue={kpi.owner}
-              maxLength={100}
-              name="owner"
-              placeholder="Executive Director"
-            />
-          </label>
-          <label className="block text-sm font-semibold">
-            Outcome/funder tag
-            <Input
-              className="mt-2"
-              defaultValue={kpi.outcomeArea}
-              maxLength={120}
-              name="outcomeArea"
-              placeholder="Strategic goal or funder report"
-            />
-          </label>
-          <label className="block text-sm font-semibold">
-            Target as displayed
-            <Input
-              className="mt-2"
-              defaultValue={kpi.targetDisplay}
-              maxLength={60}
-              name="targetDisplay"
-              placeholder=">= 70% or $1.5M"
-              required
-            />
-          </label>
-          <label className="block text-sm font-semibold">
-            Target as number
-            <Input
-              className="mt-2"
-              defaultValue={kpi.targetNumber}
-              inputMode="decimal"
-              name="targetNumber"
-              pattern={positiveDecimalNumberPattern}
-              placeholder="70 or 1500000"
-              required
-              title="Enter a number greater than zero, with up to 2 decimal places."
-            />
-            <FieldHint>Numbers only, up to 2 decimals. No currency symbols.</FieldHint>
-          </label>
-          <label className="block text-sm font-semibold">
-            Baseline number
-            <Input
-              className="mt-2"
-              defaultValue={kpi.baselineNumber ?? ""}
-              inputMode="decimal"
-              name="baselineNumber"
-              pattern={decimalNumberPattern}
-              placeholder="Optional"
-              title="Enter numbers only, with up to 2 decimal places."
-            />
-          </label>
-          <div className="flex items-end">
-            <SubmitButton className="w-full" pendingText="Saving KPI...">
-              Save KPI
-            </SubmitButton>
-          </div>
         </form>
       </DialogContent>
     </Dialog>
@@ -909,133 +794,104 @@ function QuarterTrackerTab({
                     </TableCell>
                     <TableCell>
                       <div className="flex justify-end gap-2">
-                        <EditKpiDefinitionDialog
-                          dashboardId={data.dashboard.id}
-                          kpi={kpi}
-                          quarter={quarter}
-                        />
-                        <ArchiveKpiDefinitionDialog
-                          dashboardId={data.dashboard.id}
-                          kpi={kpi}
-                          quarter={quarter}
-                        />
                         <Dialog>
                           <DialogTrigger asChild>
                             <Button
-                              aria-label={`Edit Q${quarter} result for ${kpi.name}`}
+                              aria-label={`Edit KPI and Q${quarter} result for ${kpi.name}`}
                               size="icon"
-                              title={`Edit Q${quarter} result`}
+                              title={`Edit KPI and Q${quarter} result`}
                               variant="outline"
                             >
                               <Pencil className="h-4 w-4" />
                             </Button>
                           </DialogTrigger>
-                            <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-3xl">
-                              <DialogHeader>
-                                <DialogTitle>
-                                  Q{quarter} result: {kpi.name}
-                                </DialogTitle>
-                                <DialogDescription>
-                                  Enter staff results for this quarter. Grey
-                                  fields are calculated automatically.
-                                </DialogDescription>
-                              </DialogHeader>
-                              <form
-                                action={saveKpiQuarterResult}
-                                className="space-y-4"
-                              >
-                                <HiddenDashboard dashboardId={data.dashboard.id} />
-                                <input type="hidden" name="kpiId" value={kpi.id} />
-                                <input
-                                  type="hidden"
-                                  name="quarter"
-                                  value={quarter}
-                                />
-                                <div className="grid gap-3 rounded-lg bg-slate-50 p-4 sm:grid-cols-3">
-                                  <div>
-                                    <p className="text-xs font-semibold uppercase tracking-[0.12em] text-slate-500">
-                                      Domain
-                                    </p>
-                                    <p className="font-semibold">{kpi.domain}</p>
-                                  </div>
-                                  <div>
-                                    <p className="text-xs font-semibold uppercase tracking-[0.12em] text-slate-500">
-                                      Owner
-                                    </p>
-                                    <p className="font-semibold">
-                                      {kpi.owner || "—"}
-                                    </p>
-                                  </div>
-                                  <div>
-                                    <p className="text-xs font-semibold uppercase tracking-[0.12em] text-slate-500">
-                                      Target
-                                    </p>
-                                    <p className="font-semibold">
-                                      {kpi.targetDisplay}
-                                    </p>
-                                  </div>
-                                </div>
-                                <CalculatedTrackerFields
-                                  autoRag={autoRag}
-                                  percent={percent}
-                                  previousValue={previousValue}
-                                  trend={trend}
-                                  variance={variance}
-                                />
-                                <div className="grid gap-4 sm:grid-cols-2">
-                                  <label className="block text-sm font-semibold">
-                                    Current value
-                                    <Input
-                                      className="mt-2 bg-amber-50"
-                                      defaultValue={result?.currentValue ?? ""}
-                                      inputMode="decimal"
-                                      name="currentValue"
-                                      pattern={decimalNumberPattern}
-                                      placeholder="Numbers only"
-                                      title="Enter numbers only, with up to 2 decimal places."
-                                    />
-                                    <FieldHint>
-                                      Use numbers only, with up to 2 decimals. Do
-                                      not include currency symbols or percent signs.
-                                    </FieldHint>
-                                  </label>
-                                  <label className="block text-sm font-semibold">
-                                    RAG status
-                                    <SelectField
-                                      className="mt-2"
-                                      defaultValue={result?.ragStatus ?? "na"}
-                                      name="ragStatus"
-                                      options={ragStatuses.map((status) => ({
-                                        label: ragLabels[status],
-                                        value: status,
-                                      }))}
-                                      placeholder="Choose status"
-                                    />
-                                    <FieldHint>
-                                      Auto-RAG suggests {ragLabels[autoRag]}, but
-                                      staff can override when context warrants.
-                                    </FieldHint>
-                                  </label>
-                                </div>
+                          <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-4xl">
+                            <DialogHeader>
+                              <DialogTitle>Edit KPI: {kpi.name}</DialogTitle>
+                              <DialogDescription>
+                                Update the KPI definition and Q{quarter} staff
+                                result in one place. Grey fields are calculated
+                                automatically.
+                              </DialogDescription>
+                            </DialogHeader>
+                            <form
+                              action={saveKpiQuarterResult}
+                              className="space-y-4"
+                            >
+                              <HiddenDashboard dashboardId={data.dashboard.id} />
+                              <input type="hidden" name="kpiId" value={kpi.id} />
+                              <input
+                                type="hidden"
+                                name="quarter"
+                                value={quarter}
+                              />
+                              <KpiDefinitionFields kpi={kpi} />
+                              <CalculatedTrackerFields
+                                autoRag={autoRag}
+                                percent={percent}
+                                previousValue={previousValue}
+                                trend={trend}
+                                variance={variance}
+                              />
+                              <div className="grid gap-4 sm:grid-cols-2">
                                 <label className="block text-sm font-semibold">
-                                  Notes / actions
-                                  <Textarea
+                                  Current value
+                                  <Input
                                     className="mt-2 bg-amber-50"
-                                    defaultValue={result?.contextNotes ?? ""}
-                                    maxLength={1200}
-                                    name="contextNotes"
-                                    placeholder="Achievements, issues, data quality notes..."
+                                    defaultValue={result?.currentValue ?? ""}
+                                    inputMode="decimal"
+                                    name="currentValue"
+                                    pattern={decimalNumberPattern}
+                                    placeholder="Numbers only"
+                                    title="Enter numbers only, with up to 2 decimal places."
                                   />
                                   <FieldHint>
-                                    Keep notes concise. Maximum 1,200 characters.
+                                    Use numbers only, with up to 2 decimals. Do
+                                    not include currency symbols or percent signs.
                                   </FieldHint>
                                 </label>
-                                <SubmitButton pendingText="Saving result...">
-                                  Save result
-                                </SubmitButton>
-                              </form>
-                            </DialogContent>
-                          </Dialog>
+                                <label className="block text-sm font-semibold">
+                                  RAG status
+                                  <SelectField
+                                    className="mt-2"
+                                    defaultValue={result?.ragStatus ?? "na"}
+                                    name="ragStatus"
+                                    options={ragStatuses.map((status) => ({
+                                      label: ragLabels[status],
+                                      value: status,
+                                    }))}
+                                    placeholder="Choose status"
+                                  />
+                                  <FieldHint>
+                                    Auto-RAG suggests {ragLabels[autoRag]}, but
+                                    staff can override when context warrants.
+                                  </FieldHint>
+                                </label>
+                              </div>
+                              <label className="block text-sm font-semibold">
+                                Notes / actions
+                                <Textarea
+                                  className="mt-2 bg-amber-50"
+                                  defaultValue={result?.contextNotes ?? ""}
+                                  maxLength={1200}
+                                  name="contextNotes"
+                                  placeholder="Achievements, issues, data quality notes..."
+                                />
+                                <FieldHint>
+                                  Keep notes concise. Maximum 1,200 characters.
+                                </FieldHint>
+                              </label>
+                              <SubmitButton pendingText="Saving KPI...">
+                                Save KPI
+                              </SubmitButton>
+                            </form>
+                          </DialogContent>
+                        </Dialog>
+                        <ArchiveKpiDefinitionDialog
+                          dashboardId={data.dashboard.id}
+                          kpi={kpi}
+                          quarter={quarter}
+                        />
                         {result ? (
                           <Dialog>
                             <DialogTrigger asChild>

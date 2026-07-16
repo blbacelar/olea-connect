@@ -88,6 +88,32 @@ function parseRequiredTargetNumber(formData: FormData) {
   return targetNumber;
 }
 
+function parseKpiDefinitionFields(formData: FormData) {
+  return {
+    domain: parseRequiredText(formData, "domain", "Domain", 80),
+    name: parseRequiredText(formData, "name", "KPI name", 140),
+    owner: parseOptionalText(formData, "owner", "Owner", 100),
+    targetDisplay: parseRequiredText(
+      formData,
+      "targetDisplay",
+      "Target display",
+      60,
+    ),
+    targetNumber: parseRequiredTargetNumber(formData),
+    baselineNumber: parseOptionalNumber(
+      formData,
+      "baselineNumber",
+      "Baseline number",
+    ),
+    outcomeArea: parseOptionalText(
+      formData,
+      "outcomeArea",
+      "Outcome/funder tag",
+      120,
+    ),
+  };
+}
+
 async function getNextSortOrder(
   supabase: ReturnType<typeof createAdminClient>,
   table: SortableKpiTable,
@@ -205,27 +231,15 @@ export async function createKpiTrackerEntry(formData: FormData) {
     throw new Error("Quarter is invalid.");
   }
 
-  const domain = parseRequiredText(formData, "domain", "Domain", 80);
-  const name = parseRequiredText(formData, "name", "KPI name", 140);
-  const owner = parseOptionalText(formData, "owner", "Owner", 100);
-  const targetDisplay = parseRequiredText(
-    formData,
-    "targetDisplay",
-    "Target display",
-    60,
-  );
-  const targetNumber = parseRequiredTargetNumber(formData);
-  const baselineNumber = parseOptionalNumber(
-    formData,
-    "baselineNumber",
-    "Baseline number",
-  );
-  const outcomeArea = parseOptionalText(
-    formData,
-    "outcomeArea",
-    "Outcome/funder tag",
-    120,
-  );
+  const {
+    baselineNumber,
+    domain,
+    name,
+    outcomeArea,
+    owner,
+    targetDisplay,
+    targetNumber,
+  } = parseKpiDefinitionFields(formData);
   const currentValue = parseOptionalNumber(
     formData,
     "currentValue",
@@ -294,53 +308,6 @@ export async function createKpiTrackerEntry(formData: FormData) {
   finish(`q${quarter}`);
 }
 
-export async function updateKpiDefinition(formData: FormData) {
-  const { dashboard, kpiId } = await requireKpiFromForm(formData);
-  const quarter = Number(getFormString(formData, "quarter"));
-  if (![1, 2, 3, 4].includes(quarter)) {
-    throw new Error("Quarter is invalid.");
-  }
-
-  const domain = parseRequiredText(formData, "domain", "Domain", 80);
-  const name = parseRequiredText(formData, "name", "KPI name", 140);
-  const owner = parseOptionalText(formData, "owner", "Owner", 100);
-  const targetDisplay = parseRequiredText(
-    formData,
-    "targetDisplay",
-    "Target display",
-    60,
-  );
-  const targetNumber = parseRequiredTargetNumber(formData);
-  const baselineNumber = parseOptionalNumber(
-    formData,
-    "baselineNumber",
-    "Baseline number",
-  );
-  const outcomeArea = parseOptionalText(
-    formData,
-    "outcomeArea",
-    "Outcome/funder tag",
-    120,
-  );
-
-  const { error } = await createAdminClient()
-    .from("kpi_definitions")
-    .update({
-      domain,
-      name,
-      owner,
-      target_display: targetDisplay,
-      target_number: targetNumber,
-      baseline_number: baselineNumber,
-      outcome_area: outcomeArea,
-    })
-    .eq("id", kpiId)
-    .eq("dashboard_id", dashboard.id);
-
-  if (error) throw error;
-  finish(`q${quarter}`);
-}
-
 export async function archiveKpiDefinition(formData: FormData) {
   const { dashboard, kpiId } = await requireKpiFromForm(formData);
   const quarter = Number(getFormString(formData, "quarter"));
@@ -359,12 +326,21 @@ export async function archiveKpiDefinition(formData: FormData) {
 }
 
 export async function saveKpiQuarterResult(formData: FormData) {
-  const { kpiId } = await requireKpiFromForm(formData);
+  const { dashboard, kpiId } = await requireKpiFromForm(formData);
   const quarter = Number(getFormString(formData, "quarter"));
   if (![1, 2, 3, 4].includes(quarter)) {
     throw new Error("Quarter is invalid.");
   }
 
+  const {
+    baselineNumber,
+    domain,
+    name,
+    outcomeArea,
+    owner,
+    targetDisplay,
+    targetNumber,
+  } = parseKpiDefinitionFields(formData);
   const currentValue = parseOptionalNumber(
     formData,
     "currentValue",
@@ -378,7 +354,24 @@ export async function saveKpiQuarterResult(formData: FormData) {
     1200,
   );
 
-  const { error } = await createAdminClient().from("kpi_quarter_results").upsert(
+  const supabase = createAdminClient();
+  const { error: definitionError } = await supabase
+    .from("kpi_definitions")
+    .update({
+      domain,
+      name,
+      owner,
+      target_display: targetDisplay,
+      target_number: targetNumber,
+      baseline_number: baselineNumber,
+      outcome_area: outcomeArea,
+    })
+    .eq("id", kpiId)
+    .eq("dashboard_id", dashboard.id);
+
+  if (definitionError) throw definitionError;
+
+  const { error } = await supabase.from("kpi_quarter_results").upsert(
     {
       kpi_id: kpiId,
       quarter,
