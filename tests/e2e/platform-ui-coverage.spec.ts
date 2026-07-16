@@ -50,21 +50,42 @@ test.describe("@smoke @critical platform UI coverage gate", () => {
       page.getByRole("heading", { name: "KPI definitions" }),
     ).toBeVisible();
     await expect(page.getByRole("button", { name: "Dashboard setup" })).toBeVisible();
-    await expect(page.getByRole("button", { name: "Add KPI" })).toBeVisible();
+    await expect(page.getByRole("button", { name: "Add KPI" })).toHaveCount(0);
     await page.getByRole("button", { name: "Dashboard setup" }).click();
     await expect(page.getByRole("dialog", { name: "Dashboard setup" })).toBeVisible();
     await expect(page.getByLabel("Organization name")).toBeVisible();
-    await page.keyboard.press("Escape");
-    await page.getByRole("button", { name: "Add KPI" }).click();
-    await expect(page.getByRole("dialog", { name: "Add a KPI" })).toBeVisible();
-    await expect(page.getByLabel("KPI name")).toBeVisible();
     await page.keyboard.press("Escape");
     await page.getByRole("tab", { name: "Q1 Tracker" }).click();
     await expect(
       page.getByRole("heading", { name: /KPI Staff Tracker — Q1/i }),
     ).toBeVisible();
     await expect(
-      page.getByText("Pale yellow fields are edited through the row modal"),
+      page.getByText("Pale yellow fields are edited through modals"),
+    ).toBeVisible();
+    const addQ1Kpi = page.getByRole("button", { name: "Add KPI to Q1" });
+    await expect(addQ1Kpi).toBeVisible();
+    await addQ1Kpi.click();
+    await expect(
+      page.getByRole("dialog", { name: "Add KPI to Q1" }),
+    ).toBeVisible();
+    const addKpiDialog = page.getByRole("dialog", { name: "Add KPI to Q1" });
+    await expect(addKpiDialog.getByLabel("KPI name")).toBeVisible();
+    await expect(addKpiDialog.getByLabel("Current value")).toBeVisible();
+    await expect(page.getByText("Calculated fields")).toBeVisible();
+    const kpiName = `Client satisfaction ${Date.now()}`;
+    await addKpiDialog.getByLabel("Domain").fill("Programs");
+    await addKpiDialog.getByLabel("KPI name").fill(kpiName);
+    await addKpiDialog.getByLabel("Owner").fill("Executive Director");
+    await addKpiDialog.getByLabel("Target as displayed").fill(">= 80%");
+    await addKpiDialog.getByLabel("Target as number").fill("80");
+    await addKpiDialog.getByLabel("Current value").fill("72");
+    await addKpiDialog
+      .getByLabel("Notes / actions")
+      .fill("Submitted from the quarter tracker.");
+    await addKpiDialog.getByRole("button", { name: "Add KPI" }).click();
+    await expect(addKpiDialog).toBeHidden();
+    await expect(
+      page.getByRole("cell", { exact: true, name: kpiName }),
     ).toBeVisible();
     await expect(
       page.getByRole("columnheader", { name: "Current value" }),

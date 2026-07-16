@@ -14,6 +14,7 @@ export const monthOptions = [
 ] as const;
 
 export const decimalNumberPattern = String.raw`\d+(\.\d{1,2})?`;
+export const positiveDecimalNumberPattern = String.raw`(0*[1-9]\d*(\.\d{1,2})?|0?\.(0[1-9]|[1-9]\d?))`;
 const decimalNumberRegex = new RegExp(`^${decimalNumberPattern}$`);
 const postgresIntegerMax = 2147483647;
 

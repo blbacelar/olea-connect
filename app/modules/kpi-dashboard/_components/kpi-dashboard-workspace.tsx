@@ -6,19 +6,22 @@ import {
   Plus,
   Save,
   Settings,
+  Trash2,
 } from "lucide-react";
 
 import {
   archiveKpiDefinition,
-  createKpiDefinition,
   createKpiMilestone,
   createKpiRisk,
+  createKpiTrackerEntry,
   deleteKpiMilestone,
+  deleteKpiQuarterResult,
   deleteKpiRisk,
   resetKpiQuarterSettings,
   saveKpiAnnualSummary,
   saveKpiBoardAssessment,
   saveKpiQuarterResult,
+  updateKpiDefinition,
   updateKpiDashboardSettings,
   updateKpiQuarterSettings,
 } from "@/app/modules/kpi-dashboard/actions";
@@ -58,7 +61,7 @@ import {
 } from "@/components/ui/table";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Textarea } from "@/components/ui/textarea";
-import type { KpiDashboardData } from "@/lib/data/kpi-dashboard";
+import type { KpiDashboardData, KpiDefinition } from "@/lib/data/kpi-dashboard";
 import {
   calculatePercentToTarget,
   calculateTrend,
@@ -69,6 +72,7 @@ import {
   milestoneLabels,
   milestoneStatuses,
   monthOptions,
+  positiveDecimalNumberPattern,
   ragLabels,
   ragStatuses,
   suggestRagStatus,
@@ -96,11 +100,13 @@ function HiddenDashboard({ dashboardId }: { dashboardId: string }) {
 }
 
 function SelectField({
+  ariaLabel,
   defaultValue,
   name,
   options,
   placeholder,
 }: {
+  ariaLabel?: string;
   defaultValue?: string;
   name: string;
   options: Array<{ label: string; value: string }>;
@@ -108,7 +114,10 @@ function SelectField({
 }) {
   return (
     <Select name={name} defaultValue={defaultValue}>
-      <SelectTrigger className="h-11 bg-white">
+      <SelectTrigger
+        aria-label={ariaLabel ?? placeholder}
+        className="h-11 bg-white"
+      >
         <SelectValue placeholder={placeholder} />
       </SelectTrigger>
       <SelectContent>
@@ -300,14 +309,22 @@ function DashboardSetupForm({ data }: { data: KpiDashboardData }) {
   );
 }
 
-function AddKpiForm({ dashboardId }: { dashboardId: string }) {
+function EditKpiForm({
+  dashboardId,
+  kpi,
+}: {
+  dashboardId: string;
+  kpi: KpiDefinition;
+}) {
   return (
-    <form action={createKpiDefinition} className="grid gap-4 lg:grid-cols-2">
+    <form action={updateKpiDefinition} className="grid gap-4 lg:grid-cols-2">
       <HiddenDashboard dashboardId={dashboardId} />
+      <input type="hidden" name="kpiId" value={kpi.id} />
       <label className="block text-sm font-semibold">
         Domain
         <Input
           className="mt-2"
+          defaultValue={kpi.domain}
           maxLength={80}
           minLength={2}
           name="domain"
@@ -319,6 +336,7 @@ function AddKpiForm({ dashboardId }: { dashboardId: string }) {
         KPI name
         <Input
           className="mt-2"
+          defaultValue={kpi.name}
           maxLength={140}
           minLength={2}
           name="name"
@@ -330,6 +348,7 @@ function AddKpiForm({ dashboardId }: { dashboardId: string }) {
         Owner
         <Input
           className="mt-2"
+          defaultValue={kpi.owner}
           maxLength={100}
           name="owner"
           placeholder="Executive Director"
@@ -339,6 +358,7 @@ function AddKpiForm({ dashboardId }: { dashboardId: string }) {
         Outcome/funder tag
         <Input
           className="mt-2"
+          defaultValue={kpi.outcomeArea}
           maxLength={120}
           name="outcomeArea"
           placeholder="Strategic goal or funder report"
@@ -348,6 +368,7 @@ function AddKpiForm({ dashboardId }: { dashboardId: string }) {
         Target as displayed
         <Input
           className="mt-2"
+          defaultValue={kpi.targetDisplay}
           maxLength={60}
           name="targetDisplay"
           placeholder=">= 70% or $1.5M"
@@ -356,21 +377,23 @@ function AddKpiForm({ dashboardId }: { dashboardId: string }) {
       </label>
       <label className="block text-sm font-semibold">
         Target as number
-        <Input
-          className="mt-2"
-          inputMode="decimal"
-          name="targetNumber"
-          pattern={decimalNumberPattern}
-          placeholder="70 or 1500000"
-          required
-          title="Enter numbers only, with up to 2 decimal places."
-        />
+          <Input
+            className="mt-2"
+            defaultValue={kpi.targetNumber}
+            inputMode="decimal"
+            name="targetNumber"
+            pattern={positiveDecimalNumberPattern}
+            placeholder="70 or 1500000"
+            required
+            title="Enter a number greater than zero, with up to 2 decimal places."
+          />
         <FieldHint>Numbers only, up to 2 decimals. No currency symbols.</FieldHint>
       </label>
       <label className="block text-sm font-semibold">
         Baseline number
         <Input
           className="mt-2"
+          defaultValue={kpi.baselineNumber ?? ""}
           inputMode="decimal"
           name="baselineNumber"
           pattern={decimalNumberPattern}
@@ -379,8 +402,8 @@ function AddKpiForm({ dashboardId }: { dashboardId: string }) {
         />
       </label>
       <div className="flex items-end">
-        <SubmitButton className="w-full" pendingText="Adding KPI...">
-          Add KPI
+        <SubmitButton className="w-full" pendingText="Saving KPI...">
+          Save KPI
         </SubmitButton>
       </div>
     </form>
@@ -391,7 +414,8 @@ function KpiDefinitionsTable({ data }: { data: KpiDashboardData }) {
   if (data.kpis.length === 0) {
     return (
       <EmptyState>
-        Add your first KPI when you are ready. Nothing is prefilled.
+        Add your first KPI from a Q1-Q4 tracker tab when you are ready.
+        Nothing is prefilled.
       </EmptyState>
     );
   }
@@ -422,18 +446,43 @@ function KpiDefinitionsTable({ data }: { data: KpiDashboardData }) {
             </TableCell>
             <TableCell>{formatNumber(kpi.baselineNumber)}</TableCell>
             <TableCell>
-              <form action={archiveKpiDefinition}>
-                <HiddenDashboard dashboardId={data.dashboard.id} />
-                <input type="hidden" name="kpiId" value={kpi.id} />
-                <SubmitButton
-                  pendingText="Archiving..."
-                  size="sm"
-                  variant="outline"
-                >
-                  <Archive className="h-4 w-4" />
-                  Archive
-                </SubmitButton>
-              </form>
+              <div className="flex flex-wrap gap-2">
+                <Dialog>
+                  <DialogTrigger asChild>
+                    <Button
+                      aria-label={`Edit KPI ${kpi.name}`}
+                      size="sm"
+                      variant="outline"
+                    >
+                      <Pencil className="h-4 w-4" />
+                      Edit
+                    </Button>
+                  </DialogTrigger>
+                  <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-4xl">
+                    <DialogHeader>
+                      <DialogTitle>Edit KPI</DialogTitle>
+                      <DialogDescription>
+                        Update this KPI definition. Tracker calculations will use
+                        the new target number after saving.
+                      </DialogDescription>
+                    </DialogHeader>
+                    <EditKpiForm dashboardId={data.dashboard.id} kpi={kpi} />
+                  </DialogContent>
+                </Dialog>
+                <form action={archiveKpiDefinition}>
+                  <HiddenDashboard dashboardId={data.dashboard.id} />
+                  <input type="hidden" name="kpiId" value={kpi.id} />
+                  <SubmitButton
+                    aria-label={`Archive KPI ${kpi.name}`}
+                    pendingText="Archiving..."
+                    size="sm"
+                    variant="outline"
+                  >
+                    <Archive className="h-4 w-4" />
+                    Archive
+                  </SubmitButton>
+                </form>
+              </div>
             </TableCell>
           </TableRow>
         ))}
@@ -449,8 +498,8 @@ function SetupTab({ data }: { data: KpiDashboardData }) {
         <div>
           <CardTitle>KPI definitions</CardTitle>
           <CardDescription className="mt-2">
-            Manage the KPI list for this dashboard. Setup and KPI creation open only
-            when you need them.
+            Review and edit KPI definitions created from the Q1-Q4 tracker tabs.
+            Dashboard setup opens only when you need to update report context.
           </CardDescription>
         </div>
         <div className="flex flex-col gap-2 sm:flex-row">
@@ -469,24 +518,6 @@ function SetupTab({ data }: { data: KpiDashboardData }) {
                 </DialogDescription>
               </DialogHeader>
               <DashboardSetupForm data={data} />
-            </DialogContent>
-          </Dialog>
-          <Dialog>
-            <DialogTrigger asChild>
-              <Button>
-                <Plus className="h-4 w-4" />
-                Add KPI
-              </Button>
-            </DialogTrigger>
-            <DialogContent className="max-w-4xl">
-              <DialogHeader>
-                <DialogTitle>Add a KPI</DialogTitle>
-                <DialogDescription>
-                  Define the KPI, its target, and the optional baseline that will
-                  feed the tracker tabs.
-                </DialogDescription>
-              </DialogHeader>
-              <AddKpiForm dashboardId={data.dashboard.id} />
             </DialogContent>
           </Dialog>
         </div>
@@ -554,6 +585,219 @@ function SettingsTab({ data }: { data: KpiDashboardData }) {
   );
 }
 
+function CalculatedTrackerFields({
+  autoRag,
+  percent,
+  previousValue,
+  trend,
+  variance,
+}: {
+  autoRag: RagStatus;
+  percent: number | null;
+  previousValue: number | null;
+  trend: ReturnType<typeof calculateTrend>;
+  variance: number | null;
+}) {
+  return (
+    <div className="grid gap-3 rounded-lg bg-slate-50 p-4 text-sm sm:grid-cols-2 lg:grid-cols-5">
+      <div>
+        <p className="text-xs font-semibold uppercase tracking-[0.12em] text-slate-500">
+          Prior quarter
+        </p>
+        <p className="mt-1 font-semibold">{formatNumber(previousValue)}</p>
+      </div>
+      <div>
+        <p className="text-xs font-semibold uppercase tracking-[0.12em] text-slate-500">
+          Trend
+        </p>
+        <p className="mt-1">
+          <TrendText trend={trend} />
+        </p>
+      </div>
+      <div>
+        <p className="text-xs font-semibold uppercase tracking-[0.12em] text-slate-500">
+          % to target
+        </p>
+        <p className="mt-1 font-semibold">{formatPercent(percent)}</p>
+      </div>
+      <div>
+        <p className="text-xs font-semibold uppercase tracking-[0.12em] text-slate-500">
+          Variance
+        </p>
+        <p className="mt-1 font-semibold">{formatNumber(variance)}</p>
+      </div>
+      <div>
+        <p className="text-xs font-semibold uppercase tracking-[0.12em] text-slate-500">
+          Auto-RAG
+        </p>
+        <p className="mt-1">
+          <RagBadge status={autoRag} />
+        </p>
+      </div>
+    </div>
+  );
+}
+
+function AddQuarterResultDialog({
+  dashboardId,
+  quarter,
+}: {
+  dashboardId: string;
+  quarter: QuarterNumber;
+}) {
+  return (
+    <Dialog>
+      <DialogTrigger asChild>
+        <Button>
+          <Plus className="h-4 w-4" />
+          Add KPI to Q{quarter}
+        </Button>
+      </DialogTrigger>
+      <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-4xl">
+        <DialogHeader>
+          <DialogTitle>Add KPI to Q{quarter}</DialogTitle>
+          <DialogDescription>
+            Define the KPI and enter the staff-reported result for this quarter.
+            The KPI will then appear in every tracker tab.
+          </DialogDescription>
+        </DialogHeader>
+        <form action={createKpiTrackerEntry} className="space-y-5">
+          <HiddenDashboard dashboardId={dashboardId} />
+          <input type="hidden" name="quarter" value={quarter} />
+          <div className="grid gap-4 lg:grid-cols-2">
+            <label className="block text-sm font-semibold">
+              Domain
+              <Input
+                className="mt-2"
+                maxLength={80}
+                minLength={2}
+                name="domain"
+                placeholder="Programs, Finance, People..."
+                required
+              />
+            </label>
+            <label className="block text-sm font-semibold">
+              KPI name
+              <Input
+                className="mt-2"
+                maxLength={140}
+                minLength={2}
+                name="name"
+                placeholder="Client satisfaction"
+                required
+              />
+            </label>
+            <label className="block text-sm font-semibold">
+              Owner
+              <Input
+                className="mt-2"
+                maxLength={100}
+                name="owner"
+                placeholder="Executive Director"
+              />
+            </label>
+            <label className="block text-sm font-semibold">
+              Outcome/funder tag
+              <Input
+                className="mt-2"
+                maxLength={120}
+                name="outcomeArea"
+                placeholder="Strategic goal or funder report"
+              />
+            </label>
+            <label className="block text-sm font-semibold">
+              Target as displayed
+              <Input
+                className="mt-2"
+                maxLength={60}
+                name="targetDisplay"
+                placeholder=">= 70% or $1.5M"
+                required
+              />
+            </label>
+            <label className="block text-sm font-semibold">
+              Target as number
+              <Input
+                className="mt-2"
+                inputMode="decimal"
+                name="targetNumber"
+                pattern={positiveDecimalNumberPattern}
+                placeholder="70 or 1500000"
+                required
+                title="Enter a number greater than zero, with up to 2 decimal places."
+              />
+              <FieldHint>
+                Number greater than zero, up to 2 decimals. No currency symbols.
+              </FieldHint>
+            </label>
+            <label className="block text-sm font-semibold">
+              Baseline number
+              <Input
+                className="mt-2"
+                inputMode="decimal"
+                name="baselineNumber"
+                pattern={decimalNumberPattern}
+                placeholder="Optional"
+                title="Enter numbers only, with up to 2 decimal places."
+              />
+            </label>
+          </div>
+          <div className="rounded-lg bg-slate-50 p-4 text-sm text-slate-600">
+            <p className="font-semibold text-slate-900">Calculated fields</p>
+            <p className="mt-1">
+              Prior quarter, trend, % to target, variance, and Auto-RAG are
+              calculated automatically after this result is saved.
+            </p>
+          </div>
+          <div className="grid gap-4 sm:grid-cols-2">
+            <label className="block text-sm font-semibold">
+              Current value
+              <Input
+                className="mt-2 bg-amber-50"
+                inputMode="decimal"
+                name="currentValue"
+                pattern={decimalNumberPattern}
+                placeholder="Numbers only"
+                title="Enter numbers only, with up to 2 decimal places."
+              />
+              <FieldHint>
+                Use numbers only, with up to 2 decimals. Do not include currency
+                symbols or percent signs.
+              </FieldHint>
+            </label>
+            <label className="block text-sm font-semibold">
+              RAG status
+              <SelectField
+                defaultValue="na"
+                name="ragStatus"
+                options={ragStatuses.map((status) => ({
+                  label: ragLabels[status],
+                  value: status,
+                }))}
+                placeholder="Choose status"
+              />
+              <FieldHint>
+                Staff can override the Auto-RAG suggestion when context warrants.
+              </FieldHint>
+            </label>
+          </div>
+          <label className="block text-sm font-semibold">
+            Notes / actions
+            <Textarea
+              className="mt-2 bg-amber-50"
+              maxLength={1200}
+              name="contextNotes"
+              placeholder="Achievements, issues, data quality notes..."
+            />
+            <FieldHint>Keep notes concise. Maximum 1,200 characters.</FieldHint>
+          </label>
+          <SubmitButton pendingText="Adding KPI...">Add KPI</SubmitButton>
+        </form>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
 function QuarterTrackerTab({
   data,
   quarter,
@@ -563,14 +807,22 @@ function QuarterTrackerTab({
 }) {
   return (
     <Card>
-      <CardHeader>
-        <CardTitle>KPI Staff Tracker — Q{quarter}</CardTitle>
-        <CardDescription>{getQuarterMonths(data, quarter)}</CardDescription>
-        <p className="text-sm text-slate-600">
-          Staff enter quarterly results from this table. Pale yellow fields are
-          edited through the row modal; grey cells are calculated automatically
-          from the KPI target and prior quarter.
-        </p>
+      <CardHeader className="gap-4 sm:flex-row sm:items-start sm:justify-between">
+        <div>
+          <CardTitle>KPI Staff Tracker — Q{quarter}</CardTitle>
+          <CardDescription className="mt-2">
+            {getQuarterMonths(data, quarter)}
+          </CardDescription>
+          <p className="mt-2 text-sm text-slate-600">
+            Staff enter quarterly results from this table. Pale yellow fields are
+            edited through modals; grey cells are calculated automatically from
+            the KPI target and prior quarter.
+          </p>
+        </div>
+        <AddQuarterResultDialog
+          dashboardId={data.dashboard.id}
+          quarter={quarter}
+        />
       </CardHeader>
       <CardContent>
         <div className="overflow-x-auto rounded-xl border">
@@ -614,179 +866,248 @@ function QuarterTrackerTab({
                     className="h-28 text-center text-slate-600"
                     colSpan={12}
                   >
-                    Add KPIs in Setup & Branding before entering quarterly
-                    results.
+                    Use the Add KPI button above to create the first Q{quarter}
+                    tracker row.
                   </TableCell>
                 </TableRow>
               ) : null}
               {data.kpis.map((kpi) => {
-              const result = getResult(data, kpi.id, quarter);
-              const percent = calculatePercentToTarget(
-                result?.currentValue ?? null,
-                kpi.targetNumber,
-              );
-              const previousResult =
-                quarter > 1
-                  ? getResult(data, kpi.id, (quarter - 1) as QuarterNumber)
-                  : null;
-              const trend = calculateTrend(
-                result?.currentValue ?? null,
-                previousResult?.currentValue ?? null,
-              );
-              const autoRag = suggestRagStatus(
-                result?.currentValue ?? null,
-                kpi.targetNumber,
-              );
-              const variance = calculateVariance(
-                result?.currentValue ?? null,
-                kpi.targetNumber,
-              );
-              const previousValue = previousResult?.currentValue ?? null;
+                const result = getResult(data, kpi.id, quarter);
+                const percent = calculatePercentToTarget(
+                  result?.currentValue ?? null,
+                  kpi.targetNumber,
+                );
+                const previousResult =
+                  quarter > 1
+                    ? getResult(data, kpi.id, (quarter - 1) as QuarterNumber)
+                    : null;
+                const previousValue = previousResult?.currentValue ?? null;
+                const trend = calculateTrend(
+                  result?.currentValue ?? null,
+                  previousValue,
+                );
+                const autoRag = suggestRagStatus(
+                  result?.currentValue ?? null,
+                  kpi.targetNumber,
+                );
+                const variance = calculateVariance(
+                  result?.currentValue ?? null,
+                  kpi.targetNumber,
+                );
 
-              return (
-                <TableRow key={kpi.id}>
-                  <TableCell className="font-semibold text-slate-700">
-                    {kpi.domain}
-                  </TableCell>
-                  <TableCell>
-                    <div className="font-semibold text-slate-950">{kpi.name}</div>
-                  </TableCell>
-                  <TableCell>{kpi.owner}</TableCell>
-                  <TableCell>
-                    <span className="font-semibold">{kpi.targetDisplay}</span>
-                    <div className="text-xs text-slate-500">
-                      Number: {formatNumber(kpi.targetNumber)}
-                    </div>
-                  </TableCell>
-                  <TableCell className="bg-amber-50/70 font-semibold">
-                    {formatNumber(result?.currentValue)}
-                  </TableCell>
-                  <TableCell className="bg-slate-50">
-                    {formatNumber(previousValue)}
-                  </TableCell>
-                  <TableCell className="bg-amber-50/70">
-                    <RagBadge status={result?.ragStatus ?? "na"} />
-                  </TableCell>
-                  <TableCell className="bg-slate-50">
-                    <TrendText trend={trend} />
-                  </TableCell>
-                  <TableCell className="bg-slate-50">
-                    {formatPercent(percent)}
-                  </TableCell>
-                  <TableCell className="bg-slate-50">
-                    {formatNumber(variance)}
-                  </TableCell>
-                  <TableCell className="bg-slate-50">
-                    <RagBadge status={autoRag} />
-                  </TableCell>
-                  <TableCell className="bg-amber-50/70">
-                    <div className="flex items-center justify-between gap-3">
-                      <span className="max-w-[220px] truncate text-sm text-slate-700">
-                        {result?.contextNotes || "—"}
-                      </span>
-                      <Dialog>
-                        <DialogTrigger asChild>
-                          <Button
-                            aria-label={`Edit Q${quarter} result for ${kpi.name}`}
-                            size="sm"
-                            variant="outline"
-                          >
-                            <Pencil className="h-4 w-4" />
-                            Edit
-                          </Button>
-                        </DialogTrigger>
-                        <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-2xl">
-                          <DialogHeader>
-                            <DialogTitle>
-                              Q{quarter} result: {kpi.name}
-                            </DialogTitle>
-                            <DialogDescription>
-                              Enter staff results for this quarter. Calculated
-                              values will update after saving.
-                            </DialogDescription>
-                          </DialogHeader>
-                          <form
-                            action={saveKpiQuarterResult}
-                            className="space-y-4"
-                          >
-                            <HiddenDashboard dashboardId={data.dashboard.id} />
-                            <input type="hidden" name="kpiId" value={kpi.id} />
-                            <input
-                              type="hidden"
-                              name="quarter"
-                              value={quarter}
-                            />
-                            <div className="grid gap-3 rounded-lg bg-slate-50 p-4 sm:grid-cols-2">
-                              <div>
-                                <p className="text-xs font-semibold uppercase tracking-[0.12em] text-slate-500">
-                                  Domain
-                                </p>
-                                <p className="font-semibold">{kpi.domain}</p>
-                              </div>
-                              <div>
-                                <p className="text-xs font-semibold uppercase tracking-[0.12em] text-slate-500">
-                                  Target
-                                </p>
-                                <p className="font-semibold">
-                                  {kpi.targetDisplay}
-                                </p>
-                              </div>
-                            </div>
-                            <label className="block text-sm font-semibold">
-                              Current value
-                              <Input
-                                className="mt-2 bg-amber-50"
-                                defaultValue={result?.currentValue ?? ""}
-                                inputMode="decimal"
-                                name="currentValue"
-                                pattern={decimalNumberPattern}
-                                placeholder="Numbers only"
-                                title="Enter numbers only, with up to 2 decimal places."
-                              />
-                              <FieldHint>
-                                Use numbers only, with up to 2 decimals. Do not
-                                include currency symbols or percent signs.
-                              </FieldHint>
-                            </label>
-                            <label className="block text-sm font-semibold">
-                              RAG status
-                              <SelectField
-                                defaultValue={result?.ragStatus ?? "na"}
-                                name="ragStatus"
-                                options={ragStatuses.map((status) => ({
-                                  label: ragLabels[status],
-                                  value: status,
-                                }))}
-                                placeholder="Choose status"
-                              />
-                              <FieldHint>
-                                Auto-RAG suggests {ragLabels[autoRag]}, but staff
-                                can override when context warrants.
-                              </FieldHint>
-                            </label>
-                            <label className="block text-sm font-semibold">
-                              Notes / actions
-                              <Textarea
-                                className="mt-2 bg-amber-50"
-                                defaultValue={result?.contextNotes ?? ""}
-                                maxLength={1200}
-                                name="contextNotes"
-                                placeholder="Achievements, issues, data quality notes..."
-                              />
-                              <FieldHint>
-                                Keep notes concise. Maximum 1,200 characters.
-                              </FieldHint>
-                            </label>
-                            <SubmitButton pendingText="Saving result...">
-                              Save result
-                            </SubmitButton>
-                          </form>
-                        </DialogContent>
-                      </Dialog>
-                    </div>
-                  </TableCell>
-                </TableRow>
-              );
+                return (
+                  <TableRow key={kpi.id}>
+                    <TableCell className="font-semibold text-slate-700">
+                      {kpi.domain}
+                    </TableCell>
+                    <TableCell>
+                      <div className="font-semibold text-slate-950">
+                        {kpi.name}
+                      </div>
+                    </TableCell>
+                    <TableCell>{kpi.owner || "—"}</TableCell>
+                    <TableCell>
+                      <span className="font-semibold">{kpi.targetDisplay}</span>
+                      <div className="text-xs text-slate-500">
+                        Number: {formatNumber(kpi.targetNumber)}
+                      </div>
+                    </TableCell>
+                    <TableCell className="bg-amber-50/70 font-semibold">
+                      {formatNumber(result?.currentValue)}
+                    </TableCell>
+                    <TableCell className="bg-slate-50">
+                      {formatNumber(previousValue)}
+                    </TableCell>
+                    <TableCell className="bg-amber-50/70">
+                      <RagBadge status={result?.ragStatus ?? "na"} />
+                    </TableCell>
+                    <TableCell className="bg-slate-50">
+                      <TrendText trend={trend} />
+                    </TableCell>
+                    <TableCell className="bg-slate-50">
+                      {formatPercent(percent)}
+                    </TableCell>
+                    <TableCell className="bg-slate-50">
+                      {formatNumber(variance)}
+                    </TableCell>
+                    <TableCell className="bg-slate-50">
+                      <RagBadge status={autoRag} />
+                    </TableCell>
+                    <TableCell className="bg-amber-50/70">
+                      <div className="flex items-center justify-between gap-3">
+                        <span className="max-w-[220px] truncate text-sm text-slate-700">
+                          {result?.contextNotes || "—"}
+                        </span>
+                        <div className="flex flex-wrap gap-2">
+                          <Dialog>
+                            <DialogTrigger asChild>
+                              <Button
+                                aria-label={`Edit Q${quarter} result for ${kpi.name}`}
+                                size="sm"
+                                variant="outline"
+                              >
+                                <Pencil className="h-4 w-4" />
+                                Edit
+                              </Button>
+                            </DialogTrigger>
+                            <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-3xl">
+                              <DialogHeader>
+                                <DialogTitle>
+                                  Q{quarter} result: {kpi.name}
+                                </DialogTitle>
+                                <DialogDescription>
+                                  Enter staff results for this quarter. Grey
+                                  fields are calculated automatically.
+                                </DialogDescription>
+                              </DialogHeader>
+                              <form
+                                action={saveKpiQuarterResult}
+                                className="space-y-4"
+                              >
+                                <HiddenDashboard dashboardId={data.dashboard.id} />
+                                <input type="hidden" name="kpiId" value={kpi.id} />
+                                <input
+                                  type="hidden"
+                                  name="quarter"
+                                  value={quarter}
+                                />
+                                <div className="grid gap-3 rounded-lg bg-slate-50 p-4 sm:grid-cols-3">
+                                  <div>
+                                    <p className="text-xs font-semibold uppercase tracking-[0.12em] text-slate-500">
+                                      Domain
+                                    </p>
+                                    <p className="font-semibold">{kpi.domain}</p>
+                                  </div>
+                                  <div>
+                                    <p className="text-xs font-semibold uppercase tracking-[0.12em] text-slate-500">
+                                      Owner
+                                    </p>
+                                    <p className="font-semibold">
+                                      {kpi.owner || "—"}
+                                    </p>
+                                  </div>
+                                  <div>
+                                    <p className="text-xs font-semibold uppercase tracking-[0.12em] text-slate-500">
+                                      Target
+                                    </p>
+                                    <p className="font-semibold">
+                                      {kpi.targetDisplay}
+                                    </p>
+                                  </div>
+                                </div>
+                                <CalculatedTrackerFields
+                                  autoRag={autoRag}
+                                  percent={percent}
+                                  previousValue={previousValue}
+                                  trend={trend}
+                                  variance={variance}
+                                />
+                                <div className="grid gap-4 sm:grid-cols-2">
+                                  <label className="block text-sm font-semibold">
+                                    Current value
+                                    <Input
+                                      className="mt-2 bg-amber-50"
+                                      defaultValue={result?.currentValue ?? ""}
+                                      inputMode="decimal"
+                                      name="currentValue"
+                                      pattern={decimalNumberPattern}
+                                      placeholder="Numbers only"
+                                      title="Enter numbers only, with up to 2 decimal places."
+                                    />
+                                    <FieldHint>
+                                      Use numbers only, with up to 2 decimals. Do
+                                      not include currency symbols or percent signs.
+                                    </FieldHint>
+                                  </label>
+                                  <label className="block text-sm font-semibold">
+                                    RAG status
+                                    <SelectField
+                                      defaultValue={result?.ragStatus ?? "na"}
+                                      name="ragStatus"
+                                      options={ragStatuses.map((status) => ({
+                                        label: ragLabels[status],
+                                        value: status,
+                                      }))}
+                                      placeholder="Choose status"
+                                    />
+                                    <FieldHint>
+                                      Auto-RAG suggests {ragLabels[autoRag]}, but
+                                      staff can override when context warrants.
+                                    </FieldHint>
+                                  </label>
+                                </div>
+                                <label className="block text-sm font-semibold">
+                                  Notes / actions
+                                  <Textarea
+                                    className="mt-2 bg-amber-50"
+                                    defaultValue={result?.contextNotes ?? ""}
+                                    maxLength={1200}
+                                    name="contextNotes"
+                                    placeholder="Achievements, issues, data quality notes..."
+                                  />
+                                  <FieldHint>
+                                    Keep notes concise. Maximum 1,200 characters.
+                                  </FieldHint>
+                                </label>
+                                <SubmitButton pendingText="Saving result...">
+                                  Save result
+                                </SubmitButton>
+                              </form>
+                            </DialogContent>
+                          </Dialog>
+                          {result ? (
+                            <Dialog>
+                              <DialogTrigger asChild>
+                                <Button
+                                  aria-label={`Clear Q${quarter} result for ${kpi.name}`}
+                                  size="sm"
+                                  variant="outline"
+                                >
+                                  <Trash2 className="h-4 w-4" />
+                                  Clear
+                                </Button>
+                              </DialogTrigger>
+                              <DialogContent className="sm:max-w-lg">
+                                <DialogHeader>
+                                  <DialogTitle>
+                                    Clear Q{quarter} result?
+                                  </DialogTitle>
+                                  <DialogDescription>
+                                    This removes the current value, RAG status,
+                                    and notes for &quot;{kpi.name}&quot; in Q{quarter}.
+                                    The KPI definition stays in place.
+                                  </DialogDescription>
+                                </DialogHeader>
+                                <form
+                                  action={deleteKpiQuarterResult}
+                                  className="flex flex-wrap gap-3"
+                                >
+                                  <HiddenDashboard dashboardId={data.dashboard.id} />
+                                  <input
+                                    type="hidden"
+                                    name="kpiId"
+                                    value={kpi.id}
+                                  />
+                                  <input
+                                    type="hidden"
+                                    name="quarter"
+                                    value={quarter}
+                                  />
+                                  <SubmitButton
+                                    pendingText="Clearing..."
+                                    variant="destructive"
+                                  >
+                                    Clear result
+                                  </SubmitButton>
+                                </form>
+                              </DialogContent>
+                            </Dialog>
+                          ) : null}
+                        </div>
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                );
               })}
             </TableBody>
           </Table>
@@ -1108,9 +1429,9 @@ export function KpiDashboardWorkspace({
               <p className="text-xs font-bold uppercase tracking-[0.16em] text-olea-green">
                 KPI Dashboard
               </p>
-              <h1 className="mt-2 text-3xl font-bold text-slate-950">
+              <h2 className="mt-2 text-3xl font-bold text-slate-950">
                 {data.dashboard.title}
-              </h1>
+              </h2>
               <p className="mt-2 text-slate-600">
                 {data.dashboard.organizationName} · Reporting year{" "}
                 {data.dashboard.reportingYear}

@@ -43,6 +43,21 @@ async function requireDashboardFromForm(formData: FormData) {
   return dashboard;
 }
 
+async function requireKpiFromForm(formData: FormData) {
+  const dashboard = await requireDashboardFromForm(formData);
+  const kpiId = assertUuid(getFormString(formData, "kpiId"), "KPI");
+  const { data, error } = await createAdminClient()
+    .from("kpi_definitions")
+    .select("id")
+    .eq("id", kpiId)
+    .eq("dashboard_id", dashboard.id)
+    .maybeSingle<{ id: string }>();
+
+  if (error) throw error;
+  if (!data) throw new Error("This KPI does not belong to the current workspace.");
+  return { dashboard, kpiId };
+}
+
 function finish(tab: string) {
   revalidatePath(KPI_PATH);
   redirect(`${KPI_PATH}?tab=${tab}`);
@@ -63,6 +78,14 @@ function parseOptionalDate(formData: FormData, key: string, label: string) {
     throw new Error(`${label} must use YYYY-MM-DD format.`);
   }
   return value;
+}
+
+function parseRequiredTargetNumber(formData: FormData) {
+  const targetNumber = parseRequiredNumber(formData, "targetNumber", "Target number");
+  if (targetNumber <= 0) {
+    throw new Error("Target number must be greater than zero.");
+  }
+  return targetNumber;
 }
 
 async function getNextSortOrder(
@@ -175,8 +198,13 @@ export async function resetKpiQuarterSettings(formData: FormData) {
   finish("settings");
 }
 
-export async function createKpiDefinition(formData: FormData) {
+export async function createKpiTrackerEntry(formData: FormData) {
   const dashboard = await requireDashboardFromForm(formData);
+  const quarter = Number(getFormString(formData, "quarter"));
+  if (![1, 2, 3, 4].includes(quarter)) {
+    throw new Error("Quarter is invalid.");
+  }
+
   const domain = parseRequiredText(formData, "domain", "Domain", 80);
   const name = parseRequiredText(formData, "name", "KPI name", 140);
   const owner = parseOptionalText(formData, "owner", "Owner", 100);
@@ -186,7 +214,98 @@ export async function createKpiDefinition(formData: FormData) {
     "Target display",
     60,
   );
-  const targetNumber = parseRequiredNumber(formData, "targetNumber", "Target number");
+  const targetNumber = parseRequiredTargetNumber(formData);
+  const baselineNumber = parseOptionalNumber(
+    formData,
+    "baselineNumber",
+    "Baseline number",
+  );
+  const outcomeArea = parseOptionalText(
+    formData,
+    "outcomeArea",
+    "Outcome/funder tag",
+    120,
+  );
+  const currentValue = parseOptionalNumber(
+    formData,
+    "currentValue",
+    "Current value",
+  );
+  const ragStatus = parseRagStatus(formData.get("ragStatus"));
+  const contextNotes = parseOptionalText(
+    formData,
+    "contextNotes",
+    "Context notes",
+    1200,
+  );
+
+  const supabase = createAdminClient();
+  const sortOrder = await getNextSortOrder(
+    supabase,
+    "kpi_definitions",
+    dashboard.id,
+  );
+
+  const { data, error } = await supabase
+    .from("kpi_definitions")
+    .insert({
+      dashboard_id: dashboard.id,
+      domain,
+      name,
+      owner,
+      target_display: targetDisplay,
+      target_number: targetNumber,
+      baseline_number: baselineNumber,
+      outcome_area: outcomeArea,
+      sort_order: sortOrder,
+    })
+    .select("id")
+    .single<{ id: string }>();
+
+  if (error) throw error;
+
+  const hasQuarterResult =
+    currentValue !== null || ragStatus !== "na" || contextNotes.length > 0;
+
+  if (hasQuarterResult) {
+    const { error: resultError } = await supabase
+      .from("kpi_quarter_results")
+      .insert({
+        kpi_id: data.id,
+        quarter,
+        current_value: currentValue,
+        rag_status: ragStatus,
+        context_notes: contextNotes,
+      });
+
+    if (resultError) {
+      const { error: cleanupError } = await supabase
+        .from("kpi_definitions")
+        .delete()
+        .eq("id", data.id);
+      if (cleanupError) {
+        throw new Error(
+          `KPI result could not be saved, and cleanup failed: ${cleanupError.message}`,
+        );
+      }
+      throw resultError;
+    }
+  }
+  finish(`q${quarter}`);
+}
+
+export async function updateKpiDefinition(formData: FormData) {
+  const { dashboard, kpiId } = await requireKpiFromForm(formData);
+  const domain = parseRequiredText(formData, "domain", "Domain", 80);
+  const name = parseRequiredText(formData, "name", "KPI name", 140);
+  const owner = parseOptionalText(formData, "owner", "Owner", 100);
+  const targetDisplay = parseRequiredText(
+    formData,
+    "targetDisplay",
+    "Target display",
+    60,
+  );
+  const targetNumber = parseRequiredTargetNumber(formData);
   const baselineNumber = parseOptionalNumber(
     formData,
     "baselineNumber",
@@ -199,44 +318,38 @@ export async function createKpiDefinition(formData: FormData) {
     120,
   );
 
-  const supabase = createAdminClient();
-  const sortOrder = await getNextSortOrder(
-    supabase,
-    "kpi_definitions",
-    dashboard.id,
-  );
-
-  const { error } = await supabase.from("kpi_definitions").insert({
-    dashboard_id: dashboard.id,
-    domain,
-    name,
-    owner,
-    target_display: targetDisplay,
-    target_number: targetNumber,
-    baseline_number: baselineNumber,
-    outcome_area: outcomeArea,
-    sort_order: sortOrder,
-  });
+  const { error } = await createAdminClient()
+    .from("kpi_definitions")
+    .update({
+      domain,
+      name,
+      owner,
+      target_display: targetDisplay,
+      target_number: targetNumber,
+      baseline_number: baselineNumber,
+      outcome_area: outcomeArea,
+    })
+    .eq("id", kpiId)
+    .eq("dashboard_id", dashboard.id);
 
   if (error) throw error;
   finish("setup");
 }
 
 export async function archiveKpiDefinition(formData: FormData) {
-  await requireDashboardFromForm(formData);
-  const kpiId = assertUuid(getFormString(formData, "kpiId"), "KPI");
+  const { dashboard, kpiId } = await requireKpiFromForm(formData);
   const { error } = await createAdminClient()
     .from("kpi_definitions")
     .update({ active: false })
-    .eq("id", kpiId);
+    .eq("id", kpiId)
+    .eq("dashboard_id", dashboard.id);
 
   if (error) throw error;
   finish("setup");
 }
 
 export async function saveKpiQuarterResult(formData: FormData) {
-  await requireDashboardFromForm(formData);
-  const kpiId = assertUuid(getFormString(formData, "kpiId"), "KPI");
+  const { kpiId } = await requireKpiFromForm(formData);
   const quarter = Number(getFormString(formData, "quarter"));
   if (![1, 2, 3, 4].includes(quarter)) {
     throw new Error("Quarter is invalid.");
@@ -270,9 +383,25 @@ export async function saveKpiQuarterResult(formData: FormData) {
   finish(`q${quarter}`);
 }
 
+export async function deleteKpiQuarterResult(formData: FormData) {
+  const { kpiId } = await requireKpiFromForm(formData);
+  const quarter = Number(getFormString(formData, "quarter"));
+  if (![1, 2, 3, 4].includes(quarter)) {
+    throw new Error("Quarter is invalid.");
+  }
+
+  const { error } = await createAdminClient()
+    .from("kpi_quarter_results")
+    .delete()
+    .eq("kpi_id", kpiId)
+    .eq("quarter", quarter);
+
+  if (error) throw error;
+  finish(`q${quarter}`);
+}
+
 export async function saveKpiBoardAssessment(formData: FormData) {
-  await requireDashboardFromForm(formData);
-  const kpiId = assertUuid(getFormString(formData, "kpiId"), "KPI");
+  const { kpiId } = await requireKpiFromForm(formData);
   const fullYearRag = parseRagStatus(formData.get("fullYearRag"));
   const boardNotes = parseOptionalText(formData, "boardNotes", "Board notes", 1200);
 
