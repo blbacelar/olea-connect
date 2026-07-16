@@ -3,6 +3,54 @@ import { AppShellPage } from "../pages/app-shell.page";
 import { TemplatesPage } from "../pages/templates.page";
 
 test.describe("@smoke @critical platform UI coverage gate", () => {
+  test("collapses and restores the desktop sidebar without breaking navigation", async ({
+    authenticatedMember,
+    page,
+  }) => {
+    const app = new AppShellPage(page);
+    const sidebar = page.getByTestId("app-sidebar");
+    const organizationName = sidebar.getByText(
+      authenticatedMember.organizationName,
+      { exact: true },
+    );
+
+    await app.openDashboard();
+    await app.expectSidebarExpanded();
+    await expect(organizationName).toBeVisible();
+    await page.getByRole("button", { name: "Collapse sidebar" }).focus();
+    await page.keyboard.press("Enter");
+    await app.expectSidebarCollapsed();
+    await expect(organizationName).toHaveCount(0);
+
+    const templatesLink = sidebar.getByRole("link", { name: "Templates" });
+    await expect(templatesLink).toBeVisible();
+    await templatesLink.focus();
+    await expect(page.getByTestId("sidebar-tooltip-templates")).toBeVisible();
+    await templatesLink.click();
+    await expect(page).toHaveURL(/\/templates$/);
+    await app.expectSidebarCollapsed();
+    await expect(templatesLink).toHaveAttribute("aria-label", "Templates");
+    await expect(templatesLink).toHaveAttribute("aria-current", "page");
+
+    await page.reload();
+    await app.expectSidebarCollapsed();
+    await expect(templatesLink).toHaveAttribute("aria-current", "page");
+
+    await page.getByRole("button", { name: "Expand sidebar" }).focus();
+    await page.keyboard.press("Enter");
+    await app.expectSidebarExpanded();
+    await expect(sidebar).toContainText("Templates");
+    await expect(templatesLink).toHaveAttribute("aria-current", "page");
+    await expect(organizationName).toBeVisible();
+
+    await page.setViewportSize({ width: 390, height: 844 });
+    await expect(sidebar).toBeHidden();
+    await page.getByRole("button", { name: "Open navigation" }).click();
+    await expect(
+      page.getByRole("button", { name: "Close navigation" }).nth(1),
+    ).toBeVisible();
+  });
+
   test("reaches the primary authenticated platform screens without forcing a new checkout", async ({
     authenticatedMember,
     page,

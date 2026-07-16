@@ -30,6 +30,40 @@ export class AppShellPage {
     expect(hasHorizontalOverflow).toBe(false);
   }
 
+  async collapseSidebar() {
+    await this.page
+      .getByRole("button", { name: "Collapse sidebar" })
+      .click();
+    await this.expectSidebarCollapsed();
+  }
+
+  async expandSidebar() {
+    await this.page
+      .getByRole("button", { name: "Expand sidebar" })
+      .click();
+    await this.expectSidebarExpanded();
+  }
+
+  async expectSidebarCollapsed() {
+    await expect(this.page.getByTestId("app-sidebar")).toHaveAttribute(
+      "data-state",
+      "collapsed",
+    );
+    await expect(
+      this.page.getByRole("button", { name: "Expand sidebar" }),
+    ).toBeVisible();
+  }
+
+  async expectSidebarExpanded() {
+    await expect(this.page.getByTestId("app-sidebar")).toHaveAttribute(
+      "data-state",
+      "expanded",
+    );
+    await expect(
+      this.page.getByRole("button", { name: "Collapse sidebar" }),
+    ).toBeVisible();
+  }
+
   async expectUnreadNotificationCount(count: number) {
     const label =
       count > 0 ? `Notifications (${count} unread)` : "Notifications";
