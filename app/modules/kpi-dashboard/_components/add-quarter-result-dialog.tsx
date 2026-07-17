@@ -59,7 +59,10 @@ export function AddQuarterResultDialog({
           <DialogTitle>Add KPI to Q{quarter}</DialogTitle>
           <DialogDescription>
             Define the KPI and enter the staff-reported result for this quarter.
-            The KPI will then appear in every tracker tab.
+            The KPI will appear in this quarter. Add it from another quarter when
+            you are ready to start tracking that quarter as well. Existing KPI
+            definitions are reused and remain unchanged; use the same shared
+            definition values, or edit the existing KPI row to change them.
           </DialogDescription>
         </DialogHeader>
         <form action={formAction} className="space-y-5">

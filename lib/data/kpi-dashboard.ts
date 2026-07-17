@@ -40,6 +40,11 @@ export type KpiQuarterResult = {
   contextNotes: string;
 };
 
+export type KpiQuarterAssignment = {
+  kpiId: string;
+  quarter: QuarterNumber;
+};
+
 export type KpiBoardAssessment = {
   id: string;
   kpiId: string;
@@ -80,6 +85,7 @@ export type KpiDashboardData = {
   quarters: QuarterMonthAssignment[];
   kpis: KpiDefinition[];
   results: KpiQuarterResult[];
+  assignments: KpiQuarterAssignment[];
   assessments: KpiBoardAssessment[];
   milestones: KpiMilestone[];
   risks: KpiRisk[];
@@ -120,6 +126,11 @@ type KpiQuarterResultRow = {
   current_value: number | string | null;
   rag_status: RagStatus;
   context_notes: string;
+};
+
+type KpiQuarterAssignmentRow = {
+  kpi_id: string;
+  quarter: number;
 };
 
 type KpiBoardAssessmentRow = {
@@ -336,7 +347,7 @@ export async function getKpiDashboardData(): Promise<KpiDashboardData> {
   const kpis = (kpisResult.data ?? []).map(mapKpi);
   const kpiIds = kpis.map((kpi) => kpi.id);
 
-  const [resultsResult, assessmentsResult] =
+  const [resultsResult, assignmentsResult, assessmentsResult] =
     kpiIds.length > 0
       ? await Promise.all([
           supabase
@@ -346,6 +357,12 @@ export async function getKpiDashboardData(): Promise<KpiDashboardData> {
             .order("quarter", { ascending: true })
             .returns<KpiQuarterResultRow[]>(),
           supabase
+            .from("kpi_quarter_assignments")
+            .select("kpi_id, quarter")
+            .in("kpi_id", kpiIds)
+            .order("quarter", { ascending: true })
+            .returns<KpiQuarterAssignmentRow[]>(),
+          supabase
             .from("kpi_board_assessments")
             .select("id, kpi_id, full_year_rag, board_notes")
             .in("kpi_id", kpiIds)
@@ -353,10 +370,12 @@ export async function getKpiDashboardData(): Promise<KpiDashboardData> {
         ])
       : [
           { data: [] as KpiQuarterResultRow[], error: null },
+          { data: [] as KpiQuarterAssignmentRow[], error: null },
           { data: [] as KpiBoardAssessmentRow[], error: null },
         ];
 
   if (resultsResult.error) throw resultsResult.error;
+  if (assignmentsResult.error) throw assignmentsResult.error;
   if (assessmentsResult.error) throw assessmentsResult.error;
 
   const annualSummaryRow = annualSummaryResult.data;
@@ -366,6 +385,10 @@ export async function getKpiDashboardData(): Promise<KpiDashboardData> {
     quarters: (quartersResult.data ?? []).map(mapQuarter),
     kpis,
     results: (resultsResult.data ?? []).map(mapResult),
+    assignments: (assignmentsResult.data ?? []).map((row) => ({
+      kpiId: row.kpi_id,
+      quarter: row.quarter as QuarterNumber,
+    })),
     assessments: (assessmentsResult.data ?? []).map(mapAssessment),
     milestones: (milestonesResult.data ?? []).map((row) => ({
       id: row.id,

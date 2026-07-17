@@ -271,59 +271,26 @@ async function saveKpiTrackerEntry(formData: FormData) {
     1200,
   );
 
-  const supabase = createAdminClient();
-  const sortOrder = await getNextSortOrder(
-    supabase,
-    "kpi_definitions",
-    dashboard.id,
-  );
-
-  const { data, error } = await supabase
-    .from("kpi_definitions")
-    .insert({
-      dashboard_id: dashboard.id,
-      domain,
-      name,
-      owner,
+  const { data, error } = await createAdminClient().rpc(
+    "create_kpi_tracker_entry",
+    {
+      target_dashboard_id: dashboard.id,
+      target_quarter: quarter,
+      target_domain: domain,
+      target_name: name,
+      target_owner: owner,
       target_display: targetDisplay,
       target_number: targetNumber,
-      baseline_number: baselineNumber,
-      outcome_area: outcomeArea,
-      sort_order: sortOrder,
-    })
-    .select("id")
-    .single<{ id: string }>();
+      target_baseline_number: baselineNumber,
+      target_outcome_area: outcomeArea,
+      target_current_value: currentValue,
+      target_rag_status: ragStatus,
+      target_context_notes: contextNotes,
+    },
+  );
 
   if (error) throw error;
-
-  const hasQuarterResult =
-    currentValue !== null || ragStatus !== "na" || contextNotes.length > 0;
-
-  if (hasQuarterResult) {
-    const { error: resultError } = await supabase
-      .from("kpi_quarter_results")
-      .insert({
-        kpi_id: data.id,
-        quarter,
-        current_value: currentValue,
-        rag_status: ragStatus,
-        context_notes: contextNotes,
-      });
-
-    if (resultError) {
-      const { error: cleanupError } = await supabase
-        .from("kpi_definitions")
-        .delete()
-        .eq("id", data.id);
-      if (cleanupError) {
-        throw new Error(
-          `KPI result could not be saved, and cleanup failed: ${cleanupError.message}`,
-        );
-      }
-      throw resultError;
-    }
-  }
-  return quarter;
+  return data;
 }
 
 export async function createKpiTrackerEntry(formData: FormData) {
@@ -390,6 +357,18 @@ export async function saveKpiQuarterResult(formData: FormData) {
   );
 
   const supabase = createAdminClient();
+  const { data: assignment, error: assignmentError } = await supabase
+    .from("kpi_quarter_assignments")
+    .select("kpi_id")
+    .eq("kpi_id", kpiId)
+    .eq("quarter", quarter)
+    .maybeSingle<{ kpi_id: string }>();
+
+  if (assignmentError) throw assignmentError;
+  if (!assignment) {
+    throw new Error(`This KPI is not tracked in Q${quarter}. Add it first.`);
+  }
+
   const { error: definitionError } = await supabase
     .from("kpi_definitions")
     .update({

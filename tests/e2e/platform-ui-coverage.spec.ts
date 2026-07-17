@@ -143,6 +143,97 @@ test.describe("@smoke @critical platform UI coverage gate", () => {
       .first();
     await expect(createdKpiRow).toBeVisible({ timeout: 15000 });
     await expect(addKpiDialog).toBeHidden();
+    await page.getByRole("tab", { name: "Q2 Tracker" }).click();
+    await expect(
+      page.getByRole("heading", { name: /KPI Staff Tracker — Q2/i }),
+    ).toBeVisible();
+    await expect(
+      page.getByRole("row").filter({ hasText: kpiName }),
+    ).toHaveCount(0);
+    await expect(page.getByRole("button", { name: "Add KPI to Q2" })).toBeVisible();
+    await page.getByRole("button", { name: "Add KPI to Q2" }).click();
+    const addQ2KpiDialog = page.getByRole("dialog", { name: "Add KPI to Q2" });
+    await addQ2KpiDialog.getByLabel("Domain").fill("Programs");
+    await addQ2KpiDialog.getByLabel("KPI name").fill(kpiName);
+    await addQ2KpiDialog.getByLabel("Owner").fill("Executive Director");
+    await addQ2KpiDialog.getByLabel("Target as displayed").fill(">= 80%");
+    await addQ2KpiDialog.getByLabel("Target as number").fill("80");
+    await addQ2KpiDialog.getByLabel("Current value").fill("75");
+    await addQ2KpiDialog.getByRole("button", { name: "Add KPI" }).click();
+    await expect(addQ2KpiDialog).toBeHidden();
+    await expect(
+      page.getByRole("row").filter({ hasText: kpiName }),
+    ).toHaveCount(1);
+    await expect(
+      page.getByRole("row").filter({ hasText: kpiName }),
+    ).toContainText("75");
+    await page.reload();
+    await expect(
+      page.getByRole("row").filter({ hasText: kpiName }),
+    ).toContainText("75");
+    await page.getByRole("button", { name: "Add KPI to Q2" }).click();
+    const duplicateQ2Dialog = page.getByRole("dialog", { name: "Add KPI to Q2" });
+    await duplicateQ2Dialog.getByLabel("Domain").fill("programs");
+    await duplicateQ2Dialog.getByLabel("KPI name").fill(kpiName);
+    await duplicateQ2Dialog.getByLabel("Owner").fill("Changed owner");
+    await duplicateQ2Dialog.getByLabel("Target as displayed").fill(">= 90%");
+    await duplicateQ2Dialog.getByLabel("Target as number").fill("90");
+    await duplicateQ2Dialog.getByLabel("Current value").fill("10");
+    await duplicateQ2Dialog.getByRole("button", { name: "Add KPI" }).click();
+    await expect(
+      duplicateQ2Dialog.getByText(/already exists|already tracked in Q2/i),
+    ).toBeVisible();
+    await expect(
+      page.getByRole("row").filter({ hasText: kpiName }),
+    ).toContainText("75");
+    await duplicateQ2Dialog.press("Escape");
+    for (const [quarter, currentValue] of [
+      [3, "66"],
+      [4, "60"],
+    ] as const) {
+      await page.getByRole("tab", { name: `Q${quarter} Tracker` }).click();
+      await expect(
+        page.getByRole("heading", { name: new RegExp(`KPI Staff Tracker — Q${quarter}`, "i") }),
+      ).toBeVisible();
+      await expect(
+        page.getByRole("row").filter({ hasText: kpiName }),
+      ).toHaveCount(0);
+      await page.getByRole("button", { name: `Add KPI to Q${quarter}` }).click();
+      const quarterDialog = page.getByRole("dialog", {
+        name: `Add KPI to Q${quarter}`,
+      });
+      await quarterDialog.getByLabel("Domain").fill("Programs");
+      await quarterDialog.getByLabel("KPI name").fill(kpiName);
+      await quarterDialog.getByLabel("Target as displayed").fill(">= 80%");
+      await quarterDialog.getByLabel("Target as number").fill("80");
+      await quarterDialog.getByLabel("Current value").fill(currentValue);
+      await quarterDialog.getByRole("button", { name: "Add KPI" }).click();
+      await expect(quarterDialog).toBeHidden();
+      await expect(
+        page.getByRole("row").filter({ hasText: kpiName }),
+      ).toHaveCount(1);
+      await expect(
+        page.getByRole("row").filter({ hasText: kpiName }),
+      ).toContainText(currentValue);
+    }
+    await page.reload();
+    for (const [quarter, currentValue] of [
+      [1, "72"],
+      [2, "75"],
+      [3, "66"],
+      [4, "60"],
+    ] as const) {
+      await page.getByRole("tab", { name: `Q${quarter} Tracker` }).click();
+      await expect(
+        page.getByRole("row").filter({ hasText: kpiName }),
+      ).toHaveCount(1);
+      await expect(
+        page.getByRole("row").filter({ hasText: kpiName }),
+      ).toContainText(currentValue);
+    }
+    await page.getByRole("tab", { name: "Q1 Tracker" }).click();
+    await expect(createdKpiRow).toBeVisible();
+    await expect(createdKpiRow).toContainText("72");
     const actionCell = createdKpiRow.getByRole("cell").last();
     await expect(
       page.getByRole("columnheader", { name: "Actions" }),

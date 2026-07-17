@@ -630,6 +630,13 @@ function QuarterTrackerTab({
   data: KpiDashboardData;
   quarter: QuarterNumber;
 }) {
+  const quarterKpis = data.kpis.filter((kpi) =>
+    data.assignments.some(
+      (assignment) =>
+        assignment.kpiId === kpi.id && assignment.quarter === quarter,
+    ),
+  );
+
   return (
     <Card>
       <CardHeader className="gap-4 sm:flex-row sm:items-start sm:justify-between">
@@ -739,7 +746,7 @@ function QuarterTrackerTab({
               </TableRow>
             </TableHeader>
             <TableBody>
-              {data.kpis.length === 0 ? (
+              {quarterKpis.length === 0 ? (
                 <TableRow>
                   <TableCell
                     className="h-28 text-center text-slate-600"
@@ -750,7 +757,7 @@ function QuarterTrackerTab({
                   </TableCell>
                 </TableRow>
               ) : null}
-              {data.kpis.map((kpi) => {
+              {quarterKpis.map((kpi) => {
                 const result = getResult(data, kpi.id, quarter);
                 const percent = calculatePercentToTarget(
                   result?.currentValue ?? null,
@@ -835,8 +842,9 @@ function QuarterTrackerTab({
                               <DialogTitle>Edit KPI: {kpi.name}</DialogTitle>
                               <DialogDescription>
                                 Update the KPI definition and Q{quarter} staff
-                                result in one place. Grey fields are calculated
-                                automatically.
+                                result in one place. Definition changes apply to
+                                every assigned quarter. Grey fields are
+                                calculated automatically.
                               </DialogDescription>
                             </DialogHeader>
                             <form
