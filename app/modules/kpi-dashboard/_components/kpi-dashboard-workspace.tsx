@@ -4,7 +4,6 @@ import {
   BarChart3,
   ClipboardList,
   Pencil,
-  Plus,
   Save,
   Settings,
   Trash2,
@@ -14,7 +13,6 @@ import * as React from "react";
 
 import {
   archiveKpiDefinition,
-  createKpiTrackerEntry,
   deleteKpiQuarterResult,
   resetKpiQuarterSettings,
   saveKpiAnnualSummary,
@@ -29,6 +27,7 @@ import {
   MilestoneDialogAction,
   RiskDialogAction,
 } from "@/app/modules/kpi-dashboard/_components/milestones-risks-actions";
+import { AddQuarterResultDialog } from "@/app/modules/kpi-dashboard/_components/add-quarter-result-dialog";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -581,90 +580,6 @@ function KpiDefinitionFields({ kpi }: { kpi?: KpiDefinition }) {
   );
 }
 
-function AddQuarterResultDialog({
-  dashboardId,
-  quarter,
-}: {
-  dashboardId: string;
-  quarter: QuarterNumber;
-}) {
-  return (
-    <Dialog>
-      <DialogTrigger asChild>
-        <Button>
-          <Plus className="h-4 w-4" />
-          Add KPI to Q{quarter}
-        </Button>
-      </DialogTrigger>
-      <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-4xl">
-        <DialogHeader>
-          <DialogTitle>Add KPI to Q{quarter}</DialogTitle>
-          <DialogDescription>
-            Define the KPI and enter the staff-reported result for this quarter.
-            The KPI will then appear in every tracker tab.
-          </DialogDescription>
-        </DialogHeader>
-        <form action={createKpiTrackerEntry} className="space-y-5">
-          <HiddenDashboard dashboardId={dashboardId} />
-          <input type="hidden" name="quarter" value={quarter} />
-          <KpiDefinitionFields />
-          <div className="rounded-lg bg-slate-50 p-4 text-sm text-slate-600">
-            <p className="font-semibold text-slate-900">Calculated fields</p>
-            <p className="mt-1">
-              Prior quarter, trend, % to target, variance, and Auto-RAG are
-              calculated automatically after this result is saved.
-            </p>
-          </div>
-          <div className="grid gap-4 sm:grid-cols-2">
-            <label className="block text-sm font-semibold">
-              Current value
-              <Input
-                className="mt-2 bg-amber-50"
-                inputMode="decimal"
-                name="currentValue"
-                pattern={decimalNumberPattern}
-                placeholder="Numbers only"
-                title="Enter numbers only, with up to 2 decimal places."
-              />
-              <FieldHint>
-                Use numbers only, with up to 2 decimals. Do not include currency
-                symbols or percent signs.
-              </FieldHint>
-            </label>
-            <label className="block text-sm font-semibold">
-              RAG status
-              <SelectField
-                className="mt-2"
-                defaultValue="na"
-                name="ragStatus"
-                options={ragStatuses.map((status) => ({
-                  label: ragLabels[status],
-                  value: status,
-                }))}
-                placeholder="Choose status"
-              />
-              <FieldHint>
-                Staff can override the Auto-RAG suggestion when context warrants.
-              </FieldHint>
-            </label>
-          </div>
-          <label className="block text-sm font-semibold">
-            Notes / actions
-            <Textarea
-              className="mt-2 bg-amber-50"
-              maxLength={1200}
-              name="contextNotes"
-              placeholder="Achievements, issues, data quality notes..."
-            />
-            <FieldHint>Keep notes concise. Maximum 1,200 characters.</FieldHint>
-          </label>
-          <SubmitButton pendingText="Adding KPI...">Add KPI</SubmitButton>
-        </form>
-      </DialogContent>
-    </Dialog>
-  );
-}
-
 function ArchiveKpiDefinitionDialog({
   dashboardId,
   kpi,
@@ -730,9 +645,62 @@ function QuarterTrackerTab({
           </p>
         </div>
         <AddQuarterResultDialog
-          dashboardId={data.dashboard.id}
           quarter={quarter}
-        />
+        >
+          <HiddenDashboard dashboardId={data.dashboard.id} />
+          <input type="hidden" name="quarter" value={quarter} />
+          <KpiDefinitionFields />
+          <div className="rounded-lg bg-slate-50 p-4 text-sm text-slate-600">
+            <p className="font-semibold text-slate-900">Calculated fields</p>
+            <p className="mt-1">
+              Prior quarter, trend, % to target, variance, and Auto-RAG are
+              calculated automatically after this result is saved.
+            </p>
+          </div>
+          <div className="grid gap-4 sm:grid-cols-2">
+            <label className="block text-sm font-semibold">
+              Current value
+              <Input
+                className="mt-2 bg-amber-50"
+                inputMode="decimal"
+                name="currentValue"
+                pattern={decimalNumberPattern}
+                placeholder="Numbers only"
+                title="Enter numbers only, with up to 2 decimal places."
+              />
+              <FieldHint>
+                Use numbers only, with up to 2 decimals. Do not include currency
+                symbols or percent signs.
+              </FieldHint>
+            </label>
+            <label className="block text-sm font-semibold">
+              RAG status
+              <SelectField
+                className="mt-2"
+                defaultValue="na"
+                name="ragStatus"
+                options={ragStatuses.map((status) => ({
+                  label: ragLabels[status],
+                  value: status,
+                }))}
+                placeholder="Choose status"
+              />
+              <FieldHint>
+                Staff can override the Auto-RAG suggestion when context warrants.
+              </FieldHint>
+            </label>
+          </div>
+          <label className="block text-sm font-semibold">
+            Notes / actions
+            <Textarea
+              className="mt-2 bg-amber-50"
+              maxLength={1200}
+              name="contextNotes"
+              placeholder="Achievements, issues, data quality notes..."
+            />
+            <FieldHint>Keep notes concise. Maximum 1,200 characters.</FieldHint>
+          </label>
+        </AddQuarterResultDialog>
       </CardHeader>
       <CardContent>
         <div className="overflow-x-auto rounded-xl border">

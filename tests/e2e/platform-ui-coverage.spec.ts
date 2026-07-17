@@ -142,7 +142,6 @@ test.describe("@smoke @critical platform UI coverage gate", () => {
       .filter({ hasText: kpiName })
       .first();
     await expect(createdKpiRow).toBeVisible({ timeout: 15000 });
-    await page.keyboard.press("Escape");
     await expect(addKpiDialog).toBeHidden();
     const actionCell = createdKpiRow.getByRole("cell").last();
     await expect(

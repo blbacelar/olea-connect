@@ -242,7 +242,7 @@ export async function resetKpiQuarterSettings(formData: FormData) {
   finish("settings");
 }
 
-export async function createKpiTrackerEntry(formData: FormData) {
+async function saveKpiTrackerEntry(formData: FormData) {
   const dashboard = await requireDashboardFromForm(formData);
   const quarter = Number(getFormString(formData, "quarter"));
   if (![1, 2, 3, 4].includes(quarter)) {
@@ -323,7 +323,24 @@ export async function createKpiTrackerEntry(formData: FormData) {
       throw resultError;
     }
   }
+  return quarter;
+}
+
+export async function createKpiTrackerEntry(formData: FormData) {
+  const quarter = await saveKpiTrackerEntry(formData);
   finish(`q${quarter}`);
+}
+
+export async function createKpiTrackerEntryDialog(
+  _previousState: KpiDialogActionState,
+  formData: FormData,
+) {
+  try {
+    const quarter = await saveKpiTrackerEntry(formData);
+    return dialogSuccess(`KPI added to Q${quarter}.`);
+  } catch (error) {
+    return { message: toDialogError(error), status: "error" as const };
+  }
 }
 
 export async function archiveKpiDefinition(formData: FormData) {
