@@ -69,11 +69,14 @@ function finish(tab: string) {
 
 function toDialogError(error: unknown) {
   if (error instanceof Error) return error.message;
+  if (error && typeof error === "object" && "message" in error) {
+    const message = (error as { message: unknown }).message;
+    if (typeof message === "string") return message;
+  }
   return "We could not save this item. Please try again.";
 }
 
 function dialogSuccess(message: string): KpiDialogActionState {
-  revalidatePath(KPI_PATH);
   return { message, status: "success" };
 }
 
@@ -306,6 +309,7 @@ export async function createKpiTrackerEntryDialog(
     const quarter = await saveKpiTrackerEntry(formData);
     return dialogSuccess(`KPI added to Q${quarter}.`);
   } catch (error) {
+    console.error("[kpi-dashboard] create tracker entry failed", error);
     return { message: toDialogError(error), status: "error" as const };
   }
 }

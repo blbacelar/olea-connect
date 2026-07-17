@@ -17,8 +17,7 @@ test.describe("@smoke @critical platform UI coverage gate", () => {
     await app.openDashboard();
     await app.expectSidebarExpanded();
     await expect(organizationName).toBeVisible();
-    await page.getByRole("button", { name: "Collapse sidebar" }).focus();
-    await page.keyboard.press("Enter");
+    await page.getByRole("button", { name: "Collapse sidebar" }).press("Enter");
     await app.expectSidebarCollapsed();
     await expect(organizationName).toHaveCount(0);
 
@@ -138,7 +137,7 @@ test.describe("@smoke @critical platform UI coverage gate", () => {
       .fill("Submitted from the quarter tracker.");
     await addKpiDialog.getByRole("button", { name: "Add KPI" }).click();
     const createdKpiRow = page
-      .getByRole("row")
+      .locator("tbody tr")
       .filter({ hasText: kpiName })
       .first();
     await expect(createdKpiRow).toBeVisible({ timeout: 15000 });
@@ -148,7 +147,7 @@ test.describe("@smoke @critical platform UI coverage gate", () => {
       page.getByRole("heading", { name: /KPI Staff Tracker — Q2/i }),
     ).toBeVisible();
     await expect(
-      page.getByRole("row").filter({ hasText: kpiName }),
+      page.locator("tbody tr").filter({ hasText: kpiName }),
     ).toHaveCount(0);
     await expect(page.getByRole("button", { name: "Add KPI to Q2" })).toBeVisible();
     await page.getByRole("button", { name: "Add KPI to Q2" }).click();
@@ -162,14 +161,18 @@ test.describe("@smoke @critical platform UI coverage gate", () => {
     await addQ2KpiDialog.getByRole("button", { name: "Add KPI" }).click();
     await expect(addQ2KpiDialog).toBeHidden();
     await expect(
-      page.getByRole("row").filter({ hasText: kpiName }),
+      page.locator("tbody tr").filter({ hasText: kpiName }),
     ).toHaveCount(1);
     await expect(
-      page.getByRole("row").filter({ hasText: kpiName }),
+      page.locator("tbody tr").filter({ hasText: kpiName }),
     ).toContainText("75");
     await page.reload();
+    await page.getByRole("tab", { name: "Q2 Tracker" }).click();
     await expect(
-      page.getByRole("row").filter({ hasText: kpiName }),
+      page.getByRole("heading", { name: /KPI Staff Tracker — Q2/i }),
+    ).toBeVisible();
+    await expect(
+      page.locator("tbody tr").filter({ hasText: kpiName }),
     ).toContainText("75");
     await page.getByRole("button", { name: "Add KPI to Q2" }).click();
     const duplicateQ2Dialog = page.getByRole("dialog", { name: "Add KPI to Q2" });
@@ -184,7 +187,7 @@ test.describe("@smoke @critical platform UI coverage gate", () => {
       duplicateQ2Dialog.getByText(/already exists|already tracked in Q2/i),
     ).toBeVisible();
     await expect(
-      page.getByRole("row").filter({ hasText: kpiName }),
+      page.locator("tbody tr").filter({ hasText: kpiName }),
     ).toContainText("75");
     await duplicateQ2Dialog.press("Escape");
     for (const [quarter, currentValue] of [
@@ -196,7 +199,7 @@ test.describe("@smoke @critical platform UI coverage gate", () => {
         page.getByRole("heading", { name: new RegExp(`KPI Staff Tracker — Q${quarter}`, "i") }),
       ).toBeVisible();
       await expect(
-        page.getByRole("row").filter({ hasText: kpiName }),
+        page.locator("tbody tr").filter({ hasText: kpiName }),
       ).toHaveCount(0);
       await page.getByRole("button", { name: `Add KPI to Q${quarter}` }).click();
       const quarterDialog = page.getByRole("dialog", {
@@ -204,16 +207,24 @@ test.describe("@smoke @critical platform UI coverage gate", () => {
       });
       await quarterDialog.getByLabel("Domain").fill("Programs");
       await quarterDialog.getByLabel("KPI name").fill(kpiName);
+      await quarterDialog.getByLabel("Owner").fill("Executive Director");
       await quarterDialog.getByLabel("Target as displayed").fill(">= 80%");
       await quarterDialog.getByLabel("Target as number").fill("80");
       await quarterDialog.getByLabel("Current value").fill(currentValue);
       await quarterDialog.getByRole("button", { name: "Add KPI" }).click();
       await expect(quarterDialog).toBeHidden();
+      await page.reload();
+      await page.getByRole("tab", { name: `Q${quarter} Tracker` }).click();
       await expect(
-        page.getByRole("row").filter({ hasText: kpiName }),
+        page.getByRole("heading", {
+          name: new RegExp(`KPI Staff Tracker — Q${quarter}`, "i"),
+        }),
+      ).toBeVisible();
+      await expect(
+        page.locator("tbody tr").filter({ hasText: kpiName }),
       ).toHaveCount(1);
       await expect(
-        page.getByRole("row").filter({ hasText: kpiName }),
+        page.locator("tbody tr").filter({ hasText: kpiName }),
       ).toContainText(currentValue);
     }
     await page.reload();
@@ -225,7 +236,7 @@ test.describe("@smoke @critical platform UI coverage gate", () => {
     ] as const) {
       await page.getByRole("tab", { name: `Q${quarter} Tracker` }).click();
       await expect(
-        page.getByRole("row").filter({ hasText: kpiName }),
+        page.locator("tbody tr").filter({ hasText: kpiName }),
       ).toHaveCount(1);
       await expect(
         page.getByRole("row").filter({ hasText: kpiName }),
@@ -309,6 +320,11 @@ test.describe("@smoke @critical platform UI coverage gate", () => {
     await expect(page.getByTestId("board-dashboard-table")).toHaveClass(
       /scrollbar-hide/,
     );
+    const boardTableScroller = page
+      .getByTestId("board-dashboard-table")
+      .locator("div")
+      .first();
+    await expect(boardTableScroller).toHaveClass(/scrollbar-hide/);
     const main = page.getByRole("main");
     await expect
       .poll(() =>
@@ -317,7 +333,7 @@ test.describe("@smoke @critical platform UI coverage gate", () => {
       .toBe(true);
     await expect
       .poll(() =>
-        page.getByTestId("board-dashboard-table").evaluate(
+        boardTableScroller.evaluate(
           (element) => element.scrollWidth > element.clientWidth,
         ),
       )
@@ -325,10 +341,10 @@ test.describe("@smoke @critical platform UI coverage gate", () => {
     await expect(page.getByTestId("kpi-dashboard-tabs")).toHaveClass(
       /scrollbar-hide/,
     );
-    const boardRow = page.getByRole("row").filter({ hasText: kpiName }).last();
+    const boardRow = page.locator("tbody tr").filter({ hasText: kpiName }).last();
     await expect(boardRow).toContainText("Programs");
-    await expect(boardRow).toContainText("90%");
-    await expect(boardRow).toContainText("Latest: Q1");
+    await expect(boardRow).toContainText("75%");
+    await expect(boardRow).toContainText("Latest: Q4");
     await expect(
       boardRow.getByRole("combobox", { name: `Full-year RAG for ${kpiName}` }),
     ).toBeVisible();

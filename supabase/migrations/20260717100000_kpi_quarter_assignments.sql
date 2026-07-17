@@ -100,7 +100,7 @@ begin
        or target_definition.target_number is distinct from target_number
        or target_definition.baseline_number is distinct from target_baseline_number
        or coalesce(target_definition.outcome_area, '') is distinct from coalesce(target_outcome_area, '') then
-      raise exception 'An active KPI with this domain and name already exists. Use its existing definition values before adding it to Q%.'
+      raise exception 'An active KPI with this domain and name already exists. Use its existing definition values before adding it to Q%.', target_quarter
         using errcode = '23505';
     end if;
   else

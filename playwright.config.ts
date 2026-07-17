@@ -1,4 +1,7 @@
 import { defineConfig, devices } from "@playwright/test";
+import { loadEnvConfig } from "@next/env";
+
+loadEnvConfig(process.cwd());
 
 const localBaseUrl = "http://127.0.0.1:3011";
 const baseURL = process.env.PLAYWRIGHT_BASE_URL ?? localBaseUrl;
