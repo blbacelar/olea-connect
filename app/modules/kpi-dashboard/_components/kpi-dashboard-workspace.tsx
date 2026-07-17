@@ -994,7 +994,10 @@ function BoardDashboardTab({ data }: { data: KpiDashboardData }) {
                 track, N/A = not enough data. Trend compares each quarter with
                 the prior quarter when data is available.
               </p>
-              <div className="overflow-x-auto rounded-xl border">
+              <div
+                className="scrollbar-hide overflow-x-auto rounded-xl border"
+                data-testid="board-dashboard-table"
+              >
                 <Table className="min-w-[1680px]">
                   <caption className="sr-only">
                     Full-year KPI results by quarter

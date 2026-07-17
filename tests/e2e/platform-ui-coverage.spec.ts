@@ -215,6 +215,9 @@ test.describe("@smoke @critical platform UI coverage gate", () => {
     await expect(
       page.getByRole("columnheader", { name: "Full-year RAG" }),
     ).toBeVisible();
+    await expect(page.getByTestId("board-dashboard-table")).toHaveClass(
+      /scrollbar-hide/,
+    );
     const boardRow = page.getByRole("row").filter({ hasText: kpiName }).last();
     await expect(boardRow).toContainText("Programs");
     await expect(boardRow).toContainText("90%");
