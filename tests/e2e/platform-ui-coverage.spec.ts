@@ -309,6 +309,19 @@ test.describe("@smoke @critical platform UI coverage gate", () => {
     await expect(page.getByTestId("board-dashboard-table")).toHaveClass(
       /scrollbar-hide/,
     );
+    const main = page.getByRole("main");
+    await expect
+      .poll(() =>
+        main.evaluate((element) => element.scrollWidth <= element.clientWidth),
+      )
+      .toBe(true);
+    await expect
+      .poll(() =>
+        page.getByTestId("board-dashboard-table").evaluate(
+          (element) => element.scrollWidth > element.clientWidth,
+        ),
+      )
+      .toBe(true);
     await expect(page.getByTestId("kpi-dashboard-tabs")).toHaveClass(
       /scrollbar-hide/,
     );

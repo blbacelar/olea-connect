@@ -74,7 +74,7 @@ export function AppShell({ children }: { children: ReactNode }) {
       >
         <Header />
         <Breadcrumbs />
-        <main className="flex-1 overflow-y-auto">
+        <main className="min-w-0 flex-1 overflow-x-hidden overflow-y-auto">
           <div className="mx-auto max-w-[1280px] p-4 md:p-8">{children}</div>
         </main>
       </div>
