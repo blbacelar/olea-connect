@@ -1437,7 +1437,10 @@ export function KpiDashboardWorkspace({
       </Card>
 
       <Tabs defaultValue={safeTab}>
-        <div className="overflow-x-auto rounded-xl border bg-white p-2 shadow-soft">
+        <div
+          className="scrollbar-hide overflow-x-auto rounded-xl border bg-white p-2 shadow-soft"
+          data-testid="kpi-dashboard-tabs"
+        >
           <TabsList className="h-auto min-w-max justify-start gap-1 bg-olea-light/70 p-1">
             {tabOptions.map((tab) => (
               <TabsTrigger
