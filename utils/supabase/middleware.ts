@@ -13,6 +13,7 @@ import {
 
 const publicPagePaths = new Set([
   "/",
+  "/sponsorship",
   "/login",
   "/reset-password",
   "/opengraph-image",

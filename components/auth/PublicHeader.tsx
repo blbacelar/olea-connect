@@ -23,6 +23,7 @@ export function PublicHeader({ minimal = false }: { minimal?: boolean }) {
               <Link href="/#how-it-works">How it works</Link>
               <Link href="/#plans">Pricing</Link>
               <Link href="/#faq">FAQ</Link>
+              <Link href="/sponsorship">Sponsorship</Link>
               <Link href="/login">Login</Link>
             </nav>
             <Button asChild>

@@ -15,6 +15,7 @@ import { cn } from "@/lib/utils";
 
 const publicRoutes = [
   "/",
+  "/sponsorship",
   "/login",
   "/reset-password",
   "/update-password",

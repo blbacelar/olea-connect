@@ -25,7 +25,7 @@ Browser
 `app/` contains both pages and route handlers:
 
 - Public marketing/auth routes: `/`, `/login`, `/signup`, `/reset-password`,
-  `/verify-email`, `/update-password`, `/auth/*`.
+  `/verify-email`, `/update-password`, `/sponsorship`, `/auth/*`.
 - Member routes: `/dashboard`, `/templates`, `/team`, `/subscription`,
   `/settings/brand`, `/grants`, `/sponsors`, `/webinars`, `/community`, `/help`,
   `/whats-new`.

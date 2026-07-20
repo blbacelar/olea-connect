@@ -3,6 +3,7 @@ import { expect, test } from "@playwright/test";
 
 const publicRoutes = [
   { path: "/", name: "landing page" },
+  { path: "/sponsorship", name: "sponsorship page" },
   { path: "/login", name: "login page" },
   { path: "/signup/account", name: "account creation page" },
 ];
