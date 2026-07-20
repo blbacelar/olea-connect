@@ -76,6 +76,7 @@ EMAIL_REPLY_TO
 EMAIL_ENVIRONMENT
 EMAIL_TEST_RECIPIENT
 NEXT_PUBLIC_APP_URL
+NEXT_PUBLIC_SPONSORSHIP_CALENDLY_URL
 CRON_SECRET
 GENERATED_DOCUMENT_RETENTION_HOURS
 ```
@@ -87,6 +88,10 @@ Set `NEXT_PUBLIC_APP_URL` per environment. Preview/staging should point to
 `https://staging.oleaconnects.com`; production should point to the public
 production URL. Transactional links, including team invitation accept links, are
 generated from this value.
+
+Set `NEXT_PUBLIC_SPONSORSHIP_CALENDLY_URL` to the single public Calendly booking
+destination used by sponsorship CTAs. When it is not configured, those CTAs
+fall back to the sponsorship contact email instead of linking to a dead page.
 
 `GENERATED_DOCUMENT_RETENTION_HOURS` is optional. If unset, generated template
 exports are retained for 24 hours before cleanup.
