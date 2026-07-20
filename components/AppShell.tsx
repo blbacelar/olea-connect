@@ -9,6 +9,7 @@ import { Sidebar } from "@/components/Sidebar";
 
 const publicRoutes = [
   "/",
+  "/sponsorship",
   "/login",
   "/reset-password",
   "/signup",
