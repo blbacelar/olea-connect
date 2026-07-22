@@ -87,15 +87,15 @@ import {
 import { cn } from "@/lib/utils";
 
 const tabOptions = [
-  { value: "setup", label: "Setup & Branding" },
-  { value: "settings", label: "Settings" },
+  { value: "board", label: "Board Dashboard" },
   { value: "q1", label: "Q1 Tracker" },
   { value: "q2", label: "Q2 Tracker" },
   { value: "q3", label: "Q3 Tracker" },
   { value: "q4", label: "Q4 Tracker" },
-  { value: "board", label: "Board Dashboard" },
   { value: "milestones", label: "Milestones & Risks" },
   { value: "annual", label: "Annual Summary" },
+  { value: "setup", label: "Setup" },
+  { value: "settings", label: "Settings" },
 ] as const;
 
 const quarterValues: QuarterNumber[] = [1, 2, 3, 4];
@@ -362,12 +362,8 @@ function SetupTab({ data }: { data: KpiDashboardData }) {
       <CardHeader>
         <CardTitle>Dashboard setup</CardTitle>
         <CardDescription className="mt-2">
-          Update the report title, reporting year, and fiscal year details. The
-          organization name comes from{" "}
-          <Link className="font-semibold underline" href="/settings/brand">
-            Brand Profile
-          </Link>
-          , and KPIs are added from the Q1-Q4 tracker tabs.
+          Update the report title, reporting year, and fiscal year details.{" "} 
+          KPIs are added from the Q1-Q4 tracker tabs.
         </CardDescription>
       </CardHeader>
       <CardContent>
