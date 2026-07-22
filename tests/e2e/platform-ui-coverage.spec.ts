@@ -89,19 +89,30 @@ test.describe("@smoke @critical platform UI coverage gate", () => {
     await app.expectNoServerError();
 
     await app.expectPageHeading(
-      "/modules/kpi-dashboard",
+      "/modules/kpi-dashboard?tab=setup",
       "KPI Dashboard and Board Reporting",
     );
-    await app.expectText("Setup & Branding");
+    await app.expectText("Board Dashboard");
     await app.expectText("Q1 Tracker");
     await app.expectText("Annual Summary");
     await expect(
       page.getByRole("heading", { name: "Dashboard setup" }),
     ).toBeVisible();
     await expect(page.getByLabel("Organization name")).toHaveCount(0);
-    await expect(
-      page.getByTestId("app-main").getByText("Brand Profile", { exact: true }),
-    ).toBeVisible();
+    await page
+      .locator('input[name="title"]')
+      .fill("KPI Dashboard and Board Reporting");
+    await page.locator('input[name="reportingYear"]').fill("2026");
+    await page.locator('input[name="financialYearEnd"]').fill("2026-12-31");
+    await page.getByRole("button", { name: "Save setup" }).click();
+    await expect(page.getByRole("button", { name: "Save setup" })).toBeVisible();
+    const pdfDownloadPromise = page.waitForEvent("download");
+    await page
+      .getByRole("button", { name: "Export KPI report as PDF" })
+      .click();
+    const pdfDownload = await pdfDownloadPromise;
+    expect(pdfDownload.suggestedFilename()).toMatch(/\.pdf$/i);
+    expect(await pdfDownload.path()).not.toBeNull();
     await expect(page.getByRole("heading", { name: "KPI definitions" })).toHaveCount(
       0,
     );

@@ -28,6 +28,8 @@ import {
   RiskDialogAction,
 } from "@/app/modules/kpi-dashboard/_components/milestones-risks-actions";
 import { AddQuarterResultDialog } from "@/app/modules/kpi-dashboard/_components/add-quarter-result-dialog";
+import { KpiDashboardExportButton } from "@/app/modules/kpi-dashboard/_components/kpi-dashboard-export-button";
+import { resolveKpiDashboardTab } from "@/app/modules/kpi-dashboard/tab-state";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -344,8 +346,10 @@ function DashboardSetupForm({ data }: { data: KpiDashboardData }) {
             className="mt-2"
             defaultValue={data.dashboard.financialYearEnd ?? ""}
             name="financialYearEnd"
+            required
             type="date"
           />
+          <FieldHint>Choose the date your reporting year ends.</FieldHint>
         </label>
       </div>
       <SubmitButton pendingText="Saving setup...">
@@ -1406,9 +1410,10 @@ export function KpiDashboardWorkspace({
   activeTab: string;
   data: KpiDashboardData;
 }) {
-  const safeTab = tabOptions.some((tab) => tab.value === activeTab)
-    ? activeTab
-    : "setup";
+  const safeTab = resolveKpiDashboardTab(
+    activeTab,
+    Boolean(data.dashboard.financialYearEnd),
+  );
 
   return (
     <div className="space-y-5">
@@ -1439,8 +1444,11 @@ export function KpiDashboardWorkspace({
                   {data.dashboard.reportingYear}
                 </p>
               </div>
-              <div className="rounded-full bg-white px-4 py-2 text-sm font-semibold text-slate-600 shadow-sm">
-                {data.kpis.length} KPI{data.kpis.length === 1 ? "" : "s"} tracked
+              <div className="flex flex-wrap items-center justify-end gap-3">
+                <KpiDashboardExportButton />
+                <div className="rounded-full bg-white px-4 py-2 text-sm font-semibold text-slate-600 shadow-sm">
+                  {data.kpis.length} KPI{data.kpis.length === 1 ? "" : "s"} tracked
+                </div>
               </div>
             </div>
           </div>

@@ -101,6 +101,12 @@ function parseOptionalDate(formData: FormData, key: string, label: string) {
   return value;
 }
 
+function parseRequiredDate(formData: FormData, key: string, label: string) {
+  const value = parseOptionalDate(formData, key, label);
+  if (!value) throw new Error(`${label} is required.`);
+  return value;
+}
+
 function parseRequiredTargetNumber(formData: FormData) {
   const targetNumber = parseRequiredNumber(formData, "targetNumber", "Target number");
   if (targetNumber <= 0) {
@@ -156,7 +162,7 @@ export async function updateKpiDashboardSettings(formData: FormData) {
   const dashboard = await requireDashboardFromForm(formData);
   const title = parseRequiredText(formData, "title", "Dashboard title", 140);
   const reportingYear = parseYear(formData);
-  const financialYearEnd = parseOptionalDate(
+  const financialYearEnd = parseRequiredDate(
     formData,
     "financialYearEnd",
     "Financial year end",
