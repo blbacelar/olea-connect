@@ -69,13 +69,13 @@ export function AppShell({ children }: { children: ReactNode }) {
       />
       <div
         className={cn(
-          "flex h-full min-w-0 flex-col transition-[margin] duration-200",
+          "flex h-full min-h-0 min-w-0 flex-col transition-[margin] duration-200",
           isSidebarCollapsed ? "lg:ml-20" : "lg:ml-60",
         )}
       >
         <Header />
         <Breadcrumbs />
-        <main className="min-w-0 flex-1 overflow-x-hidden overflow-y-auto">
+        <main className="min-h-0 min-w-0 flex-1 overflow-x-hidden overflow-y-auto">
           <div className="mx-auto max-w-[1280px] p-4 md:p-8">{children}</div>
         </main>
       </div>

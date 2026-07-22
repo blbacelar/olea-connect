@@ -173,12 +173,15 @@ function asNumber(value: number | string | null) {
   return typeof value === "number" ? value : Number(value);
 }
 
-function mapDashboard(row: DashboardRow): KpiDashboard {
+function mapDashboard(
+  row: DashboardRow,
+  organizationName = row.organization_name,
+): KpiDashboard {
   return {
     id: row.id,
     organizationId: row.organization_id,
     title: row.title,
-    organizationName: row.organization_name,
+    organizationName,
     reportingYear: row.reporting_year,
     financialYearEnd: row.financial_year_end,
   };
@@ -258,7 +261,7 @@ async function ensureDashboard() {
     .insert({
       organization_id: session.organization.id,
       title: "KPI Dashboard and Board Reporting",
-      organization_name: session.organization.name,
+      organization_name: session.organization.brand.organizationName,
       reporting_year: new Date().getFullYear(),
       created_by: session.member.id,
     })
@@ -292,7 +295,7 @@ async function ensureDashboard() {
 }
 
 export async function getKpiDashboardData(): Promise<KpiDashboardData> {
-  const { dashboard } = await ensureDashboard();
+  const { dashboard, session } = await ensureDashboard();
   const supabase = createAdminClient();
 
   const [
@@ -381,7 +384,7 @@ export async function getKpiDashboardData(): Promise<KpiDashboardData> {
   const annualSummaryRow = annualSummaryResult.data;
 
   return {
-    dashboard: mapDashboard(dashboard),
+    dashboard: mapDashboard(dashboard, session.organization.brand.organizationName),
     quarters: (quartersResult.data ?? []).map(mapQuarter),
     kpis,
     results: (resultsResult.data ?? []).map(mapResult),
@@ -422,5 +425,8 @@ export async function getKpiDashboardData(): Promise<KpiDashboardData> {
 
 export async function requireKpiDashboardForOrganization() {
   const { dashboard, session } = await ensureDashboard();
-  return { dashboard: mapDashboard(dashboard), session };
+  return {
+    dashboard: mapDashboard(dashboard, session.organization.brand.organizationName),
+    session,
+  };
 }

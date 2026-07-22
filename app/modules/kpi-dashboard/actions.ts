@@ -155,12 +155,6 @@ async function getNextSortOrder(
 export async function updateKpiDashboardSettings(formData: FormData) {
   const dashboard = await requireDashboardFromForm(formData);
   const title = parseRequiredText(formData, "title", "Dashboard title", 140);
-  const organizationName = parseRequiredText(
-    formData,
-    "organizationName",
-    "Organization name",
-    140,
-  );
   const reportingYear = parseYear(formData);
   const financialYearEnd = parseOptionalDate(
     formData,
@@ -172,7 +166,6 @@ export async function updateKpiDashboardSettings(formData: FormData) {
     .from("kpi_dashboards")
     .update({
       title,
-      organization_name: organizationName,
       reporting_year: reportingYear,
       financial_year_end: financialYearEnd,
     })

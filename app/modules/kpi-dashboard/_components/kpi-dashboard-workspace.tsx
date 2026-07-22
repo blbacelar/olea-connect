@@ -312,16 +312,6 @@ function DashboardSetupForm({ data }: { data: KpiDashboardData }) {
     <form action={updateKpiDashboardSettings} className="space-y-4">
       <HiddenDashboard dashboardId={data.dashboard.id} />
       <label className="block text-sm font-semibold">
-        Organization name
-        <Input
-          className="mt-2"
-          defaultValue={data.dashboard.organizationName}
-          maxLength={140}
-          name="organizationName"
-          required
-        />
-      </label>
-      <label className="block text-sm font-semibold">
         Dashboard title
         <Input
           className="mt-2"
@@ -372,8 +362,12 @@ function SetupTab({ data }: { data: KpiDashboardData }) {
       <CardHeader>
         <CardTitle>Dashboard setup</CardTitle>
         <CardDescription className="mt-2">
-          Update organization, report title, reporting year, and fiscal year
-          details. KPIs are added from the Q1-Q4 tracker tabs.
+          Update the report title, reporting year, and fiscal year details. The
+          organization name comes from{" "}
+          <Link className="font-semibold underline" href="/settings/brand">
+            Brand Profile
+          </Link>
+          , and KPIs are added from the Q1-Q4 tracker tabs.
         </CardDescription>
       </CardHeader>
       <CardContent>

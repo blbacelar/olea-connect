@@ -98,7 +98,10 @@ test.describe("@smoke @critical platform UI coverage gate", () => {
     await expect(
       page.getByRole("heading", { name: "Dashboard setup" }),
     ).toBeVisible();
-    await expect(page.getByLabel("Organization name")).toBeVisible();
+    await expect(page.getByLabel("Organization name")).toHaveCount(0);
+    await expect(
+      page.getByText("Brand Profile", { exact: true }),
+    ).toBeVisible();
     await expect(page.getByRole("heading", { name: "KPI definitions" })).toHaveCount(
       0,
     );
@@ -341,6 +344,26 @@ test.describe("@smoke @critical platform UI coverage gate", () => {
     await expect(page.getByTestId("kpi-dashboard-tabs")).toHaveClass(
       /scrollbar-hide/,
     );
+    await page.getByRole("tab", { name: "Settings" }).click();
+    await expect(
+      page.getByRole("heading", { name: "Quarter settings" }),
+    ).toBeVisible();
+    const kpiMain = page.getByRole("main");
+    await expect
+      .poll(() =>
+        kpiMain.evaluate(
+          (element) => element.scrollHeight > element.clientHeight,
+        ),
+      )
+      .toBe(true);
+    await kpiMain.evaluate((element) => {
+      element.scrollTop = element.scrollHeight;
+    });
+    await expect(page.getByText("December", { exact: true })).toBeVisible();
+    await page.getByRole("tab", { name: "Board Dashboard" }).click();
+    await expect(
+      page.getByRole("heading", { name: "Full-year KPI results by quarter" }),
+    ).toBeVisible();
     const boardRow = page.locator("tbody tr").filter({ hasText: kpiName }).last();
     await expect(boardRow).toContainText("Programs");
     await expect(boardRow).toContainText("75%");
