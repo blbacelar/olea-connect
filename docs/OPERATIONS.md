@@ -369,7 +369,7 @@ The app expects recurring CAD prices for:
 - Roots quarterly and annual.
 - Canopy quarterly and annual.
 - Harvest quarterly and annual.
-- Paid seats are one-time CAD purchases at $10.00 per seat.
+- Paid seats are one-time CAD purchases at $15.00 per seat.
 
 Paid seats are limited in the app to 1-3 seats per one-time Checkout payment.
 

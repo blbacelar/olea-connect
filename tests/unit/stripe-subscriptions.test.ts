@@ -2,6 +2,8 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import type Stripe from "stripe";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
+import { PAID_SEAT_PRICE_CENTS } from "@/lib/billing/seat-pricing";
+
 const stripeMocks = vi.hoisted(() => ({
   retrieveCheckoutSession: vi.fn(),
 }));
@@ -227,7 +229,7 @@ function makePaidSeatCheckoutSession(
           quantity: 2,
           price: {
             type: "one_time",
-            unit_amount: 1000,
+            unit_amount: PAID_SEAT_PRICE_CENTS,
             currency: "cad",
           },
         },
@@ -400,7 +402,7 @@ describe("Stripe subscription synchronization", () => {
         provider_item_id: "seat_purchase:cs_seat_123",
         quantity: 2,
         subscription_id: "local_sub_123",
-        unit_amount_cents: 1000,
+        unit_amount_cents: PAID_SEAT_PRICE_CENTS,
         currency: "CAD",
       },
     ]);

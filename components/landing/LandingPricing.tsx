@@ -128,7 +128,7 @@ export function LandingPricing() {
         </div>
         <p className="mt-7 text-center text-sm text-slate-500">
           Prices are shown before tax. GST/PST is calculated during secure
-          checkout by province. Additional seats are $10 CAD one-time per seat.
+                  checkout by province. Additional seats are $15 CAD one-time per seat.
         </p>
       </div>
     </section>
