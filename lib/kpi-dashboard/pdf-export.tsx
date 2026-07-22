@@ -168,7 +168,8 @@ const styles = StyleSheet.create({
   title: {
     fontSize: 24,
     fontFamily: "Helvetica-Bold",
-    marginBottom: 6,
+    lineHeight: 1.2,
+    marginBottom: 10,
   },
   subtitle: {
     color: "#5E7087",
