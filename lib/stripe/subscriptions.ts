@@ -8,6 +8,13 @@ import {
   mapSubscriptionStatus,
   toIsoDate,
 } from "@/lib/stripe/subscription-domain";
+import { getStripe } from "@/lib/stripe/server";
+import {
+  PAID_SEAT_PRICE_CENTS,
+  PAID_SEAT_CURRENCY,
+  PAID_SEAT_QUANTITY_MAX,
+  PAID_SEAT_QUANTITY_MIN,
+} from "@/lib/billing/seat-pricing";
 import type { MembershipTier, RegistrationState } from "@/lib/types";
 
 const membershipTiers: MembershipTier[] = [
@@ -131,7 +138,8 @@ export async function syncStripeSubscription(
   let staleItems = supabase
     .from("subscription_items")
     .update({ active: false })
-    .eq("subscription_id", localSubscription.id);
+    .eq("subscription_id", localSubscription.id)
+    .not("provider_item_id", "like", "seat_purchase:%");
   if (stripeItemIds.length > 0) {
     staleItems = staleItems.not("provider_item_id", "in", `(${stripeItemIds.join(",")})`);
   }
@@ -169,4 +177,98 @@ export async function syncStripeSubscription(
   }
 
   return localSubscription.id as string;
+}
+
+/**
+ * Records a paid one-time seat checkout as a local entitlement. The webhook
+ * and the return path can both call this safely because the checkout session
+ * ID is the idempotency key stored in provider_item_id.
+ */
+export async function syncPaidSeatCheckout(
+  supabase: SupabaseClient,
+  eventSession: Stripe.Checkout.Session,
+) {
+  if (
+    eventSession.mode !== "payment" ||
+    eventSession.payment_status !== "paid" ||
+    eventSession.metadata?.item_type !== "seat_purchase"
+  ) {
+    return null;
+  }
+
+  const stripe = getStripe();
+  const session = await stripe.checkout.sessions.retrieve(eventSession.id, {
+    expand: ["line_items.data.price"],
+  });
+  const lineItems = session.line_items?.data ?? [];
+  const lineItem = lineItems.length === 1 ? lineItems[0] : undefined;
+  const price = lineItem?.price;
+  const quantity = lineItem?.quantity ?? 0;
+  const localSubscriptionId = session.metadata?.local_subscription_id;
+  const organizationId = session.metadata?.organization_id;
+  const expectedQuantity = Number(session.metadata?.seat_quantity);
+
+  if (
+    !lineItem ||
+    !price ||
+    price.type !== "one_time" ||
+    price.unit_amount !== PAID_SEAT_PRICE_CENTS ||
+    price.currency.toUpperCase() !== PAID_SEAT_CURRENCY ||
+    !Number.isInteger(quantity) ||
+    quantity < PAID_SEAT_QUANTITY_MIN ||
+    quantity > PAID_SEAT_QUANTITY_MAX ||
+    quantity !== expectedQuantity ||
+    !localSubscriptionId ||
+    !organizationId
+  ) {
+    throw new Error("Paid seat checkout did not match the approved price.");
+  }
+
+  const customerId =
+    typeof session.customer === "string"
+      ? session.customer
+      : session.customer?.id;
+  const { data: subscription, error: subscriptionError } = await supabase
+    .from("subscriptions")
+    .select("id, organization_id, provider_customer_id, status")
+    .eq("id", localSubscriptionId)
+    .eq("organization_id", organizationId)
+    .maybeSingle();
+
+  if (subscriptionError) throw subscriptionError;
+  if (!subscription) throw new Error("Paid seat checkout has no local subscription.");
+  if (subscription.provider_customer_id !== customerId) {
+    throw new Error("Paid seat checkout customer does not match the organization.");
+  }
+  if (!["active", "trialing"].includes(subscription.status)) {
+    throw new Error("Paid seat checkout requires an active membership.");
+  }
+
+  const providerItemId = `seat_purchase:${session.id}`;
+  const { data: existingItem, error: existingItemError } = await supabase
+    .from("subscription_items")
+    .select("id")
+    .eq("provider_item_id", providerItemId)
+    .maybeSingle();
+
+  if (existingItemError) throw existingItemError;
+  if (existingItem) return subscription.id as string;
+
+  const { error: insertError } = await supabase
+    .from("subscription_items")
+    .upsert(
+      {
+        active: true,
+        item_type: "seat",
+        provider_item_id: providerItemId,
+        quantity,
+        subscription_id: subscription.id,
+        unit_amount_cents: price.unit_amount,
+        currency: price.currency.toUpperCase(),
+      },
+      { onConflict: "provider_item_id", ignoreDuplicates: true },
+    );
+
+  if (insertError) throw insertError;
+  return subscription.id as string;
 }

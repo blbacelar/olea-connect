@@ -42,31 +42,13 @@ export function getStripePriceId(
 }
 
 export function getStripeSeatPriceId() {
-  return getStripeSeatPriceIdForInterval("month");
-}
-
-export function getStripeSeatPriceIdForInterval(interval: "month" | "year") {
-  const key =
-    interval === "year"
-      ? "STRIPE_PRICE_SEAT_YEARLY"
-      : "STRIPE_PRICE_SEAT_QUARTERLY";
-  const priceId =
-    process.env[key] ??
-    (interval === "month" ? process.env.STRIPE_PRICE_SEAT_MONTHLY : undefined);
+  const priceId = process.env.STRIPE_PRICE_SEAT_ONE_TIME;
 
   if (!priceId) {
-    throw new Error(`${key} is not configured.`);
+    throw new Error("STRIPE_PRICE_SEAT_ONE_TIME is not configured.");
   }
 
   return priceId;
-}
-
-function getOptionalStripeSeatPriceIds() {
-  return [
-    process.env.STRIPE_PRICE_SEAT_QUARTERLY,
-    process.env.STRIPE_PRICE_SEAT_MONTHLY,
-    process.env.STRIPE_PRICE_SEAT_YEARLY,
-  ].filter(Boolean) as string[];
 }
 
 export function getWebhookSecret() {
@@ -81,13 +63,9 @@ export function getWebhookSecret() {
 
 async function getPortalUpdateProducts() {
   const stripe = getStripe();
-  const seatPriceIds = getOptionalStripeSeatPriceIds();
-  const priceIds = [
-    ...membershipTiers.flatMap((tier) =>
-      billingCycles.map((cycle) => getStripePriceId(tier, cycle)),
-    ),
-    ...seatPriceIds,
-  ];
+  const priceIds = membershipTiers.flatMap((tier) =>
+    billingCycles.map((cycle) => getStripePriceId(tier, cycle)),
+  );
   const prices = await Promise.all(
     priceIds.map((priceId) => stripe.prices.retrieve(priceId)),
   );
@@ -102,15 +80,6 @@ async function getPortalUpdateProducts() {
   return [...products.entries()].map(([product, pricesForProduct]) => ({
     product,
     prices: pricesForProduct,
-    ...(pricesForProduct.some((priceId) => seatPriceIds.includes(priceId))
-      ? {
-          adjustable_quantity: {
-            enabled: true,
-            minimum: 1,
-            maximum: 100,
-          },
-        }
-      : {}),
   }));
 }
 

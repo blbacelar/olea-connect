@@ -278,15 +278,16 @@ Supabase.
 - Cancellation flow.
 - Pause/resume subscription.
 - Plan upgrades.
-- Paid seat add-ons.
+- One-time paid seat purchases.
 
 It uses `getBillingSummary()` for authentication and role checks.
 
 ### Seat Counting
 
 `lib/team/seats.ts` defines remaining invite capacity. Reserved seats are active
-members plus pending invitations. Plan-included seats plus paid seat add-ons form
-the seat limit.
+members plus pending invitations. Plan-included seats plus paid seat purchases form
+the seat limit. Paid seat purchases are stored as local seat entitlements after
+Stripe confirms payment; they are not recurring subscription items.
 
 ## Email Architecture
 

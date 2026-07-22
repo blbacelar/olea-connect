@@ -54,7 +54,7 @@ testWithData.describe("@critical billing access states", () => {
     }
   });
 
-  testWithData("shows paid seat confirmation after billing confirms an add-on", async ({
+  testWithData("shows pending confirmation after a paid seat checkout", async ({
     browser,
     testData,
     baseURL,
@@ -73,8 +73,8 @@ testWithData.describe("@critical billing access states", () => {
     const subscription = new SubscriptionPage(page);
 
     try {
-      await subscription.openSeatConfirmation(3);
-      await subscription.expectPaidSeatConfirmation(3);
+      await subscription.openSeatPaymentSubmitted(3);
+      await subscription.expectPaidSeatPaymentSubmitted();
     } finally {
       await context.close();
     }

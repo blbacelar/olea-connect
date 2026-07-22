@@ -26,7 +26,7 @@ const faqs = [
   {
     question: "How many seats are included?",
     answer:
-      "Seedling includes 5 seats, Roots includes 10, Canopy includes 15, and Harvest includes 20. Additional seats are $15 CAD each on any tier.",
+      "Seedling includes 5 seats, Roots includes 10, Canopy includes 15, and Harvest includes 20. Additional seats are $10 CAD one-time per seat on any tier.",
   },
   {
     question: "Can we upgrade or downgrade?",

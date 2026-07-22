@@ -2,6 +2,7 @@ import "server-only";
 
 import type Stripe from "stripe";
 
+import { PAID_SEAT_PRICE_CENTS, PAID_SEAT_CURRENCY } from "@/lib/billing/seat-pricing";
 import { getStripe } from "@/lib/stripe/server";
 import { createAdminClient } from "@/utils/supabase/admin";
 import { createClient } from "@/utils/supabase/server";
@@ -137,9 +138,8 @@ export async function getBillingSummary(): Promise<BillingSummary | null> {
     (total, item) => total + item.quantity,
     0,
   );
-  const seatUnitAmountCents = seatItems[0]?.unit_amount_cents ?? 1500;
-  const seatCurrency =
-    seatItems[0]?.currency ?? plan?.currency ?? "CAD";
+  const seatUnitAmountCents = PAID_SEAT_PRICE_CENTS;
+  const seatCurrency = PAID_SEAT_CURRENCY;
   // The legacy DB column is named monthly_price_cents, but current plans bill
   // quarterly or annually. Until the storage column is renamed, month means
   // the quarterly upfront catalog price.

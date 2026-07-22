@@ -58,8 +58,7 @@ STRIPE_PRICE_CANOPY_QUARTERLY
 STRIPE_PRICE_CANOPY_ANNUAL
 STRIPE_PRICE_HARVEST_QUARTERLY
 STRIPE_PRICE_HARVEST_ANNUAL
-STRIPE_PRICE_SEAT_QUARTERLY
-STRIPE_PRICE_SEAT_YEARLY
+STRIPE_PRICE_SEAT_ONE_TIME
 ```
 
 Never accept price IDs from the browser. The app resolves all price IDs from
@@ -370,9 +369,9 @@ The app expects recurring CAD prices for:
 - Roots quarterly and annual.
 - Canopy quarterly and annual.
 - Harvest quarterly and annual.
-- Paid seat quarterly and yearly.
+- Paid seats are one-time CAD purchases at $10.00 per seat.
 
-Paid seats are limited in the app to 1-3 seats per add-seat action.
+Paid seats are limited in the app to 1-3 seats per one-time Checkout payment.
 
 ### Webhook Endpoint
 
@@ -396,9 +395,10 @@ Store the signing secret in `STRIPE_WEBHOOK_SECRET`.
 ### Billing Portal
 
 Set `STRIPE_BILLING_PORTAL_CONFIGURATION_ID`. The app uses portal flows for
-payment method updates, cancellation, and standard management. Plan upgrades and
-seat add-ons can update the subscription directly because the subscription can
-contain multiple items.
+payment method updates, cancellation, and standard membership management. Plan
+upgrades update the membership subscription directly. Paid seats use a separate
+Stripe Checkout payment in `payment` mode; the local seat entitlement is created
+only after a signed paid webhook and is idempotent by Checkout session ID.
 
 ## Resend Operations
 
@@ -499,7 +499,7 @@ Check:
 Seat display is:
 
 ```text
-included plan seats + paid seat add-ons
+included plan seats + paid seat purchases
 ```
 
 Reserved seats are:

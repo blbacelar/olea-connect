@@ -562,6 +562,7 @@ export function SeatManagementControls({
         const result = (await response.json().catch(() => ({}))) as {
           error?: string;
           message?: string;
+          url?: string;
         };
 
         if (response.status === 202) {
@@ -581,9 +582,14 @@ export function SeatManagementControls({
           return;
         }
 
-        window.location.assign(
-          `/subscription?seat=added&quantity=${seatQuantity}`,
-        );
+        if (!result.url) {
+          setError("Unable to start the seat payment.");
+          seatUpdateIdempotencyKeyRef.current = null;
+          setConfirmOpen(false);
+          return;
+        }
+
+        window.location.assign(result.url);
       } catch {
         setError("Unable to reach billing management. Please try again.");
         seatUpdateIdempotencyKeyRef.current = null;
@@ -600,8 +606,8 @@ export function SeatManagementControls({
             Need another teammate?
           </h3>
           <p className="mt-1 text-xs leading-5 text-emerald-900">
-            Add one paid seat for {seatPriceLabel}. After the update is
-            confirmed, invite the teammate from Team.
+            Add one paid seat for {seatPriceLabel}. After payment is confirmed,
+            invite the teammate from Team.
           </p>
           {!canManage ? (
             <p className="mt-2 text-xs font-semibold text-emerald-900">
@@ -645,8 +651,8 @@ export function SeatManagementControls({
               className="mt-2 text-sm leading-6 text-slate-600"
             >
               Select how many teammate seats to add for {seatPriceLabel} each.
-              The prorated amount is billed now, then you can invite the
-              teammate from Team.
+              This is a one-time payment. The seats remain available for your
+              organization after payment is confirmed.
             </p>
             <div className="mt-5 space-y-2">
               <label
@@ -692,7 +698,7 @@ export function SeatManagementControls({
                 ) : (
                   <Plus className="size-4" />
                 )}
-                Add {seatQuantity} seat{seatQuantity === "1" ? "" : "s"}
+                Continue to payment
               </Button>
             </div>
           </div>

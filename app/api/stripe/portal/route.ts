@@ -3,13 +3,17 @@ import type Stripe from "stripe";
 
 import { getBillingSummary } from "@/lib/billing/server";
 import {
+  PAID_SEAT_QUANTITY_MAX,
+  PAID_SEAT_QUANTITY_MIN,
+} from "@/lib/billing/seat-pricing";
+import {
   getBillingPortalConfigurationId,
   getStripePriceId,
   getStripe,
-  getStripeSeatPriceIdForInterval,
+  getStripeSeatPriceId,
 } from "@/lib/stripe/server";
 import { syncStripeSubscription } from "@/lib/stripe/subscriptions";
-import type { MembershipTier, RegistrationState } from "@/lib/types";
+import type { MembershipTier } from "@/lib/types";
 import { createAdminClient } from "@/utils/supabase/admin";
 
 export const runtime = "nodejs";
@@ -71,9 +75,13 @@ function parseActionBody(value: unknown): BillingActionBody {
 
 function getSeatQuantity(value: number | undefined) {
   const quantity = value ?? 1;
-  if (!Number.isInteger(quantity) || quantity < 1 || quantity > 3) {
+  if (
+    !Number.isInteger(quantity) ||
+    quantity < PAID_SEAT_QUANTITY_MIN ||
+    quantity > PAID_SEAT_QUANTITY_MAX
+  ) {
     throw new BillingActionError(
-      "Paid seat quantity must be between 1 and 3.",
+      `Paid seat quantity must be between ${PAID_SEAT_QUANTITY_MIN} and ${PAID_SEAT_QUANTITY_MAX}.`,
       400,
     );
   }
@@ -130,7 +138,7 @@ function assertPlanUpgradeAllowed(
   }
 }
 
-function getBillingCycle(interval: "month" | "year"): RegistrationState["billingCycle"] {
+function getBillingCycle(interval: "month" | "year"): "quarterly" | "annual" {
   return interval === "year" ? "annual" : "quarterly";
 }
 
@@ -228,45 +236,40 @@ function assertSeatAdjustmentAllowed(status: string) {
   }
 }
 
-async function addSeatToSubscription({
+async function createPaidSeatCheckout({
   idempotencyKey,
-  interval,
+  organizationId,
   quantity,
-  subscriptionId,
+  returnUrl,
+  localSubscriptionId,
+  customerId,
 }: {
   idempotencyKey: string;
-  interval: "month" | "year";
+  organizationId: string;
   quantity: number;
-  subscriptionId: string;
+  returnUrl: string;
+  localSubscriptionId: string;
+  customerId: string;
 }) {
   const stripe = getStripe();
-  const seatPriceId = getStripeSeatPriceIdForInterval(interval);
-  const subscription = await stripe.subscriptions.retrieve(subscriptionId, {
-    expand: ["items.data.price"],
-  });
-  const seatItem = subscription.items.data.find((item) => {
-    const priceId =
-      typeof item.price === "string" ? item.price : item.price.id;
-    return priceId === seatPriceId;
-  });
+  const metadata = {
+    item_type: "seat_purchase",
+    local_subscription_id: localSubscriptionId,
+    organization_id: organizationId,
+    seat_quantity: String(quantity),
+  };
 
-  return stripe.subscriptions.update(
-    subscriptionId,
+  return stripe.checkout.sessions.create(
     {
-      items: seatItem
-        ? [
-            {
-              id: seatItem.id,
-              quantity: (seatItem.quantity ?? 0) + quantity,
-            },
-          ]
-        : [
-            {
-              price: seatPriceId,
-              quantity,
-            },
-          ],
-      proration_behavior: "always_invoice",
+      mode: "payment",
+      customer: customerId,
+      client_reference_id: localSubscriptionId,
+      line_items: [{ price: getStripeSeatPriceId(), quantity }],
+      billing_address_collection: "required",
+      metadata,
+      payment_intent_data: { metadata },
+      success_url: `${returnUrl}?seat=payment_submitted&quantity=${quantity}&session_id={CHECKOUT_SESSION_ID}`,
+      cancel_url: `${returnUrl}?seat=payment_canceled`,
     },
     { idempotencyKey },
   );
@@ -358,15 +361,26 @@ export async function POST(request: Request) {
     const origin = new URL(request.url).origin;
     const returnUrl = `${origin}/subscription`;
 
-    if (
-      action === "pause" ||
-      action === "resume" ||
-      action === "add_seat" ||
-      action === "change_plan"
-    ) {
-      if (action === "add_seat") {
-        assertSeatAdjustmentAllowed(billing.status);
-      } else if (action === "change_plan") {
+    if (action === "add_seat") {
+      assertSeatAdjustmentAllowed(billing.status);
+      const session = await createPaidSeatCheckout({
+        customerId: billing.customerId,
+        idempotencyKey: getIdempotencyKey(body.idempotencyKey),
+        localSubscriptionId: billing.localSubscriptionId,
+        organizationId: billing.organizationId,
+        quantity: getSeatQuantity(body.seatQuantity),
+        returnUrl,
+      });
+
+      if (!session.url) {
+        throw new Error("Seat payment did not return a checkout URL.");
+      }
+
+      return NextResponse.json({ ok: true, url: session.url });
+    }
+
+    if (action === "pause" || action === "resume" || action === "change_plan") {
+      if (action === "change_plan") {
         assertSeatAdjustmentAllowed(billing.status);
         const targetPlanId = getTargetPlanId(body.targetPlanId);
         assertPlanUpgradeAllowed(
@@ -389,18 +403,11 @@ export async function POST(request: Request) {
             ? await getStripe().subscriptions.update(billing.subscriptionId, {
                 pause_collection: "",
               })
-            : action === "change_plan"
-              ? await changePlanSubscription({
-                  billingInterval: billing.billingInterval,
-                  idempotencyKey: getIdempotencyKey(body.idempotencyKey),
-                  subscriptionId: billing.subscriptionId,
-                  targetPlanId: getTargetPlanId(body.targetPlanId),
-                })
-            : await addSeatToSubscription({
+            : await changePlanSubscription({
+                billingInterval: billing.billingInterval,
                 idempotencyKey: getIdempotencyKey(body.idempotencyKey),
-                interval: billing.billingInterval,
-                quantity: getSeatQuantity(body.seatQuantity),
                 subscriptionId: billing.subscriptionId,
+                targetPlanId: getTargetPlanId(body.targetPlanId),
               });
 
       try {
@@ -414,15 +421,12 @@ export async function POST(request: Request) {
           subscriptionId: subscription.id,
           syncError,
         });
-        if (action === "add_seat" || action === "change_plan") {
+        if (action === "change_plan") {
           return NextResponse.json(
             {
               ok: false,
               pendingSync: true,
-              message:
-                action === "add_seat"
-                  ? "The seat update was confirmed, but local access is still syncing."
-                  : "The plan upgrade was confirmed, but local access is still syncing.",
+              message: "The plan upgrade was confirmed, but local access is still syncing.",
             },
             { status: 202 },
           );

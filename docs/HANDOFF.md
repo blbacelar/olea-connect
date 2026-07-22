@@ -127,8 +127,9 @@ The app supports:
 
 - Stripe Checkout for initial membership.
 - Billing portal for payment method/cancellation flows.
-- Direct Stripe subscription updates for pause/resume, plan upgrades, and paid
-  seat add-ons.
+- Direct Stripe subscription updates for pause/resume and plan upgrades.
+- One-time Stripe Checkout payments for paid seats, followed by a signed webhook
+  that creates an idempotent local seat entitlement.
 - Local sync from Stripe webhooks and immediate sync after some billing actions.
 
 ## Important Branches

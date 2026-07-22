@@ -4,12 +4,13 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 const routeMocks = vi.hoisted(() => ({
   billingSummary: vi.fn(),
   createAdminClient: vi.fn(() => ({ from: vi.fn() })),
+  createCheckoutSession: vi.fn(),
   createPortalSession: vi.fn(),
   getBillingPortalConfigurationId: vi.fn(),
   getStripePriceId: vi.fn(
     (tier: string, cycle: string) => `price_${tier}_${cycle}`,
   ),
-  getStripeSeatPriceIdForInterval: vi.fn(() => "price_seat"),
+  getStripeSeatPriceId: vi.fn(() => "price_seat_one_time"),
   stripeSubscriptionRetrieve: vi.fn(),
   stripeSubscriptionUpdate: vi.fn(),
   syncStripeSubscription: vi.fn(),
@@ -24,11 +25,16 @@ vi.mock("@/lib/billing/server", () => ({
 vi.mock("@/lib/stripe/server", () => ({
   getBillingPortalConfigurationId: routeMocks.getBillingPortalConfigurationId,
   getStripePriceId: routeMocks.getStripePriceId,
-  getStripeSeatPriceIdForInterval: routeMocks.getStripeSeatPriceIdForInterval,
+  getStripeSeatPriceId: routeMocks.getStripeSeatPriceId,
   getStripe: () => ({
     billingPortal: {
       sessions: {
         create: routeMocks.createPortalSession,
+      },
+    },
+    checkout: {
+      sessions: {
+        create: routeMocks.createCheckoutSession,
       },
     },
     subscriptions: {
@@ -103,11 +109,13 @@ describe("Stripe billing portal route", () => {
     routeMocks.createPortalSession.mockResolvedValue({
       url: "https://billing.stripe.test/session",
     });
+    routeMocks.createCheckoutSession.mockResolvedValue({
+      url: "https://checkout.stripe.test/session",
+    });
     routeMocks.getBillingPortalConfigurationId.mockResolvedValue("bpc_123");
     routeMocks.getStripePriceId.mockImplementation(
       (tier: string, cycle: string) => `price_${tier}_${cycle}`,
     );
-    routeMocks.getStripeSeatPriceIdForInterval.mockReturnValue("price_seat");
     routeMocks.stripeSubscriptionRetrieve.mockResolvedValue(
       makeSubscription({
         items: {
@@ -220,7 +228,7 @@ describe("Stripe billing portal route", () => {
     expect(routeMocks.syncStripeSubscription).toHaveBeenCalled();
   });
 
-  it("adds one paid seat through the Stripe seat add-on price", async () => {
+  it("starts a one-time Checkout payment for one paid seat", async () => {
     const { POST } = await import("@/app/api/stripe/portal/route");
 
     const response = await POST(
@@ -231,22 +239,40 @@ describe("Stripe billing portal route", () => {
     );
 
     expect(response.status).toBe(200);
-    expect(routeMocks.getStripeSeatPriceIdForInterval).toHaveBeenCalledWith(
-      "month",
-    );
-    expect(routeMocks.stripeSubscriptionRetrieve).toHaveBeenCalledWith(
-      "sub_123",
-      { expand: ["items.data.price"] },
-    );
-    expect(routeMocks.stripeSubscriptionUpdate).toHaveBeenCalledWith(
-      "sub_123",
+    await expect(response.json()).resolves.toEqual({
+      ok: true,
+      url: "https://checkout.stripe.test/session",
+    });
+    expect(routeMocks.getStripeSeatPriceId).toHaveBeenCalledOnce();
+    expect(routeMocks.createCheckoutSession).toHaveBeenCalledWith(
       {
-        items: [{ id: "si_seat", quantity: 2 }],
-        proration_behavior: "always_invoice",
+        billing_address_collection: "required",
+        client_reference_id: "local_sub_123",
+        customer: "cus_123",
+        line_items: [{ price: "price_seat_one_time", quantity: 1 }],
+        metadata: {
+          item_type: "seat_purchase",
+          local_subscription_id: "local_sub_123",
+          organization_id: "org_123",
+          seat_quantity: "1",
+        },
+        mode: "payment",
+        payment_intent_data: {
+          metadata: {
+            item_type: "seat_purchase",
+            local_subscription_id: "local_sub_123",
+            organization_id: "org_123",
+            seat_quantity: "1",
+          },
+        },
+        success_url:
+          "https://app.test/subscription?seat=payment_submitted&quantity=1&session_id={CHECKOUT_SESSION_ID}",
+        cancel_url: "https://app.test/subscription?seat=payment_canceled",
       },
       { idempotencyKey: "seat_1234567890abcdef" },
     );
-    expect(routeMocks.syncStripeSubscription).toHaveBeenCalled();
+    expect(routeMocks.stripeSubscriptionRetrieve).not.toHaveBeenCalled();
+    expect(routeMocks.stripeSubscriptionUpdate).not.toHaveBeenCalled();
   });
 
   it("upgrades the membership item to a higher quarterly plan", async () => {
@@ -419,46 +445,11 @@ describe("Stripe billing portal route", () => {
     expect(body.message).toContain("plan upgrade");
   });
 
-  it("uses the annual seat price for annual memberships", async () => {
+  it("starts one Checkout payment for three paid seats regardless of membership interval", async () => {
     const { POST } = await import("@/app/api/stripe/portal/route");
     routeMocks.billingSummary.mockResolvedValue(
       makeBillingSummary({ billingInterval: "year" }),
     );
-    routeMocks.getStripeSeatPriceIdForInterval.mockReturnValue(
-      "price_seat_yearly",
-    );
-    routeMocks.stripeSubscriptionRetrieve.mockResolvedValue(
-      makeSubscription({
-        items: {
-          data: [],
-        } as unknown as Stripe.ApiList<Stripe.SubscriptionItem>,
-      }),
-    );
-
-    const response = await POST(
-      makeRequest({
-        action: "add_seat",
-        idempotencyKey: "seat_annual123456789",
-        seatQuantity: 1,
-      }),
-    );
-
-    expect(response.status).toBe(200);
-    expect(routeMocks.getStripeSeatPriceIdForInterval).toHaveBeenCalledWith(
-      "year",
-    );
-    expect(routeMocks.stripeSubscriptionUpdate).toHaveBeenCalledWith(
-      "sub_123",
-      {
-        items: [{ price: "price_seat_yearly", quantity: 1 }],
-        proration_behavior: "always_invoice",
-      },
-      { idempotencyKey: "seat_annual123456789" },
-    );
-  });
-
-  it("adds multiple paid seats through the Stripe seat add-on price", async () => {
-    const { POST } = await import("@/app/api/stripe/portal/route");
 
     const response = await POST(
       makeRequest({
@@ -469,14 +460,15 @@ describe("Stripe billing portal route", () => {
     );
 
     expect(response.status).toBe(200);
-    expect(routeMocks.stripeSubscriptionUpdate).toHaveBeenCalledWith(
-      "sub_123",
-      {
-        items: [{ id: "si_seat", quantity: 4 }],
-        proration_behavior: "always_invoice",
-      },
+    expect(routeMocks.createCheckoutSession).toHaveBeenCalledWith(
+      expect.objectContaining({
+        line_items: [{ price: "price_seat_one_time", quantity: 3 }],
+        mode: "payment",
+        metadata: expect.objectContaining({ seat_quantity: "3" }),
+      }),
       { idempotencyKey: "seat_multi123456789" },
     );
+    expect(routeMocks.stripeSubscriptionUpdate).not.toHaveBeenCalled();
   });
 
   it("rejects paid seat requests without an idempotency key", async () => {
@@ -489,7 +481,7 @@ describe("Stripe billing portal route", () => {
 
     expect(response.status).toBe(400);
     expect(body.error).toContain("idempotency key is required");
-    expect(routeMocks.stripeSubscriptionUpdate).not.toHaveBeenCalled();
+    expect(routeMocks.createCheckoutSession).not.toHaveBeenCalled();
   });
 
   it("rejects paid seat quantities outside the supported range", async () => {
@@ -506,24 +498,65 @@ describe("Stripe billing portal route", () => {
 
     expect(response.status).toBe(400);
     expect(body.error).toContain("between 1 and 3");
+    expect(routeMocks.createCheckoutSession).not.toHaveBeenCalled();
+  });
+
+  it("returns an error when Stripe does not provide a Checkout URL", async () => {
+    const { POST } = await import("@/app/api/stripe/portal/route");
+    routeMocks.createCheckoutSession.mockResolvedValue({ url: null });
+
+    const response = await POST(
+      makeRequest({
+        action: "add_seat",
+        idempotencyKey: "seat_missing_url123",
+        seatQuantity: 1,
+      }),
+    );
+
+    expect(response.status).toBe(500);
+    expect(routeMocks.createCheckoutSession).toHaveBeenCalledOnce();
+  });
+
+  it("does not grant seats when the Checkout session is created", async () => {
+    const { POST } = await import("@/app/api/stripe/portal/route");
+
+    await POST(
+      makeRequest({
+        action: "add_seat",
+        idempotencyKey: "seat_no_entitlement123",
+        seatQuantity: 2,
+      }),
+    );
+
+    expect(routeMocks.syncStripeSubscription).not.toHaveBeenCalled();
     expect(routeMocks.stripeSubscriptionUpdate).not.toHaveBeenCalled();
   });
 
-  it("creates the seat add-on item when none exists yet", async () => {
+  /* Membership plan upgrades continue to use the recurring subscription. */
+  it("keeps membership plan upgrades on the Stripe subscription", async () => {
     const { POST } = await import("@/app/api/stripe/portal/route");
     routeMocks.stripeSubscriptionRetrieve.mockResolvedValue(
       makeSubscription({
         items: {
-          data: [],
+          data: [
+            {
+              id: "si_membership",
+              price: {
+                id: "price_roots_quarterly",
+                metadata: { item_type: "membership", plan_id: "roots" },
+              },
+              quantity: 1,
+            },
+          ],
         } as unknown as Stripe.ApiList<Stripe.SubscriptionItem>,
       }),
     );
 
     const response = await POST(
       makeRequest({
-        action: "add_seat",
-        idempotencyKey: "seat_create123456",
-        seatQuantity: 2,
+        action: "change_plan",
+        idempotencyKey: "plan_upgrade_after_seat_change",
+        targetPlanId: "canopy",
       }),
     );
 
@@ -531,31 +564,20 @@ describe("Stripe billing portal route", () => {
     expect(routeMocks.stripeSubscriptionUpdate).toHaveBeenCalledWith(
       "sub_123",
       {
-        items: [{ price: "price_seat", quantity: 2 }],
+        items: [
+          {
+            id: "si_membership",
+            price: "price_canopy_quarterly",
+            quantity: 1,
+          },
+        ],
         proration_behavior: "always_invoice",
+        metadata: {
+          local_subscription_id: "local_sub_123",
+          plan_id: "canopy",
+        },
       },
-      { idempotencyKey: "seat_create123456" },
+      { idempotencyKey: "plan_upgrade_after_seat_change" },
     );
-  });
-
-  it("returns pending sync when a seat update succeeds in Stripe but local sync fails", async () => {
-    const { POST } = await import("@/app/api/stripe/portal/route");
-    routeMocks.syncStripeSubscription.mockRejectedValue(new Error("sync failed"));
-
-    const response = await POST(
-      makeRequest({
-        action: "add_seat",
-        idempotencyKey: "seat_pending123456",
-        seatQuantity: 1,
-      }),
-    );
-    const body = (await response.json()) as {
-      message: string;
-      pendingSync: boolean;
-    };
-
-    expect(response.status).toBe(202);
-    expect(body.pendingSync).toBe(true);
-    expect(body.message).toContain("local access is still syncing");
   });
 });

@@ -11,8 +11,10 @@ export class SubscriptionPage {
     await this.page.goto("/dashboard");
   }
 
-  async openSeatConfirmation(quantity: number) {
-    await this.page.goto(`/subscription?seat=added&quantity=${quantity}`);
+  async openSeatPaymentSubmitted(quantity: number) {
+    await this.page.goto(
+      `/subscription?seat=payment_submitted&quantity=${quantity}`,
+    );
   }
 
   async expectActiveMembership(organizationName: string) {
@@ -48,10 +50,11 @@ export class SubscriptionPage {
     );
   }
 
-  async expectPaidSeatConfirmation(quantity: number) {
+  async expectPaidSeatPaymentSubmitted() {
     await expect(
       this.page.getByRole("status").filter({
-        hasText: `${quantity} paid seats added. The billing update is confirmed`,
+        hasText:
+          "Payment submitted. Your seat access will appear after payment confirmation.",
       }),
     ).toBeVisible();
   }

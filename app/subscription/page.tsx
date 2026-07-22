@@ -17,6 +17,11 @@ import {
   type BillingStatus,
 } from "@/lib/billing/server";
 import type { MembershipTier } from "@/lib/types";
+import {
+  formatPaidSeatPrice,
+  PAID_SEAT_QUANTITY_MAX,
+  PAID_SEAT_QUANTITY_MIN,
+} from "@/lib/billing/seat-pricing";
 
 import {
   BillingManagementControls,
@@ -54,13 +59,29 @@ function formatBillingInterval(interval: "month" | "year") {
 function getSeatAddedMessage(quantityValue?: string) {
   const quantity = Number(quantityValue);
   const normalizedQuantity =
-    Number.isInteger(quantity) && quantity >= 1 && quantity <= 3 ? quantity : 1;
+    Number.isInteger(quantity) &&
+    quantity >= PAID_SEAT_QUANTITY_MIN &&
+    quantity <= PAID_SEAT_QUANTITY_MAX
+      ? quantity
+      : PAID_SEAT_QUANTITY_MIN;
 
   return `${normalizedQuantity} paid seat${
     normalizedQuantity === 1 ? "" : "s"
-  } added. The billing update is confirmed, and ${
+  } added. The one-time payment is confirmed, and ${
     normalizedQuantity === 1 ? "the new seat is" : "the new seats are"
   } available for invitations.`;
+}
+
+function getSeatPaymentMessage(seatState?: string) {
+  if (seatState === "payment_canceled") {
+    return "Seat payment was canceled. No seat was added.";
+  }
+
+  if (seatState === "payment_submitted") {
+    return "Payment submitted. Your seat access will appear after payment confirmation.";
+  }
+
+  return "";
 }
 
 const membershipTierIds = new Set<MembershipTier>([
@@ -343,8 +364,7 @@ export default async function SubscriptionPage({
             {billing.includedSeats === 1 ? "" : "s"} plus{" "}
             {billing.seatQuantity} paid seat add-on
             {billing.seatQuantity === 1 ? "" : "s"} at{" "}
-            {formatMoney(billing.seatUnitAmountCents, billing.seatCurrency)} /
-            {formatBillingInterval(billing.billingInterval)}.
+            {formatPaidSeatPrice()}.
           </p>
           <SeatManagementControls
             canManage={canManage}
@@ -356,12 +376,9 @@ export default async function SubscriptionPage({
             initialSuccessMessage={
               searchParams?.seat === "added"
                 ? getSeatAddedMessage(searchParams.quantity)
-                : undefined
+                : getSeatPaymentMessage(searchParams?.seat) || undefined
             }
-            seatPriceLabel={`${formatMoney(
-              billing.seatUnitAmountCents,
-              billing.seatCurrency,
-            )} / ${formatBillingInterval(billing.billingInterval)}`}
+            seatPriceLabel={formatPaidSeatPrice()}
           />
         </section>
 

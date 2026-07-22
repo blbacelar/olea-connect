@@ -18,7 +18,10 @@ import {
   attemptWorkspaceProvisioning,
   recordStripeSubscription,
 } from "@/lib/stripe/registration";
-import { syncStripeSubscription } from "@/lib/stripe/subscriptions";
+import {
+  syncPaidSeatCheckout,
+  syncStripeSubscription,
+} from "@/lib/stripe/subscriptions";
 import { createAdminClient } from "@/utils/supabase/admin";
 
 export const runtime = "nodejs";
@@ -313,6 +316,16 @@ export async function POST(request: Request) {
     if (!claimed) {
       logInfo("Duplicate Stripe webhook ignored", eventContext);
       return NextResponse.json({ received: true, duplicate: true });
+    }
+
+    if (
+      event.type === "checkout.session.completed" ||
+      event.type === "checkout.session.async_payment_succeeded"
+    ) {
+      await syncPaidSeatCheckout(
+        supabase,
+        event.data.object as Stripe.Checkout.Session,
+      );
     }
 
     const subscription = await getEventSubscription(event);
