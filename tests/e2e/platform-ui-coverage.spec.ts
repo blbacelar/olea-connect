@@ -377,6 +377,12 @@ test.describe("@smoke @critical platform UI coverage gate", () => {
     await expect(
       page.getByRole("heading", { name: "Risk register" }),
     ).toBeVisible();
+    await expect(page.getByTestId("kpi-milestones-table")).toHaveClass(
+      /scrollbar-hide/,
+    );
+    await expect(page.getByTestId("kpi-risks-table")).toHaveClass(
+      /scrollbar-hide/,
+    );
 
     const milestoneTitle = `AGM confirmed ${Date.now()}`;
     await page.getByRole("button", { name: "Add milestone" }).click();

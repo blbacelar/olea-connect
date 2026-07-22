@@ -704,7 +704,10 @@ function QuarterTrackerTab({
         </AddQuarterResultDialog>
       </CardHeader>
       <CardContent>
-        <div className="overflow-x-auto rounded-xl border">
+        <div
+          className="scrollbar-hide overflow-x-auto rounded-xl border"
+          data-testid="kpi-quarter-table"
+        >
           <Table className="min-w-[1400px]">
             <TableHeader>
               <TableRow className="bg-olea-green text-white hover:bg-olea-green">
@@ -1227,7 +1230,10 @@ function MilestonesAndRisksTab({ data }: { data: KpiDashboardData }) {
           {data.milestones.length === 0 ? (
             <EmptyState>No milestones yet.</EmptyState>
           ) : (
-            <div className="overflow-x-auto rounded-xl border">
+            <div
+              className="scrollbar-hide overflow-x-auto rounded-xl border"
+              data-testid="kpi-milestones-table"
+            >
               <Table>
                 <caption className="sr-only">
                   KPI dashboard milestone list with owner, due date, status, notes, and
@@ -1292,7 +1298,10 @@ function MilestonesAndRisksTab({ data }: { data: KpiDashboardData }) {
           {data.risks.length === 0 ? (
             <EmptyState>No risks yet.</EmptyState>
           ) : (
-            <div className="overflow-x-auto rounded-xl border">
+            <div
+              className="scrollbar-hide overflow-x-auto rounded-xl border"
+              data-testid="kpi-risks-table"
+            >
               <Table>
                 <caption className="sr-only">
                   KPI dashboard risk register with area, risk, mitigation, owner, RAG
