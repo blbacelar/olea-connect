@@ -1375,7 +1375,11 @@ function AnnualSummaryTab({ data }: { data: KpiDashboardData }) {
         </p>
       </CardHeader>
       <CardContent>
-        <form action={saveKpiAnnualSummary} className="space-y-4">
+        <form
+          action={saveKpiAnnualSummary}
+          className="grid gap-4 md:grid-cols-2"
+          data-testid="annual-summary-form"
+        >
           <HiddenDashboard dashboardId={data.dashboard.id} />
           {fields.map(([name, label]) => (
             <label className="block text-sm font-semibold" key={name}>
@@ -1389,7 +1393,7 @@ function AnnualSummaryTab({ data }: { data: KpiDashboardData }) {
               />
             </label>
           ))}
-          <SubmitButton pendingText="Saving summary...">
+          <SubmitButton className="md:col-span-2" pendingText="Saving summary...">
             <Save className="h-4 w-4" />
             Save annual summary
           </SubmitButton>

@@ -491,6 +491,12 @@ test.describe("@smoke @critical platform UI coverage gate", () => {
     await expect(milestoneRow).toHaveCount(0);
     await app.expectNoServerError();
 
+    await page.getByRole("link", { name: "Annual Summary" }).click();
+    await expect(page.getByRole("heading", { name: "Annual Summary" })).toBeVisible();
+    const annualSummaryForm = page.getByTestId("annual-summary-form");
+    await expect(annualSummaryForm).toHaveClass(/md:grid-cols-2/);
+    await expect(annualSummaryForm.locator("textarea")).toHaveCount(7);
+
     await app.expectPageHeading("/webinars", "Webinars");
     await app.expectSectionHeading("Upcoming");
     await app.expectNoServerError();
