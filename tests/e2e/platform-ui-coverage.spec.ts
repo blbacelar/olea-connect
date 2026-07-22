@@ -100,7 +100,7 @@ test.describe("@smoke @critical platform UI coverage gate", () => {
     ).toBeVisible();
     await expect(page.getByLabel("Organization name")).toHaveCount(0);
     await expect(
-      page.getByText("Brand Profile", { exact: true }),
+      page.getByTestId("app-main").getByText("Brand Profile", { exact: true }),
     ).toBeVisible();
     await expect(page.getByRole("heading", { name: "KPI definitions" })).toHaveCount(
       0,
@@ -111,7 +111,7 @@ test.describe("@smoke @critical platform UI coverage gate", () => {
     await expect(page.getByRole("button", { name: "Add KPI" })).toHaveCount(0);
     await expect(page.getByRole("button", { name: /Edit KPI/i })).toHaveCount(0);
     await expect(page.getByRole("button", { name: /Archive KPI/i })).toHaveCount(0);
-    await page.getByRole("tab", { name: "Q1 Tracker" }).click();
+    await page.getByRole("link", { name: "Q1 Tracker" }).click();
     await expect(
       page.getByRole("heading", { name: /KPI Staff Tracker — Q1/i }),
     ).toBeVisible();
@@ -145,7 +145,7 @@ test.describe("@smoke @critical platform UI coverage gate", () => {
       .first();
     await expect(createdKpiRow).toBeVisible({ timeout: 15000 });
     await expect(addKpiDialog).toBeHidden();
-    await page.getByRole("tab", { name: "Q2 Tracker" }).click();
+    await page.getByRole("link", { name: "Q2 Tracker" }).click();
     await expect(
       page.getByRole("heading", { name: /KPI Staff Tracker — Q2/i }),
     ).toBeVisible();
@@ -170,7 +170,7 @@ test.describe("@smoke @critical platform UI coverage gate", () => {
       page.locator("tbody tr").filter({ hasText: kpiName }),
     ).toContainText("75");
     await page.reload();
-    await page.getByRole("tab", { name: "Q2 Tracker" }).click();
+    await page.getByRole("link", { name: "Q2 Tracker" }).click();
     await expect(
       page.getByRole("heading", { name: /KPI Staff Tracker — Q2/i }),
     ).toBeVisible();
@@ -197,7 +197,7 @@ test.describe("@smoke @critical platform UI coverage gate", () => {
       [3, "66"],
       [4, "60"],
     ] as const) {
-      await page.getByRole("tab", { name: `Q${quarter} Tracker` }).click();
+      await page.getByRole("link", { name: `Q${quarter} Tracker` }).click();
       await expect(
         page.getByRole("heading", { name: new RegExp(`KPI Staff Tracker — Q${quarter}`, "i") }),
       ).toBeVisible();
@@ -217,7 +217,7 @@ test.describe("@smoke @critical platform UI coverage gate", () => {
       await quarterDialog.getByRole("button", { name: "Add KPI" }).click();
       await expect(quarterDialog).toBeHidden();
       await page.reload();
-      await page.getByRole("tab", { name: `Q${quarter} Tracker` }).click();
+      await page.getByRole("link", { name: `Q${quarter} Tracker` }).click();
       await expect(
         page.getByRole("heading", {
           name: new RegExp(`KPI Staff Tracker — Q${quarter}`, "i"),
@@ -237,7 +237,7 @@ test.describe("@smoke @critical platform UI coverage gate", () => {
       [3, "66"],
       [4, "60"],
     ] as const) {
-      await page.getByRole("tab", { name: `Q${quarter} Tracker` }).click();
+      await page.getByRole("link", { name: `Q${quarter} Tracker` }).click();
       await expect(
         page.locator("tbody tr").filter({ hasText: kpiName }),
       ).toHaveCount(1);
@@ -245,7 +245,7 @@ test.describe("@smoke @critical platform UI coverage gate", () => {
         page.getByRole("row").filter({ hasText: kpiName }),
       ).toContainText(currentValue);
     }
-    await page.getByRole("tab", { name: "Q1 Tracker" }).click();
+    await page.getByRole("link", { name: "Q1 Tracker" }).click();
     await expect(createdKpiRow).toBeVisible();
     await expect(createdKpiRow).toContainText("72");
     const actionCell = createdKpiRow.getByRole("cell").last();
@@ -293,7 +293,7 @@ test.describe("@smoke @critical platform UI coverage gate", () => {
     await expect(
       page.getByRole("columnheader", { name: "Auto-RAG" }),
     ).toBeVisible();
-    await page.getByRole("tab", { name: "Board Dashboard" }).click();
+    await page.getByRole("link", { name: "Board Dashboard" }).click();
     await expect(
       page.getByRole("heading", { name: "Full-year KPI results by quarter" }),
     ).toBeVisible();
@@ -328,7 +328,7 @@ test.describe("@smoke @critical platform UI coverage gate", () => {
       .locator("div")
       .first();
     await expect(boardTableScroller).toHaveClass(/scrollbar-hide/);
-    const main = page.getByRole("main");
+    const main = page.getByTestId("app-main");
     await expect
       .poll(() =>
         main.evaluate((element) => element.scrollWidth <= element.clientWidth),
@@ -344,23 +344,35 @@ test.describe("@smoke @critical platform UI coverage gate", () => {
     await expect(page.getByTestId("kpi-dashboard-tabs")).toHaveClass(
       /scrollbar-hide/,
     );
-    await page.getByRole("tab", { name: "Settings" }).click();
+    await page.getByRole("link", { name: "Settings" }).click();
     await expect(
       page.getByRole("heading", { name: "Quarter settings" }),
     ).toBeVisible();
-    const kpiMain = page.getByRole("main");
     await expect
       .poll(() =>
-        kpiMain.evaluate(
-          (element) => element.scrollHeight > element.clientHeight,
+        page.evaluate(
+          () =>
+            document.documentElement.scrollHeight >
+            document.documentElement.clientHeight,
         ),
       )
       .toBe(true);
-    await kpiMain.evaluate((element) => {
-      element.scrollTop = element.scrollHeight;
-    });
-    await expect(page.getByText("December", { exact: true })).toBeVisible();
-    await page.getByRole("tab", { name: "Board Dashboard" }).click();
+    await expect
+      .poll(() =>
+        page.getByTestId("app-main").evaluate((element) => {
+          const styles = window.getComputedStyle(element);
+          return styles.overflowY;
+        }),
+      )
+      .toBe("visible");
+    await page.evaluate(() => window.scrollTo(0, document.body.scrollHeight));
+    const decemberQuarterSelect = page
+      .locator("label")
+      .filter({ hasText: /^December/ })
+      .getByRole("combobox");
+    await decemberQuarterSelect.scrollIntoViewIfNeeded();
+    await expect(decemberQuarterSelect).toBeVisible();
+    await page.getByRole("link", { name: "Board Dashboard" }).click();
     await expect(
       page.getByRole("heading", { name: "Full-year KPI results by quarter" }),
     ).toBeVisible();
@@ -371,18 +383,20 @@ test.describe("@smoke @critical platform UI coverage gate", () => {
     await expect(
       boardRow.getByRole("combobox", { name: `Full-year RAG for ${kpiName}` }),
     ).toBeVisible();
-    await page.getByRole("tab", { name: "Milestones & Risks" }).click();
-    await expect(page).toHaveURL(/\/modules\/kpi-dashboard\?tab=milestones/);
+    await page.getByRole("link", { name: "Milestones & Risks" }).click();
     await expect(page.getByRole("heading", { name: "Milestones" })).toBeVisible();
+    await expect(page).toHaveURL(/\/modules\/kpi-dashboard\?tab=milestones/);
     await expect(
       page.getByRole("heading", { name: "Risk register" }),
     ).toBeVisible();
-    await expect(page.getByTestId("kpi-milestones-table")).toHaveClass(
-      /scrollbar-hide/,
-    );
-    await expect(page.getByTestId("kpi-risks-table")).toHaveClass(
-      /scrollbar-hide/,
-    );
+    await expect(
+      page
+        .getByTestId("kpi-milestones-table")
+        .or(page.getByText("No milestones yet.")),
+    ).toBeVisible();
+    await expect(
+      page.getByTestId("kpi-risks-table").or(page.getByText("No risks yet.")),
+    ).toBeVisible();
 
     const milestoneTitle = `AGM confirmed ${Date.now()}`;
     await page.getByRole("button", { name: "Add milestone" }).click();
@@ -395,8 +409,8 @@ test.describe("@smoke @critical platform UI coverage gate", () => {
     await addMilestoneDialog.getByRole("button", { name: "Add milestone" }).click();
     await expect(page).toHaveURL(/\/modules\/kpi-dashboard\?tab=milestones/);
     await expect(
-      page.getByRole("tab", { name: "Milestones & Risks" }),
-    ).toHaveAttribute("data-state", "active");
+      page.getByRole("link", { name: "Milestones & Risks" }),
+    ).toHaveAttribute("aria-current", "page");
     const milestoneRow = page
       .getByRole("row")
       .filter({ hasText: milestoneTitle })

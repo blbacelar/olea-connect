@@ -62,7 +62,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Tabs, TabsContent } from "@/components/ui/tabs";
 import { Textarea } from "@/components/ui/textarea";
 import type {
   KpiDashboardData,
@@ -1447,33 +1447,37 @@ export function KpiDashboardWorkspace({
         </CardContent>
       </Card>
 
-      <Tabs defaultValue={safeTab}>
-        <div
+      <Tabs value={safeTab}>
+        <nav
+          aria-label="KPI dashboard sections"
           className="scrollbar-hide overflow-x-auto rounded-xl border bg-white p-2 shadow-soft"
           data-testid="kpi-dashboard-tabs"
         >
-          <TabsList className="h-auto min-w-max justify-start gap-1 bg-olea-light/70 p-1">
+          <div className="flex h-auto min-w-max justify-start gap-1 rounded-lg bg-olea-light/70 p-1">
             {tabOptions.map((tab) => (
-              <TabsTrigger
-                asChild
-                className="data-[state=active]:bg-white data-[state=active]:text-olea-green"
+              <Link
+                aria-current={safeTab === tab.value ? "page" : undefined}
+                className={cn(
+                  "inline-flex items-center justify-center whitespace-nowrap rounded-md px-4 py-2 text-sm font-semibold transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
+                  safeTab === tab.value
+                    ? "bg-white text-olea-green shadow-sm"
+                    : "text-muted-foreground hover:bg-white/60",
+                )}
+                href={`/modules/kpi-dashboard?tab=${tab.value}`}
                 key={tab.value}
-                value={tab.value}
               >
-                <Link href={`/modules/kpi-dashboard?tab=${tab.value}`}>
-                  {tab.value === "settings" && (
-                    <Settings className="mr-2 h-4 w-4" />
-                  )}
-                  {tab.value === "board" && <BarChart3 className="mr-2 h-4 w-4" />}
-                  {tab.value === "milestones" && (
-                    <ClipboardList className="mr-2 h-4 w-4" />
-                  )}
-                  {tab.label}
-                </Link>
-              </TabsTrigger>
+                {tab.value === "settings" && (
+                  <Settings className="mr-2 h-4 w-4" />
+                )}
+                {tab.value === "board" && <BarChart3 className="mr-2 h-4 w-4" />}
+                {tab.value === "milestones" && (
+                  <ClipboardList className="mr-2 h-4 w-4" />
+                )}
+                {tab.label}
+              </Link>
             ))}
-          </TabsList>
-        </div>
+          </div>
+        </nav>
 
         <TabsContent value="setup">
           <SetupTab data={data} />

@@ -62,20 +62,23 @@ export function AppShell({ children }: { children: ReactNode }) {
   }
 
   return (
-    <div className="fixed inset-0 overflow-hidden bg-slate-100">
+    <div className="min-h-screen overflow-x-clip bg-slate-100">
       <Sidebar
         collapsed={isSidebarCollapsed}
         onCollapsedChange={handleSidebarCollapsedChange}
       />
       <div
         className={cn(
-          "flex h-full min-h-0 min-w-0 flex-col transition-[margin] duration-200",
+          "flex min-h-screen min-w-0 flex-col transition-[margin] duration-200",
           isSidebarCollapsed ? "lg:ml-20" : "lg:ml-60",
         )}
       >
         <Header />
         <Breadcrumbs />
-        <main className="min-h-0 min-w-0 flex-1 overflow-x-hidden overflow-y-auto">
+        <main
+          data-testid="app-main"
+          className="min-w-0 flex-1 overflow-x-clip"
+        >
           <div className="mx-auto max-w-[1280px] p-4 md:p-8">{children}</div>
         </main>
       </div>
