@@ -11,6 +11,94 @@ billing, Resend email, native community tables with deferred Circle
 SSO/provisioning scaffolding, Attio/QuickBooks outbox workers, and
 Playwright/Vitest/pgTAP tests.
 
+## Implemented Product Areas
+
+### Authentication, onboarding, and billing
+
+- Supabase email/password authentication with email confirmation, password
+  recovery, session refresh, protected routes, and global auth boundaries.
+- Guided account registration with plan selection, organization setup, brand
+  profile configuration, and Seedling template selection.
+- Stripe Checkout and billing portal support for subscriptions, plan upgrades,
+  billing recovery, payment status synchronization, and paid seats.
+- Paid seats are currently **$15 CAD one-time per seat**. Seat entitlements are
+  recorded idempotently and team capacity reflects the organization's paid
+  seats plus the primary member.
+- Team invitations include expiry handling, existing-account validation, and
+  transactional email delivery through Resend.
+
+### Branded templates and document exports
+
+- Tier-aware template library with availability messaging for templates that
+  are not yet released.
+- Brand profile assets and colors are applied to generated documents.
+- Board Self-Evaluation supports structured survey responses and board-ready
+  PDF exports.
+- Export services support branded HTML, PDF, DOCX, and meeting-package output,
+  including report covers, branded headers and footers, page numbers, and
+  confidentiality acknowledgement where required.
+- Generated export files are tracked for cleanup instead of being retained
+  indefinitely in storage.
+
+### Board Calendar & Operational Workflow
+
+The Board Calendar is implemented as a board-portal module rather than a
+single long form. Its tabs support:
+
+- Calendar entries for meetings, events, operational tasks, notes, dates,
+  times, locations, links, contacts, confirmation status, and related
+  meetings.
+- Current-date calendar navigation, month/annual views, disabled past dates
+  for new entries, same-date/time entries, edit/delete flows, confirmation
+  dialogs, and time-aware sorting.
+- Meeting-only views, where the Meetings tab contains entries created as
+  Meeting or Event.
+- Operational task rules that generate preparation tasks from meeting dates;
+  generated workflow records remain linked to their source meeting.
+- Data-table views with filters and modal CRUD forms for Workflows, Directory,
+  AGM Planning, and Board Packages.
+- Board package uploads, confidentiality acknowledgement, branded package
+  HTML/PDF generation, and export cleanup support.
+
+### KPI Dashboard & Board Reporting
+
+- Setup and Branding for organization name, dashboard title, reporting year,
+  and financial year-end.
+- Custom reporting-quarter definitions instead of fixed calendar quarters.
+- Q1-Q4 tracker tabs with modal CRUD forms for KPI results, numeric validation,
+  notes, RAG status, trend, variance, and progress-to-target calculations.
+- Board Dashboard data table with quarterly results, full-year RAG review,
+  scorecards, milestones, and risk summaries.
+- Milestones & Risks data tables with modal CRUD workflows and validation.
+- Annual Summary narrative sections and branded PDF reporting.
+
+### Community, webinars, consulting, and sponsorship
+
+- Native community spaces with posts, comments, likes, edit/delete actions,
+  author and organization identity, mentions, optimistic UI updates, and
+  realtime synchronization between members.
+- AI-assisted community moderation and link-safety checks before content is
+  published, using the configured OpenRouter moderation worker.
+- Tier-aware webinar catalog with Zoom meeting links, recording links,
+  member detail pages, admin-only creation, and admin archive controls.
+- Harvest Consulting request intake with categories, urgency, descriptions,
+  safe attachment validation, request history, staff triage, assignments, and
+  auditable time tracking.
+- Public sponsorship page with five sponsor tiers, benefits, Catalyst Impact
+  Circle content, responsive layout, and Calendly calls to action.
+- Grants, notifications, global search/command palette, brand settings, team
+  management, and subscription management are available from the member app
+  shell.
+
+### Integrations and operations
+
+- Resend transactional email delivery, signed webhook ingestion, email
+  observability, retryable outbox processing, and scheduled cleanup jobs.
+- Attio and QuickBooks integration boundaries are represented by versioned
+  outbox/sync services so provider-specific work can be expanded safely.
+- Circle SSO/provisioning remains scaffolded and is intentionally deferred
+  while the native community experience is used.
+
 ## Start Here
 
 For a developer handoff, read these in order:
