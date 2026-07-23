@@ -281,6 +281,7 @@ export function TeamWorkspace({ team }: { team: TeamData }) {
               </SelectContent>
             </Select>
             <Button
+              data-testid="send-invite"
               onClick={sendInvite}
               disabled={!email.trim() || isPending || remainingInviteSeats === 0}
             >

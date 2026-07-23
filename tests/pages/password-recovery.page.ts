@@ -9,9 +9,7 @@ export class PasswordRecoveryPage {
 
   async requestReset(email: string) {
     await this.page.getByLabel("Email address").fill(email);
-    const sendResetLink = this.page.getByRole("button", {
-      name: "Send reset link",
-    });
+    const sendResetLink = this.page.getByTestId("send-reset-link");
     await expect(sendResetLink).toBeVisible({ timeout: 15_000 });
     await expect(sendResetLink).toBeEnabled({ timeout: 15_000 });
     await sendResetLink.click();

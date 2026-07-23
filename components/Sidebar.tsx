@@ -81,7 +81,10 @@ export function Sidebar({ collapsed, onCollapsedChange }: SidebarProps) {
         </div>
       ) : (
         <div className="px-4 pb-2 pt-4">
-          <p className="truncate text-[14.5px] font-semibold text-slate-800">
+          <p
+            data-testid="workspace-organization-name"
+            className="truncate text-[14.5px] font-semibold text-slate-800"
+          >
             {organization?.name ?? "Olea Connects"}
           </p>
           <span className="mt-1.5 inline-flex items-center gap-1 rounded-full bg-green-100 px-2.5 py-1 text-xs font-semibold capitalize text-green-800">

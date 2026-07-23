@@ -63,6 +63,7 @@ export default function ResetPasswordPage() {
             />
           </div>
           <Button
+            data-testid="send-reset-link"
             className="w-full"
             disabled={!/\S+@\S+\.\S+/.test(email) || isPending}
             onClick={submit}

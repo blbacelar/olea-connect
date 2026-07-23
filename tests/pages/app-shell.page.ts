@@ -119,8 +119,11 @@ export class AppShellPage {
   async expectDashboardForOrganization(organizationName: string) {
     await this.openDashboard();
     await expect(
-      this.page.getByRole("main").getByText(organizationName),
+      this.page.getByTestId("workspace-organization-name"),
     ).toBeVisible({ timeout: 15_000 });
+    await expect(this.page.getByTestId("workspace-organization-name")).toHaveText(
+      organizationName,
+    );
   }
 
   async expectDashboardTemplate(templateName: string) {

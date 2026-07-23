@@ -14,7 +14,7 @@ export class TeamPage {
   async inviteMember(email: string) {
     await this.open();
     await this.page.getByLabel("Team member email").fill(email);
-    const sendInvite = this.page.getByRole("button", { name: "Send invite" });
+    const sendInvite = this.page.getByTestId("send-invite");
     await expect(sendInvite).toBeVisible({ timeout: 15_000 });
     await expect(sendInvite).toBeEnabled({ timeout: 15_000 });
     await sendInvite.click();
@@ -24,7 +24,10 @@ export class TeamPage {
   async expectExistingAccountInviteAlert(email: string) {
     await this.open();
     await this.page.getByLabel("Team member email").fill(email);
-    await this.page.getByRole("button", { name: "Send invite" }).click();
+    const sendInvite = this.page.getByTestId("send-invite");
+    await expect(sendInvite).toBeVisible({ timeout: 15_000 });
+    await expect(sendInvite).toBeEnabled({ timeout: 15_000 });
+    await sendInvite.click();
 
     const alert = this.page
       .getByRole("alert")

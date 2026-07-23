@@ -17,14 +17,16 @@ test.describe("@a11y dynamic template accessibility", () => {
     const blockingViolations = results.violations.filter(({ impact }) =>
       ["serious", "critical"].includes(impact ?? ""),
     );
+    const violationSummary = blockingViolations
+      .map(({ help, id, impact, nodes }) => {
+        const targets = nodes.map(({ target }) => target.join(" ")).join(", ");
+        return `${id} (${impact ?? "unknown"}): ${help} [${targets}]`;
+      })
+      .join("\n");
 
     expect(
-      blockingViolations.map(({ help, id, impact, nodes }) => ({
-        help,
-        id,
-        impact,
-        nodes: nodes.map(({ target }) => target),
-      })),
-    ).toEqual([]);
+      blockingViolations,
+      violationSummary || "No serious or critical violations found.",
+    ).toHaveLength(0);
   });
 });
