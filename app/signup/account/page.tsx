@@ -182,7 +182,7 @@ export default function SignupAccountPage() {
               value={registration.phone}
               onChange={(event) => updateRegistration({ phone: event.target.value })}
             />
-            <p className="text-xs text-slate-500">Optional; use a Canadian or North American phone number.</p>
+            <p className="text-xs text-slate-500">Optional; numbers, spaces, parentheses, hyphens, and a leading + only.</p>
           </div>
           <div className="space-y-2">
             <Label htmlFor="acquisitionSource">How did you hear about us?</Label>

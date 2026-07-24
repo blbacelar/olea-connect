@@ -14,6 +14,7 @@ import { SectionHeading } from "@/components/SectionHeading";
 import { Button } from "@/components/ui/button";
 import { FormSelect } from "@/components/ui/form-select";
 import { Input } from "@/components/ui/input";
+import { CurrencyInput } from "@/components/ui/currency-input";
 import { Textarea } from "@/components/ui/textarea";
 import { getGrantsData } from "@/lib/data/grants";
 import {
@@ -144,7 +145,7 @@ function ApplicationForm({
         </label>
         <label className="text-sm font-semibold text-slate-700">
           Requested amount
-          <Input
+          <CurrencyInput
             defaultValue={
               application
                 ? String(application.requestedAmountCents / 100)
@@ -153,18 +154,13 @@ function ApplicationForm({
             max={round.awardAmountCents / 100}
             min={1}
             name="requestedAmount"
-            step="1"
-            type="number"
           />
         </label>
         <label className="text-sm font-semibold text-slate-700">
           Annual revenue
-          <Input
+          <CurrencyInput
             defaultValue={defaultRevenue ? String(defaultRevenue / 100) : ""}
-            min={0}
             name="annualRevenue"
-            step="1"
-            type="number"
           />
         </label>
         <div className="grid content-end gap-2 rounded-lg bg-slate-50 p-3 text-sm text-slate-600">
@@ -403,7 +399,14 @@ function AdminBoard({
               <input name="applicationId" type="hidden" value={application.id} />
               <label className="text-sm font-semibold text-slate-700">
                 Score
-                <Input defaultValue="3" max={5} min={1} name="score" type="number" />
+                <Input
+                  defaultValue="3"
+                  max={5}
+                  min={1}
+                  name="score"
+                  step={1}
+                  type="number"
+                />
               </label>
               <label className="text-sm font-semibold text-slate-700">
                 Member feedback
@@ -474,12 +477,11 @@ function AdminBoard({
                 <input name="applicationId" type="hidden" value={application.id} />
                 <label className="text-sm font-semibold text-amber-950">
                   Award amount
-                  <Input
+                  <CurrencyInput
                     defaultValue={String(application.requestedAmountCents / 100)}
                     max={application.requestedAmountCents / 100}
                     min={1}
                     name="awardAmount"
-                    type="number"
                   />
                 </label>
                 <Button size="sm" type="submit" variant="outline">

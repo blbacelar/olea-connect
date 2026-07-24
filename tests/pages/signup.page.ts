@@ -49,6 +49,14 @@ export class SignupPage {
     await this.page.getByLabel("Password *").fill(password);
   }
 
+  async enterPhone(phone: string) {
+    await this.page.getByLabel("Phone number").fill(phone);
+  }
+
+  async expectPhone(phone: string) {
+    await expect(this.page.getByLabel("Phone number")).toHaveValue(phone);
+  }
+
   async expectOrganizationName(organization: string) {
     await expect(this.page.getByLabel("Organization name *")).toHaveValue(
       organization,

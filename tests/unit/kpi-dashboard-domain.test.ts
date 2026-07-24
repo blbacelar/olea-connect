@@ -67,7 +67,7 @@ describe("KPI dashboard domain helpers", () => {
 
   it("parses KPI number fields after display formatting", () => {
     const required = new FormData();
-    required.set("targetNumber", "1,500,000.50");
+    required.set("targetNumber", "1500000.50");
 
     const optional = new FormData();
     optional.set("baselineNumber", "65.00");
@@ -86,7 +86,12 @@ describe("KPI dashboard domain helpers", () => {
 
     expect(() =>
       parseRequiredNumber(formData, "targetNumber", "Target number"),
-    ).toThrow("Target number must be a positive number with up to 2 decimals.");
+    ).toThrow("Target number must contain a number with up to 2 decimals.");
+
+    formData.set("targetNumber", "1,500.00");
+    expect(() =>
+      parseRequiredNumber(formData, "targetNumber", "Target number"),
+    ).toThrow("Target number must contain a number with up to 2 decimals.");
   });
 
   it("generates sort orders that stay inside Postgres integer limits", () => {

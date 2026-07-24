@@ -1,4 +1,4 @@
-import { expect, test } from "@playwright/test";
+import { expect, test } from "../fixtures/browser.fixture";
 
 import { createTestIdentity } from "../factories/identity";
 import { SignupPage } from "../pages/signup.page";
@@ -39,6 +39,17 @@ test.describe("@smoke @critical membership signup", () => {
 
     await signup.expectOrganizationName("Persistent Org");
     await signup.expectPasswordCleared();
+  });
+
+  test("filters letters from the phone field as the user types", async ({
+    page,
+  }) => {
+    const signup = new SignupPage(page);
+    await signup.openAccount();
+
+    await signup.enterPhone("+1 (604) 555-0123abc");
+
+    await signup.expectPhone("+1 (604) 555-0123");
   });
 
   test("returns from account creation to landing-page plans", async ({

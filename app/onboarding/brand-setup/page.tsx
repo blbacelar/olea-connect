@@ -196,6 +196,8 @@ export default function BrandSetupPage() {
                 <Label htmlFor="brandPhone">Footer phone</Label>
                 <Input
                   id="brandPhone"
+                  type="tel"
+                  inputMode="tel"
                   value={phone}
                   onChange={(event) => setPhone(event.target.value)}
                   placeholder="+1 555 123 4567"

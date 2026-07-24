@@ -4,6 +4,11 @@ import {
   isFieldComplete,
   isVisible,
 } from "./schema";
+import {
+  isValidDecimalInput,
+  normalizeEmail,
+  normalizeHttpUrl,
+} from "@/lib/input-validation";
 import type {
   FieldPath,
   TemplateField,
@@ -115,13 +120,31 @@ function validateField(
 
   if (value === undefined || value === null || value === "") return errors;
 
+  if (field.type === "checkbox" && typeof value !== "boolean") {
+    errors.push({ path: pathKey, message: `${label} must be true or false.` });
+  }
+
   if (
     (field.type === "number" ||
       field.type === "currency" ||
       field.type === "rating") &&
-    Number.isNaN(Number(value))
+    (typeof value !== "number" &&
+      (typeof value !== "string" || !isValidDecimalInput(value)))
   ) {
     errors.push({ path: pathKey, message: `${label} must be a number.` });
+  }
+
+  if (
+    (field.type === "number" ||
+      field.type === "currency" ||
+      field.type === "rating") &&
+    (typeof value === "number" &&
+      (!Number.isFinite(value) || Math.round(value * 100) !== value * 100))
+  ) {
+    errors.push({
+      path: pathKey,
+      message: `${label} must be a number with up to 2 decimals.`,
+    });
   }
 
   const numericValue = Number(value);
@@ -163,12 +186,16 @@ function validateField(
         errors.push({ path: pathKey, message: `${label} is not valid.` });
       }
     }
-    if (field.type === "email" && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value)) {
-      errors.push({ path: pathKey, message: `${label} must be a valid email.` });
+    if (field.type === "email") {
+      try {
+        normalizeEmail(value, label);
+      } catch {
+        errors.push({ path: pathKey, message: `${label} must be a valid email.` });
+      }
     }
     if (field.type === "url") {
       try {
-        new URL(value);
+        normalizeHttpUrl(value, label);
       } catch {
         errors.push({ path: pathKey, message: `${label} must be a valid URL.` });
       }

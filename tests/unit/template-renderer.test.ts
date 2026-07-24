@@ -67,6 +67,38 @@ describe("dynamic template renderer domain", () => {
     expect(errors).toEqual([]);
   });
 
+  it("enforces typed email, URL, number, and boolean values", () => {
+    const typedSchema: TemplateFieldSchema = {
+      version: 1,
+      sections: [
+        {
+          id: "typed",
+          title: "Typed fields",
+          questions: [
+            { id: "email", type: "email", label: "Email" },
+            { id: "website", type: "url", label: "Website" },
+            { id: "amount", type: "currency", label: "Amount" },
+            { id: "confirmed", type: "checkbox", label: "Confirmed" },
+          ],
+        },
+      ],
+    };
+
+    expect(
+      validateTemplateData(typedSchema, {
+        email: "not-an-email",
+        website: "javascript:alert(1)",
+        amount: "1,000.00",
+        confirmed: "yes",
+      }),
+    ).toEqual([
+      { path: "email", message: "Email must be a valid email." },
+      { path: "website", message: "Website must be a valid URL." },
+      { path: "amount", message: "Amount must be a number." },
+      { path: "confirmed", message: "Confirmed must be true or false." },
+    ]);
+  });
+
   it("calculates completion from visible editable fields", () => {
     expect(
       calculateCompletionPercent(schema, {

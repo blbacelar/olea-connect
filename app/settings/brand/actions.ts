@@ -8,6 +8,11 @@ import {
   createLogoSignedUrl,
 } from "@/lib/data/brand-assets";
 import type { BrandProfile } from "@/lib/types";
+import {
+  normalizeOptionalEmail,
+  normalizeOptionalHttpUrl,
+  normalizeOptionalPhone,
+} from "@/lib/input-validation";
 import { createClient } from "@/utils/supabase/server";
 
 const MAX_LOGO_SIZE_BYTES = 2 * 1024 * 1024;
@@ -26,6 +31,9 @@ export async function saveBrandProfile(
   const supabase = await createClient();
   const displayName = brand.organizationName.trim();
   assertCompleteBrand(displayName, brand.primaryColor, brand.secondaryColor);
+  const phone = normalizeOptionalPhone(brand.phone, "Footer phone");
+  const contactEmail = normalizeOptionalEmail(brand.contactEmail, "Footer email");
+  const website = normalizeOptionalHttpUrl(brand.website, "Footer website");
 
   const { data: existingBrand, error: existingBrandError } = await supabase
     .from("organization_brand_profiles")
@@ -54,9 +62,9 @@ export async function saveBrandProfile(
       primary_color: brand.primaryColor,
       secondary_color: brand.secondaryColor,
       address: nullableText(brand.address),
-      phone: nullableText(brand.phone),
-      contact_email: nullableText(brand.contactEmail),
-      website: nullableText(brand.website),
+      phone,
+      contact_email: contactEmail,
+      website,
       brand_completed_at: new Date().toISOString(),
     })
     .select(

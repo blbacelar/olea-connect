@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 
 import { FORM_SELECT_EMPTY_VALUE } from "@/lib/forms/constants";
+import { parseFormBoolean, parseIsoDate } from "@/lib/input-validation";
 import {
   normalizeOptionalEmail,
   normalizeOptionalPhone,
@@ -55,7 +56,7 @@ function nullableText(formData: FormData, key: string) {
 }
 
 function checked(formData: FormData, key: string) {
-  return formData.get(key) === "on" || formData.get(key) === "true";
+  return parseFormBoolean(formData.get(key), key);
 }
 
 function assertChoice<T extends readonly string[]>(
@@ -292,6 +293,17 @@ export async function saveSponsorshipTerm(
     );
     if (!sponsorId) throw new Error("Choose a sponsor.");
 
+    const startsOn = text(formData, "startsOn");
+    const endsOn = text(formData, "endsOn");
+    if (!startsOn || !endsOn) {
+      throw new Error("Start and end dates are required.");
+    }
+    const parsedStartsOn = parseIsoDate(startsOn, "Start date");
+    const parsedEndsOn = parseIsoDate(endsOn, "End date");
+    if (parsedEndsOn < parsedStartsOn) {
+      throw new Error("End date must be on or after the start date.");
+    }
+
     const values = {
       category_exclusivity: nullableText(formData, "categoryExclusivity"),
       committed_contribution_cents: validateOptionalCurrencyToCents(
@@ -303,7 +315,7 @@ export async function saveSponsorshipTerm(
         "Contract amount",
       ),
       currency: "CAD",
-      ends_on: text(formData, "endsOn"),
+      ends_on: endsOn,
       financial_notes: nullableText(formData, "financialNotes"),
       package_id: text(formData, "packageId"),
       private_terms: nullableText(formData, "privateTerms"),
@@ -312,14 +324,11 @@ export async function saveSponsorshipTerm(
         recognition_notes: nullableText(formData, "recognitionNotes"),
       },
       sponsor_id: sponsorId,
-      starts_on: text(formData, "startsOn"),
+      starts_on: startsOn,
       status,
     };
 
     if (!values.package_id) throw new Error("Choose a sponsorship package.");
-    if (!values.starts_on || !values.ends_on) {
-      throw new Error("Start and end dates are required.");
-    }
     const query = sponsorshipId
       ? admin.from("sponsorships").update(values).eq("id", sponsorshipId)
       : admin.from("sponsorships").insert({ ...values, created_by: userId });

@@ -336,6 +336,7 @@ function DashboardSetupForm({ data }: { data: KpiDashboardData }) {
             name="reportingYear"
             pattern="[0-9]{4}"
             required
+            step={1}
             type="number"
           />
           <FieldHint>Use a four-digit year, for example 2026.</FieldHint>

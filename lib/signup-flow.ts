@@ -1,4 +1,8 @@
 import type { RegistrationState } from "@/lib/types";
+import {
+  normalizeEmail,
+  normalizeOptionalPhone,
+} from "@/lib/input-validation";
 import { normalizeReferralCode } from "@/lib/referral-capture";
 
 export const CANADIAN_PROVINCES = [
@@ -124,18 +128,27 @@ export function parseSignupCheckoutInput(value: unknown): SignupCheckoutInput {
     "checkout",
   );
 
-  const email = typeof value.email === "string" ? value.email.trim().toLowerCase() : "";
+  const rawEmail = typeof value.email === "string" ? value.email : "";
   const password = typeof value.password === "string" ? value.password : "";
   const fullName = typeof value.fullName === "string" ? value.fullName.trim() : "";
   const organizationName =
     typeof value.organizationName === "string" ? value.organizationName.trim() : "";
-  const phone = typeof value.phone === "string" ? value.phone.trim() : "";
+  const rawPhone = typeof value.phone === "string" ? value.phone : "";
   const rawReferralCode =
     typeof value.referralCode === "string" ? value.referralCode.trim() : "";
   const referralCode = normalizeReferralCode(rawReferralCode);
 
-  if (!/^\S+@\S+\.\S+$/.test(email) || email.length > 254) {
+  let email: string;
+  let phone: string;
+  try {
+    email = normalizeEmail(rawEmail);
+  } catch {
     throw new SignupValidationError("Enter a valid email address.");
+  }
+  try {
+    phone = normalizeOptionalPhone(rawPhone) ?? "";
+  } catch {
+    throw new SignupValidationError("Enter a valid phone number.");
   }
   if (password.length < 8 || password.length > 128) {
     throw new SignupValidationError("Password must be between 8 and 128 characters.");
@@ -157,9 +170,6 @@ export function parseSignupCheckoutInput(value: unknown): SignupCheckoutInput {
   }
   if (!isOneOf(value.boardSizeRange, BOARD_SIZE_RANGES)) {
     throw new SignupValidationError("Select an approximate board size.");
-  }
-  if (phone && !/^\+?[0-9 ()().-]{7,24}$/.test(phone)) {
-    throw new SignupValidationError("Enter a valid phone number.");
   }
   if (rawReferralCode && !referralCode) {
     throw new SignupValidationError("Enter a valid referral code.");

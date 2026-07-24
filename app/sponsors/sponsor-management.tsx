@@ -5,13 +5,13 @@ import { useFormState, useFormStatus } from "react-dom";
 import { SectionHeading } from "@/components/SectionHeading";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { CurrencyInput } from "@/components/ui/currency-input";
 import { FormSelect } from "@/components/ui/form-select";
 import { Input } from "@/components/ui/input";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Textarea } from "@/components/ui/textarea";
 import type { SponsorGrantRoundOption } from "@/lib/data/sponsors";
 import { FORM_SELECT_EMPTY_VALUE } from "@/lib/forms/constants";
-import { SPONSOR_CURRENCY_PATTERN_SOURCE } from "@/lib/sponsors/domain";
 import type { SponsorReport, SponsorshipPackageSummary } from "@/lib/types";
 
 import {
@@ -63,7 +63,7 @@ function SponsorSubmitButton({ children }: { children: string }) {
 
 function SponsorCurrencyInput({
   name,
-  placeholder = "$1,200.00",
+  placeholder = "1200.00",
   required = false,
 }: {
   name: string;
@@ -71,13 +71,11 @@ function SponsorCurrencyInput({
   required?: boolean;
 }) {
   return (
-    <Input
+    <CurrencyInput
       name={name}
-      inputMode="decimal"
-      pattern={SPONSOR_CURRENCY_PATTERN_SOURCE}
       placeholder={placeholder}
       required={required}
-      title="Use a CAD amount like $1,200.00."
+      title="Enter numbers only, with up to two decimals. The value is formatted as CAD."
     />
   );
 }
@@ -178,7 +176,7 @@ function SponsorProfileForm({ reports }: { reports: SponsorReport[] }) {
             type="tel"
             inputMode="tel"
             placeholder="+1 555 555 5555"
-            pattern="^\\+?[0-9().\\-\\s]{7,}(?:\\s*(?:x|ext)\\.?\\s*\\d{1,6})?$"
+            pattern="^\\+?[0-9().\\-\\s]{7,24}$"
           />
         </label>
       </div>
@@ -208,7 +206,7 @@ function SponsorProfileForm({ reports }: { reports: SponsorReport[] }) {
               type="tel"
               inputMode="tel"
               placeholder="+1 555 555 5555"
-              pattern="^\\+?[0-9().\\-\\s]{7,}(?:\\s*(?:x|ext)\\.?\\s*\\d{1,6})?$"
+              pattern="^\\+?[0-9().\\-\\s]{7,24}$"
             />
           </label>
         </div>

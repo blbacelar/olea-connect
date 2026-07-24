@@ -262,6 +262,7 @@ export function WebinarCreateForm() {
                   name="complimentaryTicketLimit"
                   min={1}
                   placeholder="1"
+                  step={1}
                   type="number"
                 />
               </div>
@@ -274,6 +275,7 @@ export function WebinarCreateForm() {
                   name="ticketPriceCents"
                   min={1}
                   placeholder="2500"
+                  step={1}
                   type="number"
                 />
               </div>

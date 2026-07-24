@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 
 import { requireKpiDashboardForOrganization } from "@/lib/data/kpi-dashboard";
+import { parseStrictInteger } from "@/lib/input-validation";
 import {
   defaultQuarterAssignments,
   monthOptions,
@@ -81,11 +82,23 @@ function dialogSuccess(message: string): KpiDialogActionState {
 }
 
 function parseYear(formData: FormData) {
-  const year = Number(getFormString(formData, "reportingYear"));
-  if (!Number.isInteger(year) || year < 2000 || year > 2100) {
-    throw new Error("Reporting year must be between 2000 and 2100.");
-  }
+  const year = parseStrictInteger(
+    getFormString(formData, "reportingYear"),
+    "Reporting year",
+    2000,
+  );
+  if (year > 2100) throw new Error("Reporting year must be between 2000 and 2100.");
   return year;
+}
+
+function parseQuarter(formData: FormData) {
+  const quarter = parseStrictInteger(
+    getFormString(formData, "quarter"),
+    "Quarter",
+    1,
+  );
+  if (quarter > 4) throw new Error("Quarter is invalid.");
+  return quarter as QuarterNumber;
 }
 
 function parseOptionalDate(formData: FormData, key: string, label: string) {
@@ -184,7 +197,11 @@ export async function updateKpiDashboardSettings(formData: FormData) {
 export async function updateKpiQuarterSettings(formData: FormData) {
   const dashboard = await requireDashboardFromForm(formData);
   const assignments: QuarterMonthAssignment[] = monthOptions.map((month, index) => {
-    const rawQuarter = Number(getFormString(formData, `month_${month.value}`));
+    const rawQuarter = parseStrictInteger(
+      getFormString(formData, `month_${month.value}`),
+      `Quarter for ${month.label}`,
+      1,
+    );
     return {
       monthNumber: month.value,
       quarter: rawQuarter as QuarterNumber,
@@ -246,10 +263,7 @@ export async function resetKpiQuarterSettings(formData: FormData) {
 
 async function saveKpiTrackerEntry(formData: FormData) {
   const dashboard = await requireDashboardFromForm(formData);
-  const quarter = Number(getFormString(formData, "quarter"));
-  if (![1, 2, 3, 4].includes(quarter)) {
-    throw new Error("Quarter is invalid.");
-  }
+  const quarter = parseQuarter(formData);
 
   const {
     baselineNumber,
@@ -315,10 +329,7 @@ export async function createKpiTrackerEntryDialog(
 
 export async function archiveKpiDefinition(formData: FormData) {
   const { dashboard, kpiId } = await requireKpiFromForm(formData);
-  const quarter = Number(getFormString(formData, "quarter"));
-  if (![1, 2, 3, 4].includes(quarter)) {
-    throw new Error("Quarter is invalid.");
-  }
+  const quarter = parseQuarter(formData);
 
   const { error } = await createAdminClient()
     .from("kpi_definitions")
@@ -332,10 +343,7 @@ export async function archiveKpiDefinition(formData: FormData) {
 
 export async function saveKpiQuarterResult(formData: FormData) {
   const { dashboard, kpiId } = await requireKpiFromForm(formData);
-  const quarter = Number(getFormString(formData, "quarter"));
-  if (![1, 2, 3, 4].includes(quarter)) {
-    throw new Error("Quarter is invalid.");
-  }
+  const quarter = parseQuarter(formData);
 
   const {
     baselineNumber,
@@ -405,10 +413,7 @@ export async function saveKpiQuarterResult(formData: FormData) {
 
 export async function deleteKpiQuarterResult(formData: FormData) {
   const { kpiId } = await requireKpiFromForm(formData);
-  const quarter = Number(getFormString(formData, "quarter"));
-  if (![1, 2, 3, 4].includes(quarter)) {
-    throw new Error("Quarter is invalid.");
-  }
+  const quarter = parseQuarter(formData);
 
   const { error } = await createAdminClient()
     .from("kpi_quarter_results")

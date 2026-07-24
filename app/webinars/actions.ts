@@ -7,6 +7,7 @@ import { eventTypes, platformEventRoles } from "@/lib/data/webinars";
 import type { MembershipTier, Webinar } from "@/lib/types";
 import { createAdminClient } from "@/utils/supabase/admin";
 import { createClient } from "@/utils/supabase/server";
+import { normalizeHttpUrl, parseStrictInteger } from "@/lib/input-validation";
 
 const activeSubscriptionStatuses = new Set(["active", "trialing"]);
 const membershipTiers = ["seedling", "roots", "canopy", "harvest"] as const;
@@ -45,9 +46,11 @@ function assertOneOf<T extends readonly string[]>(
 }
 
 function parsePositiveInteger(value: string, message: string) {
-  const parsed = Number.parseInt(value, 10);
-  if (!Number.isInteger(parsed) || parsed <= 0) throw new Error(message);
-  return parsed;
+  try {
+    return parseStrictInteger(value, message, 1);
+  } catch {
+    throw new Error(message);
+  }
 }
 
 function parseOptionalPositiveInteger(value: string, message: string) {
@@ -283,7 +286,7 @@ export async function createWebinarEvent(formData: FormData) {
       "Choose a valid end date and time.",
     );
     const timezone = getText(formData, "timezone") || "America/Vancouver";
-    const joinUrl = getText(formData, "joinUrl");
+    const joinUrl = normalizeHttpUrl(getText(formData, "joinUrl"), "Zoom URL");
     const providerEventId = getText(formData, "providerEventId");
     const accessMode = getText(formData, "accessMode") || "included";
     const selectedPlanIds = formData
@@ -450,9 +453,10 @@ export async function importEventAttendance(formData: FormData) {
   const userId = getText(formData, "userId");
   const providerRegistrationId = getText(formData, "providerRegistrationId");
   const providerAttendanceId = getText(formData, "providerAttendanceId");
-  const duration = Number.parseInt(getText(formData, "watchDurationSeconds"), 10);
-  const watchDurationSeconds =
-    Number.isFinite(duration) && duration >= 0 ? duration : null;
+  const rawDuration = getText(formData, "watchDurationSeconds");
+  const watchDurationSeconds = rawDuration
+    ? parseStrictInteger(rawDuration, "Watch duration", 0)
+    : null;
   const { admin } = await requireEventAdmin();
   const attendanceUpdate: Record<string, string | number | null> = {
     attended_at: new Date().toISOString(),

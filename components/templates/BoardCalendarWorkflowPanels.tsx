@@ -409,6 +409,7 @@ export function BoardCalendarSetupPanel({
                 />
                 <Input
                   aria-label={`Task rule ${index + 1} days`}
+                  step={1}
                   type="number"
                   value={String(
                     isAfter
@@ -1673,6 +1674,7 @@ export function AgmTimelinePanel({
                 <Field label="Days before AGM">
                   <Input
                     aria-label={`AGM milestone ${activeMilestoneNumber} days before AGM`}
+                    step={1}
                     type="number"
                     value={String(getNumber(milestoneDraft, "days_before"))}
                     onChange={(event) =>

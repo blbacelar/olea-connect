@@ -1,3 +1,5 @@
+import { parseStrictDecimal } from "@/lib/input-validation";
+
 export const monthOptions = [
   { label: "January", value: 1 },
   { label: "February", value: 2 },
@@ -15,7 +17,6 @@ export const monthOptions = [
 
 export const decimalNumberPattern = String.raw`\d+(\.\d{1,2})?`;
 export const positiveDecimalNumberPattern = String.raw`(0*[1-9]\d*(\.\d{1,2})?|0?\.(0[1-9]|[1-9]\d?))`;
-const decimalNumberRegex = new RegExp(`^${decimalNumberPattern}$`);
 const postgresIntegerMax = 2147483647;
 
 export const ragStatuses = ["green", "amber", "red", "na"] as const;
@@ -181,12 +182,9 @@ export function parseRequiredNumber(
   key: string,
   label: string,
 ) {
-  const rawValue = String(formData.get(key) ?? "").trim().replace(/,/g, "");
+  const rawValue = String(formData.get(key) ?? "").trim();
   if (!rawValue) throw new Error(`${label} is required.`);
-  if (!decimalNumberRegex.test(rawValue)) {
-    throw new Error(`${label} must be a positive number with up to 2 decimals.`);
-  }
-  return Number(rawValue);
+  return parseStrictDecimal(rawValue, label);
 }
 
 export function parseOptionalNumber(
@@ -194,12 +192,9 @@ export function parseOptionalNumber(
   key: string,
   label: string,
 ) {
-  const rawValue = String(formData.get(key) ?? "").trim().replace(/,/g, "");
+  const rawValue = String(formData.get(key) ?? "").trim();
   if (!rawValue) return null;
-  if (!decimalNumberRegex.test(rawValue)) {
-    throw new Error(`${label} must be a positive number with up to 2 decimals.`);
-  }
-  return Number(rawValue);
+  return parseStrictDecimal(rawValue, label);
 }
 
 export function nextSortOrderAfter(currentMax: number | null | undefined) {

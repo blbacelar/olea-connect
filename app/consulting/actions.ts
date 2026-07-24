@@ -9,6 +9,7 @@ import type {
 } from "@/lib/types";
 import { createAdminClient } from "@/utils/supabase/admin";
 import { createClient } from "@/utils/supabase/server";
+import { parseFormBoolean, parseStrictInteger } from "@/lib/input-validation";
 
 import { requireMemberContext } from "@/lib/data/member-context";
 
@@ -282,15 +283,16 @@ export async function recordConsultingTime(
   formData: FormData,
 ): Promise<ConsultingActionState> {
   try {
-    const minutes = Number.parseInt(getText(formData, "minutes"), 10);
-    if (!Number.isInteger(minutes) || minutes <= 0) {
-      throw new Error("Enter time in minutes greater than zero.");
-    }
+    const minutes = parseStrictInteger(
+      getText(formData, "minutes"),
+      "Minutes",
+      1,
+    );
 
     const supabase = await createClient();
     const { error } = await supabase.rpc("record_consulting_time_entry", {
       target_description: getText(formData, "description"),
-      target_is_in_kind: formData.get("isInKind") === "on",
+      target_is_in_kind: parseFormBoolean(formData.get("isInKind"), "In-kind time"),
       target_minutes: minutes,
       target_request_id: getText(formData, "requestId"),
       target_work_date: getText(formData, "workDate") || null,

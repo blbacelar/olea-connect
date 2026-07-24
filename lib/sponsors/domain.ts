@@ -1,3 +1,9 @@
+import {
+  normalizeEmail,
+  normalizeHttpUrl,
+  normalizePhone,
+} from "@/lib/input-validation";
+
 export type SponsorContributionReconciliationInput = {
   allocatedAmountCents: number;
   amountCents: number;
@@ -48,8 +54,7 @@ export function normalizeSponsorSlug(value: string) {
     .replace(/-{2,}/g, "-");
 }
 
-export const SPONSOR_CURRENCY_PATTERN_SOURCE =
-  "(?:CAD\\s*)?\\$?(?:\\d+|\\d{1,3}(?:,\\d{3})+)(?:\\.\\d{1,2})?";
+export const SPONSOR_CURRENCY_PATTERN_SOURCE = "\\d+(?:\\.\\d{1,2})?";
 
 const currencyFormatPattern = new RegExp(
   `^${SPONSOR_CURRENCY_PATTERN_SOURCE}$`,
@@ -61,10 +66,7 @@ export function parseCurrencyToCents(value: string) {
   if (!normalizedInput) return 0;
   if (!currencyFormatPattern.test(normalizedInput)) return 0;
 
-  const normalized = normalizedInput.replace(/CAD|[$,\s]/gi, "");
-  if (!normalized) return 0;
-
-  const amount = Number(normalized);
+  const amount = Number(normalizedInput);
   if (!Number.isFinite(amount) || amount < 0) return 0;
 
   return Math.round(amount * 100);
@@ -78,7 +80,7 @@ export function validateCurrencyToCents(value: string, label = "Amount") {
 
   const cents = parseCurrencyToCents(normalizedInput);
   if (cents <= 0) {
-    throw new Error(`${label} must be a valid CAD amount like $1,200.00.`);
+    throw new Error(`${label} must contain numbers only, with up to 2 decimals.`);
   }
 
   return cents;
@@ -93,7 +95,7 @@ export function validateOptionalCurrencyToCents(
 
   const cents = parseCurrencyToCents(normalizedInput);
   if (cents <= 0) {
-    throw new Error(`${label} must be a valid CAD amount like $1,200.00.`);
+    throw new Error(`${label} must contain numbers only, with up to 2 decimals.`);
   }
 
   return cents;
@@ -103,9 +105,7 @@ export function normalizeOptionalHttpUrl(value: string | null) {
   if (!value) return null;
 
   try {
-    const url = new URL(value);
-    if (url.protocol !== "http:" && url.protocol !== "https:") return null;
-    return url.toString();
+    return normalizeHttpUrl(value);
   } catch {
     return null;
   }
@@ -125,25 +125,11 @@ export function validateOptionalHttpUrl(value: string | null, label = "URL") {
 export function normalizeOptionalEmail(value: string | null, label = "Email") {
   if (!value) return null;
 
-  const normalized = value.trim().toLowerCase();
-  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(normalized)) {
-    throw new Error(`${label} must be a valid email address.`);
-  }
-
-  return normalized;
+  return normalizeEmail(value, label);
 }
 
 export function normalizeOptionalPhone(value: string | null, label = "Phone") {
   if (!value) return null;
 
-  const normalized = value.replace(/\s+/g, " ").trim();
-  const digits = normalized.replace(/\D/g, "");
-  const hasPhoneShape =
-    /^\+?[\d().\-\s]{7,}(?:\s*(?:x|ext)\.?\s*\d{1,6})?$/i.test(normalized);
-
-  if (!hasPhoneShape || digits.length < 7 || digits.length > 20) {
-    throw new Error(`${label} must be a valid phone number.`);
-  }
-
-  return normalized;
+  return normalizePhone(value, label);
 }

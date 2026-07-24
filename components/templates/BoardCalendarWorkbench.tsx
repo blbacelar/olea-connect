@@ -1728,6 +1728,7 @@ function CalendarEntryComposer({
                 </Label>
                 <Input
                   id="calendar-entry-days-before-agm"
+                  step={1}
                   type="number"
                   placeholder="30"
                   value={entryWeeksBefore}

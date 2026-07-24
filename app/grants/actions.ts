@@ -11,6 +11,7 @@ import {
 } from "@/lib/grants/domain";
 import { createAdminClient } from "@/utils/supabase/admin";
 import { createClient } from "@/utils/supabase/server";
+import { parseFormBoolean, parseStrictDecimal, parseStrictInteger } from "@/lib/input-validation";
 
 type GrantDecision = "in_review" | "shortlisted" | "approved" | "declined";
 
@@ -21,13 +22,11 @@ function getText(formData: FormData, key: string) {
 }
 
 function getBoolean(formData: FormData, key: string) {
-  return formData.get(key) === "on" || formData.get(key) === "true";
+  return parseFormBoolean(formData.get(key), key);
 }
 
 function getMoneyCents(formData: FormData, key: string) {
-  const value = getText(formData, key).replace(/[$,\s]/g, "");
-  const amount = Number(value);
-  if (!Number.isFinite(amount)) return 0;
+  const amount = parseStrictDecimal(getText(formData, key), key, 0);
   return Math.round(amount * 100);
 }
 
@@ -244,7 +243,7 @@ export async function withdrawGrantApplication(formData: FormData) {
 export async function reviewGrantApplication(formData: FormData) {
   const applicationId = getText(formData, "applicationId");
   const decision = getText(formData, "decision") as GrantDecision;
-  const score = Number(getText(formData, "score"));
+  const score = parseStrictInteger(getText(formData, "score"), "Score", 1);
   const { admin, userId } = await requireGrantsAdmin();
 
   if (!["in_review", "shortlisted", "approved", "declined"].includes(decision)) {

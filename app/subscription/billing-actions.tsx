@@ -462,6 +462,7 @@ export function BillingManagementControls({
                 max={60}
                 min={1}
                 onChange={(event) => setPauseDays(event.target.value)}
+                step={1}
                 type="number"
                 value={pauseDays}
               />

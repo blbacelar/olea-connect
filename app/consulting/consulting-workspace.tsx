@@ -528,7 +528,13 @@ function TimeEntryForm({ requestId }: { requestId: string }) {
         </div>
         <div>
           <Label htmlFor={`minutes-${requestId}`}>Minutes</Label>
-          <Input id={`minutes-${requestId}`} min={1} name="minutes" type="number" />
+          <Input
+            id={`minutes-${requestId}`}
+            min={1}
+            name="minutes"
+            step={1}
+            type="number"
+          />
         </div>
         <div>
           <Label htmlFor={`in-kind-${requestId}`}>Time type</Label>
