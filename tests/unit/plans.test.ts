@@ -27,6 +27,18 @@ describe("membership plans", () => {
     ]);
   });
 
+  it("keeps strategic planning unavailable below Canopy", () => {
+    expect(getPlan("seedling").notIncluded).toContain(
+      "Strategic planning module",
+    );
+    expect(getPlan("roots").notIncluded).toContain(
+      "Strategic planning module",
+    );
+    expect(getPlan("canopy").features).toContain(
+      "Strategic planning module",
+    );
+  });
+
   it("returns Roots as the conservative fallback for an unknown tier", () => {
     expect(getPlan("roots").id).toBe("roots");
     expect(getPlan("unknown" as "roots").id).toBe("roots");

@@ -371,6 +371,27 @@ The app expects recurring CAD prices for:
 - Harvest quarterly and annual.
 - Paid seats are one-time CAD purchases at $15.00 per seat.
 
+The public pricing catalog also includes these non-membership services:
+
+- Impact Coaching: $162 CAD/hour; Light $1,944/quarter, Medium $3,888/quarter,
+  Deep $5,832/quarter.
+- Admin Support: $100 CAD/hour; Light $1,200/quarter, Medium $2,400/quarter,
+  Deep $3,600/quarter.
+- Board Retreat Facilitation: $1,400 half-day or $2,300 full day.
+- Canopy and Harvest receive 10% off coaching and admin packages.
+
+The public referral program displays the current recognition tiers: one
+successful referral earns a $250 Olea Gives grant and two coaching hours; two
+earns $500 and four coaching hours; three or more earns Olea Champion
+recognition. Referral validation and post-payment crediting are tracked in
+issue #56 and must be enforced server-side before this policy is considered
+operational.
+
+Founding-member pricing is display-only until the first-50 eligibility check,
+Stripe discount strategy, and Year 1 expiration are verified in a real Stripe
+test environment. Do not treat a client-side founding price as authorization to
+charge or discount an account.
+
 Paid seats are limited in the app to 1-3 seats per one-time Checkout payment.
 
 ### Webhook Endpoint

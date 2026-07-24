@@ -9,6 +9,7 @@ import { StepIndicator } from "@/components/auth/StepIndicator";
 import { Button } from "@/components/ui/button";
 import { useRegistration } from "@/hooks/use-registration";
 import { membershipPlans } from "@/lib/plans";
+import { formatCad, pricingPolicies } from "@/lib/pricing";
 import type { MembershipTier } from "@/lib/types";
 import { cn } from "@/lib/utils";
 
@@ -97,17 +98,18 @@ export default function SignupPlanPage() {
                   {plan.icon} {plan.name}
                 </p>
                 <p className="mt-4 text-3xl font-bold">
-                  ${price.toLocaleString()}
+                  {formatCad(price)}
                   <span className="text-sm font-normal text-slate-400">
                     /{registration.billingCycle === "annual" ? "year" : "quarter"}
                   </span>
                 </p>
                 <p className="mt-1 text-xs font-semibold text-olea-green">
-                  Founding Year 1: $
-                  {(registration.billingCycle === "annual"
-                    ? plan.foundingAnnualPrice
-                    : plan.foundingQuarterlyPrice
-                  ).toLocaleString()}
+                  Founding Year 1: {formatCad(
+                    registration.billingCycle === "annual"
+                      ? plan.foundingAnnualPrice
+                      : plan.foundingQuarterlyPrice,
+                  )}
+                  {" "}· eligibility confirmed before payment
                 </p>
                 <p className="mt-1 text-sm text-slate-500">{plan.seats}</p>
                 <ul className="mt-5 space-y-2 text-sm text-slate-600">
@@ -122,6 +124,10 @@ export default function SignupPlanPage() {
             );
           })}
         </div>
+        <p className="mx-auto mt-5 max-w-2xl text-center text-xs leading-5 text-slate-500">
+          {pricingPolicies.foundingMember} Prices are shown before tax; GST/PST
+          is calculated at secure checkout.
+        </p>
         <div className="mt-8 text-center">
           <Button size="lg" onClick={() => router.push("/signup/account")}>
             Continue with{" "}

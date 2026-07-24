@@ -41,6 +41,7 @@ export const membershipPlans: MembershipPlan[] = [
       "KPI and impact dashboard",
       "Board evaluation system",
       "ED/CEO 360 review",
+      "Strategic planning module",
     ],
   },
   {

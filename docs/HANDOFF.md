@@ -25,6 +25,22 @@ The platform also includes:
 - Transactional email, webhooks, and background workers.
 - Native community foundation with deferred Circle SSO/provisioning scaffolding.
 
+### Pricing Package
+
+The public pricing source is centralized in `lib/plans.ts` for membership tiers
+and `lib/pricing.ts` for add-ons, referral display rewards, and public billing
+policies. The current membership prices are $800/$200 for Seedling,
+$3,200/$800 for Roots, $6,000/$1,500 for Canopy, and $9,600/$2,400 for Harvest
+(annual/quarterly CAD). Included seats are 5, 10, 15, and 20 respectively;
+additional seats are $15 CAD one-time per seat.
+
+The pricing page intentionally distinguishes public display from billing
+authorization. Founding-member rates are shown as a first-50, Year 1-only
+offer, but the server must verify eligibility and apply the Stripe discount
+before charging. Referral capture, first-referral-wins, self-referral checks,
+and post-payment reward crediting are specified in issue #56 and are not
+considered complete based on display copy alone.
+
 ## Business Context
 
 The app is built for Canadian nonprofit, society, charity, and community

@@ -17,6 +17,7 @@ import {
 import { useRegistration } from "@/hooks/use-registration";
 import { startStripeCheckout } from "@/lib/auth";
 import { getPlan } from "@/lib/plans";
+import { formatCad } from "@/lib/pricing";
 
 const provinces = [
   "AB",
@@ -163,13 +164,14 @@ export default function SignupPaymentPage() {
               {registration.billingCycle} billing
             </p>
             <p className="mt-5 text-3xl font-bold">
-              ${price.toLocaleString()}
+              {formatCad(price)}
               <span className="text-sm font-normal text-slate-400">
                 /{billingPeriod}
               </span>
             </p>
             <p className="mt-1 text-xs font-semibold text-olea-green">
-              Founding Year 1: ${foundingPrice.toLocaleString()}/{billingPeriod}
+              Founding Year 1: {formatCad(foundingPrice)}/{billingPeriod} ·
+              eligibility confirmed before payment
             </p>
             <div className="my-5 border-t" />
             <p className="font-semibold text-olea-dark">
