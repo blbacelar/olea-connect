@@ -15,19 +15,30 @@ export class SignupPage {
     fullName,
     email,
     password,
+    organizationKind = "Nonprofit",
+    boardSize = "6-10 members",
+    annualBudget = "Under $250,000",
   }: {
     organization: string;
     fullName: string;
     email: string;
     password: string;
+    organizationKind?: string;
+    boardSize?: string;
+    annualBudget?: string;
   }) {
     await this.page.getByLabel("Organization name *").fill(organization);
     await this.page.getByLabel("Your name *").fill(fullName);
+    await this.select("Organization type *", organizationKind);
+    await this.select("Approximate board size *", boardSize);
+    await this.select("Annual organizational budget *", annualBudget);
     await this.page.getByLabel("Email address *").fill(email);
     await this.page.getByLabel("Password *").fill(password);
-    await this.page
-      .getByLabel("I agree to the Terms of Service and Privacy Policy.")
-      .check();
+  }
+
+  private async select(label: string, option: string) {
+    await this.page.getByRole("combobox", { name: label }).click();
+    await this.page.getByRole("option", { name: option, exact: true }).click();
   }
 
   async enterOrganizationName(organization: string) {

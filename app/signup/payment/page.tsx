@@ -16,6 +16,7 @@ import {
 } from "@/components/ui/select";
 import { useRegistration } from "@/hooks/use-registration";
 import { startStripeCheckout } from "@/lib/auth";
+import { LEGAL_DOCUMENTS } from "@/lib/legal-documents";
 import { getPlan } from "@/lib/plans";
 import { formatCad } from "@/lib/pricing";
 
@@ -44,12 +45,9 @@ export default function SignupPaymentPage() {
     registration.billingCycle === "annual"
       ? plan.annualPrice
       : plan.quarterlyPrice;
-  const foundingPrice =
-    registration.billingCycle === "annual"
-      ? plan.foundingAnnualPrice
-      : plan.foundingQuarterlyPrice;
   const billingPeriod =
     registration.billingCycle === "annual" ? "year" : "quarter";
+  const allConsentsGranted = Object.values(registration.consents).every(Boolean);
 
   useEffect(() => {
     if (
@@ -62,6 +60,10 @@ export default function SignupPaymentPage() {
   }, []);
 
   const handlePayment = () => {
+    if (!allConsentsGranted) {
+      setError("Review and accept each required policy before continuing.");
+      return;
+    }
     startTransition(async () => {
       try {
         setError("");
@@ -126,11 +128,43 @@ export default function SignupPaymentPage() {
                   </SelectContent>
                 </Select>
               </div>
+              <div className="rounded-xl border bg-slate-50 p-4">
+                <h3 className="font-semibold text-olea-dark">Review & legal agreements</h3>
+                <dl className="mt-3 grid gap-2 text-sm text-slate-600">
+                  <div className="flex justify-between gap-4"><dt>Organization</dt><dd className="font-medium text-slate-900">{registration.organizationName}</dd></div>
+                  <div className="flex justify-between gap-4"><dt>Plan</dt><dd className="font-medium text-slate-900">{plan.name}</dd></div>
+                  <div className="flex justify-between gap-4"><dt>Billing</dt><dd className="font-medium capitalize text-slate-900">{registration.billingCycle}</dd></div>
+                  <div className="flex justify-between gap-4"><dt>Included seats</dt><dd className="font-medium text-slate-900">{plan.seats}</dd></div>
+                </dl>
+                <div className="mt-4 space-y-3 border-t pt-4 text-sm text-slate-700">
+                  <ConsentCheckbox
+                    checked={registration.consents.terms}
+                    onChange={(checked) => updateRegistration({ consents: { ...registration.consents, terms: checked } })}
+                    document={LEGAL_DOCUMENTS.terms}
+                  />
+                  <ConsentCheckbox
+                    checked={registration.consents.privacy}
+                    onChange={(checked) => updateRegistration({ consents: { ...registration.consents, privacy: checked } })}
+                    document={LEGAL_DOCUMENTS.privacy}
+                  />
+                  <ConsentCheckbox
+                    checked={registration.consents.dataOwnership}
+                    onChange={(checked) => updateRegistration({ consents: { ...registration.consents, dataOwnership: checked } })}
+                    document={LEGAL_DOCUMENTS.dataOwnership}
+                  />
+                  <ConsentCheckbox
+                    checked={registration.consents.confidentiality}
+                    onChange={(checked) => updateRegistration({ consents: { ...registration.consents, confidentiality: checked } })}
+                    document={LEGAL_DOCUMENTS.confidentiality}
+                  />
+                </div>
+              </div>
               <Button
                 className="w-full"
                 disabled={
                   !registration.email ||
                   registration.password.length < 8 ||
+                  !allConsentsGranted ||
                   isPending
                 }
                 onClick={handlePayment}
@@ -170,8 +204,7 @@ export default function SignupPaymentPage() {
               </span>
             </p>
             <p className="mt-1 text-xs font-semibold text-olea-green">
-              Founding Year 1: {formatCad(foundingPrice)}/{billingPeriod} ·
-              eligibility confirmed before payment
+              Founding-member eligibility is confirmed securely before payment.
             </p>
             <div className="my-5 border-t" />
             <p className="font-semibold text-olea-dark">
@@ -191,5 +224,38 @@ export default function SignupPaymentPage() {
         </div>
       </main>
     </div>
+  );
+}
+
+function ConsentCheckbox({
+  checked,
+  onChange,
+  document,
+}: {
+  checked: boolean;
+  onChange: (checked: boolean) => void;
+  document: { title: string; version: string; href: string };
+}) {
+  return (
+    <label className="flex items-start gap-2.5">
+      <input
+        type="checkbox"
+        checked={checked}
+        onChange={(event) => onChange(event.target.checked)}
+        className="mt-0.5 size-4 accent-olea-green"
+      />
+      <span>
+        I agree to the{" "}
+        <a
+          className="font-semibold text-olea-green underline"
+          href={document.href}
+          target="_blank"
+          rel="noreferrer"
+        >
+          {document.title}
+        </a>{" "}
+        <span className="text-xs text-slate-500">(version {document.version})</span>.
+      </span>
+    </label>
   );
 }

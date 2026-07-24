@@ -3,6 +3,8 @@ import "server-only";
 import type Stripe from "stripe";
 import type { SupabaseClient } from "@supabase/supabase-js";
 
+import { LEGAL_DOCUMENTS } from "@/lib/legal-documents";
+import { SignupValidationError } from "@/lib/signup-flow";
 import {
   mapSubscriptionStatus,
   toIsoDate,
@@ -14,7 +16,7 @@ import type { MembershipTier, RegistrationState } from "@/lib/types";
 type BillingCycle = RegistrationState["billingCycle"];
 const tiers: MembershipTier[] = ["seedling", "roots", "canopy", "harvest"];
 
-interface CheckoutRegistration {
+export interface CheckoutRegistration {
   userId: string;
   email: string;
   fullName: string;
@@ -22,6 +24,13 @@ interface CheckoutRegistration {
   province: string;
   tier: MembershipTier;
   billingCycle: BillingCycle;
+  organizationKind: RegistrationState["organizationKind"];
+  annualBudgetRange: RegistrationState["annualBudgetRange"];
+  boardSizeRange: RegistrationState["boardSizeRange"];
+  phone: string;
+  acquisitionSource: RegistrationState["acquisitionSource"];
+  referralCode: string;
+  consents: RegistrationState["consents"];
 }
 
 export interface ProvisioningResult {
@@ -56,25 +65,54 @@ export async function prepareCheckoutRegistration(
     await supabase.auth.admin.getUserById(registration.userId);
 
   if (authError || !authUser.user) {
-    throw new Error("The signup account could not be verified.");
+    throw new SignupValidationError("The signup account could not be verified.");
   }
 
   if (
     authUser.user.email?.toLowerCase() !== registration.email.toLowerCase()
   ) {
-    throw new Error("The checkout email does not match the signup account.");
+    throw new SignupValidationError("The checkout email does not match the signup account.");
   }
 
   const { data: existing, error: lookupError } = await supabase
     .from("workspace_provisioning_requests")
-    .select("id, status")
+    .select(
+      "id, status, referral_code, founding_member_eligible, founding_discount_identifier, founding_member_year",
+    )
     .eq("user_id", registration.userId)
     .maybeSingle();
 
   if (lookupError) throw lookupError;
   if (existing?.status === "completed") {
-    throw new Error("This account already has an active workspace.");
+    throw new SignupValidationError("This account already has an active workspace.");
   }
+
+  const referralCode = (existing?.referral_code ?? registration.referralCode)
+    .trim()
+    .toUpperCase();
+  if (referralCode) {
+    const { data: referral, error: referralError } = await supabase
+      .from("referral_codes")
+      .select("organization_id")
+      .eq("code", referralCode)
+      .eq("active", true)
+      .maybeSingle();
+    if (referralError) throw referralError;
+    if (!referral) throw new SignupValidationError("That referral code is invalid or expired.");
+
+    const { data: currentMembership, error: membershipError } = await supabase
+      .from("organization_members")
+      .select("organization_id")
+      .eq("user_id", registration.userId)
+      .eq("status", "active")
+      .maybeSingle();
+    if (membershipError) throw membershipError;
+    if (currentMembership?.organization_id === referral.organization_id) {
+      throw new SignupValidationError("You cannot use your own organization referral code.");
+    }
+  }
+
+  const foundingCouponId = process.env.STRIPE_FOUNDING_COUPON_ID ?? "";
 
   const values = {
     user_id: registration.userId,
@@ -82,6 +120,17 @@ export async function prepareCheckoutRegistration(
     full_name: registration.fullName.trim(),
     organization_name: registration.organizationName.trim(),
     province_or_region: registration.province,
+    organization_kind: registration.organizationKind,
+    annual_budget_range: registration.annualBudgetRange,
+    board_size_range: registration.boardSizeRange,
+    contact_phone: registration.phone.trim() || null,
+    acquisition_source: registration.acquisitionSource || null,
+    referral_code: referralCode || null,
+    referral_status: referralCode ? "pending" : "none",
+    founding_member_eligible: existing?.founding_member_eligible ?? false,
+    founding_discount_identifier:
+      existing?.founding_discount_identifier ?? null,
+    founding_member_year: existing?.founding_member_year ?? null,
     plan_id: registration.tier,
     billing_interval:
       registration.billingCycle === "annual" ? "year" : "month",
@@ -100,7 +149,12 @@ export async function prepareCheckoutRegistration(
       .single();
 
     if (error) throw error;
-    return { requestId: data.id as string };
+    return reserveFoundingMember(
+      supabase,
+      data.id as string,
+      foundingCouponId,
+      referralCode || null,
+    );
   }
 
   const { data, error } = await supabase
@@ -110,7 +164,83 @@ export async function prepareCheckoutRegistration(
     .single();
 
   if (error) throw error;
-  return { requestId: data.id as string };
+  return reserveFoundingMember(
+    supabase,
+    data.id as string,
+    foundingCouponId,
+    referralCode || null,
+  );
+}
+
+async function reserveFoundingMember(
+  supabase: SupabaseClient,
+  requestId: string,
+  couponId: string,
+  referralCode: string | null,
+) {
+  if (!couponId) {
+    return {
+      requestId,
+      referralCode,
+      foundingMemberEligible: false,
+      foundingDiscountIdentifier: null,
+    };
+  }
+
+  const { data, error } = await supabase.rpc("reserve_founding_member", {
+    target_request_id: requestId,
+    target_discount_identifier: couponId,
+  });
+  if (error) throw error;
+
+  const result = data as {
+    eligible?: boolean;
+    discount_identifier?: string | null;
+  };
+  return {
+    requestId,
+    referralCode,
+    foundingMemberEligible: result.eligible === true,
+    foundingDiscountIdentifier:
+      result.eligible === true ? result.discount_identifier ?? couponId : null,
+  };
+}
+
+export async function storeSignupConsents(
+  supabase: SupabaseClient,
+  registration: CheckoutRegistration,
+  requestId: string,
+) {
+  if (!Object.values(registration.consents).every(Boolean)) {
+    throw new SignupValidationError("Review and accept all required policies.");
+  }
+
+  const documents = [
+    ["terms_of_service", LEGAL_DOCUMENTS.terms],
+    ["privacy_policy", LEGAL_DOCUMENTS.privacy],
+    ["data_ownership", LEGAL_DOCUMENTS.dataOwnership],
+    ["confidentiality", LEGAL_DOCUMENTS.confidentiality],
+  ] as const;
+
+  const { error } = await supabase.from("privacy_consents").upsert(
+    documents.map(([consentType, document]) => ({
+      user_id: registration.userId,
+      signup_request_id: requestId,
+      consent_type: consentType,
+      policy_version: document.version,
+      granted: true,
+      document_path: document.href,
+      context: {
+        tier: registration.tier,
+        billing_cycle: registration.billingCycle,
+        organization_kind: registration.organizationKind,
+        referral_present: Boolean(registration.referralCode),
+      },
+    })),
+    { onConflict: "signup_request_id,consent_type" },
+  );
+
+  if (error) throw error;
 }
 
 export async function attachCheckoutSession(
@@ -266,6 +396,26 @@ export async function attemptWorkspaceProvisioning(
   if (error) throw error;
   const result = data as ProvisioningResult;
 
+  if (result.status === "completed" && result.organization_id) {
+    const { error: referralError } = await supabase.rpc(
+      "finalize_signup_referral",
+      {
+        target_request_id: requestId,
+        target_organization_id: result.organization_id,
+      },
+    );
+    if (referralError) throw referralError;
+
+    const { error: foundingMemberError } = await supabase.rpc(
+      "mark_founding_member_paid",
+      {
+        target_request_id: requestId,
+        target_organization_id: result.organization_id,
+      },
+    );
+    if (foundingMemberError) throw foundingMemberError;
+  }
+
   if (result.status === "completed") {
     const { data: request, error: requestError } = await supabase
       .from("workspace_provisioning_requests")
@@ -291,6 +441,7 @@ export async function attemptWorkspaceProvisioning(
           request.provider_subscription_id,
           {
             metadata: {
+              ...subscription.metadata,
               provisioning_request_id: requestId,
               local_subscription_id: result.subscription_id ?? "",
               organization_id: result.organization_id ?? "",

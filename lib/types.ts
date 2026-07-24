@@ -1,5 +1,28 @@
 export type MembershipTier = "seedling" | "roots" | "canopy" | "harvest";
 export type Tier = MembershipTier;
+export type OrganizationKind =
+  | "nonprofit"
+  | "registered_charity"
+  | "society"
+  | "community_organization"
+  | "foundation"
+  | "other";
+export type AnnualBudgetRange =
+  | "under-250k"
+  | "250k-500k"
+  | "500k-1m"
+  | "1m-2m"
+  | "2m-5m"
+  | "over-5m";
+export type BoardSizeRange = "3-5" | "6-10" | "11-15" | "16-20" | "20plus";
+export type AcquisitionSource =
+  | "referral"
+  | "web-search"
+  | "social-media"
+  | "webinar"
+  | "sponsor"
+  | "word-of-mouth"
+  | "other";
 export type OrganizationRole = "owner" | "admin" | "member";
 export type PlatformRole =
   | "super_admin"
@@ -17,6 +40,18 @@ export interface RegistrationState {
   email: string;
   password: string;
   province: string;
+  organizationKind: OrganizationKind | "";
+  annualBudgetRange: AnnualBudgetRange | "";
+  boardSizeRange: BoardSizeRange | "";
+  phone: string;
+  acquisitionSource: AcquisitionSource | "";
+  referralCode: string;
+  consents: {
+    terms: boolean;
+    privacy: boolean;
+    dataOwnership: boolean;
+    confidentiality: boolean;
+  };
   emailVerified: boolean;
   brandComplete: boolean;
   selectedTemplateIds: string[];

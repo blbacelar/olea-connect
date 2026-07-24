@@ -21,24 +21,47 @@ const initialState: RegistrationState = {
   email: "",
   password: "",
   province: "AB",
+  organizationKind: "",
+  annualBudgetRange: "",
+  boardSizeRange: "",
+  phone: "",
+  acquisitionSource: "",
+  referralCode: "",
+  consents: {
+    terms: false,
+    privacy: false,
+    dataOwnership: false,
+    confidentiality: false,
+  },
   emailVerified: false,
   brandComplete: false,
   selectedTemplateIds: [],
 };
 
-function normalizeStoredRegistration(stored: unknown): RegistrationState {
-  if (!stored || typeof stored !== "object") return initialState;
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === "object" && value !== null;
+}
 
-  const candidate = stored as Partial<RegistrationState> & {
-    billingCycle?: string;
-  };
+function normalizeStoredRegistration(stored: unknown): RegistrationState {
+  if (!isRecord(stored)) return initialState;
+
+  const candidate = stored as Partial<RegistrationState>;
   const billingCycle =
     candidate.billingCycle === "annual" ? "annual" : "quarterly";
+  const storedConsents: Record<string, unknown> = isRecord(candidate.consents)
+    ? candidate.consents
+    : {};
 
   return {
     ...initialState,
     ...candidate,
     billingCycle,
+    consents: {
+      terms: storedConsents.terms === true,
+      privacy: storedConsents.privacy === true,
+      dataOwnership: storedConsents.dataOwnership === true,
+      confidentiality: storedConsents.confidentiality === true,
+    },
   };
 }
 

@@ -3,31 +3,20 @@ import { NextResponse } from "next/server";
 import {
   attachCheckoutSession,
   prepareCheckoutRegistration,
+  storeSignupConsents,
 } from "@/lib/stripe/registration";
+import {
+  parseSignupCheckoutInput,
+  type SignupCheckoutInput,
+  SignupValidationError,
+} from "@/lib/signup-flow";
 import { getStripe, getStripePriceId } from "@/lib/stripe/server";
-import type { MembershipTier, RegistrationState } from "@/lib/types";
 import {
   createAdminClient,
   createPublicServerClient,
 } from "@/utils/supabase/admin";
 
 export const runtime = "nodejs";
-
-const tiers: MembershipTier[] = ["seedling", "roots", "canopy", "harvest"];
-const billingCycles: RegistrationState["billingCycle"][] = [
-  "quarterly",
-  "annual",
-];
-
-interface CheckoutBody {
-  email?: string;
-  password?: string;
-  fullName?: string;
-  organizationName?: string;
-  province?: string;
-  tier?: MembershipTier;
-  billingCycle?: RegistrationState["billingCycle"];
-}
 
 async function findUserIdByEmail(email: string) {
   const supabase = createAdminClient();
@@ -51,7 +40,7 @@ async function findUserIdByEmail(email: string) {
   return null;
 }
 
-async function resolveSignupUser(body: Required<CheckoutBody>, origin: string) {
+async function resolveSignupUser(body: SignupCheckoutInput, origin: string) {
   const signupClient = createPublicServerClient();
   const email = body.email.trim().toLowerCase();
   const existingUserId = await findUserIdByEmail(email);
@@ -80,6 +69,12 @@ async function resolveSignupUser(body: Required<CheckoutBody>, origin: string) {
       data: {
         full_name: body.fullName.trim(),
         organization_name: body.organizationName.trim(),
+        organization_kind: body.organizationKind,
+        annual_budget_range: body.annualBudgetRange,
+        board_size_range: body.boardSizeRange,
+        contact_phone: body.phone || null,
+        acquisition_source: body.acquisitionSource || null,
+        referral_code: body.referralCode || null,
         membership_tier: body.tier,
         billing_cycle: body.billingCycle,
         billing_province: body.province,
@@ -102,31 +97,9 @@ async function resolveSignupUser(body: Required<CheckoutBody>, origin: string) {
   return signup.user.id;
 }
 
-function isCheckoutBody(value: CheckoutBody): value is Required<CheckoutBody> {
-  return Boolean(
-    value.email &&
-      value.password &&
-      value.password.length >= 8 &&
-      value.fullName?.trim() &&
-      value.organizationName?.trim() &&
-      value.province &&
-      value.tier &&
-      tiers.includes(value.tier) &&
-      value.billingCycle &&
-      billingCycles.includes(value.billingCycle),
-  );
-}
-
 export async function POST(request: Request) {
   try {
-    const body = (await request.json()) as CheckoutBody;
-
-    if (!isCheckoutBody(body)) {
-      return NextResponse.json(
-        { error: "Complete your account and plan details before checkout." },
-        { status: 400 },
-      );
-    }
+    const body = parseSignupCheckoutInput(await request.json());
 
     const origin = new URL(request.url).origin;
     const userId = await resolveSignupUser(body, origin);
@@ -136,6 +109,11 @@ export async function POST(request: Request) {
       ...body,
       userId,
     });
+    await storeSignupConsents(
+      supabase,
+      { ...body, userId, referralCode: prepared.referralCode ?? "" },
+      prepared.requestId,
+    );
     const stripe = getStripe();
     const priceId = getStripePriceId(body.tier, body.billingCycle);
     const metadata = {
@@ -143,6 +121,14 @@ export async function POST(request: Request) {
       user_id: userId,
       plan_id: body.tier,
       billing_cycle: body.billingCycle,
+      organization_kind: body.organizationKind,
+      annual_budget_range: body.annualBudgetRange,
+      board_size_range: body.boardSizeRange,
+      province: body.province,
+      referral_code: prepared.referralCode,
+      founding_member_eligible: String(prepared.foundingMemberEligible),
+      founding_member_year: prepared.foundingMemberEligible ? "1" : "",
+      consent_version: "2026-07-24",
     };
 
     const session = await stripe.checkout.sessions.create({
@@ -151,7 +137,10 @@ export async function POST(request: Request) {
       client_reference_id: userId,
       line_items: [{ price: priceId, quantity: 1 }],
       billing_address_collection: "required",
-      allow_promotion_codes: true,
+      allow_promotion_codes: !prepared.foundingDiscountIdentifier,
+      ...(prepared.foundingDiscountIdentifier
+        ? { discounts: [{ coupon: prepared.foundingDiscountIdentifier }] }
+        : {}),
       metadata,
       subscription_data: { metadata },
       success_url: `${origin}/signup/success?session_id={CHECKOUT_SESSION_ID}`,
@@ -166,6 +155,9 @@ export async function POST(request: Request) {
 
     return NextResponse.json({ url: session.url });
   } catch (error) {
+    if (error instanceof SignupValidationError) {
+      return NextResponse.json({ error: error.message }, { status: 400 });
+    }
     console.error("Unable to create Stripe Checkout session", error);
     return NextResponse.json(
       {
