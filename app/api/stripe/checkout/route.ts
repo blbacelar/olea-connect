@@ -8,8 +8,12 @@ import {
 import {
   parseSignupCheckoutInput,
   type SignupCheckoutInput,
-  SignupValidationError,
 } from "@/lib/signup-flow";
+import {
+  CHECKOUT_EMAIL_RATE_LIMIT_MESSAGE,
+  CheckoutRateLimitError,
+  getCheckoutErrorResponse,
+} from "@/lib/stripe/checkout-errors";
 import { getStripe, getStripePriceId } from "@/lib/stripe/server";
 import {
   createAdminClient,
@@ -83,9 +87,7 @@ async function resolveSignupUser(body: SignupCheckoutInput, origin: string) {
   });
 
   if (signupError?.code === "over_email_send_rate_limit") {
-    throw new Error(
-      "Verification emails are temporarily limited. Please wait a few minutes and try again.",
-    );
+    throw new CheckoutRateLimitError(CHECKOUT_EMAIL_RATE_LIMIT_MESSAGE);
   }
   if (signupError) throw signupError;
   if (!signup.user || signup.user.identities?.length === 0) {
@@ -155,8 +157,12 @@ export async function POST(request: Request) {
 
     return NextResponse.json({ url: session.url });
   } catch (error) {
-    if (error instanceof SignupValidationError) {
-      return NextResponse.json({ error: error.message }, { status: 400 });
+    const safeResponse = getCheckoutErrorResponse(error);
+    if (safeResponse) {
+      return NextResponse.json(
+        { error: safeResponse.error },
+        { status: safeResponse.status },
+      );
     }
     console.error("Unable to create Stripe Checkout session", error);
     return NextResponse.json(
