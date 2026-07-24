@@ -1,4 +1,4 @@
-import { expect, test } from "@playwright/test";
+import { expect, test } from "../fixtures/browser.fixture";
 
 test.describe("@smoke @critical public entry points", () => {
   test("presents the product value and signup entry point", async ({
@@ -104,5 +104,26 @@ test.describe("@smoke @critical public entry points", () => {
       expect(bookingHrefs[0]).toBe("mailto:sponsorship@olivesocialimpact.com");
     }
     await expect(page).not.toHaveURL(/login|dashboard/);
+  });
+
+  test("exposes all versioned legal documents as public pages", async ({
+    page,
+  }) => {
+    const documents = [
+      ["terms", "Terms of Service"],
+      ["privacy", "Privacy Policy"],
+      ["data-ownership", "Data Ownership Agreement"],
+      ["confidentiality", "Confidentiality Policy"],
+    ] as const;
+
+    for (const [slug, title] of documents) {
+      await page.goto(`/legal/${slug}`);
+      await expect(page.getByRole("heading", { name: title })).toBeVisible();
+      await expect(page.getByText("Version 2026-07-24")).toBeVisible();
+      await expect(
+        page.getByRole("link", { name: "Return to signup" }),
+      ).toHaveAttribute("href", "/signup");
+      await expect(page).not.toHaveURL(/login|dashboard/);
+    }
   });
 });

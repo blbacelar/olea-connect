@@ -23,6 +23,7 @@ const publicRoutes = [
   "/verify-email",
   "/auth",
   "/onboarding",
+  "/legal",
 ];
 
 const sidebarStorageKey = "olea-connects-sidebar-collapsed";

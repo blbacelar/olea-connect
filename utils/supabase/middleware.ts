@@ -28,6 +28,7 @@ const publicPathPrefixes = [
   "/auth",
   "/signup",
   "/api",
+  "/legal",
 ];
 
 function isPathOrChild(pathname: string, prefix: string) {
