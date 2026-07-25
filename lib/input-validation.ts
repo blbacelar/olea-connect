@@ -1,10 +1,14 @@
-export const PHONE_INPUT_PATTERN = String.raw`\+?[0-9().\-\s]{7,24}`;
+import {
+  decimalStringSchema,
+  emailStringSchema,
+  formBooleanValueSchema,
+  httpUrlStringSchema,
+  integerStringSchema,
+  isoDateStringSchema,
+  phoneStringSchema,
+} from "@/lib/validation/schemas";
 
-const phonePattern = new RegExp(`^${PHONE_INPUT_PATTERN}$`);
-const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-const decimalPattern = /^\d+(?:\.\d{0,2})?$/;
-const integerPattern = /^\d+$/;
-const isoDatePattern = /^(\d{4})-(\d{2})-(\d{2})$/;
+export const PHONE_INPUT_PATTERN = String.raw`\+?[0-9().\-\s]{7,24}`;
 
 export function sanitizePhoneInput(value: string) {
   const filtered = value.replace(/[^0-9+().\-\s]/g, "");
@@ -15,13 +19,7 @@ export function sanitizePhoneInput(value: string) {
 
 export function isValidPhoneNumber(value: string) {
   const normalized = value.trim();
-  if (!normalized) return true;
-  const digits = normalized.replace(/\D/g, "");
-  return (
-    phonePattern.test(normalized) &&
-    digits.length >= 7 &&
-    digits.length <= 20
-  );
+  return !normalized || phoneStringSchema.safeParse(normalized).success;
 }
 
 export function sanitizeIntegerInput(value: string) {
@@ -37,12 +35,11 @@ export function sanitizeDecimalInput(value: string, maxDecimals = 2) {
 }
 
 export function isValidDecimalInput(value: string, maxDecimals = 2) {
-  const fraction = value.split(".")[1];
-  return decimalPattern.test(value) && (fraction === undefined || fraction.length <= maxDecimals);
+  return decimalStringSchema(maxDecimals).safeParse(value).success;
 }
 
 export function isValidIntegerInput(value: string) {
-  return integerPattern.test(value);
+  return integerStringSchema.safeParse(value).success;
 }
 
 export function formatCurrencyInput(value: string, currency = "CAD") {
@@ -61,11 +58,9 @@ export function formatCurrencyInput(value: string, currency = "CAD") {
 }
 
 export function normalizeEmail(value: string, label = "Email") {
-  const normalized = value.trim().toLowerCase();
-  if (!normalized || normalized.length > 254 || !emailPattern.test(normalized)) {
-    throw new Error(`${label} must be a valid email address.`);
-  }
-  return normalized;
+  const result = emailStringSchema.safeParse(value);
+  if (!result.success) throw new Error(`${label} must be a valid email address.`);
+  return result.data;
 }
 
 export function normalizeOptionalEmail(value: string | null | undefined, label = "Email") {
@@ -75,10 +70,11 @@ export function normalizeOptionalEmail(value: string | null | undefined, label =
 
 export function normalizePhone(value: string, label = "Phone") {
   const normalized = value.replace(/\s+/g, " ").trim();
-  if (!isValidPhoneNumber(normalized)) {
+  const result = phoneStringSchema.safeParse(normalized);
+  if (!result.success) {
     throw new Error(`${label} must be a valid phone number.`);
   }
-  return normalized;
+  return result.data;
 }
 
 export function normalizeOptionalPhone(value: string | null | undefined, label = "Phone") {
@@ -87,13 +83,11 @@ export function normalizeOptionalPhone(value: string | null | undefined, label =
 }
 
 export function normalizeHttpUrl(value: string, label = "URL") {
-  try {
-    const url = new URL(value.trim());
-    if (url.protocol !== "http:" && url.protocol !== "https:") throw new Error();
-    return url.toString();
-  } catch {
+  const result = httpUrlStringSchema.safeParse(value);
+  if (!result.success) {
     throw new Error(`${label} must be a valid http or https URL.`);
   }
+  return new URL(result.data).toString();
 }
 
 export function normalizeOptionalHttpUrl(value: string | null | undefined, label = "URL") {
@@ -103,7 +97,8 @@ export function normalizeOptionalHttpUrl(value: string | null | undefined, label
 
 export function parseStrictInteger(value: string, label: string, minimum = 0) {
   const normalized = value.trim();
-  if (!isValidIntegerInput(normalized)) {
+  const result = integerStringSchema.safeParse(normalized);
+  if (!result.success) {
     throw new Error(`${label} must contain numbers only.`);
   }
   const parsed = Number(normalized);
@@ -115,7 +110,8 @@ export function parseStrictInteger(value: string, label: string, minimum = 0) {
 
 export function parseStrictDecimal(value: string, label: string, minimum = 0) {
   const normalized = value.trim();
-  if (!isValidDecimalInput(normalized)) {
+  const result = decimalStringSchema().safeParse(normalized);
+  if (!result.success) {
     throw new Error(`${label} must contain a number with up to 2 decimals.`);
   }
   const parsed = Number(normalized);
@@ -126,28 +122,18 @@ export function parseStrictDecimal(value: string, label: string, minimum = 0) {
 }
 
 export function parseFormBoolean(value: FormDataEntryValue | null, label: string) {
-  if (value === null) return false;
-  if (value === "on" || value === "true") return true;
-  if (value === "false") return false;
+  const result = formBooleanValueSchema.safeParse(value === null ? null : value);
+  if (!result.success) throw new Error(`${label} must be true or false.`);
+  if (result.data === null || result.data === "false") return false;
+  if (result.data === "on" || result.data === "true") return true;
   throw new Error(`${label} must be true or false.`);
 }
 
 export function parseIsoDate(value: string, label: string) {
   const normalized = value.trim();
-  const match = isoDatePattern.exec(normalized);
-  if (!match) {
+  const result = isoDateStringSchema.safeParse(normalized);
+  if (!result.success) {
     throw new Error(`${label} must be a valid date.`);
   }
-
-  const [, year, month, day] = match;
-  const parsed = new Date(Date.UTC(Number(year), Number(month) - 1, Number(day)));
-  if (
-    parsed.getUTCFullYear() !== Number(year) ||
-    parsed.getUTCMonth() !== Number(month) - 1 ||
-    parsed.getUTCDate() !== Number(day)
-  ) {
-    throw new Error(`${label} must be a valid date.`);
-  }
-
-  return parsed;
+  return new Date(`${result.data}T00:00:00.000Z`);
 }

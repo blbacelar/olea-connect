@@ -3,6 +3,7 @@ import {
   normalizeHttpUrl,
   normalizePhone,
 } from "@/lib/input-validation";
+import { decimalStringSchema } from "@/lib/validation/schemas";
 
 export type SponsorContributionReconciliationInput = {
   allocatedAmountCents: number;
@@ -54,17 +55,10 @@ export function normalizeSponsorSlug(value: string) {
     .replace(/-{2,}/g, "-");
 }
 
-export const SPONSOR_CURRENCY_PATTERN_SOURCE = "\\d+(?:\\.\\d{1,2})?";
-
-const currencyFormatPattern = new RegExp(
-  `^${SPONSOR_CURRENCY_PATTERN_SOURCE}$`,
-  "i",
-);
-
 export function parseCurrencyToCents(value: string) {
   const normalizedInput = value.trim();
   if (!normalizedInput) return 0;
-  if (!currencyFormatPattern.test(normalizedInput)) return 0;
+  if (!decimalStringSchema(2).safeParse(normalizedInput).success) return 0;
 
   const amount = Number(normalizedInput);
   if (!Number.isFinite(amount) || amount < 0) return 0;

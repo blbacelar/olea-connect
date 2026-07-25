@@ -1,4 +1,9 @@
 import { parseStrictDecimal } from "@/lib/input-validation";
+import * as z from "zod";
+import {
+  nonEmptyTextSchema,
+  optionalTextSchema,
+} from "@/lib/validation/schemas";
 
 export const monthOptions = [
   { label: "January", value: 1 },
@@ -154,14 +159,15 @@ export function parseRequiredText(
   minLength = 1,
 ) {
   const value = String(formData.get(key) ?? "").trim();
-  if (!value) throw new Error(`${label} is required.`);
-  if (value.length < minLength) {
-    throw new Error(`${label} must be at least ${minLength} characters.`);
-  }
-  if (value.length > maxLength) {
+  const result = nonEmptyTextSchema(maxLength, minLength).safeParse(value);
+  if (!result.success) {
+    if (!value) throw new Error(`${label} is required.`);
+    if (value.length < minLength) {
+      throw new Error(`${label} must be at least ${minLength} characters.`);
+    }
     throw new Error(`${label} must be ${maxLength} characters or fewer.`);
   }
-  return value;
+  return result.data;
 }
 
 export function parseOptionalText(
@@ -171,10 +177,11 @@ export function parseOptionalText(
   maxLength: number,
 ) {
   const value = String(formData.get(key) ?? "").trim();
-  if (value.length > maxLength) {
+  const result = optionalTextSchema(maxLength).safeParse(value);
+  if (!result.success) {
     throw new Error(`${label} must be ${maxLength} characters or fewer.`);
   }
-  return value;
+  return result.data;
 }
 
 export function parseRequiredNumber(
@@ -208,7 +215,8 @@ export function nextSortOrderAfter(currentMax: number | null | undefined) {
 
 export function parseRagStatus(value: FormDataEntryValue | null): RagStatus {
   const status = String(value ?? "na");
-  if (ragStatuses.includes(status as RagStatus)) return status as RagStatus;
+  const result = z.enum(ragStatuses).safeParse(status);
+  if (result.success) return result.data;
   throw new Error("Choose a supported RAG status.");
 }
 
@@ -216,8 +224,7 @@ export function parseMilestoneStatus(
   value: FormDataEntryValue | null,
 ): MilestoneStatus {
   const status = String(value ?? "not_started");
-  if (milestoneStatuses.includes(status as MilestoneStatus)) {
-    return status as MilestoneStatus;
-  }
+  const result = z.enum(milestoneStatuses).safeParse(status);
+  if (result.success) return result.data;
   throw new Error("Choose a supported milestone status.");
 }
