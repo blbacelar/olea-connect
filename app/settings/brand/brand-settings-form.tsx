@@ -157,6 +157,7 @@ export function BrandSettingsForm({
               <Label htmlFor="website">Footer website</Label>
               <Input
                 id="website"
+                type="url"
                 value={brand.website ?? ""}
                 onChange={(event) => updateBrand("website", event.target.value)}
                 placeholder="https://example.org"

@@ -17,6 +17,30 @@ export function sanitizePhoneInput(value: string) {
   return `${hasLeadingPlus ? "+" : ""}${withoutExtraPluses}`;
 }
 
+/** Formats complete North American numbers without changing incomplete input. */
+export function formatPhoneInput(value: string) {
+  const normalized = sanitizePhoneInput(value).trim();
+  if (!normalized) return "";
+
+  const hasLeadingPlus = normalized.startsWith("+");
+  const digits = normalized.replace(/\D/g, "");
+  const hasCountryCode = digits.length === 11 && digits.startsWith("1");
+  const localDigits = hasCountryCode ? digits.slice(1) : digits;
+
+  if (localDigits.length !== 10) return normalized;
+
+  const countryPrefix = hasCountryCode ? `${hasLeadingPlus ? "+" : ""}1 ` : "";
+  return `${countryPrefix}(${localDigits.slice(0, 3)}) ${localDigits.slice(3, 6)}-${localDigits.slice(6)}`;
+}
+
+export function formatEmailInput(value: string) {
+  return value.trim().toLowerCase();
+}
+
+export function formatUrlInput(value: string) {
+  return value.trim();
+}
+
 export function isValidPhoneNumber(value: string) {
   const normalized = value.trim();
   return !normalized || phoneStringSchema.safeParse(normalized).success;

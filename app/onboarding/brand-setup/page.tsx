@@ -217,6 +217,7 @@ export default function BrandSetupPage() {
                 <Label htmlFor="brandWebsite">Footer website</Label>
                 <Input
                   id="brandWebsite"
+                  type="url"
                   value={website}
                   onChange={(event) => setWebsite(event.target.value)}
                   placeholder="https://example.org"

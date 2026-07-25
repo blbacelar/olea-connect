@@ -1,13 +1,23 @@
 import * as React from "react";
 
 import {
+  formatCurrencyInput,
+  formatEmailInput,
+  formatPhoneInput,
+  formatUrlInput,
   sanitizeDecimalInput,
   sanitizeIntegerInput,
   sanitizePhoneInput,
 } from "@/lib/input-validation";
 import { cn } from "@/lib/utils";
 
-type InputFormat = "phone" | "integer" | "decimal" | "currency";
+type InputFormat =
+  | "phone"
+  | "integer"
+  | "decimal"
+  | "currency"
+  | "email"
+  | "url";
 
 type InputProps = React.ComponentProps<"input"> & {
   "data-format"?: InputFormat;
@@ -16,7 +26,7 @@ type InputProps = React.ComponentProps<"input"> & {
 const Input = React.forwardRef<
   HTMLInputElement,
   InputProps
->(({ className, type, onChange, step, ...props }, ref) => {
+>(({ className, type, onBlur, onChange, step, ...props }, ref) => {
   const format = props["data-format"];
   const inputFormat =
     format ??
@@ -26,6 +36,10 @@ const Input = React.forwardRef<
         ? String(step) === "1"
           ? "integer"
           : "decimal"
+        : type === "email"
+          ? "email"
+          : type === "url"
+            ? "url"
         : undefined);
 
   const handleChange: React.ChangeEventHandler<HTMLInputElement> = (event) => {
@@ -43,6 +57,26 @@ const Input = React.forwardRef<
     onChange?.(event);
   };
 
+  const handleBlur: React.FocusEventHandler<HTMLInputElement> = (event) => {
+    const rawValue = event.currentTarget.value;
+    const formattedValue =
+      inputFormat === "phone"
+        ? formatPhoneInput(rawValue)
+        : inputFormat === "currency"
+          ? formatCurrencyInput(rawValue)
+          : inputFormat === "email"
+            ? formatEmailInput(rawValue)
+            : inputFormat === "url"
+              ? formatUrlInput(rawValue)
+              : rawValue;
+
+    if (formattedValue !== rawValue) {
+      event.currentTarget.value = formattedValue;
+      onChange?.(event as unknown as React.ChangeEvent<HTMLInputElement>);
+    }
+    onBlur?.(event);
+  };
+
   return (
     <input
       type={type}
@@ -53,6 +87,7 @@ const Input = React.forwardRef<
       ref={ref}
       step={step}
       onChange={handleChange}
+      onBlur={handleBlur}
       {...props}
     />
   );

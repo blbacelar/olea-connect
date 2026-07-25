@@ -52,6 +52,18 @@ test.describe("@smoke @critical membership signup", () => {
     await signup.expectPhone("+1 (604) 555-0123");
   });
 
+  test("formats a complete phone number when focus leaves the field", async ({
+    page,
+  }) => {
+    const signup = new SignupPage(page);
+    await signup.openAccount();
+
+    await signup.enterPhone("6045550100");
+    await page.getByLabel("Phone number").blur();
+
+    await signup.expectPhone("(604) 555-0100");
+  });
+
   test("returns from account creation to landing-page plans", async ({
     page,
   }) => {

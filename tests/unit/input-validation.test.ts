@@ -2,6 +2,9 @@ import { describe, expect, it } from "vitest";
 
 import {
   formatCurrencyInput,
+  formatEmailInput,
+  formatPhoneInput,
+  formatUrlInput,
   isValidPhoneNumber,
   normalizeEmail,
   normalizeHttpUrl,
@@ -22,6 +25,9 @@ describe("shared input validation", () => {
     expect(isValidPhoneNumber("+1 (604) 555-0123")).toBe(true);
     expect(isValidPhoneNumber("call me")).toBe(false);
     expect(isValidPhoneNumber("604-555-0100 ext 12")).toBe(false);
+    expect(formatPhoneInput("6045550100")).toBe("(604) 555-0100");
+    expect(formatPhoneInput("+16045550100")).toBe("+1 (604) 555-0100");
+    expect(formatPhoneInput("604555")).toBe("604555");
   });
 
   it("sanitizes integer and decimal fields predictably", () => {
@@ -39,6 +45,10 @@ describe("shared input validation", () => {
   });
 
   it("normalizes emails and limits URLs to http or https", () => {
+    expect(formatEmailInput(" Bruno@Example.org ")).toBe("bruno@example.org");
+    expect(formatUrlInput(" https://example.org/path ")).toBe(
+      "https://example.org/path",
+    );
     expect(normalizeEmail(" Bruno@Example.org ")).toBe("bruno@example.org");
     expect(normalizeHttpUrl("https://example.org/path")).toBe(
       "https://example.org/path",

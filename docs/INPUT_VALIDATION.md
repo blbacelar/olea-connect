@@ -20,7 +20,7 @@ Zod is the schema authority for shared primitive and payload validation. Schemas
 - `lib/input-validation.ts` contains sanitizers, formatters, normalizers, and strict parsers.
 - `lib/validation/schemas.ts` contains the reusable Zod schemas for phone, email, numeric strings, dates, URLs, booleans, and bounded text.
 - `lib/signup-flow.ts` uses a strict Zod object schema for the complete signup payload, including an explicit consent object.
-- `components/ui/input.tsx` applies field-aware typing behavior for shared inputs.
+- `components/ui/input.tsx` applies field-aware typing behavior for shared inputs and formats complete phone, email, URL, and currency values when focus leaves the field. Incomplete phone numbers remain unchanged so the server validator can explain what is missing.
 - `components/ui/currency-input.tsx` provides a formatted CAD display while preserving a raw numeric form value.
 
 ## Implementation guidance

@@ -1662,6 +1662,7 @@ function CalendarEntryComposer({
                 <Label htmlFor="calendar-entry-virtual-link">Virtual link</Label>
                 <Input
                   id="calendar-entry-virtual-link"
+                  type="url"
                   placeholder="https://zoom.us/j/..."
                   value={entryVirtualLink}
                   onChange={(event) => onVirtualLinkChange(event.target.value)}
