@@ -3,6 +3,7 @@ import { describe, expect, it } from "vitest";
 import {
   applyAuthCookieDuration,
   AUTH_REMEMBER_MAX_AGE_SECONDS,
+  getRememberPreferenceCookieOptions,
 } from "@/utils/supabase/auth-cookie-options";
 
 describe("auth cookie duration", () => {
@@ -56,6 +57,22 @@ describe("auth cookie duration", () => {
       ),
     ).toEqual({
       expires,
+      maxAge: 0,
+      path: "/",
+      sameSite: "lax",
+    });
+  });
+
+  it("persists the remember preference for 30 days", () => {
+    expect(getRememberPreferenceCookieOptions(true)).toEqual({
+      maxAge: AUTH_REMEMBER_MAX_AGE_SECONDS,
+      path: "/",
+      sameSite: "lax",
+    });
+  });
+
+  it("clears the remember preference when it is disabled", () => {
+    expect(getRememberPreferenceCookieOptions(false)).toEqual({
       maxAge: 0,
       path: "/",
       sameSite: "lax",

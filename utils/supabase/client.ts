@@ -4,7 +4,7 @@ import { parse, serialize } from "cookie";
 import {
   applyAuthCookieDuration,
   AUTH_REMEMBER_COOKIE_NAME,
-  AUTH_REMEMBER_MAX_AGE_SECONDS,
+  getRememberPreferenceCookieOptions,
 } from "./auth-cookie-options";
 
 type CreateClientOptions = {
@@ -36,20 +36,13 @@ function createRememberAwareCookies(rememberFor30Days: boolean) {
         );
       });
 
+      // Keep the preference separate from Supabase's chunked session cookies.
+      // Middleware reads this marker before refreshing the session so the
+      // selected persistence policy survives navigation and reloads.
       document.cookie = serialize(
         AUTH_REMEMBER_COOKIE_NAME,
         rememberFor30Days ? "1" : "",
-        rememberFor30Days
-          ? {
-              maxAge: AUTH_REMEMBER_MAX_AGE_SECONDS,
-              path: "/",
-              sameSite: "lax",
-            }
-          : {
-              maxAge: 0,
-              path: "/",
-              sameSite: "lax",
-            },
+        getRememberPreferenceCookieOptions(rememberFor30Days),
       );
     },
   };
@@ -64,6 +57,11 @@ export function createClient(options?: CreateClientOptions) {
           cookies: createRememberAwareCookies(
             Boolean(options.rememberFor30Days),
           ),
+          auth: {
+            // Session persistence is handled by the cookie adapter above so
+            // both checked and unchecked modes use the same SSR auth flow.
+            persistSession: true,
+          },
           isSingleton: false,
         }
       : undefined,
