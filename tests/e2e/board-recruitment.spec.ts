@@ -1,5 +1,6 @@
 import { expect, test } from "../fixtures/authenticated.fixture";
 import { BoardRecruitmentPage } from "../pages/board-recruitment.page";
+import { inspectPdf } from "../support/pdf-inspector";
 
 test.describe("@critical Board Recruitment Toolkit", () => {
   test("opens the tenant-scoped toolkit and exposes all modules", async ({
@@ -77,6 +78,25 @@ test.describe("@critical Board Recruitment Toolkit", () => {
     ).toBeVisible();
     await page.getByRole("button", { name: "Anonymous" }).click();
     await expect(page.getByText(/Anonymous view/)).toBeVisible();
+  });
+
+  test("exports a branded cover page followed by the recruitment report pages", async ({
+    page,
+  }, testInfo) => {
+    const recruitment = new BoardRecruitmentPage(page);
+    await recruitment.open("report");
+    const download = await recruitment.downloadReport("anonymous");
+    const path = testInfo.outputPath("board-recruitment-report.pdf");
+    await download.saveAs(path);
+    const inspection = await inspectPdf(
+      await (await import("node:fs/promises")).readFile(path),
+    );
+    expect(inspection.pageCount).toBeGreaterThanOrEqual(2);
+    expect(inspection.text).toContain("Board Recruitment Toolkit");
+    expect(inspection.text).toContain("Skills coverage");
+    expect(inspection.text).toContain("Anonymous view");
+    expect(inspection.text).not.toContain("Board recruitment, made visible");
+    expect(inspection.metadata.title).toContain("Board Recruitment Report");
   });
 
   test("keeps survey preview limited to active directors and tracks invitation lifecycle", async ({

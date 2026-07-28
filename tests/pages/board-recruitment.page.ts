@@ -145,4 +145,18 @@ export class BoardRecruitmentPage {
       await expect(this.tab(name)).toBeVisible();
     }
   }
+
+  async downloadReport(view: "identified" | "anonymous" = "identified") {
+    await this.openTab("Board Report");
+    if (view === "anonymous") {
+      await this.page.getByRole("button", { name: "Anonymous" }).click();
+    }
+    const downloadPromise = this.page.waitForEvent("download");
+    await this.page.getByRole("button", { name: "Export PDF" }).click();
+    const download = await downloadPromise;
+    expect(download.suggestedFilename()).toMatch(
+      /Board-Recruitment-Report-\d{4}\.pdf$/,
+    );
+    return download;
+  }
 }

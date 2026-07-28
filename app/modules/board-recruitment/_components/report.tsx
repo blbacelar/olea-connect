@@ -94,6 +94,8 @@ import { responseFor } from "./helpers";
 
 export function Report({ data }: { data: RecruitmentData }) {
   const [identified, setIdentified] = React.useState(true);
+  const [isExporting, setIsExporting] = React.useState(false);
+  const [exportError, setExportError] = React.useState("");
   const directors = data.members.filter(
     (member) => member.active && member.memberType === "director",
   );
@@ -105,7 +107,7 @@ export function Report({ data }: { data: RecruitmentData }) {
   );
   return (
     <div className="space-y-6">
-      <div className="flex flex-wrap items-center justify-between gap-3 print:hidden">
+      <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
           <p className="text-xs font-bold uppercase tracking-[0.12em] text-olea-green">
             Board report
@@ -132,14 +134,57 @@ export function Report({ data }: { data: RecruitmentData }) {
           <Button
             type="button"
             variant="outline"
-            onClick={() => window.print()}
+            disabled={isExporting}
+            onClick={() => {
+              setIsExporting(true);
+              void fetch(
+                `/api/board-recruitment/export?view=${identified ? "identified" : "anonymous"}`,
+              )
+                .then(async (response) => {
+                  if (!response.ok) {
+                    const payload = (await response
+                      .json()
+                      .catch(() => null)) as { error?: string } | null;
+                    throw new Error(
+                      payload?.error ||
+                        "Unable to generate the recruitment report.",
+                    );
+                  }
+                  const blob = await response.blob();
+                  const url = URL.createObjectURL(blob);
+                  const link = document.createElement("a");
+                  link.href = url;
+                  link.download = getDownloadFileName(
+                    response.headers.get("content-disposition"),
+                  );
+                  link.click();
+                  URL.revokeObjectURL(url);
+                  setExportError("");
+                })
+                .catch((error: unknown) => {
+                  setExportError(
+                    error instanceof Error
+                      ? error.message
+                      : "Unable to generate the recruitment report.",
+                  );
+                })
+                .finally(() => setIsExporting(false));
+            }}
           >
-            <Printer className="size-4" />
-            Print / Save as PDF
+            <Printer className={cn("size-4", isExporting && "animate-pulse")} />
+            {isExporting ? "Generating PDF..." : "Export PDF"}
           </Button>
         </div>
       </div>
-      <Card className="print:rounded-none print:border-0 print:shadow-none">
+      {exportError ? (
+        <p
+          role="alert"
+          className="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm font-medium text-red-700"
+        >
+          {exportError}
+        </p>
+      ) : null}
+      <Card>
         <CardHeader>
           <p className="text-xs font-bold uppercase tracking-[0.12em] text-olea-green">
             Board Recruitment Toolkit
@@ -218,7 +263,7 @@ export function Report({ data }: { data: RecruitmentData }) {
               <p className="text-sm text-slate-600">No uncovered skills.</p>
             )}
           </section>
-          <section className="print:break-before-page">
+          <section>
             <h3 className="text-lg font-bold">Terms & succession</h3>
             <Table>
               <TableHeader>
@@ -250,4 +295,9 @@ export function Report({ data }: { data: RecruitmentData }) {
       </Card>
     </div>
   );
+}
+
+function getDownloadFileName(contentDisposition: string | null) {
+  const match = contentDisposition?.match(/filename="([^"]+)"/i);
+  return match?.[1] || "board-recruitment-report.pdf";
 }
