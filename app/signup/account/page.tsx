@@ -20,6 +20,7 @@ import { captureReferralCodeFromUrl } from "@/lib/referral-capture";
 import { useRegistration } from "@/hooks/use-registration";
 import { membershipPlans } from "@/lib/plans";
 import type { MembershipTier } from "@/lib/types";
+import { emailStringSchema } from "@/lib/validation/schemas";
 
 export default function SignupAccountPage() {
   const router = useRouter();
@@ -59,7 +60,7 @@ export default function SignupAccountPage() {
   const valid =
     registration.organizationName.trim().length >= 2 &&
     registration.fullName.trim().length >= 2 &&
-    /\S+@\S+\.\S+/.test(registration.email) &&
+    emailStringSchema.safeParse(registration.email).success &&
     registration.password.length >= 8 &&
     registration.organizationKind !== "" &&
     registration.annualBudgetRange !== "" &&

@@ -29,6 +29,23 @@ test.describe("@smoke @critical membership signup", () => {
     });
   });
 
+  test("accepts a valid email copied with surrounding spaces", async ({
+    page,
+  }, testInfo) => {
+    const signup = new SignupPage(page);
+    const identity = createTestIdentity(testInfo);
+    await signup.openAccount("seedling", "annual");
+
+    await signup.completeAccountDetails({
+      organization: identity.organizationName,
+      fullName: identity.fullName,
+      email: ` ${identity.email} `,
+      password: identity.password,
+    });
+
+    await expect(signup.continueToPayment).toBeEnabled();
+  });
+
   test("does not persist the password in browser storage", async ({ page }) => {
     const signup = new SignupPage(page);
     await signup.openAccount();
