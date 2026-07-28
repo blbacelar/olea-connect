@@ -31,6 +31,7 @@ export const navigationGroups: NavigationItem[][] = [
     { label: "Templates", href: "/templates", icon: FileText, dot: true },
     { label: "Board Calendar", href: "/modules/board-calendar", icon: CalendarDays },
     { label: "KPI Dashboard", href: "/modules/kpi-dashboard", icon: BarChart3 },
+    { label: "Board Recruitment", href: "/modules/board-recruitment", icon: Users },
     { label: "Community", href: "/community", icon: Users },
     { label: "Grants", href: "/grants", icon: Gift },
     { label: "Sponsors", href: "/sponsors", icon: Handshake },

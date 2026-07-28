@@ -94,6 +94,39 @@ export function teamInvitationEmail(input: {
   };
 }
 
+export function boardRecruitmentSurveyInvitationEmail(input: {
+  organizationName: string;
+  memberName: string;
+  surveyYear: number;
+  surveyUrl: string;
+  expiresAt: string;
+}): TransactionalEmail {
+  const organizationName = escapeHtml(input.organizationName);
+  const memberName = escapeHtml(input.memberName);
+  const surveyUrl = escapeHtml(input.surveyUrl);
+  const expiry = new Intl.DateTimeFormat("en-CA", {
+    dateStyle: "long",
+    timeStyle: "short",
+    timeZone: "America/Edmonton",
+  }).format(new Date(input.expiresAt));
+  const subject = `${input.organizationName} board skills survey`;
+  const text = `Hi ${input.memberName}, please complete the ${input.surveyYear} board skills survey for ${input.organizationName}: ${input.surveyUrl}. This secure link expires ${expiry}.`;
+
+  return {
+    subject,
+    text,
+    html: layout({
+      preheader: `Complete the ${input.surveyYear} board skills survey.`,
+      title: "Board skills survey",
+      body: `<p>Hi ${memberName},</p><p>${organizationName} is collecting its annual board skills information for ${input.surveyYear}.</p><p>Your responses help the board identify strengths, gaps, and recruitment priorities.</p><p>This secure link expires ${expiry}.</p>`,
+      actionLabel: "Complete survey",
+      actionUrl: surveyUrl,
+      footer:
+        "If you were not expecting this survey, you can safely ignore this email.",
+    }),
+  };
+}
+
 export function eventScheduleChangeEmail(input: {
   eventTitle: string;
   startsAt: string;
