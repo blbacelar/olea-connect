@@ -38,6 +38,7 @@ export async function getPublicRecruitmentSurvey(
       .from("board_recruitment_members")
       .select("full_name, member_type, active")
       .eq("id", invitation.member_id)
+      .eq("workspace_id", invitation.workspace_id)
       .single(),
     supabase
       .from("board_recruitment_skill_categories")

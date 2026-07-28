@@ -21,6 +21,11 @@ type Row = Record<string, unknown>;
 
 async function ensureWorkspace() {
   const session = await requireMemberContext();
+  if (!["owner", "admin"].includes(session.member.membershipRole)) {
+    throw new Error(
+      "Only organization owners and administrators can access Board Recruitment.",
+    );
+  }
   const supabase = createAdminClient();
   const organizationId = session.organization.id;
 
@@ -150,6 +155,7 @@ export async function getBoardRecruitmentData(): Promise<RecruitmentData> {
     categoriesResult,
     skillsResult,
     invitationResult,
+    assignmentResult,
     responseResult,
     committeesResult,
     committeeMembersResult,
@@ -175,6 +181,11 @@ export async function getBoardRecruitmentData(): Promise<RecruitmentData> {
       .eq("workspace_id", workspaceId)
       .eq("survey_year", Number(workspace.survey_year)),
     supabase
+      .from("board_recruitment_skill_assignments")
+      .select("member_id, skill_id")
+      .eq("workspace_id", workspaceId)
+      .eq("survey_year", Number(workspace.survey_year)),
+    supabase
       .from("board_recruitment_responses")
       .select("member_id, skill_id, has_skill")
       .eq("workspace_id", workspaceId)
@@ -193,6 +204,7 @@ export async function getBoardRecruitmentData(): Promise<RecruitmentData> {
     categoriesResult,
     skillsResult,
     invitationResult,
+    assignmentResult,
     responseResult,
     committeesResult,
     committeeMembersResult,
@@ -243,6 +255,13 @@ export async function getBoardRecruitmentData(): Promise<RecruitmentData> {
     skillId: String(response.skill_id),
     hasSkill: Boolean(response.has_skill),
   }));
+  const skillAssignments: RecruitmentResponse[] = (
+    (assignmentResult.data ?? []) as Row[]
+  ).map((assignment) => ({
+    memberId: String(assignment.member_id),
+    skillId: String(assignment.skill_id),
+    hasSkill: true,
+  }));
   const committeeMembers = (committeeMembersResult.data ?? []) as Row[];
   const committees: RecruitmentCommittee[] = (
     (committeesResult.data ?? []) as Row[]
@@ -269,6 +288,7 @@ export async function getBoardRecruitmentData(): Promise<RecruitmentData> {
     members,
     skills,
     invitations,
+    skillAssignments,
     responses,
     committees,
   };

@@ -57,10 +57,7 @@ function formatNotificationTime(value: string) {
 
   for (const [unit, seconds] of ranges) {
     if (Math.abs(diffSeconds) >= seconds) {
-      return formatter.format(
-        Math.round(diffSeconds / seconds),
-        unit,
-      );
+      return formatter.format(Math.round(diffSeconds / seconds), unit);
     }
   }
 
@@ -115,11 +112,9 @@ function mapNotificationRow(row: unknown): MemberNotification | null {
     severity: record.severity,
     title: record.title,
     body: record.body,
-    actionUrl:
-      typeof record.action_url === "string" ? record.action_url : null,
+    actionUrl: typeof record.action_url === "string" ? record.action_url : null,
     readAt: typeof record.read_at === "string" ? record.read_at : null,
-    expiresAt:
-      typeof record.expires_at === "string" ? record.expires_at : null,
+    expiresAt: typeof record.expires_at === "string" ? record.expires_at : null,
     createdAt: record.created_at,
   };
 }
@@ -132,7 +127,8 @@ function wasUnreadNotificationRow(row: unknown) {
 function sortNotifications(items: MemberNotification[]) {
   return [...items].sort(
     (first, second) =>
-      new Date(second.createdAt).getTime() - new Date(first.createdAt).getTime(),
+      new Date(second.createdAt).getTime() -
+      new Date(first.createdAt).getTime(),
   );
 }
 
@@ -140,16 +136,19 @@ export function Header() {
   const router = useRouter();
   const session = useSession();
   const member = session?.member;
-  const navigationGroups = getNavigationGroups(session?.platformRoles);
+  const navigationGroups = getNavigationGroups(
+    session?.platformRoles,
+    session?.member.membershipRole,
+  );
   const { resetRegistration } = useRegistration();
   const [notificationsOpen, setNotificationsOpen] = useState(false);
   const [userOpen, setUserOpen] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
   const [notificationError, setNotificationError] = useState("");
   const [isNotificationPending, setIsNotificationPending] = useState(false);
-  const [notificationItems, setNotificationItems] = useState<MemberNotification[]>(
-    () => session?.notifications.items ?? [],
-  );
+  const [notificationItems, setNotificationItems] = useState<
+    MemberNotification[]
+  >(() => session?.notifications.items ?? []);
   const [unreadCount, setUnreadCount] = useState(
     () => session?.notifications.unreadCount ?? 0,
   );
@@ -492,7 +491,9 @@ export function Header() {
                       <Link
                         key={item.href}
                         href={item.href}
-                        prefetch={item.href.startsWith("/api/") ? false : undefined}
+                        prefetch={
+                          item.href.startsWith("/api/") ? false : undefined
+                        }
                         onClick={() => setMobileOpen(false)}
                         className="flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium text-slate-600 hover:bg-olea-light hover:text-olea-dark"
                       >

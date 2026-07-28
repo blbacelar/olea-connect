@@ -85,6 +85,7 @@ export type RecruitmentData = {
   members: RecruitmentMember[];
   skills: RecruitmentSkill[];
   invitations: RecruitmentInvitation[];
+  skillAssignments: RecruitmentResponse[];
   responses: RecruitmentResponse[];
   committees: RecruitmentCommittee[];
 };

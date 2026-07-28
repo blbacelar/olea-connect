@@ -15,7 +15,7 @@ import {
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 
-import type { PlatformRole } from "@/lib/types";
+import type { OrganizationRole, PlatformRole } from "@/lib/types";
 
 export type NavigationItem = {
   dot?: boolean;
@@ -23,15 +23,25 @@ export type NavigationItem = {
   icon: LucideIcon;
   label: string;
   requiredPlatformRole?: PlatformRole;
+  requiredOrganizationRoles?: readonly OrganizationRole[];
 };
 
 export const navigationGroups: NavigationItem[][] = [
   [
     { label: "Dashboard", href: "/dashboard", icon: Home },
     { label: "Templates", href: "/templates", icon: FileText, dot: true },
-    { label: "Board Calendar", href: "/modules/board-calendar", icon: CalendarDays },
+    {
+      label: "Board Calendar",
+      href: "/modules/board-calendar",
+      icon: CalendarDays,
+    },
     { label: "KPI Dashboard", href: "/modules/kpi-dashboard", icon: BarChart3 },
-    { label: "Board Recruitment", href: "/modules/board-recruitment", icon: Users },
+    {
+      label: "Board Recruitment",
+      href: "/modules/board-recruitment",
+      icon: Users,
+      requiredOrganizationRoles: ["owner", "admin"],
+    },
     { label: "Community", href: "/community", icon: Users },
     { label: "Grants", href: "/grants", icon: Gift },
     { label: "Sponsors", href: "/sponsors", icon: Handshake },
@@ -55,14 +65,21 @@ export const navigationGroups: NavigationItem[][] = [
   ],
 ];
 
-export function getNavigationGroups(platformRoles: readonly PlatformRole[] = []) {
+export function getNavigationGroups(
+  platformRoles: readonly PlatformRole[] = [],
+  organizationRole?: OrganizationRole,
+) {
   const roleSet = new Set(platformRoles);
 
   return navigationGroups
     .map((group) =>
       group.filter(
         (item) =>
-          !item.requiredPlatformRole || roleSet.has(item.requiredPlatformRole),
+          (!item.requiredPlatformRole ||
+            roleSet.has(item.requiredPlatformRole)) &&
+          (!item.requiredOrganizationRoles ||
+            (organizationRole !== undefined &&
+              item.requiredOrganizationRoles.includes(organizationRole))),
       ),
     )
     .filter((group) => group.length > 0);

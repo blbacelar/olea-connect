@@ -11,6 +11,7 @@ import React from "react";
 
 import type { BrandProfile } from "@/lib/types";
 import { getEmbeddedLogo } from "@/lib/template-renderer/logo-data";
+import { activeDirectorHolders } from "./metrics";
 import { calculateTerm, coverageLevel, officerLabels } from "./domain";
 import type { RecruitmentData, RecruitmentMember } from "./types";
 
@@ -256,10 +257,7 @@ export async function renderBoardRecruitmentPdfBuffer(
     (member) => member.active && member.memberType === "director",
   );
   const gaps = data.skills.filter(
-    (skill) =>
-      !data.responses.some(
-        (response) => response.skillId === skill.id && response.hasSkill,
-      ),
+    (skill) => activeDirectorHolders(data, skill.id).length === 0,
   );
   const footer = buildFooter(safeBrand);
 
@@ -586,14 +584,7 @@ function SkillsTable({
       widths={["25%", "25%", "35%", "15%"]}
     >
       {data.skills.map((skill) => {
-        const holders = directors.filter((member) =>
-          data.responses.some(
-            (response) =>
-              response.memberId === member.id &&
-              response.skillId === skill.id &&
-              response.hasSkill,
-          ),
-        );
+        const holders = activeDirectorHolders(data, skill.id);
         return (
           <DataRow
             key={skill.id}

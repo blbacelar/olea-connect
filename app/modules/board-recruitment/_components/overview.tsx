@@ -80,6 +80,7 @@ import type {
   RecruitmentMember,
   RecruitmentTab,
 } from "@/lib/board-recruitment/types";
+import { activeDirectorHasSkill } from "@/lib/board-recruitment/metrics";
 import { cn } from "@/lib/utils";
 import {
   ConfirmAction,
@@ -109,17 +110,12 @@ export function Overview({
       (skill) => skill.categoryName === category,
     );
     const covered = skills.filter((skill) =>
-      data.responses.some(
-        (response) => response.skillId === skill.id && response.hasSkill,
-      ),
+      activeDirectorHasSkill(data, skill.id),
     ).length;
     return { category, covered, total: skills.length };
   });
   const gaps = data.skills.filter(
-    (skill) =>
-      !data.responses.some(
-        (response) => response.skillId === skill.id && response.hasSkill,
-      ),
+    (skill) => !activeDirectorHasSkill(data, skill.id),
   );
   return (
     <div className="space-y-6">

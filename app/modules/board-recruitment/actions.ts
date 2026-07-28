@@ -157,6 +157,136 @@ function parseMember(formData: FormData) {
   });
 }
 
+const skillIdsSchema = z
+  .array(idSchema)
+  .max(200, "Select fewer than 200 skills.")
+  .superRefine((skillIds, context) => {
+    if (new Set(skillIds).size !== skillIds.length) {
+      context.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: "A skill can only be selected once.",
+      });
+    }
+  });
+
+function parseSkillIds(formData: FormData) {
+  return skillIdsSchema.parse(
+    formData
+      .getAll("skillIds")
+      .map((skillId) => String(skillId).trim())
+      .filter(Boolean),
+  );
+}
+
+function assertMemberSkillType(
+  memberType: "director" | "staff",
+  selectedSkillIds: string[],
+) {
+  if (memberType === "staff" && selectedSkillIds.length > 0) {
+    throw new Error("Only directors can have recruitment skills assigned.");
+  }
+}
+
+async function replaceMemberSkills({
+  workspace,
+  supabase,
+  memberId,
+  selectedSkillIds,
+}: {
+  workspace: Record<string, unknown>;
+  supabase: Awaited<
+    ReturnType<typeof requireBoardRecruitmentWorkspace>
+  >["supabase"];
+  memberId: string;
+  selectedSkillIds: string[];
+}) {
+  const { data: member, error: memberError } = await supabase
+    .from("board_recruitment_members")
+    .select("id")
+    .eq("id", memberId)
+    .eq("workspace_id", workspace.id)
+    .maybeSingle();
+  if (memberError) throw memberError;
+  if (!member) throw new Error("That member is not in this workspace.");
+
+  const { data: skills, error: skillsError } = await supabase
+    .from("board_recruitment_skills")
+    .select("id")
+    .eq("workspace_id", workspace.id);
+  if (skillsError) throw skillsError;
+
+  const workspaceSkillIds = new Set((skills ?? []).map((skill) => skill.id));
+  if (selectedSkillIds.some((skillId) => !workspaceSkillIds.has(skillId))) {
+    throw new Error("One or more selected skills are not in this workspace.");
+  }
+
+  const selected = new Set(selectedSkillIds);
+  const rows = (skills ?? [])
+    .filter((skill) => selected.has(skill.id))
+    .map((skill) => ({
+      workspace_id: workspace.id,
+      member_id: memberId,
+      skill_id: skill.id,
+      survey_year: workspace.survey_year,
+      updated_at: new Date().toISOString(),
+    }));
+
+  const { error: deleteError } = await supabase
+    .from("board_recruitment_skill_assignments")
+    .delete()
+    .eq("workspace_id", workspace.id)
+    .eq("member_id", memberId)
+    .eq("survey_year", workspace.survey_year);
+  if (deleteError) throw deleteError;
+  if (!rows.length) return;
+
+  const { error } = await supabase
+    .from("board_recruitment_skill_assignments")
+    .insert(rows);
+  if (error) throw error;
+}
+
+type MemberSkillAssignmentSnapshot = {
+  skill_id: string;
+  survey_year: number;
+};
+
+async function restoreMemberSkillAssignments({
+  workspace,
+  supabase,
+  memberId,
+  snapshot,
+}: {
+  workspace: Record<string, unknown>;
+  supabase: Awaited<
+    ReturnType<typeof requireBoardRecruitmentWorkspace>
+  >["supabase"];
+  memberId: string;
+  snapshot: MemberSkillAssignmentSnapshot[];
+}) {
+  const { error: deleteError } = await supabase
+    .from("board_recruitment_skill_assignments")
+    .delete()
+    .eq("workspace_id", workspace.id)
+    .eq("member_id", memberId)
+    .eq("survey_year", workspace.survey_year);
+  if (deleteError) throw deleteError;
+  if (!snapshot.length) return;
+
+  const { error: restoreError } = await supabase
+    .from("board_recruitment_skill_assignments")
+    .insert(
+      snapshot.map((assignment) => ({
+        workspace_id: workspace.id,
+        member_id: memberId,
+        skill_id: assignment.skill_id,
+        survey_year: assignment.survey_year,
+        updated_at: new Date().toISOString(),
+      })),
+    );
+  if (restoreError) throw restoreError;
+}
+
 export async function saveRecruitmentSettings(formData: FormData) {
   const { workspace, supabase } = await workspaceFrom(formData);
   const parsed = z
@@ -188,22 +318,108 @@ export async function saveRecruitmentSettings(formData: FormData) {
 
 export async function createRecruitmentMember(formData: FormData) {
   const { workspace, supabase } = await workspaceFrom(formData);
-  const { error } = await supabase
+  const parsedMember = parseMember(formData);
+  const selectedSkillIds = parseSkillIds(formData);
+  assertMemberSkillType(parsedMember.member_type, selectedSkillIds);
+  const { data: member, error } = await supabase
     .from("board_recruitment_members")
-    .insert({ workspace_id: workspace.id, ...parseMember(formData) });
+    .insert({ workspace_id: workspace.id, ...parsedMember })
+    .select("id")
+    .single();
   if (error) throw error;
+  try {
+    await replaceMemberSkills({
+      workspace,
+      supabase,
+      memberId: member.id,
+      selectedSkillIds:
+        parsedMember.member_type === "director" ? selectedSkillIds : [],
+    });
+  } catch (skillsError) {
+    const { error: rollbackError } = await supabase
+      .from("board_recruitment_members")
+      .delete()
+      .eq("id", member.id)
+      .eq("workspace_id", workspace.id);
+    if (rollbackError) {
+      throw new Error(
+        `The member was created, but its skills could not be saved and the member could not be rolled back: ${rollbackError.message}`,
+        { cause: skillsError },
+      );
+    }
+    throw skillsError;
+  }
   redirectTab("terms");
 }
 
 export async function updateRecruitmentMember(formData: FormData) {
   const { workspace, supabase } = await workspaceFrom(formData);
   const memberId = idSchema.parse(value(formData, "memberId"));
-  const { error } = await supabase
+  const parsedMember = parseMember(formData);
+  const selectedSkillIds = parseSkillIds(formData);
+  assertMemberSkillType(parsedMember.member_type, selectedSkillIds);
+  const { data: previousMember, error: previousMemberError } = await supabase
     .from("board_recruitment_members")
-    .update(parseMember(formData))
+    .select(
+      "full_name, role_title, member_type, office, email, date_joined, notes",
+    )
     .eq("id", memberId)
-    .eq("workspace_id", workspace.id);
+    .eq("workspace_id", workspace.id)
+    .maybeSingle();
+  if (previousMemberError) throw previousMemberError;
+  if (!previousMember) throw new Error("That member is not in this workspace.");
+  const { data: previousAssignments, error: previousAssignmentsError } =
+    await supabase
+      .from("board_recruitment_skill_assignments")
+      .select("skill_id, survey_year")
+      .eq("workspace_id", workspace.id)
+      .eq("member_id", memberId)
+      .eq("survey_year", workspace.survey_year);
+  if (previousAssignmentsError) throw previousAssignmentsError;
+  const { data: updatedMember, error } = await supabase
+    .from("board_recruitment_members")
+    .update(parsedMember)
+    .eq("id", memberId)
+    .eq("workspace_id", workspace.id)
+    .select("id")
+    .maybeSingle();
   if (error) throw error;
+  if (!updatedMember) throw new Error("That member is not in this workspace.");
+  try {
+    await replaceMemberSkills({
+      workspace,
+      supabase,
+      memberId,
+      selectedSkillIds:
+        parsedMember.member_type === "director" ? selectedSkillIds : [],
+    });
+  } catch (skillsError) {
+    try {
+      await restoreMemberSkillAssignments({
+        workspace,
+        supabase,
+        memberId,
+        snapshot: (previousAssignments ??
+          []) as MemberSkillAssignmentSnapshot[],
+      });
+      const { error: rollbackError } = await supabase
+        .from("board_recruitment_members")
+        .update(previousMember)
+        .eq("id", memberId)
+        .eq("workspace_id", workspace.id);
+      if (rollbackError) throw rollbackError;
+    } catch (rollbackError) {
+      throw new Error(
+        `The member was updated, but its skills could not be saved and the member could not be rolled back: ${
+          rollbackError instanceof Error
+            ? rollbackError.message
+            : String(rollbackError)
+        }`,
+        { cause: skillsError },
+      );
+    }
+    throw skillsError;
+  }
   redirectTab("terms");
 }
 

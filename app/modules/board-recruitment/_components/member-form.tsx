@@ -78,8 +78,10 @@ import {
 import type {
   RecruitmentData,
   RecruitmentMember,
+  RecruitmentMemberType,
   RecruitmentTab,
 } from "@/lib/board-recruitment/types";
+import { assignedSkillIdsForMember } from "@/lib/board-recruitment/metrics";
 import { cn } from "@/lib/utils";
 import {
   ConfirmAction,
@@ -100,6 +102,41 @@ export function MemberForm({
   member?: RecruitmentMember;
   trigger: React.ReactNode;
 }) {
+  const initialMemberType = member?.memberType ?? "director";
+  const initialSkillIds = member
+    ? assignedSkillIdsForMember(data, member.id)
+    : [];
+  const [dialogOpen, setDialogOpen] = React.useState(false);
+  const [memberType, setMemberType] =
+    React.useState<RecruitmentMemberType>(initialMemberType);
+  const [selectedSkillIds, setSelectedSkillIds] =
+    React.useState<string[]>(initialSkillIds);
+  const skillsByCategory = data.skills.reduce<Map<string, typeof data.skills>>(
+    (groups, skill) => {
+      const categorySkills = groups.get(skill.categoryName) ?? [];
+      categorySkills.push(skill);
+      groups.set(skill.categoryName, categorySkills);
+      return groups;
+    },
+    new Map(),
+  );
+
+  function toggleSkill(skillId: string) {
+    setSelectedSkillIds((current) =>
+      current.includes(skillId)
+        ? current.filter((id) => id !== skillId)
+        : [...current, skillId],
+    );
+  }
+
+  function handleDialogChange(open: boolean) {
+    if (open) {
+      setMemberType(initialMemberType);
+      setSelectedSkillIds(initialSkillIds);
+    }
+    setDialogOpen(open);
+  }
+
   return (
     <ModalForm
       title={member ? "Edit board roster member" : "Add roster member"}
@@ -107,6 +144,8 @@ export function MemberForm({
       trigger={trigger}
       action={member ? updateRecruitmentMember : createRecruitmentMember}
       submitLabel={member ? "Save member" : "Add member"}
+      open={dialogOpen}
+      onOpenChange={handleDialogChange}
     >
       <HiddenWorkspace data={data} />
       {member && <input type="hidden" name="memberId" value={member.id} />}
@@ -129,6 +168,9 @@ export function MemberForm({
           <Select
             name="memberType"
             defaultValue={member?.memberType ?? "director"}
+            onValueChange={(value) =>
+              setMemberType(value as RecruitmentMemberType)
+            }
           >
             <SelectTrigger aria-label="Member type">
               <SelectValue />
@@ -170,6 +212,58 @@ export function MemberForm({
           defaultValue={member?.dateJoined ?? ""}
         />
       </div>
+      {memberType === "director" ? (
+        <fieldset className="space-y-3 rounded-xl border bg-slate-50 p-4">
+          <legend className="px-1 text-sm font-semibold text-slate-700">
+            Skills held
+          </legend>
+          <p className="text-xs leading-5 text-slate-500">
+            Select the skills this director holds. These assignments appear in
+            Skills Matrix, where a skill with one active holder is flagged as a
+            succession risk. Deactivating this member removes them from active
+            coverage immediately.
+          </p>
+          <div className="max-h-80 space-y-4 overflow-y-auto pr-2">
+            {[...skillsByCategory].map(([category, skills]) => (
+              <div key={category} className="space-y-2">
+                <h3 className="text-xs font-bold uppercase tracking-[0.08em] text-slate-500">
+                  {category}
+                </h3>
+                <div className="grid gap-2 sm:grid-cols-2">
+                  {skills.map((skill) => {
+                    const checked = selectedSkillIds.includes(skill.id);
+                    return (
+                      <label
+                        key={skill.id}
+                        className="flex cursor-pointer items-start gap-2 rounded-lg border bg-white px-3 py-2 text-sm font-medium text-slate-700 transition-colors hover:border-olea-green"
+                      >
+                        <input
+                          type="checkbox"
+                          name="skillIds"
+                          value={skill.id}
+                          checked={checked}
+                          onChange={() => toggleSkill(skill.id)}
+                          className="mt-0.5 size-4 accent-olea-green"
+                        />
+                        <span>{skill.name}</span>
+                      </label>
+                    );
+                  })}
+                </div>
+              </div>
+            ))}
+          </div>
+          <p className="text-xs font-medium text-slate-500">
+            {selectedSkillIds.length} skill
+            {selectedSkillIds.length === 1 ? "" : "s"} selected
+          </p>
+        </fieldset>
+      ) : (
+        <div className="rounded-xl border border-dashed bg-slate-50 p-4 text-sm text-slate-600">
+          Staff members are assigned to committees. Skills are tracked for
+          directors in the Skills Matrix.
+        </div>
+      )}
       <label className="block space-y-1.5 text-sm font-semibold text-slate-700">
         <span>Notes</span>
         <Textarea

@@ -8,11 +8,16 @@ The automated coverage includes:
 - Roster CRUD: create, edit, deactivate, and delete a member.
 - Committee CRUD: create, rename, assign members, set a chair, and delete a committee.
 - Skill CRUD: add and remove a custom skill.
+- Skill assignment: add and edit a director's skills from the member dialog,
+  reassign skills, and recalculate single-holder risk after deactivation.
 - Survey workflow: active director eligibility, invitation status, preview responses, and response status transition.
 - Report modes: identified and anonymous views.
 - Public access: invalid and unavailable survey tokens.
 - Isolation: test records use per-run markers and the fixture cleanup removes them after the test.
 - Validation and authorization: server actions validate input and resolve the workspace from the authenticated organization; the public response path validates the signed token, expiry, active director, exact skill set, and boolean answers inside one database transaction.
+- Administrative authorization: owners and organization admins can use the
+  toolkit; regular organization members are denied by both the server boundary
+  and the authenticated E2E regression.
 
 ## Verification commands
 

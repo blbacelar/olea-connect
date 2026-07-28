@@ -80,6 +80,10 @@ import type {
   RecruitmentMember,
   RecruitmentTab,
 } from "@/lib/board-recruitment/types";
+import {
+  activeDirectorHasSkill,
+  responseFor,
+} from "@/lib/board-recruitment/metrics";
 import { cn } from "@/lib/utils";
 import {
   ConfirmAction,
@@ -90,7 +94,6 @@ import {
   SectionHeader,
   StatCard,
 } from "./shared";
-import { responseFor } from "./helpers";
 
 export function Report({ data }: { data: RecruitmentData }) {
   const [identified, setIdentified] = React.useState(true);
@@ -100,10 +103,7 @@ export function Report({ data }: { data: RecruitmentData }) {
     (member) => member.active && member.memberType === "director",
   );
   const gaps = data.skills.filter(
-    (skill) =>
-      !data.responses.some(
-        (response) => response.skillId === skill.id && response.hasSkill,
-      ),
+    (skill) => !activeDirectorHasSkill(data, skill.id),
   );
   return (
     <div className="space-y-6">

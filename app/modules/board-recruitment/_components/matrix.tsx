@@ -80,6 +80,7 @@ import type {
   RecruitmentMember,
   RecruitmentTab,
 } from "@/lib/board-recruitment/types";
+import { responseFor } from "@/lib/board-recruitment/metrics";
 import { cn } from "@/lib/utils";
 import {
   ConfirmAction,
@@ -90,7 +91,6 @@ import {
   SectionHeader,
   StatCard,
 } from "./shared";
-import { responseFor } from "./helpers";
 
 export function Matrix({ data }: { data: RecruitmentData }) {
   const activeDirectors = data.members.filter(
@@ -126,14 +126,13 @@ export function Matrix({ data }: { data: RecruitmentData }) {
                     <CardDescription>
                       {
                         categorySkills.filter((skill) =>
-                          data.responses.some(
-                            (response) =>
-                              response.skillId === skill.id &&
-                              response.hasSkill,
+                          activeDirectors.some((member) =>
+                            responseFor(data, member.id, skill.id),
                           ),
                         ).length
                       }{" "}
-                      of {categorySkills.length} skills covered
+                      of {categorySkills.length} skills covered by active
+                      directors
                     </CardDescription>
                   </div>
                   {categoryRow && (
@@ -182,6 +181,15 @@ export function Matrix({ data }: { data: RecruitmentData }) {
                       <div>
                         <div className="flex items-center justify-between gap-3">
                           <p className="font-semibold">{skill.name}</p>
+                          {holders.length === 1 && (
+                            <Badge
+                              data-testid={`skill-risk-${skill.id}`}
+                              className="border-red-200 bg-red-50 text-red-800"
+                              variant="outline"
+                            >
+                              Single-holder risk
+                            </Badge>
+                          )}
                           {skill.isCustom && (
                             <ConfirmAction
                               title={`Delete ${skill.name}?`}

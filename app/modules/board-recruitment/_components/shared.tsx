@@ -107,6 +107,8 @@ export function ModalForm({
   action,
   children,
   submitLabel = "Save",
+  open,
+  onOpenChange,
 }: {
   title: string;
   description?: string;
@@ -114,9 +116,11 @@ export function ModalForm({
   action: (formData: FormData) => void | Promise<void>;
   children: React.ReactNode;
   submitLabel?: string;
+  open?: boolean;
+  onOpenChange?: (open: boolean) => void;
 }) {
   return (
-    <Dialog>
+    <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogTrigger asChild>{trigger}</DialogTrigger>
       <DialogContent>
         <DialogHeader>

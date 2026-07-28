@@ -31,12 +31,26 @@ export class BoardRecruitmentPage {
     return this.page.getByRole("dialog");
   }
 
-  async addMember(name: string, email: string) {
+  async addMember(name: string, email: string, skills: string[] = []) {
     await this.page.getByRole("button", { name: "Add member" }).click();
     const dialog = this.dialog();
     await dialog.getByLabel("Full name").fill(name);
     await dialog.getByLabel("Email").fill(email);
+    for (const skill of skills) {
+      await dialog.getByRole("checkbox", { name: skill, exact: true }).check();
+    }
     await dialog.getByRole("button", { name: "Add member" }).click();
+    await expect(this.memberRow(name)).toBeVisible();
+  }
+
+  async updateMemberSkills(name: string, remove: string, add: string) {
+    await this.memberRow(name)
+      .getByRole("button", { name: `Edit ${name}` })
+      .click();
+    const dialog = this.dialog();
+    await dialog.getByRole("checkbox", { name: remove, exact: true }).uncheck();
+    await dialog.getByRole("checkbox", { name: add, exact: true }).check();
+    await dialog.getByRole("button", { name: "Save member" }).click();
     await expect(this.memberRow(name)).toBeVisible();
   }
 

@@ -80,6 +80,7 @@ import type {
   RecruitmentMember,
   RecruitmentTab,
 } from "@/lib/board-recruitment/types";
+import { answersForMember } from "@/lib/board-recruitment/metrics";
 import { cn } from "@/lib/utils";
 import {
   ConfirmAction,
@@ -90,7 +91,7 @@ import {
   SectionHeader,
   StatCard,
 } from "./shared";
-import { answersForMember, invitationFor } from "./helpers";
+import { invitationFor } from "./helpers";
 
 export function Survey({ data }: { data: RecruitmentData }) {
   const [memberId, setMemberId] = React.useState(
