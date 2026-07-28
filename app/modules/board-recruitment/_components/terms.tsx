@@ -2,37 +2,11 @@
 
 import * as React from "react";
 import Link from "next/link";
+import { Archive, Check, Minus, Pencil, Plus, Trash2 } from "lucide-react";
 import {
-  Archive,
-  ArrowLeft,
-  BarChart3,
-  Check,
-  ChevronRight,
-  ClipboardList,
-  Mail,
-  Pencil,
-  Plus,
-  Printer,
-  ShieldCheck,
-  Trash2,
-  Users,
-} from "lucide-react";
-import {
-  addRecruitmentSkill,
-  createRecruitmentCommittee,
-  createRecruitmentMember,
-  deleteRecruitmentCommittee,
   deleteRecruitmentMember,
-  deleteRecruitmentSkill,
-  saveRecruitmentResponse,
-  saveRecruitmentSettings,
-  sendRecruitmentInvitation,
-  sendRecruitmentInvitations,
-  setCommitteeChair,
-  toggleCommitteeMember,
+  saveRecruitmentTermRules,
   toggleRecruitmentMember,
-  updateRecruitmentCommittee,
-  updateRecruitmentMember,
 } from "@/app/modules/board-recruitment/actions";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -43,22 +17,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import { SubmitButton } from "@/components/ui/submit-button";
 import {
   Table,
@@ -68,31 +27,112 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Textarea } from "@/components/ui/textarea";
-import {
-  calculateTerm,
-  coverageLevel,
-  officerLabels,
-} from "@/lib/board-recruitment/domain";
-import type {
-  RecruitmentData,
-  RecruitmentMember,
-  RecruitmentTab,
-} from "@/lib/board-recruitment/types";
+import { calculateTerm, officerLabels } from "@/lib/board-recruitment/domain";
+import type { RecruitmentData } from "@/lib/board-recruitment/types";
 import { cn } from "@/lib/utils";
 import {
   ConfirmAction,
   EmptyState,
-  Field,
   HiddenWorkspace,
-  ModalForm,
   SectionHeader,
   StatCard,
 } from "./shared";
 import { MemberForm } from "./member-form";
 
+function RuleStepper({
+  label,
+  name,
+  value,
+  min,
+  max,
+  suffix,
+  onChange,
+}: {
+  label: string;
+  name: string;
+  value: number | "";
+  min: number;
+  max: number;
+  suffix?: string;
+  onChange: (value: number | "") => void;
+}) {
+  return (
+    <fieldset className="space-y-1.5 text-sm font-semibold text-slate-700">
+      <legend>{label}</legend>
+      <div className="flex items-center gap-2">
+        <Button
+          type="button"
+          variant="outline"
+          size="icon"
+          className="size-11 shrink-0"
+          aria-label={`Decrease ${label}`}
+          disabled={value === "" || value <= min}
+          onClick={() => {
+            if (value !== "") onChange(Math.max(min, value - 1));
+          }}
+        >
+          <Minus className="size-4" />
+        </Button>
+        <div className="relative flex-1">
+          <Input
+            name={name}
+            type="number"
+            inputMode="numeric"
+            min={min}
+            max={max}
+            step={1}
+            value={value}
+            onChange={(event) => {
+              const raw = event.currentTarget.value;
+              if (raw === "") {
+                onChange("");
+                return;
+              }
+              const next = Number(raw);
+              if (Number.isInteger(next)) onChange(next);
+            }}
+            aria-label={label}
+            required
+            className={suffix ? "pr-14" : undefined}
+          />
+          {suffix && (
+            <span className="pointer-events-none absolute inset-y-0 right-3 flex items-center text-xs font-medium text-slate-500">
+              {suffix}
+            </span>
+          )}
+        </div>
+        <Button
+          type="button"
+          variant="outline"
+          size="icon"
+          className="size-11 shrink-0"
+          aria-label={`Increase ${label}`}
+          disabled={value === "" || value >= max}
+          onClick={() => {
+            if (value !== "") onChange(Math.min(max, value + 1));
+          }}
+        >
+          <Plus className="size-4" />
+        </Button>
+      </div>
+    </fieldset>
+  );
+}
+
+type TermRuleDraft = {
+  termLengthYears: number | "";
+  maxConsecutiveTerms: number | "";
+  maxYearsOfService: number | "";
+  upcomingAgmYear: number | "";
+};
+
 export function Terms({ data }: { data: RecruitmentData }) {
+  const [rules, setRules] = React.useState<TermRuleDraft>({
+    termLengthYears: data.workspace.termLengthYears,
+    maxConsecutiveTerms: data.workspace.maxConsecutiveTerms,
+    maxYearsOfService: data.workspace.maxYearsOfService,
+    upcomingAgmYear: data.workspace.upcomingAgmYear,
+  });
   const active = data.members.filter((member) => member.active);
   const directors = active.filter((member) => member.memberType === "director");
   const standing = directors.filter(
@@ -123,8 +163,83 @@ export function Terms({ data }: { data: RecruitmentData }) {
         <CardHeader>
           <CardTitle>Term rules</CardTitle>
           <CardDescription>
-            Update these rules in Workspace settings; computed terms use the
-            upcoming AGM year.
+            Enter the rules from your bylaws. The roster, officer succession,
+            and report update from these values after saving.
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <form action={saveRecruitmentTermRules} className="space-y-5">
+            <HiddenWorkspace data={data} />
+            <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+              <RuleStepper
+                label="Term length"
+                name="termLengthYears"
+                value={rules.termLengthYears}
+                min={1}
+                max={10}
+                suffix="yrs"
+                onChange={(value) =>
+                  setRules((current) => ({
+                    ...current,
+                    termLengthYears: value,
+                  }))
+                }
+              />
+              <RuleStepper
+                label="Max consecutive terms"
+                name="maxConsecutiveTerms"
+                value={rules.maxConsecutiveTerms}
+                min={1}
+                max={10}
+                onChange={(value) =>
+                  setRules((current) => ({
+                    ...current,
+                    maxConsecutiveTerms: value,
+                  }))
+                }
+              />
+              <RuleStepper
+                label="Max years of service"
+                name="maxYearsOfService"
+                value={rules.maxYearsOfService}
+                min={1}
+                max={80}
+                suffix="yrs"
+                onChange={(value) =>
+                  setRules((current) => ({
+                    ...current,
+                    maxYearsOfService: value,
+                  }))
+                }
+              />
+              <RuleStepper
+                label="Upcoming AGM year"
+                name="upcomingAgmYear"
+                value={rules.upcomingAgmYear}
+                min={2000}
+                max={2100}
+                onChange={(value) =>
+                  setRules((current) => ({
+                    ...current,
+                    upcomingAgmYear: value,
+                  }))
+                }
+              />
+            </div>
+            <div className="flex justify-end">
+              <SubmitButton>
+                <Check className="size-4" />
+                Save term rules
+              </SubmitButton>
+            </div>
+          </form>
+        </CardContent>
+      </Card>
+      <Card>
+        <CardHeader>
+          <CardTitle>Term summary</CardTitle>
+          <CardDescription>
+            Computed from active directors and the rules above.
           </CardDescription>
         </CardHeader>
         <CardContent className="grid gap-4 sm:grid-cols-3">

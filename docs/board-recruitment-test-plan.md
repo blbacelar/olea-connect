@@ -6,6 +6,10 @@ The module is tested as a tenant-scoped workflow. Test data must be created with
 
 - Open the module and switch through Overview, Survey & Send, Skills Matrix, Board Terms, Committees, and Board Report.
 - Add, edit, deactivate/reactivate, and delete a director and staff roster member.
+- Edit term length, consecutive-term limit, service-year limit, and AGM year
+  directly in Board Terms; saving keeps the user on the Board Terms tab and
+  refreshes the computed term summary. Blank and out-of-range values are
+  rejected by the form and server-side schema.
 - Assign skills while adding or editing a director; reassignments update the
   Skills Matrix and single-holder warning.
 - Add, rename, assign members to, set a chair for, and delete a committee.
@@ -23,6 +27,8 @@ The module is tested as a tenant-scoped workflow. Test data must be created with
 - Deactivating a director removes their skill coverage immediately; staff are
   intentionally excluded from the director skills matrix and survey.
 - Missing join dates render as “Add join date” instead of producing a false term.
+- Workspace appearance and survey year remain in Workspace Settings; term
+  rules are not duplicated in that dialog.
 - Survey response writes are idempotent and status cannot move from responded back to invited.
 
 ## Authorization and isolation

@@ -97,6 +97,70 @@ test.describe("@critical Board Recruitment Toolkit", () => {
     await recruitment.deleteCommittee(renamedCommittee);
   });
 
+  test("persists editable term rules without leaving Board Terms", async ({
+    page,
+  }) => {
+    const recruitment = new BoardRecruitmentPage(page);
+    await recruitment.open("terms");
+    await recruitment.saveTermRules({
+      termLength: 2,
+      maxTerms: 4,
+      maxYears: 10,
+      agmYear: 2028,
+    });
+    await expect(
+      page.getByRole("heading", { name: "Term summary" }),
+    ).toBeVisible();
+    await expect(page.getByText("Standing at 2028")).toBeVisible();
+
+    const marker = `Term rules QA ${Date.now()}`;
+    await recruitment.addMember(
+      marker,
+      `term-rules-${Date.now()}@example.test`,
+      [],
+      "2019-01-01",
+    );
+    await expect(recruitment.memberRow(marker)).toContainText(
+      "Term 5 · ends 2029",
+    );
+    await expect(recruitment.memberRow(marker)).toContainText("Term-limited");
+    await recruitment.deleteMember(marker);
+  });
+
+  test("rejects blank and out-of-range term rules before submission", async ({
+    page,
+  }) => {
+    const recruitment = new BoardRecruitmentPage(page);
+    await recruitment.open("terms");
+    const rules = page.locator("form").filter({
+      has: page.getByRole("button", { name: "Save term rules" }),
+    });
+    const termLength = rules.getByRole("spinbutton", { name: "Term length" });
+
+    await termLength.fill("");
+    await expect(termLength).toHaveJSProperty("validity.valid", false);
+    await termLength.fill("11");
+    await expect(termLength).toHaveJSProperty("validity.valid", false);
+    await rules.getByRole("button", { name: "Save term rules" }).click();
+    await expect(page).toHaveURL(/tab=terms/);
+  });
+
+  test("keeps term rules out of the workspace settings dialog", async ({
+    page,
+  }) => {
+    const recruitment = new BoardRecruitmentPage(page);
+    await recruitment.open();
+    await page.getByRole("button", { name: "Workspace settings" }).click();
+    const dialog = recruitment.dialog();
+    await expect(
+      dialog.getByText(/Bylaw rules are managed directly in Board Terms/),
+    ).toBeVisible();
+    await expect(
+      dialog.getByRole("spinbutton", { name: "Term length" }),
+    ).toHaveCount(0);
+    await dialog.getByRole("button", { name: "Close" }).click();
+  });
+
   test("supports custom skill CRUD and identified or anonymous reporting", async ({
     page,
   }) => {

@@ -31,6 +31,20 @@ const date = z
   .or(z.literal(""))
   .nullable();
 
+const workspaceSettingsSchema = z.object({
+  accent_color: z
+    .string()
+    .regex(/^#[0-9A-Fa-f]{6}$/, "Use a six-digit hex color."),
+  survey_year: z.coerce.number().int().min(2000).max(2100),
+});
+
+const termRulesSchema = z.object({
+  term_length_years: z.coerce.number().int().min(1).max(10),
+  max_consecutive_terms: z.coerce.number().int().min(1).max(10),
+  max_years_of_service: z.coerce.number().int().min(1).max(80),
+  upcoming_agm_year: z.coerce.number().int().min(2000).max(2100),
+});
+
 function value(formData: FormData, key: string) {
   return String(formData.get(key) ?? "").trim();
 }
@@ -289,31 +303,32 @@ async function restoreMemberSkillAssignments({
 
 export async function saveRecruitmentSettings(formData: FormData) {
   const { workspace, supabase } = await workspaceFrom(formData);
-  const parsed = z
-    .object({
-      accent_color: z
-        .string()
-        .regex(/^#[0-9A-Fa-f]{6}$/, "Use a six-digit hex color."),
-      survey_year: z.coerce.number().int().min(2000).max(2100),
-      term_length_years: z.coerce.number().int().min(1).max(10),
-      max_consecutive_terms: z.coerce.number().int().min(1).max(10),
-      max_years_of_service: z.coerce.number().int().min(1).max(80),
-      upcoming_agm_year: z.coerce.number().int().min(2000).max(2100),
-    })
-    .parse({
-      accent_color: value(formData, "accentColor"),
-      survey_year: value(formData, "surveyYear"),
-      term_length_years: value(formData, "termLengthYears"),
-      max_consecutive_terms: value(formData, "maxConsecutiveTerms"),
-      max_years_of_service: value(formData, "maxYearsOfService"),
-      upcoming_agm_year: value(formData, "upcomingAgmYear"),
-    });
+  const parsed = workspaceSettingsSchema.parse({
+    accent_color: value(formData, "accentColor"),
+    survey_year: value(formData, "surveyYear"),
+  });
   const { error } = await supabase
     .from("board_recruitment_workspaces")
     .update(parsed)
     .eq("id", workspace.id);
   if (error) throw error;
   redirectTab("overview");
+}
+
+export async function saveRecruitmentTermRules(formData: FormData) {
+  const { workspace, supabase } = await workspaceFrom(formData);
+  const parsed = termRulesSchema.parse({
+    term_length_years: value(formData, "termLengthYears"),
+    max_consecutive_terms: value(formData, "maxConsecutiveTerms"),
+    max_years_of_service: value(formData, "maxYearsOfService"),
+    upcoming_agm_year: value(formData, "upcomingAgmYear"),
+  });
+  const { error } = await supabase
+    .from("board_recruitment_workspaces")
+    .update(parsed)
+    .eq("id", workspace.id);
+  if (error) throw error;
+  redirectTab("terms");
 }
 
 export async function createRecruitmentMember(formData: FormData) {

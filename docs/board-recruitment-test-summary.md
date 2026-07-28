@@ -10,6 +10,9 @@ The automated coverage includes:
 - Skill CRUD: add and remove a custom skill.
 - Skill assignment: add and edit a director's skills from the member dialog,
   reassign skills, and recalculate single-holder risk after deactivation.
+- Term rules: edit all four bylaw controls inline in Board Terms, persist them,
+  verify navigation stays on the same tab, and confirm the controls are not
+  duplicated in Workspace Settings.
 - Survey workflow: active director eligibility, invitation status, preview responses, and response status transition.
 - Report modes: identified and anonymous views.
 - Public access: invalid and unavailable survey tokens.
@@ -18,6 +21,14 @@ The automated coverage includes:
 - Administrative authorization: owners and organization admins can use the
   toolkit; regular organization members are denied by both the server boundary
   and the authenticated E2E regression.
+
+## Prototype parity review
+
+The standalone toolkit was served locally and exercised through all six views:
+Overview, Survey & Send, Skills Matrix, Board Terms, Committees, and Board
+Report. The production module now matches the important Board Terms behavior:
+term rules are visible beside the roster workflow and update the computed
+summary after save, while workspace branding/year settings remain separate.
 
 ## Verification commands
 

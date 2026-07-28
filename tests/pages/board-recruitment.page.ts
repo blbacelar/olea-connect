@@ -31,11 +31,19 @@ export class BoardRecruitmentPage {
     return this.page.getByRole("dialog");
   }
 
-  async addMember(name: string, email: string, skills: string[] = []) {
+  async addMember(
+    name: string,
+    email: string,
+    skills: string[] = [],
+    dateJoined?: string,
+  ) {
     await this.page.getByRole("button", { name: "Add member" }).click();
     const dialog = this.dialog();
     await dialog.getByLabel("Full name").fill(name);
     await dialog.getByLabel("Email").fill(email);
+    if (dateJoined) {
+      await dialog.getByLabel("Date joined").fill(dateJoined);
+    }
     for (const skill of skills) {
       await dialog.getByRole("checkbox", { name: skill, exact: true }).check();
     }
@@ -52,6 +60,42 @@ export class BoardRecruitmentPage {
     await dialog.getByRole("checkbox", { name: add, exact: true }).check();
     await dialog.getByRole("button", { name: "Save member" }).click();
     await expect(this.memberRow(name)).toBeVisible();
+  }
+
+  async saveTermRules(values: {
+    termLength: number;
+    maxTerms: number;
+    maxYears: number;
+    agmYear: number;
+  }) {
+    await this.openTab("Board Terms");
+    const rules = this.page.locator("form").filter({
+      has: this.page.getByRole("button", { name: "Save term rules" }),
+    });
+    await rules
+      .getByRole("spinbutton", { name: "Term length" })
+      .fill(String(values.termLength));
+    await rules
+      .getByRole("spinbutton", { name: "Max consecutive terms" })
+      .fill(String(values.maxTerms));
+    await rules
+      .getByRole("spinbutton", { name: "Max years of service" })
+      .fill(String(values.maxYears));
+    await rules
+      .getByRole("spinbutton", { name: "Upcoming AGM year" })
+      .fill(String(values.agmYear));
+    await rules.getByRole("button", { name: "Save term rules" }).click();
+    await expect(this.page).toHaveURL(/tab=terms/);
+    for (const [label, value] of [
+      ["Term length", values.termLength],
+      ["Max consecutive terms", values.maxTerms],
+      ["Max years of service", values.maxYears],
+      ["Upcoming AGM year", values.agmYear],
+    ] as const) {
+      await expect(rules.getByRole("spinbutton", { name: label })).toHaveValue(
+        String(value),
+      );
+    }
   }
 
   memberRow(name: string): Locator {

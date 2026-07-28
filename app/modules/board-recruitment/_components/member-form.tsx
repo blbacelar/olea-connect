@@ -2,21 +2,7 @@
 
 import * as React from "react";
 import Link from "next/link";
-import {
-  Archive,
-  ArrowLeft,
-  BarChart3,
-  Check,
-  ChevronRight,
-  ClipboardList,
-  Mail,
-  Pencil,
-  Plus,
-  Printer,
-  ShieldCheck,
-  Trash2,
-  Users,
-} from "lucide-react";
+import { Check, Pencil } from "lucide-react";
 import {
   addRecruitmentSkill,
   createRecruitmentCommittee,
@@ -36,13 +22,7 @@ import {
 } from "@/app/modules/board-recruitment/actions";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
   Dialog,
   DialogContent,
@@ -60,38 +40,15 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { SubmitButton } from "@/components/ui/submit-button";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Textarea } from "@/components/ui/textarea";
-import {
-  calculateTerm,
-  coverageLevel,
-  officerLabels,
-} from "@/lib/board-recruitment/domain";
+import { officerLabels } from "@/lib/board-recruitment/domain";
 import type {
   RecruitmentData,
   RecruitmentMember,
   RecruitmentMemberType,
-  RecruitmentTab,
 } from "@/lib/board-recruitment/types";
 import { assignedSkillIdsForMember } from "@/lib/board-recruitment/metrics";
-import { cn } from "@/lib/utils";
-import {
-  ConfirmAction,
-  EmptyState,
-  Field,
-  HiddenWorkspace,
-  ModalForm,
-  SectionHeader,
-  StatCard,
-} from "./shared";
+import { Field, HiddenWorkspace, ModalForm } from "./shared";
 
 export function MemberForm({
   data,
@@ -290,7 +247,8 @@ export function SettingsDialog({ data }: { data: RecruitmentData }) {
         <DialogHeader>
           <DialogTitle>Recruitment workspace settings</DialogTitle>
           <DialogDescription>
-            Set the survey year and bylaw rules used by Board Terms.
+            Set the workspace accent and survey year. Bylaw rules are managed
+            directly in Board Terms.
           </DialogDescription>
         </DialogHeader>
         <form action={saveRecruitmentSettings} className="space-y-4">
@@ -311,38 +269,6 @@ export function SettingsDialog({ data }: { data: RecruitmentData }) {
               min={2000}
               max={2100}
               defaultValue={workspace.surveyYear}
-            />
-            <Field
-              label="Term length (years)"
-              name="termLengthYears"
-              type="number"
-              min={1}
-              max={10}
-              defaultValue={workspace.termLengthYears}
-            />
-            <Field
-              label="Maximum consecutive terms"
-              name="maxConsecutiveTerms"
-              type="number"
-              min={1}
-              max={10}
-              defaultValue={workspace.maxConsecutiveTerms}
-            />
-            <Field
-              label="Maximum years of service"
-              name="maxYearsOfService"
-              type="number"
-              min={1}
-              max={80}
-              defaultValue={workspace.maxYearsOfService}
-            />
-            <Field
-              label="Upcoming AGM year"
-              name="upcomingAgmYear"
-              type="number"
-              min={2000}
-              max={2100}
-              defaultValue={workspace.upcomingAgmYear}
             />
           </div>
           <div className="flex justify-end">
