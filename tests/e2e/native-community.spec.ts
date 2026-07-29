@@ -1,4 +1,4 @@
-import { expect, test as base } from "@playwright/test";
+import { expect, test as base } from "../fixtures/browser.fixture";
 
 import { test as testWithData } from "../fixtures/test-data.fixture";
 import { AppShellPage } from "../pages/app-shell.page";

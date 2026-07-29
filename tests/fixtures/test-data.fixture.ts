@@ -1,8 +1,8 @@
 import { createClient, type SupabaseClient } from "@supabase/supabase-js";
-import { test as base } from "@playwright/test";
 
 import { createTestIdentity } from "../factories/identity";
 import { getTestSupabaseEnvironment } from "../support/test-environment";
+import { test as base } from "./browser.fixture";
 
 type CleanupTask = {
   label: string;
@@ -1284,4 +1284,4 @@ export const test = base.extend<{ testData: TestDataManager }>({
   },
 });
 
-export { expect } from "@playwright/test";
+export { expect } from "./browser.fixture";

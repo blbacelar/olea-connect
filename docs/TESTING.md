@@ -159,6 +159,12 @@ and the environment is declared:
 PLAYWRIGHT_TEST_ENV=local|staging
 ```
 
+When running browser tests against a Vercel-protected preview or staging URL,
+set `VERCEL_AUTOMATION_BYPASS_SECRET` to the repository's GitHub Actions secret.
+Playwright sends it as the `x-vercel-protection-bypass` header. The value must
+never be committed or printed in test output. Local runs do not need this
+variable because they use the local Next.js server.
+
 Never point test-data variables at production.
 
 ## Feature Completion Gate
