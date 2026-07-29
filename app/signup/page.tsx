@@ -9,8 +9,10 @@ import { StepIndicator } from "@/components/auth/StepIndicator";
 import { Button } from "@/components/ui/button";
 import { useRegistration } from "@/hooks/use-registration";
 import { membershipPlans } from "@/lib/plans";
+import { formatCad, pricingPolicies } from "@/lib/pricing";
 import type { MembershipTier } from "@/lib/types";
 import { cn } from "@/lib/utils";
+import { captureReferralCodeFromUrl } from "@/lib/referral-capture";
 
 export default function SignupPlanPage() {
   const router = useRouter();
@@ -18,6 +20,7 @@ export default function SignupPlanPage() {
 
   useEffect(() => {
     if (!hydrated) return;
+    const referralCode = captureReferralCodeFromUrl();
     const tier = new URLSearchParams(window.location.search).get(
       "tier",
     ) as MembershipTier | null;
@@ -27,17 +30,24 @@ export default function SignupPlanPage() {
     const updates: {
       tier?: MembershipTier;
       billingCycle?: "quarterly" | "annual";
+      referralCode?: string;
     } = {};
     if (tier && membershipPlans.some((plan) => plan.id === tier)) {
       updates.tier = tier;
     }
-    if (billingCycle === "quarterly" || billingCycle === "annual") {
-      updates.billingCycle = billingCycle;
+    if (billingCycle === "quarterly" || billingCycle === "monthly") {
+      updates.billingCycle = "quarterly";
+    }
+    if (billingCycle === "annual") {
+      updates.billingCycle = "annual";
     }
     if (updates.tier || updates.billingCycle) {
       updateRegistration(updates);
     }
-  }, [hydrated, updateRegistration]);
+    if (referralCode && !registration.referralCode) {
+      updateRegistration({ referralCode });
+    }
+  }, [hydrated, registration.referralCode, updateRegistration]);
 
   return (
     <div className="min-h-screen bg-slate-100">
@@ -94,17 +104,13 @@ export default function SignupPlanPage() {
                   {plan.icon} {plan.name}
                 </p>
                 <p className="mt-4 text-3xl font-bold">
-                  ${price.toLocaleString()}
+                  {formatCad(price)}
                   <span className="text-sm font-normal text-slate-400">
                     /{registration.billingCycle === "annual" ? "year" : "quarter"}
                   </span>
                 </p>
                 <p className="mt-1 text-xs font-semibold text-olea-green">
-                  Founding Year 1: $
-                  {(registration.billingCycle === "annual"
-                    ? plan.foundingAnnualPrice
-                    : plan.foundingQuarterlyPrice
-                  ).toLocaleString()}
+                  Founding-member eligibility is confirmed securely before payment.
                 </p>
                 <p className="mt-1 text-sm text-slate-500">{plan.seats}</p>
                 <ul className="mt-5 space-y-2 text-sm text-slate-600">
@@ -119,6 +125,10 @@ export default function SignupPlanPage() {
             );
           })}
         </div>
+        <p className="mx-auto mt-5 max-w-2xl text-center text-xs leading-5 text-slate-500">
+          {pricingPolicies.foundingMember} Prices are shown before tax; GST/PST
+          is calculated at secure checkout.
+        </p>
         <div className="mt-8 text-center">
           <Button size="lg" onClick={() => router.push("/signup/account")}>
             Continue with{" "}

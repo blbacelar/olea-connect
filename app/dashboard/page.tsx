@@ -14,22 +14,9 @@ import { SectionHeading } from "@/components/SectionHeading";
 import { StatCard } from "@/components/StatCard";
 import { TemplateCard } from "@/components/TemplateCard";
 import { Button } from "@/components/ui/button";
-import { getMember, getOrg, getTemplates } from "@/lib/db";
-
-const communityPosts = [
-  {
-    channel: "# grants-and-funding",
-    title: "Anyone applied to the Q2 Olea Gives round? Tips welcome.",
-  },
-  {
-    channel: "# governance-questions",
-    title: "How often should we refresh our conflict-of-interest policy?",
-  },
-  {
-    channel: "# wins-and-shoutouts",
-    title: "We just passed our first board self-evaluation — thank you!",
-  },
-];
+import { getDashboardSummary } from "@/lib/data/dashboard";
+import { requireMemberContext } from "@/lib/data/member-context";
+import { getTemplates } from "@/lib/data/templates";
 
 function getGreeting() {
   const hour = new Date().getHours();
@@ -39,38 +26,38 @@ function getGreeting() {
 }
 
 export default async function DashboardPage() {
-  const [organization, member, templates] = await Promise.all([
-    getOrg(),
-    getMember(),
+  const [{ organization, member }, templates, summary] = await Promise.all([
+    requireMemberContext(),
     getTemplates(),
+    getDashboardSummary(),
   ]);
 
   const stats = [
     {
       label: "Templates",
-      value: "3",
+      value: String(templates.filter((template) => template.available).length),
       detail: "available to you",
       icon: FileText,
       tone: "bg-olea-light text-olea-green",
     },
     {
       label: "Downloads",
-      value: "7",
-      detail: "this month",
+      value: String(summary.completedTemplates),
+      detail: "completed",
       icon: Download,
       tone: "bg-blue-50 text-blue-700",
     },
     {
       label: "Community",
-      value: "2",
+      value: String(summary.unreadNotifications),
       detail: "new mentions",
       icon: Users,
       tone: "bg-orange-50 text-orange-700",
     },
     {
       label: "Grants",
-      value: "Open",
-      detail: "closes in 41 days",
+      value: summary.grantRound?.status === "open" ? "Open" : "Upcoming",
+      detail: summary.grantRound?.name ?? "No active round",
       icon: Gift,
       tone: "bg-amber-50 text-amber-600",
     },
@@ -112,7 +99,7 @@ export default async function DashboardPage() {
           Your templates
         </SectionHeading>
         <div className="grid gap-4 md:grid-cols-2">
-          {templates.map((template) => (
+          {templates.slice(0, 4).map((template) => (
             <TemplateCard
               key={template.id}
               template={template}
@@ -123,7 +110,7 @@ export default async function DashboardPage() {
       </section>
 
       <section className="grid gap-4 lg:grid-cols-[1.3fr_1fr]">
-        <div className="relative overflow-hidden rounded-[14px] bg-[linear-gradient(120deg,#2D5C3E_0%,#4A7C59_100%)] p-6 text-white shadow-soft md:p-[26px]">
+        <div className="relative overflow-hidden rounded-[14px] bg-[linear-gradient(120deg,#173F2A_0%,#446B52_100%)] p-6 text-white shadow-soft md:p-[26px]">
           <Image
             src="/olea-tree.png"
             alt=""
@@ -135,11 +122,12 @@ export default async function DashboardPage() {
             Olea Gives Fund
           </p>
           <h2 className="relative mt-2.5 text-[22px] font-bold tracking-[-0.01em]">
-            Q3 grant applications open July 1
+            {summary.grantRound?.name ?? "Olea Gives grants"}
           </h2>
           <p className="relative mt-2 max-w-md text-sm leading-6 text-[#E2EFE6]">
-            A $500 quarterly grant awarded back to the community. Simple
-            application, no complex reporting.
+            {summary.grantRound
+              ? `Applications ${summary.grantRound.status}. Review the current round and your application history.`
+              : "New grant rounds will appear here when applications become available."}
           </p>
           <Button
             asChild
@@ -152,20 +140,25 @@ export default async function DashboardPage() {
         <div className="rounded-[14px] border bg-white p-[22px] shadow-soft">
           <SectionHeading>Recent in community</SectionHeading>
           <div>
-            {communityPosts.map((post) => (
+            {summary.notifications.map((notification) => (
               <Link
-                key={post.title}
-                href="/community"
+                key={notification.id}
+                href={notification.action_url ?? "/dashboard"}
                 className="block border-t border-slate-100 py-3 first:border-t-0 first:pt-0"
               >
                 <p className="text-xs font-semibold text-olea-green">
-                  {post.channel}
+                  Notification
                 </p>
                 <p className="mt-0.5 text-[13.5px] leading-5 text-slate-800">
-                  {post.title}
+                  {notification.title}
                 </p>
               </Link>
             ))}
+            {summary.notifications.length === 0 ? (
+              <p className="py-8 text-center text-sm text-slate-500">
+                You have no unread notifications.
+              </p>
+            ) : null}
           </div>
         </div>
       </section>

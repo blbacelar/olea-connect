@@ -21,10 +21,49 @@ const initialState: RegistrationState = {
   email: "",
   password: "",
   province: "AB",
+  organizationKind: "",
+  annualBudgetRange: "",
+  boardSizeRange: "",
+  phone: "",
+  acquisitionSource: "",
+  referralCode: "",
+  consents: {
+    terms: false,
+    privacy: false,
+    dataOwnership: false,
+    confidentiality: false,
+  },
   emailVerified: false,
   brandComplete: false,
   selectedTemplateIds: [],
 };
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === "object" && value !== null;
+}
+
+function normalizeStoredRegistration(stored: unknown): RegistrationState {
+  if (!isRecord(stored)) return initialState;
+
+  const candidate = stored as Partial<RegistrationState>;
+  const billingCycle =
+    candidate.billingCycle === "annual" ? "annual" : "quarterly";
+  const storedConsents: Record<string, unknown> = isRecord(candidate.consents)
+    ? candidate.consents
+    : {};
+
+  return {
+    ...initialState,
+    ...candidate,
+    billingCycle,
+    consents: {
+      terms: storedConsents.terms === true,
+      privacy: storedConsents.privacy === true,
+      dataOwnership: storedConsents.dataOwnership === true,
+      confidentiality: storedConsents.confidentiality === true,
+    },
+  };
+}
 
 interface RegistrationContextValue {
   registration: RegistrationState;
@@ -45,7 +84,12 @@ export function RegistrationProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     const stored = window.localStorage.getItem(STORAGE_KEY);
     if (stored) {
-      setRegistration({ ...initialState, ...JSON.parse(stored) });
+      try {
+        setRegistration(normalizeStoredRegistration(JSON.parse(stored)));
+      } catch {
+        window.localStorage.removeItem(STORAGE_KEY);
+        setRegistration(initialState);
+      }
     }
     setHydrated(true);
   }, []);

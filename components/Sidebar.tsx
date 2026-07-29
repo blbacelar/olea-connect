@@ -1,36 +1,105 @@
 "use client";
 
-import { Settings } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { PanelLeftClose, PanelLeftOpen } from "lucide-react";
 
 import { Logo } from "@/components/Logo";
-import { navigationGroups } from "@/components/navigation";
+import { getNavigationGroups } from "@/components/navigation";
+import { Button } from "@/components/ui/button";
 import { useSession } from "@/hooks/use-session";
 import { cn } from "@/lib/utils";
 
-export function Sidebar() {
+type SidebarProps = {
+  collapsed: boolean;
+  onCollapsedChange: (collapsed: boolean) => void;
+};
+
+function getSidebarTooltipTestId(label: string) {
+  return `sidebar-tooltip-${label.toLowerCase().replace(/[^a-z0-9]+/g, "-")}`;
+}
+
+export function Sidebar({ collapsed, onCollapsedChange }: SidebarProps) {
   const pathname = usePathname();
-  const { organization } = useSession();
+  const session = useSession();
+  const organization = session?.organization;
+  const navigationGroups = getNavigationGroups(session?.platformRoles);
+  const ToggleIcon = collapsed ? PanelLeftOpen : PanelLeftClose;
+
+  function isActiveRoute(href: string) {
+    if (href === "/dashboard") return pathname === href;
+    return pathname === href || pathname.startsWith(`${href}/`);
+  }
 
   return (
-    <aside className="fixed inset-y-0 left-0 z-40 hidden w-60 flex-col border-r bg-white lg:flex">
-      <div className="flex h-[68px] items-center border-b border-slate-100 px-4">
-        <Logo />
+    <aside
+      aria-label="App sidebar"
+      data-state={collapsed ? "collapsed" : "expanded"}
+      data-testid="app-sidebar"
+      className={cn(
+        "fixed inset-y-0 left-0 z-40 hidden flex-col border-r bg-white transition-[width] duration-200 lg:flex",
+        collapsed ? "w-20" : "w-60",
+      )}
+    >
+      <div
+        className={cn(
+          "flex items-center border-b border-slate-100 px-3",
+          collapsed
+            ? "h-[92px] flex-col justify-center gap-2"
+            : "h-[68px] justify-between",
+        )}
+      >
+        <Logo compact={collapsed} />
+        <Button
+          type="button"
+          variant="ghost"
+          size="icon"
+          className={cn(
+            "size-9 shrink-0 text-slate-500 hover:bg-olea-light hover:text-olea-dark",
+            collapsed && "bg-white/90 shadow-sm",
+          )}
+          aria-label={collapsed ? "Expand sidebar" : "Collapse sidebar"}
+          aria-controls="app-sidebar-navigation"
+          aria-expanded={!collapsed}
+          onClick={() => onCollapsedChange(!collapsed)}
+        >
+          <ToggleIcon className="size-4" />
+        </Button>
       </div>
 
-      <div className="px-4 pb-2 pt-4">
-        <p className="truncate text-[14.5px] font-semibold text-slate-800">
-          {organization.name}
-        </p>
-        <span className="mt-1.5 inline-flex items-center gap-1 rounded-full bg-green-100 px-2.5 py-1 text-xs font-semibold capitalize text-green-800">
-          <span aria-hidden="true">🌿</span> {organization.tier}
-        </span>
-      </div>
+      {collapsed ? (
+        <div className="px-2 pb-2 pt-4">
+          <span
+            className="mx-auto flex size-10 items-center justify-center rounded-full bg-green-100 text-lg"
+            aria-label={`${organization?.tier ?? "Member"} workspace`}
+            title={`${organization?.name ?? "Olea Connects"} · ${
+              organization?.tier ?? "member"
+            }`}
+          >
+            <span aria-hidden="true">🌿</span>
+          </span>
+        </div>
+      ) : (
+        <div className="px-4 pb-2 pt-4">
+          <p
+            data-testid="workspace-organization-name"
+            className="truncate text-[14.5px] font-semibold text-slate-800"
+          >
+            {organization?.name ?? "Olea Connects"}
+          </p>
+          <span className="mt-1.5 inline-flex items-center gap-1 rounded-full bg-green-100 px-2.5 py-1 text-xs font-semibold capitalize text-green-800">
+            <span aria-hidden="true">🌿</span> {organization?.tier ?? "member"}
+          </span>
+        </div>
+      )}
 
       <nav
+        id="app-sidebar-navigation"
         aria-label="Primary navigation"
-        className="flex-1 overflow-y-auto px-3 pb-3 pt-1"
+        className={cn(
+          "flex-1 overflow-y-auto pb-3 pt-1",
+          collapsed ? "px-2" : "px-3",
+        )}
       >
         {navigationGroups.map((group, groupIndex) => (
           <div
@@ -42,24 +111,44 @@ export function Sidebar() {
           >
             {group.map((item) => {
               const Icon = item.icon;
-              const active =
-                item.href === "/dashboard"
-                  ? pathname === item.href
-                  : pathname.startsWith(item.href);
+              const active = isActiveRoute(item.href);
               return (
                 <Link
                   key={item.href}
                   href={item.href}
+                  prefetch={item.href.startsWith("/api/") ? false : undefined}
+                  aria-current={active ? "page" : undefined}
+                  aria-label={collapsed ? item.label : undefined}
+                  title={collapsed ? item.label : undefined}
                   className={cn(
-                    "relative flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium text-slate-600 transition-colors hover:bg-slate-100",
+                    "group relative flex w-full items-center rounded-lg text-sm font-medium text-slate-600 transition-colors hover:bg-slate-100",
+                    collapsed
+                      ? "justify-center px-2 py-3"
+                      : "gap-3 px-3 py-2.5",
                     active &&
-                      "bg-olea-light font-semibold text-olea-dark shadow-[inset_3px_0_0_#4A7C59] hover:bg-olea-light",
+                      "bg-olea-light font-semibold text-olea-dark shadow-[inset_3px_0_0_#446B52] hover:bg-olea-light",
                   )}
                 >
                   <Icon className="size-5 shrink-0" strokeWidth={1.8} />
-                  <span className="flex-1">{item.label}</span>
+                  <span className={collapsed ? "sr-only" : "flex-1"}>
+                    {item.label}
+                  </span>
+                  {collapsed ? (
+                    <span
+                      aria-hidden="true"
+                      data-testid={getSidebarTooltipTestId(item.label)}
+                      className="pointer-events-none absolute left-[calc(100%+0.5rem)] top-1/2 z-50 hidden -translate-y-1/2 whitespace-nowrap rounded-md border bg-white px-2.5 py-1.5 text-xs font-semibold text-slate-700 shadow-elevated group-hover:block group-focus-visible:block"
+                    >
+                      {item.label}
+                    </span>
+                  ) : null}
                   {item.dot ? (
-                    <span className="size-[7px] rounded-full bg-olea-orange" />
+                    <span
+                      className={cn(
+                        "size-[7px] rounded-full bg-olea-orange",
+                        collapsed && "absolute right-2 top-2",
+                      )}
+                    />
                   ) : null}
                 </Link>
               );
@@ -68,15 +157,6 @@ export function Sidebar() {
         ))}
       </nav>
 
-      <div className="border-t p-3">
-        <Link
-          href="/settings/brand"
-          className="flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium text-slate-500 hover:bg-slate-100"
-        >
-          <Settings className="size-5" />
-          Workspace settings
-        </Link>
-      </div>
     </aside>
   );
 }

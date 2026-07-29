@@ -1,56 +1,141 @@
 # Olea Connects
 
-Olea Connects is a branded document and community platform for nonprofit
-organizations. This repository contains the full MVP demo, including the
-marketing site, membership signup flow, brand onboarding, dashboard, template
-library, PDF generation, grants, webinars, team management, and subscription
-screens.
+Olea Connects is a branded governance document platform for Canadian nonprofit
+organizations. Members subscribe to a plan, set their organization brand once,
+use tier-aware templates, generate board-ready PDFs/DOCX files, manage team
+seats, and access grants, webinars, and community features.
 
-The product is operated by Olive Social Impact Inc. and is designed primarily
-for Canadian nonprofits, societies, charities, and community organizations.
+This repository is the production application, not just the original demo. It
+uses Next.js App Router, Supabase Auth/Postgres/Storage/Edge Functions, Stripe
+billing, Resend email, native community tables with deferred Circle
+SSO/provisioning scaffolding, Attio/QuickBooks outbox workers, and
+Playwright/Vitest/pgTAP tests.
 
-## MVP Status
+## Implemented Product Areas
 
-This project is currently a frontend-focused product demo.
+### Authentication, onboarding, and billing
 
-- Authentication, checkout, email verification, and automation calls use mock
-  adapters.
-- Organization, member, template, and session data come from local mock data.
-- Registration progress and uploaded onboarding logos are persisted in browser
-  `localStorage`.
-- PDF generation runs in the browser with `@react-pdf/renderer`.
-- No environment variables or external accounts are required to run the demo.
+- Supabase email/password authentication with email confirmation, password
+  recovery, session refresh, protected routes, and global auth boundaries.
+- Guided account registration with plan selection, organization setup, brand
+  profile configuration, and Seedling template selection.
+- Stripe Checkout and billing portal support for subscriptions, plan upgrades,
+  billing recovery, payment status synchronization, and paid seats.
+- Paid seats are currently **$15 CAD one-time per seat**. Seat entitlements are
+  recorded idempotently and team capacity reflects the organization's paid
+  seats plus the primary member.
+- Team invitations include expiry handling, existing-account validation, and
+  transactional email delivery through Resend.
 
-Production integrations such as Stripe, Resend, Circle, Attio, Klaviyo, and a
-database are represented in the user experience but are not connected yet.
+### Branded templates and document exports
 
-## Tech Stack
+- Tier-aware template library with availability messaging for templates that
+  are not yet released.
+- Brand profile assets and colors are applied to generated documents.
+- Board Self-Evaluation supports structured survey responses and board-ready
+  PDF exports.
+- Export services support branded HTML, PDF, DOCX, and meeting-package output,
+  including report covers, branded headers and footers, page numbers, and
+  confidentiality acknowledgement where required.
+- Generated export files are tracked for cleanup instead of being retained
+  indefinitely in storage.
 
-- Next.js 14 with the App Router
-- React 18
-- TypeScript
-- Tailwind CSS
-- shadcn-style UI components built with Radix primitives
-- Lucide icons
-- `@react-pdf/renderer`
+### Board Calendar & Operational Workflow
 
-## Getting Started
+The Board Calendar is implemented as a board-portal module rather than a
+single long form. Its tabs support:
 
-### Requirements
+- Calendar entries for meetings, events, operational tasks, notes, dates,
+  times, locations, links, contacts, confirmation status, and related
+  meetings.
+- Current-date calendar navigation, month/annual views, disabled past dates
+  for new entries, same-date/time entries, edit/delete flows, confirmation
+  dialogs, and time-aware sorting.
+- Meeting-only views, where the Meetings tab contains entries created as
+  Meeting or Event.
+- Operational task rules that generate preparation tasks from meeting dates;
+  generated workflow records remain linked to their source meeting.
+- Data-table views with filters and modal CRUD forms for Workflows, Directory,
+  AGM Planning, and Board Packages.
+- Board package uploads, confidentiality acknowledgement, branded package
+  HTML/PDF generation, and export cleanup support.
 
-- Node.js 20 or newer
+### KPI Dashboard & Board Reporting
+
+- Setup and Branding for organization name, dashboard title, reporting year,
+  and financial year-end.
+- Custom reporting-quarter definitions instead of fixed calendar quarters.
+- Q1-Q4 tracker tabs with modal CRUD forms for KPI results, numeric validation,
+  notes, RAG status, trend, variance, and progress-to-target calculations.
+- Board Dashboard data table with quarterly results, full-year RAG review,
+  scorecards, milestones, and risk summaries.
+- Milestones & Risks data tables with modal CRUD workflows and validation.
+- Annual Summary narrative sections and branded PDF reporting.
+
+### Community, webinars, consulting, and sponsorship
+
+- Native community spaces with posts, comments, likes, edit/delete actions,
+  author and organization identity, mentions, optimistic UI updates, and
+  realtime synchronization between members.
+- AI-assisted community moderation and link-safety checks before content is
+  published, using the configured OpenRouter moderation worker.
+- Tier-aware webinar catalog with Zoom meeting links, recording links,
+  member detail pages, admin-only creation, and admin archive controls.
+- Harvest Consulting request intake with categories, urgency, descriptions,
+  safe attachment validation, request history, staff triage, assignments, and
+  auditable time tracking.
+- Public sponsorship page with five sponsor tiers, benefits, Catalyst Impact
+  Circle content, responsive layout, and Calendly calls to action.
+- Grants, notifications, global search/command palette, brand settings, team
+  management, and subscription management are available from the member app
+  shell.
+
+### Integrations and operations
+
+- Resend transactional email delivery, signed webhook ingestion, email
+  observability, retryable outbox processing, and scheduled cleanup jobs.
+- Attio and QuickBooks integration boundaries are represented by versioned
+  outbox/sync services so provider-specific work can be expanded safely.
+- Circle SSO/provisioning remains scaffolded and is intentionally deferred
+  while the native community experience is used.
+
+## Start Here
+
+For a developer handoff, read these in order:
+
+1. [Project Handoff](./docs/HANDOFF.md) - product map, key flows, setup, and
+   ownership rules.
+2. [Architecture](./docs/ARCHITECTURE.md) - app structure, data model,
+   authentication, billing, templates, and integrations.
+3. [Operations](./docs/OPERATIONS.md) - environment variables, Supabase, Stripe,
+   Resend, Vercel, cron jobs, deployment, and troubleshooting.
+4. [Testing](./docs/TESTING.md) - unit, database, E2E, CI, test data isolation,
+   and known Supabase Auth rate-limit constraints.
+5. [Harvest Consulting](./docs/CONSULTING.md) - consulting requests, staff
+   triage, time tracking, entitlements, and database test coverage.
+
+## Requirements
+
+- Node.js 22 recommended for parity with CI
 - npm
+- Docker, for local Supabase
+- Supabase CLI
+- Vercel CLI for deployments
+- Stripe CLI for webhook/product setup when needed
 
-### Installation
+Install dependencies:
 
 ```bash
 npm install
 ```
 
-### Development
+Copy environment variables:
 
-Port `3000` is reserved for another local application, so run Olea Connects on
-port `3001`:
+```bash
+cp .env.example .env.local
+```
+
+Port `3000` is used by another local app, so run Olea Connects on `3001`:
 
 ```bash
 npm run dev -- -p 3001
@@ -58,136 +143,88 @@ npm run dev -- -p 3001
 
 Open [http://localhost:3001](http://localhost:3001).
 
-### Production Build
+## Production-Like Local Run
+
+Playwright now boots the app through the production server path. You can do the
+same manually:
 
 ```bash
 npm run build
 npm run start -- -p 3001
 ```
 
-## Available Scripts
+## Common Commands
 
 ```bash
-npm run dev        # Start the Next.js development server
-npm run build      # Create an optimized production build
-npm run start      # Run the production server
-npm run lint       # Run Next.js ESLint checks
-npm run typecheck  # Run TypeScript without emitting files
+npm run lint
+npm run typecheck
+npm run test:unit
+npm run test:e2e:smoke
+npm run test:e2e:critical
+npm run test:e2e:security:local
+npm run test:e2e:a11y
+npm run test:db:local
+npm run build
 ```
 
-Before considering a change complete, run:
+Before handing off a change, run at minimum:
 
 ```bash
 npm run typecheck
 npm run lint
+npm run test:unit
+npm run test:e2e:smoke
 npm run build
 ```
 
-## Main Routes
+For database or auth-sensitive changes, also run:
 
-### Public and Authentication
-
-| Route | Purpose |
-| --- | --- |
-| `/` | Marketing landing page and pricing |
-| `/signup` | Membership and billing-cycle selection |
-| `/signup/account` | Organization and account details |
-| `/signup/payment` | Demo checkout |
-| `/verify-email` | Email verification flow |
-| `/login` | Member login |
-| `/reset-password` | Password reset flow |
-
-### Onboarding
-
-| Route | Purpose |
-| --- | --- |
-| `/onboarding/brand-setup` | Organization name, logo, and brand colours |
-| `/onboarding/template-selection` | Seedling template selection |
-
-### Member Platform
-
-| Route | Purpose |
-| --- | --- |
-| `/dashboard` | Member overview |
-| `/templates` | Template library |
-| `/templates/[slug]` | Template detail or coming-soon state |
-| `/templates/board-self-evaluation` | Interactive survey and PDF workflow |
-| `/grants` | Olea Gives opportunities |
-| `/webinars` | Live and recorded learning |
-| `/community` | Circle community entry point |
-| `/team` | Seats and invitations |
-| `/subscription` | Plan and billing management |
-| `/settings/brand` | Brand profile management |
-| `/whats-new` | Product updates |
-| `/help` | Help centre placeholder |
-
-## Project Structure
-
-```text
-app/                    Next.js routes and route-specific components
-components/
-  auth/                 Public authentication UI
-  landing/              Modular marketing-page sections
-  ui/                   Shared shadcn-style primitives
-hooks/                  Registration, session, and survey state
-lib/
-  auth.ts               Mock authentication and automation adapters
-  db.ts                 Mock data-access layer
-  mock-data.ts          Demo organization and product data
-  pdf-generator.tsx     Branded PDF document generation
-  plans.ts              Shared membership plan definitions
-  types.ts              Domain types
-public/                 Static brand assets
+```bash
+npm run test:db:local
+npm run test:e2e:data:local
+npm run test:e2e:security:local
 ```
 
-## Architecture Notes
+## Repository Map
 
-- `components/AppShell.tsx` applies the authenticated sidebar and header only to
-  member routes.
-- `hooks/use-registration.tsx` owns signup and onboarding state.
-- `lib/plans.ts` is the single source of truth for membership pricing and plan
-  features.
-- Shared landing sections live in `components/landing` to keep
-  `app/page.tsx` focused on composition.
-- Logo upload behavior is shared between onboarding and Brand Settings through
-  `components/LogoUpload.tsx` and `hooks/use-logo-upload.ts`.
-- Data access is isolated behind `lib/db.ts` so mock functions can later be
-  replaced by server-side database calls.
+```text
+app/                    Next.js App Router pages, route handlers, server actions
+components/             Shared UI, app shell, landing sections, template UI
+hooks/                  Client-side state hooks
+lib/                    Domain logic, data repositories, billing, integrations
+utils/supabase/         Supabase clients for browser, server, admin, middleware
+supabase/migrations/    Ordered SQL migrations
+supabase/tests/         pgTAP database/security contract tests
+supabase/functions/     Supabase Edge Functions, including auth email hook
+tests/                  Vitest, Playwright, fixtures, factories, page objects
+scripts/                Local Supabase helper scripts
+.github/workflows/      CI and nightly regression workflows
+docs/                   Handoff, architecture, operations, and testing guides
+```
 
-## Membership Plans
+## Branches and Environments
 
-All prices are in CAD. Annual billing charges for 10 months and provides 12.
+- `main` is the active development branch.
+- `demo` preserves the CEO demo experience and should not receive production
+  work unless explicitly requested.
+- `staging`/preview deployments are used for internal verification before
+  production.
+- Vercel production currently serves the demo branch by design. Do not promote
+  production-development changes over the demo without confirming the release
+  plan.
 
-| Plan | Monthly | Annual | Included seats |
-| --- | ---: | ---: | ---: |
-| Seedling | $44 | $440 | 1 |
-| Roots | $99 | $990 | 2 |
-| Canopy | $199 | $1,990 | 3 |
-| Harvest | $1,150 | $11,500 | VIP service, limited to 8 clients |
+## Current Caveats
 
-Every membership tier includes access to the Olea Connects community. Resource
-depth, learning access, and hands-on support vary by plan.
+- Supabase Auth has hosted rate limits. Full cross-browser E2E runs can hit
+  email or password sign-in limits against hosted Supabase. See
+  [Testing](./docs/TESTING.md).
+- Playwright intentionally uses `next build && next start` instead of
+  `next dev` to avoid dev/HMR-only runtime noise.
+- Vercel CLI should be kept current. If deploy commands behave oddly, upgrade:
 
-## Moving to Production
-
-The mock boundaries are intentionally separated so they can be replaced without
-rewriting the UI:
-
-1. Replace `lib/auth.ts` with real authentication, Stripe checkout, and email
-   verification services.
-2. Replace `lib/db.ts` and `lib/mock-data.ts` with a persistent database and
-   authenticated server-side queries.
-3. Store uploaded logos in object storage instead of `localStorage`.
-4. Connect new subscriptions to Attio, Klaviyo, Circle, and other automations.
-5. Add authorization and tier checks on the server.
-6. Add automated unit, integration, accessibility, and end-to-end tests.
-
-## Brand and Accessibility
-
-The interface uses Olea green and orange brand accents and is designed around
-WCAG 2.1 AA accessibility goals. New work should preserve keyboard navigation,
-visible focus states, semantic markup, sufficient contrast, and responsive
-layouts.
+```bash
+npm i -g vercel@latest
+```
 
 ## License
 

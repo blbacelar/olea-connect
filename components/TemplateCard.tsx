@@ -2,6 +2,7 @@ import { ArrowRight, FileText, LockKeyhole } from "lucide-react";
 import Link from "next/link";
 
 import { Button } from "@/components/ui/button";
+import { boardCalendarModule, getResourceHref } from "@/lib/modules";
 import type { Template } from "@/lib/types";
 import { cn } from "@/lib/utils";
 
@@ -13,6 +14,8 @@ export function TemplateCard({
   variant?: "dashboard" | "library";
 }) {
   const locked = !template.available;
+  const href = getResourceHref(template.slug);
+  const opensModule = template.slug === boardCalendarModule.resourceSlug;
 
   return (
     <article
@@ -74,11 +77,16 @@ export function TemplateCard({
               🔒 {template.requiredTier} & above
             </span>
             <Button
+              asChild
               variant="outline"
               size="sm"
               className="border-olea-green text-olea-green hover:bg-olea-light"
             >
-              Upgrade{variant === "dashboard" ? " to unlock" : ""}
+              <Link
+                href={`/subscription?upgrade=${template.requiredTier}&resource=${template.slug}`}
+              >
+                Upgrade{variant === "dashboard" ? " to unlock" : ""}
+              </Link>
             </Button>
           </>
         ) : (
@@ -87,8 +95,12 @@ export function TemplateCard({
               {template.status}
             </span>
             <Button asChild size="sm">
-              <Link href={`/templates/${template.slug}`}>
-                {variant === "dashboard" ? "Open template" : "Open"}
+              <Link href={href}>
+                {variant === "dashboard"
+                  ? opensModule
+                    ? "Open module"
+                    : "Open template"
+                  : "Open"}
                 <ArrowRight className="size-3.5" />
               </Link>
             </Button>

@@ -1,5 +1,3 @@
-import Image from "next/image";
-
 import { cn } from "@/lib/utils";
 
 export function BrandMark({
@@ -22,13 +20,11 @@ export function BrandMark({
       style={{ backgroundColor: color }}
     >
       {logoUrl ? (
-        <Image
+        // eslint-disable-next-line @next/next/no-img-element
+        <img
           src={logoUrl}
           alt=""
-          fill
-          unoptimized
-          sizes="64px"
-          className="object-contain p-1"
+          className="h-full w-full object-contain p-1"
         />
       ) : (
         initials

@@ -58,7 +58,7 @@ export function LandingHero() {
               “Whatever stage your organization is at, there is a place for you
               here.”
             </p>
-            <p className="mt-1 text-xs font-bold uppercase tracking-wider text-slate-400">
+            <p className="mt-1 text-xs font-bold uppercase tracking-wider text-slate-600">
               The Olea Connects promise
             </p>
           </div>

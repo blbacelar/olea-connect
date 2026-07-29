@@ -1,0 +1,214 @@
+"use client";
+
+import { Check, FileText } from "lucide-react";
+import { useRouter } from "next/navigation";
+import { useMemo, useState, useTransition } from "react";
+
+import { OnboardingHeader } from "@/components/onboarding/OnboardingHeader";
+import { Button } from "@/components/ui/button";
+import type { Template } from "@/lib/types";
+import { cn } from "@/lib/utils";
+
+import { saveTemplateSelections } from "./actions";
+
+const dateFormatter = new Intl.DateTimeFormat("en-CA", {
+  month: "short",
+  day: "numeric",
+  year: "numeric",
+});
+
+function formatTemplateDate(value?: string | null) {
+  if (!value) return null;
+  return dateFormatter.format(new Date(value));
+}
+
+function isTemplateLocked(value?: string | null) {
+  return Boolean(value && new Date(value).getTime() > Date.now());
+}
+
+export function TemplateSelection({ templates }: { templates: Template[] }) {
+  const router = useRouter();
+  const selectionLimit = Math.min(3, templates.length);
+  const hasSelectableTemplates = selectionLimit > 0;
+  const initialSelection = useMemo(
+    () => templates.filter((template) => template.available).map(({ id }) => id),
+    [templates],
+  );
+  const [selected, setSelected] = useState(initialSelection);
+  const [error, setError] = useState("");
+  const [isPending, startTransition] = useTransition();
+
+  const toggle = (id: string) => {
+    setError("");
+    const template = templates.find((item) => item.id === id);
+    if (isTemplateLocked(template?.lockedUntil)) return;
+
+    if (selected.includes(id)) {
+      setSelected((current) => current.filter((item) => item !== id));
+      return;
+    }
+    if (selected.length < selectionLimit) {
+      setSelected((current) => [...current, id]);
+    }
+  };
+
+  const confirm = () => {
+    startTransition(async () => {
+      try {
+        await saveTemplateSelections(selected);
+        router.push("/dashboard");
+      } catch (selectionError) {
+        setError(
+          selectionError instanceof Error
+            ? selectionError.message
+            : "Unable to save your template selections.",
+        );
+      }
+    });
+  };
+
+  return (
+    <div className="min-h-screen bg-slate-100">
+      <OnboardingHeader />
+      <main className="mx-auto max-w-6xl px-4 py-10">
+        <p className="text-sm font-semibold text-olea-green">Step 2 of 2</p>
+        <h1 className="mt-1 text-3xl font-bold">
+          {hasSelectableTemplates
+            ? `Choose your ${selectionLimit} templates`
+            : "Templates are coming soon"}
+        </h1>
+        <p className="mt-2 max-w-3xl leading-6 text-slate-500">
+          {hasSelectableTemplates
+            ? "Your Seedling plan includes up to 3 templates. These become your permanent set and can be changed once per year."
+            : "We will let you know as soon as Seedling templates are available."}
+        </p>
+
+        {hasSelectableTemplates ? (
+          <div className="mt-6 max-w-md">
+            <div className="flex justify-between text-sm">
+              <span className="font-semibold">
+                Selected: {selected.length} of {selectionLimit}
+              </span>
+              <span className="text-slate-400">
+                {selected.length === selectionLimit ? "Ready to confirm" : "Choose more"}
+              </span>
+            </div>
+            <div className="mt-2 h-2 overflow-hidden rounded-full bg-slate-200">
+              <div
+                className="h-full rounded-full bg-olea-green transition-all"
+                style={{
+                  width: `${(selected.length / selectionLimit) * 100}%`,
+                }}
+              />
+            </div>
+          </div>
+        ) : null}
+
+        {templates.length ? (
+          <div className="mt-8 grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+            {templates.map((template) => {
+              const isSelected = selected.includes(template.id);
+              const limitReached = selected.length === selectionLimit && !isSelected;
+              const availableAt = formatTemplateDate(template.availableAt);
+              const selectedAt = formatTemplateDate(template.selectedAt);
+              const lockedUntil = formatTemplateDate(template.lockedUntil);
+              const isLocked = isTemplateLocked(template.lockedUntil);
+              return (
+                <button
+                  key={template.id}
+                  disabled={isLocked || limitReached || isPending}
+                  onClick={() => toggle(template.id)}
+                  className={cn(
+                    "relative min-h-[190px] rounded-xl border bg-white p-5 text-left shadow-soft transition",
+                    isSelected && "border-[3px] border-olea-green bg-olea-light",
+                    isLocked && "cursor-not-allowed",
+                    limitReached && "cursor-not-allowed opacity-50",
+                  )}
+                >
+                  {isSelected ? (
+                    <span className="absolute right-4 top-4 grid size-6 place-items-center rounded-full bg-olea-green text-white">
+                      <Check className="size-4" />
+                    </span>
+                  ) : null}
+                  <span className="grid size-11 place-items-center rounded-xl bg-olea-light text-olea-green">
+                    <FileText className="size-5" />
+                  </span>
+                  <h2 className="mt-4 text-lg font-semibold">{template.name}</h2>
+                  <p className="mt-1 text-sm text-slate-400">
+                    {template.category}
+                  </p>
+                  <dl className="mt-4 space-y-1 text-xs text-slate-500">
+                    {availableAt ? (
+                      <div className="flex justify-between gap-3">
+                        <dt>Available</dt>
+                        <dd className="font-medium text-slate-600">
+                          {availableAt}
+                        </dd>
+                      </div>
+                    ) : null}
+                    {selectedAt ? (
+                      <div className="flex justify-between gap-3">
+                        <dt>Selected</dt>
+                        <dd className="font-medium text-slate-600">
+                          {selectedAt}
+                        </dd>
+                      </div>
+                    ) : null}
+                    {lockedUntil ? (
+                      <div className="flex justify-between gap-3">
+                        <dt>Locked until</dt>
+                        <dd className="font-medium text-slate-600">
+                          {lockedUntil}
+                        </dd>
+                      </div>
+                    ) : null}
+                  </dl>
+                  <p className="mt-5 text-sm font-semibold text-olea-green">
+                    {isLocked
+                      ? "Locked"
+                      : isSelected
+                      ? "Selected"
+                      : limitReached
+                        ? "Limit reached"
+                        : "Select"}
+                  </p>
+                </button>
+              );
+            })}
+          </div>
+        ) : (
+          <p className="mt-8 rounded-xl border bg-white p-8 text-center text-slate-500">
+            No templates are available for selection yet.
+          </p>
+        )}
+
+        <div className="mt-8 rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-800">
+          Your selections are locked for 12 months. Choose carefully, or
+          upgrade to Roots for the full template library.
+        </div>
+        {error ? (
+          <p role="alert" className="mt-4 text-sm font-medium text-red-600">
+            {error}
+          </p>
+        ) : null}
+        <div className="mt-6 flex flex-wrap items-center gap-4">
+          {hasSelectableTemplates ? (
+            <Button
+              size="lg"
+              disabled={selected.length !== selectionLimit || isPending}
+              onClick={confirm}
+            >
+              {isPending ? "Saving..." : `Confirm my ${selectionLimit} templates →`}
+            </Button>
+          ) : null}
+          <button
+            onClick={() => router.push("/subscription")}
+            className="text-sm font-semibold text-olea-green"
+          >
+            Want all templates? Upgrade to Roots →
+          </button>
+        </div>
+      </main>
+    </div>
+  );
+}

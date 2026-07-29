@@ -2,14 +2,19 @@
 
 import { createContext, useContext, type ReactNode } from "react";
 
-import { mockSession } from "@/lib/mock-data";
 import type { Session } from "@/lib/types";
 
-const SessionContext = createContext<Session>(mockSession);
+const SessionContext = createContext<Session | null>(null);
 
-export function SessionProvider({ children }: { children: ReactNode }) {
+export function SessionProvider({
+  children,
+  initialSession,
+}: {
+  children: ReactNode;
+  initialSession: Session | null;
+}) {
   return (
-    <SessionContext.Provider value={mockSession}>
+    <SessionContext.Provider value={initialSession}>
       {children}
     </SessionContext.Provider>
   );

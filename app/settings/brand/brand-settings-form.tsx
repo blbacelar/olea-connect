@@ -9,9 +9,10 @@ import { PageHeader } from "@/components/PageHeader";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { saveBrandProfile } from "@/lib/db";
+import { Textarea } from "@/components/ui/textarea";
 import type { BrandProfile } from "@/lib/types";
 
+import { saveBrandProfile } from "./actions";
 export function BrandSettingsForm({
   initialBrand,
 }: {
@@ -19,17 +20,40 @@ export function BrandSettingsForm({
 }) {
   const [brand, setBrand] = useState(initialBrand);
   const [saved, setSaved] = useState(false);
+  const [error, setError] = useState("");
+  const [isUploadingLogo, setIsUploadingLogo] = useState(false);
   const [isPending, startTransition] = useTransition();
 
   const updateBrand = (field: keyof BrandProfile, value: string) => {
     setSaved(false);
+    setError("");
     setBrand((current) => ({ ...current, [field]: value }));
+  };
+
+  const updateLogo = (logo?: { path: string; signedUrl?: string }) => {
+    setSaved(false);
+    setError("");
+    setBrand((current) => ({
+      ...current,
+      logoPath: logo?.path,
+      logoUrl: logo?.signedUrl,
+    }));
   };
 
   const handleSave = () => {
     startTransition(async () => {
-      setBrand(await saveBrandProfile(brand));
-      setSaved(true);
+      try {
+        setBrand(await saveBrandProfile(brand));
+        setSaved(true);
+        setError("");
+      } catch (saveError) {
+        setSaved(false);
+        setError(
+          saveError instanceof Error
+            ? saveError.message
+            : "We couldn't save your brand profile. Please try again.",
+        );
+      }
     });
   };
 
@@ -57,7 +81,8 @@ export function BrandSettingsForm({
             <Label>Logo</Label>
             <LogoUpload
               value={brand.logoUrl}
-              onChange={(value) => updateBrand("logoUrl", value ?? "")}
+              onChange={updateLogo}
+              onUploadingChange={setIsUploadingLogo}
               initials={brand.logoInitials}
               color={brand.primaryColor}
             />
@@ -91,10 +116,65 @@ export function BrandSettingsForm({
             ))}
           </div>
 
+          <div className="mt-6 space-y-2 border-t border-slate-100 pt-5">
+            <Label htmlFor="address">Footer address</Label>
+            <Textarea
+              id="address"
+              value={brand.address ?? ""}
+              onChange={(event) => updateBrand("address", event.target.value)}
+              placeholder="123 Main Street, Calgary, AB"
+            />
+            <p className="text-xs leading-5 text-slate-400">
+              Appears in the footer of future PDF exports.
+            </p>
+          </div>
+
+          <div className="mt-5 grid gap-[18px] sm:grid-cols-2">
+            <div className="space-y-2">
+              <Label htmlFor="phone">Footer phone</Label>
+              <Input
+                id="phone"
+                type="tel"
+                inputMode="tel"
+                value={brand.phone ?? ""}
+                onChange={(event) => updateBrand("phone", event.target.value)}
+                placeholder="+1 555 123 4567"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="contactEmail">Footer email</Label>
+              <Input
+                id="contactEmail"
+                type="email"
+                value={brand.contactEmail ?? ""}
+                onChange={(event) =>
+                  updateBrand("contactEmail", event.target.value)
+                }
+                placeholder="hello@example.org"
+              />
+            </div>
+            <div className="space-y-2 sm:col-span-2">
+              <Label htmlFor="website">Footer website</Label>
+              <Input
+                id="website"
+                type="url"
+                value={brand.website ?? ""}
+                onChange={(event) => updateBrand("website", event.target.value)}
+                placeholder="https://example.org"
+              />
+            </div>
+          </div>
+
           <div className="mt-6 flex gap-3 border-t border-slate-100 pt-5">
-            <Button onClick={handleSave} disabled={isPending}>
+            <Button onClick={handleSave} disabled={isPending || isUploadingLogo}>
               {saved ? <Check className="size-4" /> : null}
-              {isPending ? "Saving..." : saved ? "Changes saved" : "Save changes"}
+              {isUploadingLogo
+                ? "Uploading logo..."
+                : isPending
+                  ? "Saving..."
+                  : saved
+                    ? "Changes saved"
+                    : "Save changes"}
             </Button>
             <Button
               variant="outline"
@@ -106,6 +186,11 @@ export function BrandSettingsForm({
               Discard
             </Button>
           </div>
+          {error ? (
+            <p role="alert" className="mt-4 text-sm font-medium text-red-600">
+              {error}
+            </p>
+          ) : null}
           <p className="mt-4 text-xs leading-5 text-slate-400">
             Changing your brand affects future downloads only. Past PDFs are
             not updated.

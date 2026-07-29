@@ -2,7 +2,10 @@
 
 import { useMemo, useState } from "react";
 
-import { surveySections } from "@/lib/survey-content";
+import {
+  calculateSectionAverages,
+  countCompletedSurveyAnswers,
+} from "@/lib/survey-domain";
 import type { SurveyScore, TemplateSession } from "@/lib/types";
 
 export function useSurveySession(initialSession: TemplateSession) {
@@ -33,28 +36,11 @@ export function useSurveySession(initialSession: TemplateSession) {
   };
 
   const sectionAverages = useMemo(
-    () =>
-      surveySections.map((section) => {
-        const scores = section.questions.flatMap((question) => {
-          const score = session.answers[question.id];
-          return typeof score === "number" ? [score] : [];
-        });
-        return {
-          id: section.id,
-          title: section.title,
-          average:
-            scores.length > 0
-              ? scores.reduce((total, score) => total + score, 0) /
-                scores.length
-              : null,
-        };
-      }),
+    () => calculateSectionAverages(session.answers),
     [session.answers],
   );
 
-  const completedCount = Object.values(session.answers).filter(
-    (answer) => answer !== undefined,
-  ).length;
+  const completedCount = countCompletedSurveyAnswers(session.answers);
 
   return {
     session,

@@ -1,5 +1,36 @@
-export type Tier = "roots" | "canopy" | "forest";
 export type MembershipTier = "seedling" | "roots" | "canopy" | "harvest";
+export type Tier = MembershipTier;
+export type OrganizationKind =
+  | "nonprofit"
+  | "registered_charity"
+  | "society"
+  | "community_organization"
+  | "foundation"
+  | "other";
+export type AnnualBudgetRange =
+  | "under-250k"
+  | "250k-500k"
+  | "500k-1m"
+  | "1m-2m"
+  | "2m-5m"
+  | "over-5m";
+export type BoardSizeRange = "3-5" | "6-10" | "11-15" | "16-20" | "20plus";
+export type AcquisitionSource =
+  | "referral"
+  | "web-search"
+  | "social-media"
+  | "webinar"
+  | "sponsor"
+  | "word-of-mouth"
+  | "other";
+export type OrganizationRole = "owner" | "admin" | "member";
+export type PlatformRole =
+  | "super_admin"
+  | "community_admin"
+  | "consulting_admin"
+  | "consultant"
+  | "finance_admin"
+  | "grants_admin";
 
 export interface RegistrationState {
   tier: MembershipTier;
@@ -9,18 +40,34 @@ export interface RegistrationState {
   email: string;
   password: string;
   province: string;
+  organizationKind: OrganizationKind | "";
+  annualBudgetRange: AnnualBudgetRange | "";
+  boardSizeRange: BoardSizeRange | "";
+  phone: string;
+  acquisitionSource: AcquisitionSource | "";
+  referralCode: string;
+  consents: {
+    terms: boolean;
+    privacy: boolean;
+    dataOwnership: boolean;
+    confidentiality: boolean;
+  };
   emailVerified: boolean;
   brandComplete: boolean;
-  logoDataUrl?: string;
   selectedTemplateIds: string[];
 }
 
 export interface BrandProfile {
   organizationName: string;
   logoInitials: string;
+  logoPath?: string;
   logoUrl?: string;
   primaryColor: string;
   secondaryColor: string;
+  address?: string;
+  phone?: string;
+  contactEmail?: string;
+  website?: string;
 }
 
 export interface Organization {
@@ -30,6 +77,7 @@ export interface Organization {
   seatsUsed: number;
   seatLimit: number;
   renewalDate: string;
+  brandComplete: boolean;
   brand: BrandProfile;
 }
 
@@ -39,7 +87,109 @@ export interface Member {
   name: string;
   firstName: string;
   role: string;
+  membershipRole: OrganizationRole;
   email: string;
+}
+
+export type NotificationSeverity = "info" | "success" | "warning" | "critical";
+
+export interface MemberNotification {
+  id: string;
+  type: string;
+  severity: NotificationSeverity;
+  title: string;
+  body: string;
+  actionUrl: string | null;
+  readAt: string | null;
+  expiresAt: string | null;
+  createdAt: string;
+}
+
+export interface NotificationSummary {
+  unreadCount: number;
+  items: MemberNotification[];
+}
+
+export type ConsultingRequestStatus =
+  | "submitted"
+  | "accepted"
+  | "in_progress"
+  | "blocked"
+  | "completed"
+  | "canceled";
+
+export type ConsultingRequestType =
+  | "board_package"
+  | "committee_minutes"
+  | "governance_support"
+  | "strategy_call"
+  | "other";
+
+export type ConsultingRequestUrgency = "low" | "standard" | "high" | "urgent";
+
+export interface ConsultingTimeEntry {
+  id: string;
+  userId: string;
+  workDate: string;
+  minutes: number;
+  isInKind: boolean;
+  description: string;
+  createdAt: string;
+}
+
+export interface ConsultingActivityEntry {
+  id: number;
+  actorUserId: string | null;
+  eventType: string;
+  oldStatus: ConsultingRequestStatus | null;
+  newStatus: ConsultingRequestStatus | null;
+  message: string | null;
+  createdAt: string;
+}
+
+export interface ConsultingAttachment {
+  id: string;
+  fileName: string;
+  filePath: string;
+  downloadUrl: string | null;
+  contentType: string | null;
+  sizeBytes: number | null;
+  createdAt: string;
+}
+
+export interface ConsultingRequest {
+  id: string;
+  organizationId: string;
+  organizationName: string;
+  requestedBy: string;
+  requestedByName: string;
+  assignedTo: string | null;
+  assignedToName: string | null;
+  type: ConsultingRequestType;
+  urgency: ConsultingRequestUrgency;
+  status: ConsultingRequestStatus;
+  title: string;
+  description: string;
+  dueAt: string | null;
+  scheduledAt: string | null;
+  completedAt: string | null;
+  memberNotes: string | null;
+  internalNotes: string | null;
+  createdAt: string;
+  updatedAt: string;
+  attachments: ConsultingAttachment[];
+  timeEntries: ConsultingTimeEntry[];
+  activity: ConsultingActivityEntry[];
+}
+
+export interface ConsultingHourSummary {
+  includedMinutes: number;
+  inKindMinutes: number;
+  purchasedMinutes: number;
+  usedIncludedMinutes: number;
+  usedInKindMinutes: number;
+  periodStart: string | null;
+  periodEnd: string | null;
 }
 
 export interface Template {
@@ -53,6 +203,9 @@ export interface Template {
   estimatedTime: string;
   status: string;
   isNew?: boolean;
+  availableAt?: string | null;
+  selectedAt?: string | null;
+  lockedUntil?: string | null;
 }
 
 export type SurveyScore = 1 | 2 | 3 | 4 | 5 | "na";
@@ -85,4 +238,311 @@ export interface TemplateSession {
 export interface Session {
   member: Member;
   organization: Organization;
+  notifications: NotificationSummary;
+  platformRoles?: PlatformRole[];
+}
+
+export interface TeamInvitation {
+  id: string;
+  email: string;
+  role: OrganizationRole;
+  status: "pending" | "accepted" | "expired" | "revoked";
+  createdAt: string;
+  expiresAt: string;
+}
+
+export interface TeamMember {
+  id: string;
+  email: string;
+  name: string;
+  role: OrganizationRole;
+  status: "invited" | "active" | "suspended";
+  joinedAt: string | null;
+}
+
+export interface TeamData {
+  currentMember: Member;
+  organization: Organization;
+  activeMemberCount: number;
+  reservedSeatCount: number;
+  members: TeamMember[];
+  invitations: TeamInvitation[];
+  canManage: boolean;
+}
+
+export interface GrantRound {
+  id: string;
+  name: string;
+  programName: string;
+  programType: "quarterly" | "summit" | "named_sponsor";
+  description: string;
+  status: "draft" | "upcoming" | "open" | "reviewing" | "awarded" | "closed";
+  opensAt: string;
+  closesAt: string;
+  decisionAt: string | null;
+  awardAmountCents: number;
+  availableAwards: number;
+  budgetCents: number;
+  publicNotes: string | null;
+  existingApplicationId: string | null;
+}
+
+export interface GrantApplicationSummary {
+  id: string;
+  roundId: string;
+  roundName: string;
+  organizationName: string;
+  status:
+    | "draft"
+    | "submitted"
+    | "in_review"
+    | "shortlisted"
+    | "approved"
+    | "declined"
+    | "withdrawn";
+  focusArea: string;
+  fundingRequest: string;
+  expectedOutcome: string;
+  requestedAmountCents: number;
+  annualRevenueCents: number | null;
+  craGoodStanding: boolean;
+  registeredInCanada: boolean;
+  submittedAt: string | null;
+  withdrawnAt: string | null;
+  updatedAt: string;
+  award: {
+    id: string;
+    status: "approved" | "scheduled" | "paid" | "canceled";
+    amountCents: number;
+    paidOn: string | null;
+    paymentReference: string | null;
+    impactStory: string | null;
+    impactStoryConsent: boolean;
+    outcomeReceivedAt: string | null;
+  } | null;
+  reviews?: Array<{
+    id: string;
+    score: number | null;
+    recommendation: string | null;
+    internalNotes: string | null;
+    reviewedAt: string;
+  }>;
+}
+
+export type SponsorStatus = "prospect" | "active" | "paused" | "former" | "declined";
+export type SponsorshipStatus =
+  | "draft"
+  | "proposed"
+  | "active"
+  | "completed"
+  | "canceled";
+export type ContributionStatus = "pledged" | "invoiced" | "received" | "allocated";
+
+export interface SponsorDirectoryProfile {
+  id: string;
+  name: string;
+  slug: string;
+  category: string | null;
+  websiteUrl: string | null;
+  logoPath: string | null;
+  shortDescription: string | null;
+  directoryDescription: string | null;
+  directoryEmail: string | null;
+  directoryPhone: string | null;
+}
+
+export interface SponsorshipPackageSummary {
+  id: string;
+  name: string;
+  annualPriceCents: number;
+  oleaGivesContributionCents: number;
+  currency: string;
+  categoryExclusivity: boolean;
+  benefits: string[];
+  isActive: boolean;
+}
+
+export interface SponsorContactSummary {
+  id: string;
+  fullName: string;
+  title: string | null;
+  email: string | null;
+  phone: string | null;
+  isPrimary: boolean;
+}
+
+export interface SponsorAllocationSummary {
+  amountCents: number;
+  grantProgramName: string;
+  grantProgramSlug: string;
+  grantRoundName: string | null;
+}
+
+export interface SponsorContributionSummary {
+  id: string;
+  status: ContributionStatus;
+  amountCents: number;
+  currency: string;
+  pledgedOn: string;
+  receivedOn: string | null;
+  allocatedOn: string | null;
+  quickbooksTransactionId: string | null;
+  notes: string | null;
+  allocations: SponsorAllocationSummary[];
+  allocatedAmountCents: number;
+}
+
+export interface SponsorshipReport {
+  id: string;
+  sponsorId: string;
+  sponsorName: string;
+  packageId: string;
+  packageName: string;
+  status: SponsorshipStatus;
+  startsOn: string;
+  endsOn: string;
+  contractAmountCents: number;
+  committedContributionCents: number;
+  currency: string;
+  categoryExclusivity: string | null;
+  recognitionPreferences: Record<string, unknown>;
+  privateTerms: string | null;
+  financialNotes: string | null;
+  contributionAmountCents: number;
+  allocatedAmountCents: number;
+  unallocatedAmountCents: number;
+  isReconciled: boolean;
+  contributions: SponsorContributionSummary[];
+}
+
+export interface SponsorReport {
+  id: string;
+  name: string;
+  slug: string;
+  status: SponsorStatus;
+  category: string | null;
+  websiteUrl: string | null;
+  shortDescription: string | null;
+  directoryVisible: boolean;
+  contacts: SponsorContactSummary[];
+  sponsorships: SponsorshipReport[];
+}
+
+export interface Webinar {
+  id: string;
+  slug: string;
+  type:
+    | "webinar"
+    | "speaker_session"
+    | "funder_ama"
+    | "networking"
+    | "workshop"
+    | "summit";
+  title: string;
+  summary: string;
+  description: string | null;
+  status:
+    | "scheduled"
+    | "live"
+    | "completed"
+    | "canceled"
+    | "rescheduled"
+    | "archived";
+  startsAt: string;
+  endsAt: string;
+  timezone: string;
+  capacity: number | null;
+  joinUrl: string | null;
+  meetingProvider: string | null;
+  providerEventId: string | null;
+  recordingAvailable: boolean;
+  available: boolean;
+  registered: boolean;
+  registrationStatus:
+    | "registered"
+    | "waitlisted"
+    | "canceled"
+    | "attended"
+    | "no_show"
+    | null;
+  included: boolean;
+  complimentaryTicketLimit: number | null;
+  complimentaryTicketsUsed: number;
+  ticketPriceCents: number | null;
+  currency: string;
+  allowedPlanIds: MembershipTier[];
+}
+
+export interface CommunitySpace {
+  id: string;
+  slug: string;
+  name: string;
+  description: string | null;
+  sortOrder: number;
+  allowedPlanIds: MembershipTier[];
+}
+
+export interface CommunityPost {
+  id: string;
+  spaceId: string;
+  authorUserId: string;
+  authorName: string;
+  authorOrganizationName: string;
+  kind: "discussion" | "announcement" | "resource";
+  title: string;
+  body: string;
+  resourceUrl: string | null;
+  pinnedAt: string | null;
+  createdAt: string;
+  updatedAt: string;
+  comments: CommunityPostComment[];
+  mentionedUserIds: string[];
+  likedByCurrentUser: boolean;
+  likeCount: number;
+}
+
+export interface CommunityPostComment {
+  id: string;
+  authorUserId: string;
+  authorName: string;
+  authorOrganizationName: string;
+  body: string;
+  createdAt: string;
+  updatedAt: string;
+  mentionedUserIds: string[];
+  likedByCurrentUser: boolean;
+  likeCount: number;
+}
+
+export interface CommunityMentionCandidate {
+  userId: string;
+  name: string;
+  organizationName: string;
+  planIds: MembershipTier[];
+}
+
+export interface CommunityEvent {
+  id: string;
+  spaceId: string | null;
+  title: string;
+  summary: string;
+  startsAt: string;
+  endsAt: string;
+  timezone: string;
+  zoomUrl: string | null;
+  recordingUrl: string | null;
+  status: "scheduled" | "live" | "completed" | "canceled";
+}
+
+export interface CommunityHome {
+  id: string;
+  slug: string;
+  name: string;
+  description: string | null;
+  spaces: CommunitySpace[];
+  posts: CommunityPost[];
+  events: CommunityEvent[];
+  mentionCandidates: CommunityMentionCandidate[];
+  canManage: boolean;
+  currentUserId: string;
 }

@@ -1,22 +1,27 @@
 "use client";
 
 import { MailCheck } from "lucide-react";
-import { useRouter } from "next/navigation";
 import { useEffect, useState, useTransition } from "react";
 
 import { AuthCard } from "@/components/auth/AuthCard";
 import { Button } from "@/components/ui/button";
 import { useRegistration } from "@/hooks/use-registration";
 import {
-  confirmEmailVerification,
   resendVerificationEmail,
 } from "@/lib/auth";
 
 export default function VerifyEmailPage() {
-  const router = useRouter();
-  const { registration, updateRegistration } = useRegistration();
+  const { registration } = useRegistration();
   const [cooldown, setCooldown] = useState(0);
+  const [message, setMessage] = useState("");
   const [isPending, startTransition] = useTransition();
+  const [paymentComplete, setPaymentComplete] = useState(false);
+
+  useEffect(() => {
+    setPaymentComplete(
+      new URLSearchParams(window.location.search).get("payment") === "success",
+    );
+  }, []);
 
   useEffect(() => {
     if (cooldown <= 0) return;
@@ -27,18 +32,20 @@ export default function VerifyEmailPage() {
     return () => window.clearInterval(timer);
   }, [cooldown]);
 
-  const verify = () => {
-    startTransition(async () => {
-      await confirmEmailVerification();
-      updateRegistration({ emailVerified: true });
-      router.push("/onboarding/brand-setup");
-    });
-  };
-
   const resend = () => {
     startTransition(async () => {
-      await resendVerificationEmail(registration.email);
-      setCooldown(60);
+      try {
+        setMessage("");
+        await resendVerificationEmail(registration.email);
+        setCooldown(60);
+        setMessage("A new verification email has been sent.");
+      } catch (resendError) {
+        setMessage(
+          resendError instanceof Error
+            ? resendError.message
+            : "Unable to resend the verification email.",
+        );
+      }
     });
   };
 
@@ -54,16 +61,21 @@ export default function VerifyEmailPage() {
           <MailCheck className="size-8" />
         </span>
         <p className="mt-5 text-sm leading-6 text-slate-500">
-          Confirm your email before accessing the dashboard. In this demo,
-          the button below simulates clicking the secure email link.
+          {paymentComplete
+            ? "Your payment was received. Confirm your email before accessing the dashboard."
+            : "Confirm your email before accessing the dashboard."}{" "}
+          The secure link will return you to Olea Connects and continue setup
+          automatically.
         </p>
-        <Button className="mt-6 w-full" disabled={isPending} onClick={verify}>
-          {isPending ? "Verifying..." : "Verify email and continue"}
-        </Button>
+        {message ? (
+          <p className="mt-5 rounded-lg bg-slate-50 p-3 text-sm text-slate-600">
+            {message}
+          </p>
+        ) : null}
         <button
           disabled={cooldown > 0 || isPending}
           onClick={resend}
-          className="mt-4 text-sm font-semibold text-olea-green disabled:text-slate-400"
+          className="mt-6 text-sm font-semibold text-olea-green disabled:text-slate-400"
         >
           {cooldown > 0
             ? `Resend available in ${cooldown}s`

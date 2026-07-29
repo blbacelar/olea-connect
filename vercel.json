@@ -1,0 +1,8 @@
+{
+  "crons": [
+    {
+      "path": "/api/v1/generated-documents/cleanup",
+      "schedule": "0 10 * * *"
+    }
+  ]
+}

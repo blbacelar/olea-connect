@@ -1,0 +1,124 @@
+name: CI
+
+on:
+  pull_request:
+    branches: [main]
+    types: [opened, synchronize, reopened, ready_for_review]
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  quality:
+    name: Quality and Build
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      NEXT_PUBLIC_SUPABASE_URL: http://127.0.0.1:54321
+      NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: ci-placeholder
+      SUPABASE_SERVICE_ROLE_KEY: ci-placeholder
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npm run lint
+      - run: npm run typecheck
+      - run: npm run test:unit
+      - run: npm run build
+
+  database:
+    name: Database and Isolation
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - name: Validate migrations from a clean database
+        run: |
+          bash scripts/with-local-supabase.sh bash -c '
+            HOME="$PWD/.supabase-home" npx supabase db reset &&
+            HOME="$PWD/.supabase-home" npx supabase db lint &&
+            npm run test:db &&
+            npm run test:e2e:data
+          '
+      - uses: actions/upload-artifact@v7
+        if: failure()
+        with:
+          name: database-test-report
+          path: |
+            playwright-report
+            test-results
+          retention-days: 14
+
+  browser:
+    name: Browser Smoke
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npx playwright install --with-deps chromium
+      - name: Run PR smoke and security tests
+        run: |
+          bash scripts/with-local-supabase.sh bash -c '
+            npm run test:e2e:pr &&
+            npm run test:e2e:security
+          '
+      - uses: actions/upload-artifact@v7
+        if: failure()
+        with:
+          name: browser-smoke-report
+          path: |
+            playwright-report
+            test-results
+          retention-days: 14
+
+  security:
+    name: Dependency Security
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - name: Block critical dependency vulnerabilities
+        run: npm run security:audit
+
+  pr-gate:
+    name: PR Gate
+    if: always()
+    needs: [quality, database, browser, security]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Require every CI job to pass
+        env:
+          QUALITY_RESULT: ${{ needs.quality.result }}
+          DATABASE_RESULT: ${{ needs.database.result }}
+          BROWSER_RESULT: ${{ needs.browser.result }}
+          SECURITY_RESULT: ${{ needs.security.result }}
+        run: |
+          test "$QUALITY_RESULT" = "success"
+          test "$DATABASE_RESULT" = "success"
+          test "$BROWSER_RESULT" = "success"
+          test "$SECURITY_RESULT" = "success"

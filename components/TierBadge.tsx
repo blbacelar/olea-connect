@@ -5,9 +5,10 @@ import type { Tier } from "@/lib/types";
 import { cn } from "@/lib/utils";
 
 const tierStyles: Record<Tier, string> = {
+  seedling: "border-transparent bg-lime-100 text-lime-800",
   roots: "border-transparent bg-green-100 text-green-800",
   canopy: "border-transparent bg-emerald-100 text-emerald-800",
-  forest: "border-transparent bg-orange-50 text-orange-800",
+  harvest: "border-transparent bg-orange-50 text-orange-800",
 };
 
 export function TierBadge({

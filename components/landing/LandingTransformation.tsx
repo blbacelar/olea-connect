@@ -60,7 +60,7 @@ export function LandingTransformation() {
             );
           })}
         </div>
-        <div className="mt-6 rounded-2xl bg-[#183D2A] px-6 py-7 text-white md:flex md:items-center md:justify-between md:px-9">
+        <div className="mt-6 rounded-2xl bg-olea-dark px-6 py-7 text-white md:flex md:items-center md:justify-between md:px-9">
           <div>
             <p className="text-xs font-bold uppercase tracking-[0.14em] text-emerald-200">
               The after

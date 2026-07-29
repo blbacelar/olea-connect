@@ -1,28 +1,50 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useMemo, useState } from "react";
+import { useMemo, useState, useTransition } from "react";
 
 import { BrandPreview } from "@/components/BrandPreview";
 import { LogoUpload } from "@/components/LogoUpload";
-import { PublicHeader } from "@/components/auth/PublicHeader";
+import { OnboardingHeader } from "@/components/onboarding/OnboardingHeader";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
 import { useRegistration } from "@/hooks/use-registration";
+import { useSession } from "@/hooks/use-session";
 import type { BrandProfile } from "@/lib/types";
+import { saveBrandProfile } from "@/app/settings/brand/actions";
 
 export default function BrandSetupPage() {
   const router = useRouter();
+  const session = useSession();
   const { registration, updateRegistration } = useRegistration();
   const [organizationName, setOrganizationName] = useState(
-    registration.organizationName || "Willow Creek Youth Collective",
+    session?.organization.brand.organizationName ||
+      registration.organizationName ||
+      "",
   );
-  const [primaryColor, setPrimaryColor] = useState("#4A7C59");
-  const [secondaryColor, setSecondaryColor] = useState("#2D5C3E");
-  const [logoDataUrl, setLogoDataUrl] = useState<string | undefined>(
-    registration.logoDataUrl,
+  const [primaryColor, setPrimaryColor] = useState(
+    session?.organization.brand.primaryColor ?? "#446B52",
   );
+  const [secondaryColor, setSecondaryColor] = useState(
+    session?.organization.brand.secondaryColor ?? "#F4EFE4",
+  );
+  const [logoUrl, setLogoUrl] = useState<string | undefined>(
+    session?.organization.brand.logoUrl,
+  );
+  const [logoPath, setLogoPath] = useState<string | undefined>(
+    session?.organization.brand.logoPath,
+  );
+  const [address, setAddress] = useState(session?.organization.brand.address ?? "");
+  const [phone, setPhone] = useState(session?.organization.brand.phone ?? "");
+  const [contactEmail, setContactEmail] = useState(
+    session?.organization.brand.contactEmail ?? session?.member.email ?? "",
+  );
+  const [website, setWebsite] = useState(session?.organization.brand.website ?? "");
+  const [error, setError] = useState("");
+  const [isUploadingLogo, setIsUploadingLogo] = useState(false);
+  const [isPending, startTransition] = useTransition();
 
   const brand = useMemo<BrandProfile>(
     () => ({
@@ -35,29 +57,59 @@ export default function BrandSetupPage() {
           .map((word) => word.charAt(0))
           .join("")
           .toUpperCase() || "OC",
-      logoUrl: logoDataUrl,
+      logoUrl,
+      logoPath,
       primaryColor,
       secondaryColor,
+      address,
+      phone,
+      contactEmail,
+      website,
     }),
-    [logoDataUrl, organizationName, primaryColor, secondaryColor],
+    [
+      address,
+      contactEmail,
+      logoPath,
+      logoUrl,
+      organizationName,
+      phone,
+      primaryColor,
+      secondaryColor,
+      website,
+    ],
   );
 
+  const updateLogo = (logo?: { path: string; signedUrl?: string }) => {
+    setLogoPath(logo?.path);
+    setLogoUrl(logo?.signedUrl);
+  };
+
   const continueFlow = (complete: boolean) => {
-    updateRegistration({
-      organizationName,
-      brandComplete: complete,
-      logoDataUrl,
+    startTransition(async () => {
+      try {
+        if (complete) await saveBrandProfile(brand);
+        updateRegistration({
+          organizationName,
+          brandComplete: complete,
+        });
+        router.push(
+          (session?.organization.tier ?? registration.tier) === "seedling"
+            ? "/onboarding/template-selection"
+            : "/dashboard",
+        );
+      } catch (saveError) {
+        setError(
+          saveError instanceof Error
+            ? saveError.message
+            : "Unable to save your brand profile.",
+        );
+      }
     });
-    router.push(
-      registration.tier === "seedling"
-        ? "/onboarding/template-selection"
-        : "/dashboard",
-    );
   };
 
   return (
     <div className="min-h-screen bg-slate-100">
-      <PublicHeader />
+      <OnboardingHeader />
       <main className="mx-auto max-w-6xl px-4 py-10">
         <div className="mb-7">
           <p className="text-sm font-semibold text-olea-green">
@@ -83,8 +135,9 @@ export default function BrandSetupPage() {
             <div className="mt-6 space-y-2">
               <Label>Logo</Label>
               <LogoUpload
-                value={logoDataUrl}
-                onChange={setLogoDataUrl}
+                value={logoUrl}
+                onChange={updateLogo}
+                onUploadingChange={setIsUploadingLogo}
                 initials={brand.logoInitials}
                 color={primaryColor}
               />
@@ -125,19 +178,76 @@ export default function BrandSetupPage() {
               ))}
             </div>
 
+            <div className="mt-6 space-y-2 border-t border-slate-100 pt-5">
+              <Label htmlFor="brandAddress">Footer address</Label>
+              <Textarea
+                id="brandAddress"
+                value={address}
+                onChange={(event) => setAddress(event.target.value)}
+                placeholder="123 Main Street, Calgary, AB"
+              />
+              <p className="text-xs leading-5 text-slate-400">
+                Used in the footer of future PDF exports.
+              </p>
+            </div>
+
+            <div className="mt-5 grid gap-4 sm:grid-cols-2">
+              <div className="space-y-2">
+                <Label htmlFor="brandPhone">Footer phone</Label>
+                <Input
+                  id="brandPhone"
+                  type="tel"
+                  inputMode="tel"
+                  value={phone}
+                  onChange={(event) => setPhone(event.target.value)}
+                  placeholder="+1 555 123 4567"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="brandContactEmail">Footer email</Label>
+                <Input
+                  id="brandContactEmail"
+                  type="email"
+                  value={contactEmail}
+                  onChange={(event) => setContactEmail(event.target.value)}
+                  placeholder="hello@example.org"
+                />
+              </div>
+              <div className="space-y-2 sm:col-span-2">
+                <Label htmlFor="brandWebsite">Footer website</Label>
+                <Input
+                  id="brandWebsite"
+                  type="url"
+                  value={website}
+                  onChange={(event) => setWebsite(event.target.value)}
+                  placeholder="https://example.org"
+                />
+              </div>
+            </div>
+
             <Button
               className="mt-7 w-full"
-              disabled={!organizationName.trim()}
+              disabled={!organizationName.trim() || isPending || isUploadingLogo}
               onClick={() => continueFlow(true)}
             >
-              Save brand and continue →
+              {isUploadingLogo
+                ? "Uploading logo..."
+                : isPending
+                  ? "Saving..."
+                  : "Save brand and continue →"}
             </Button>
             <button
               onClick={() => continueFlow(false)}
+              disabled={isPending || isUploadingLogo}
               className="mt-4 w-full text-sm font-medium text-slate-500"
             >
               Skip for now — set up later
             </button>
+            {error ? (
+              <p role="alert" className="mt-4 text-sm font-medium text-red-600">
+                {error}
+              </p>
+            ) : null}
           </section>
 
           <div className="lg:sticky lg:top-6">

@@ -1,0 +1,519 @@
+import {
+  Document,
+  Image,
+  Page,
+  StyleSheet,
+  Text,
+  View,
+  renderToBuffer,
+} from "@react-pdf/renderer";
+import React from "react";
+
+import type { BrandProfile } from "@/lib/types";
+
+import type { TemplateExportModel } from "./export-model";
+import { getEmbeddedLogo } from "./logo-data";
+
+const pdfTextReplacements: Record<string, string> = {
+  "\u00B2": "2",
+  "\u00B3": "3",
+  "\u00B9": "1",
+  "\u2070": "0",
+  "\u2074": "4",
+  "\u2075": "5",
+  "\u2076": "6",
+  "\u2077": "7",
+  "\u2078": "8",
+  "\u2079": "9",
+  "\u207A": "+",
+  "\u207B": "-",
+  "\u207C": "=",
+  "\u207D": "(",
+  "\u207E": ")",
+  "\u2080": "0",
+  "\u2081": "1",
+  "\u2082": "2",
+  "\u2083": "3",
+  "\u2084": "4",
+  "\u2085": "5",
+  "\u2086": "6",
+  "\u2087": "7",
+  "\u2088": "8",
+  "\u2089": "9",
+  "\u208A": "+",
+  "\u208B": "-",
+  "\u208C": "=",
+  "\u208D": "(",
+  "\u208E": ")",
+};
+
+const styles = StyleSheet.create({
+  cover: {
+    paddingTop: 60,
+    paddingRight: 56,
+    paddingBottom: 56,
+    paddingLeft: 56,
+    fontFamily: "Helvetica",
+    color: "#1F2937",
+    fontSize: 10,
+  },
+  coverLogo: {
+    width: 76,
+    height: 76,
+    borderRadius: 12,
+    color: "#FFFFFF",
+    alignItems: "center",
+    justifyContent: "center",
+    fontSize: 20,
+    fontFamily: "Helvetica-Bold",
+  },
+  coverLogoImage: {
+    width: 64,
+    height: 64,
+    objectFit: "contain",
+  },
+  coverContent: {
+    position: "absolute",
+    left: 56,
+    right: 56,
+    bottom: 104,
+  },
+  coverEyebrow: {
+    color: "#94A3B8",
+    fontSize: 10,
+    fontFamily: "Helvetica-Bold",
+    letterSpacing: 1.6,
+    marginBottom: 12,
+    textTransform: "uppercase",
+  },
+  coverTitle: {
+    fontSize: 34,
+    fontFamily: "Helvetica-Bold",
+    lineHeight: 1.1,
+    maxWidth: 460,
+  },
+  coverRule: {
+    width: 92,
+    height: 4,
+    borderRadius: 999,
+    marginTop: 28,
+    marginBottom: 28,
+  },
+  coverOrg: {
+    fontSize: 17,
+    fontFamily: "Helvetica-Bold",
+    marginBottom: 8,
+  },
+  coverMeta: {
+    color: "#64748B",
+    fontSize: 12,
+  },
+  coverFooter: {
+    position: "absolute",
+    bottom: 34,
+    left: 56,
+    right: 56,
+    paddingTop: 14,
+    borderTopWidth: 1,
+    borderTopColor: "#E5E7EB",
+    flexDirection: "row",
+    justifyContent: "space-between",
+    color: "#94A3B8",
+    fontSize: 9,
+  },
+  page: {
+    paddingTop: 110,
+    paddingRight: 42,
+    paddingBottom: 96,
+    paddingLeft: 42,
+    fontFamily: "Helvetica",
+    color: "#1F2937",
+    fontSize: 10,
+    lineHeight: 1.45,
+  },
+  accent: {
+    position: "absolute",
+    top: 0,
+    left: 0,
+    right: 0,
+    height: 12,
+  },
+  header: {
+    position: "absolute",
+    top: 28,
+    left: 42,
+    right: 42,
+    height: 48,
+    flexDirection: "row",
+    alignItems: "center",
+    borderBottomWidth: 1,
+    borderBottomColor: "#E5E7EB",
+  },
+  headerText: {
+    marginLeft: 10,
+    flexGrow: 1,
+    height: 34,
+    justifyContent: "center",
+  },
+  headerOrg: {
+    fontSize: 10,
+    fontFamily: "Helvetica-Bold",
+    color: "#1F2937",
+  },
+  title: {
+    fontSize: 24,
+    fontFamily: "Helvetica-Bold",
+    lineHeight: 1.2,
+    marginBottom: 6,
+  },
+  org: {
+    fontSize: 11,
+    color: "#4B5563",
+    lineHeight: 1.25,
+    marginTop: 0,
+    marginBottom: 22,
+  },
+  logo: {
+    width: 34,
+    height: 34,
+    borderRadius: 8,
+    color: "#FFFFFF",
+    alignItems: "center",
+    justifyContent: "center",
+    fontSize: 11,
+    fontFamily: "Helvetica-Bold",
+  },
+  headerLogoImage: {
+    width: 28,
+    height: 28,
+    objectFit: "contain",
+  },
+  section: {
+    marginTop: 18,
+  },
+  sectionTitle: {
+    fontSize: 15,
+    fontFamily: "Helvetica-Bold",
+    marginBottom: 4,
+  },
+  description: {
+    color: "#4B5563",
+    marginBottom: 10,
+  },
+  field: {
+    marginBottom: 8,
+  },
+  label: {
+    fontFamily: "Helvetica-Bold",
+    marginBottom: 2,
+  },
+  value: {
+    color: "#374151",
+  },
+  heading: {
+    fontSize: 12,
+    fontFamily: "Helvetica-Bold",
+    marginTop: 6,
+    marginBottom: 6,
+  },
+  footerRule: {
+    position: "absolute",
+    top: 735,
+    left: 42,
+    right: 42,
+    borderTopWidth: 1,
+    borderTopColor: "#E5E7EB",
+  },
+  footerText: {
+    position: "absolute",
+    top: 748,
+    left: 42,
+    right: 42,
+    color: "#4B5563",
+    fontSize: 7,
+    textAlign: "center",
+  },
+});
+
+export async function renderTemplatePdfBuffer({
+  title,
+  organizationName,
+  brand,
+  model,
+}: {
+  title: string;
+  organizationName: string;
+  brand: BrandProfile;
+  model: TemplateExportModel;
+}) {
+  const logo = getEmbeddedLogo(brand.logoUrl);
+  const footerText = buildFooterText(brand, model);
+  const documentTitle = sanitizePdfText(`${organizationName} ${title}`);
+  const safeOrganizationName = sanitizePdfText(organizationName);
+  const safeTitle = sanitizePdfText(title);
+  const safeReportType = getReportTypeLabel(title);
+
+  return renderToBuffer(
+    React.createElement(
+      Document,
+      {
+        title: documentTitle,
+        author: safeOrganizationName,
+        subject: "Board-ready document generated by Olea Connects",
+        keywords: "Olea Connects, nonprofit governance, board document",
+        creator: "Olea Connects",
+        producer: "Olea Connects",
+      },
+      React.createElement(
+        Page,
+        { size: "LETTER", style: styles.cover },
+        React.createElement(BrandLogo, {
+          brand,
+          logo,
+          variant: "cover",
+        }),
+        React.createElement(
+          View,
+          { style: styles.coverContent },
+          React.createElement(Text, { style: styles.coverEyebrow }, safeReportType),
+          React.createElement(
+            Text,
+            { style: [styles.coverTitle, { color: brand.primaryColor }] },
+            safeTitle,
+          ),
+          React.createElement(View, {
+            style: [styles.coverRule, { backgroundColor: brand.secondaryColor }],
+          }),
+          React.createElement(Text, { style: styles.coverOrg }, safeOrganizationName),
+          React.createElement(Text, { style: styles.coverMeta }, "Generated by Olea Connects"),
+        ),
+        React.createElement(
+          View,
+          { style: styles.coverFooter },
+          React.createElement(
+            Text,
+            null,
+            sanitizePdfText(formatWebsite(brand.website || "oleaconnects.ca")),
+          ),
+          React.createElement(Text, {
+            render: ({ pageNumber, totalPages }) => `Page ${pageNumber} of ${totalPages}`,
+          }),
+        ),
+      ),
+      React.createElement(
+        Page,
+        { size: "LETTER", style: styles.page, wrap: true },
+        React.createElement(View, {
+          style: [styles.accent, { backgroundColor: brand.secondaryColor }],
+          fixed: true,
+        }),
+        React.createElement(
+          View,
+          { style: styles.header, fixed: true },
+          React.createElement(BrandLogo, { brand, logo, variant: "header" }),
+          React.createElement(
+            View,
+            { style: styles.headerText },
+            React.createElement(Text, { style: styles.headerOrg }, safeOrganizationName),
+          ),
+        ),
+        React.createElement(Text, { style: styles.title }, safeTitle),
+        React.createElement(Text, { style: styles.org }, safeOrganizationName),
+        React.createElement(FieldList, { fields: model.headerFields }),
+        model.sections.map((section) =>
+          React.createElement(
+            View,
+            { key: section.id, style: styles.section, minPresenceAhead: 72 },
+            React.createElement(
+              Text,
+              { style: styles.sectionTitle, wrap: false, minPresenceAhead: 48 },
+              sanitizePdfText(section.title),
+            ),
+            section.description
+              ? React.createElement(
+                  Text,
+                  { style: styles.description, minPresenceAhead: 36 },
+                  sanitizePdfText(section.description),
+                )
+              : null,
+            React.createElement(FieldList, { fields: section.fields }),
+          ),
+        ),
+        React.createElement(
+          React.Fragment,
+          null,
+          React.createElement(View, { style: styles.footerRule, fixed: true }),
+          React.createElement(Text, {
+            fixed: true,
+            wrap: false,
+            style: styles.footerText,
+            render: ({ pageNumber, totalPages }) =>
+              `${sanitizePdfText(footerText)}  |  Page ${pageNumber}/${totalPages}`,
+          }),
+        ),
+      ),
+    ),
+  );
+}
+
+function BrandLogo({
+  brand,
+  logo,
+  variant = "header",
+}: {
+  brand: BrandProfile;
+  logo: ReturnType<typeof getEmbeddedLogo>;
+  variant?: "cover" | "header";
+}) {
+  const isCover = variant === "cover";
+
+  return React.createElement(
+    View,
+    {
+      style: [
+        isCover ? styles.coverLogo : styles.logo,
+        { backgroundColor: brand.primaryColor },
+      ],
+    },
+    logo
+      ? React.createElement(Image, {
+          src: logo.dataUrl,
+          style: isCover ? styles.coverLogoImage : styles.headerLogoImage,
+        })
+      : React.createElement(Text, null, sanitizePdfText(brand.logoInitials)),
+  );
+}
+
+function FieldList({ fields }: { fields: TemplateExportModel["headerFields"] }) {
+  const firstNestedFieldByHeading = new Set<string>();
+  for (const [index, field] of fields.entries()) {
+    if (field.type !== "heading" && field.type !== "repeatable") continue;
+    const nextField = fields[index + 1];
+    if (nextField && nextField.depth > field.depth) {
+      firstNestedFieldByHeading.add(nextField.id);
+    }
+  }
+
+  return React.createElement(
+    React.Fragment,
+    null,
+    fields.map((field, index) => {
+      if (field.type === "heading" || field.type === "repeatable") {
+        const nextField = fields[index + 1];
+        const hasNestedContent = nextField && nextField.depth > field.depth;
+        return React.createElement(
+          Text,
+          {
+            key: field.id,
+            style: [styles.heading, { marginLeft: field.depth * 12 }],
+            minPresenceAhead: hasNestedContent ? 54 : 24,
+            wrap: false,
+          },
+          sanitizePdfText(field.label),
+        );
+      }
+      if (field.type === "paragraph") {
+        return React.createElement(
+          Text,
+          {
+            key: field.id,
+            style: [styles.value, { marginLeft: field.depth * 12 }],
+            orphans: 2,
+            widows: 2,
+          },
+          sanitizePdfText(field.value),
+        );
+      }
+
+      return React.createElement(
+        View,
+        {
+          key: field.id,
+          style: [styles.field, { marginLeft: field.depth * 12 }],
+          minPresenceAhead: firstNestedFieldByHeading.has(field.id) ? 28 : 0,
+          ...(shouldKeepFieldTogether(field.value) ? { wrap: false } : {}),
+        },
+        React.createElement(Text, { style: styles.label }, sanitizePdfText(field.label)),
+        React.createElement(
+          Text,
+          { style: styles.value, orphans: 2, widows: 2 },
+          sanitizePdfText(field.value),
+        ),
+      );
+    }),
+  );
+}
+
+function shouldKeepFieldTogether(value: string) {
+  return value.length <= 240 && !value.includes("\n");
+}
+
+export function buildFooterText(
+  brand: BrandProfile,
+  model: TemplateExportModel,
+) {
+  const contactEmail =
+    brand.contactEmail ??
+    findFieldValue(model, [
+      "contact_email",
+      "contact email",
+      "facilitator_email",
+      "facilitator email",
+      "administrator email",
+    ]);
+  const contactDetails = [
+    brand.address ? `Address: ${formatFooterValue(brand.address)}` : null,
+    brand.phone ? `Phone: ${formatFooterValue(brand.phone)}` : null,
+    contactEmail ? `Email: ${contactEmail}` : null,
+    brand.website ? `Web: ${formatWebsite(brand.website)}` : null,
+  ].filter(isPresent);
+
+  return [
+    sanitizePdfText(brand.organizationName),
+    ...contactDetails,
+  ].join("  |  ");
+}
+
+export function sanitizePdfText(value: string) {
+  return value
+    .replace(/[\u00B2\u00B3\u00B9\u2070\u2074-\u207E\u2080-\u208E]/g, (match) => {
+      return pdfTextReplacements[match] ?? "";
+    })
+    .replace(/[\u0000-\u0008\u000B\u000C\u000E-\u001F\u007F]/g, "")
+    .replace(/\r\n?/g, "\n");
+}
+
+function findFieldValue(model: TemplateExportModel, candidates: string[]) {
+  const normalizedCandidates = new Set(candidates.map(normalizeFieldKey));
+  const fields = [
+    ...model.headerFields,
+    ...model.sections.flatMap((section) => section.fields),
+  ];
+  const match = fields.find(
+    (field) =>
+      normalizedCandidates.has(normalizeFieldKey(field.id)) ||
+      normalizedCandidates.has(normalizeFieldKey(field.label)),
+  );
+  const value = match?.value?.trim();
+  return value && value !== "—" ? value : undefined;
+}
+
+function normalizeFieldKey(value: string) {
+  return value.toLowerCase().replace(/[^a-z0-9]+/g, " ").trim();
+}
+
+function formatFooterValue(value: string) {
+  return value.trim().replace(/\s+/g, " ");
+}
+
+function formatWebsite(value: string) {
+  return formatFooterValue(value).replace(/^https?:\/\//i, "").replace(/\/$/, "");
+}
+
+function getReportTypeLabel(title: string) {
+  return title.toLowerCase().includes("report") ? "Report" : "Board-ready report";
+}
+
+function isPresent(value: string | null | undefined): value is string {
+  return Boolean(value?.trim());
+}

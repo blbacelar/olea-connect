@@ -22,7 +22,7 @@ export function LandingFooter() {
           <Link href="/login">Member login</Link>
         </nav>
       </div>
-      <div className="mx-auto mt-8 flex max-w-7xl flex-col gap-2 border-t pt-6 text-xs text-slate-400 sm:flex-row sm:justify-between">
+      <div className="mx-auto mt-8 flex max-w-7xl flex-col gap-2 border-t pt-6 text-xs text-slate-600 sm:flex-row sm:justify-between">
         <span>© 2026 Olive Social Impact Inc.</span>
         <span>All prices in CAD.</span>
       </div>

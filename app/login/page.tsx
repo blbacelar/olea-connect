@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useState, useTransition } from "react";
+import { useEffect, useState, useTransition } from "react";
 
 import { AuthCard } from "@/components/auth/AuthCard";
 import { Button } from "@/components/ui/button";
@@ -10,25 +10,53 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useRegistration } from "@/hooks/use-registration";
 import { signIn } from "@/lib/auth";
+import { retryMembershipActivation } from "@/lib/provisioning/client";
+
+const DASHBOARD_PATH = "/dashboard";
+
+function getSafePath(value: string | undefined, fallback = DASHBOARD_PATH) {
+  return value?.startsWith("/") && !value.startsWith("//") ? value : fallback;
+}
 
 export default function LoginPage() {
   const router = useRouter();
   const { registration } = useRegistration();
-  const [email, setEmail] = useState(
-    registration.email || "sarah@willowcreekyouth.test",
-  );
-  const [password, setPassword] = useState(registration.password || "password123");
+  const [email, setEmail] = useState(registration.email);
+  const [password, setPassword] = useState("");
   const [error, setError] = useState("");
+  const [message, setMessage] = useState("");
+  const [nextPath, setNextPath] = useState("");
+  const [rememberFor30Days, setRememberFor30Days] = useState(false);
   const [isPending, startTransition] = useTransition();
+
+  useEffect(() => {
+    const searchParams = new URLSearchParams(window.location.search);
+    setError(searchParams.get("error") || "");
+    const paymentSucceeded = searchParams.get("payment") === "success";
+    const needsEmailVerification = searchParams.get("verify") === "email";
+    setMessage(
+      needsEmailVerification
+        ? "Payment received. Check your inbox for a confirmation email from Olea Connects, confirm your address, then sign in."
+        : paymentSucceeded
+          ? "Payment received. Sign in to finish setting up your membership."
+          : "",
+    );
+    setNextPath(searchParams.get("next") || "");
+  }, []);
 
   const handleLogin = () => {
     startTransition(async () => {
       try {
         setError("");
-        await signIn(email, password);
-        router.push(
-          registration.brandComplete ? "/dashboard" : "/onboarding/brand-setup",
-        );
+        await signIn(email, password, { rememberFor30Days });
+        const { result } = await retryMembershipActivation();
+        if (result.status === "completed") {
+          router.push(getSafePath(result.nextPath));
+          router.refresh();
+          return;
+        }
+        router.push(getSafePath(nextPath));
+        router.refresh();
       } catch (loginError) {
         setError(
           loginError instanceof Error
@@ -76,8 +104,18 @@ export default function LoginPage() {
             {error}
           </p>
         ) : null}
+        {message ? (
+          <p className="rounded-lg bg-emerald-50 p-3 text-sm text-emerald-800">
+            {message}
+          </p>
+        ) : null}
         <label className="flex items-center gap-2 text-sm text-slate-500">
-          <input type="checkbox" className="size-4 accent-olea-green" />
+          <input
+            type="checkbox"
+            className="size-4 accent-olea-green"
+            checked={rememberFor30Days}
+            onChange={(event) => setRememberFor30Days(event.target.checked)}
+          />
           Remember me for 30 days
         </label>
         <Button
@@ -86,14 +124,6 @@ export default function LoginPage() {
           onClick={handleLogin}
         >
           {isPending ? "Signing in..." : "Sign in →"}
-        </Button>
-        <div className="flex items-center gap-3 text-xs text-slate-400">
-          <span className="h-px flex-1 bg-slate-200" />
-          or
-          <span className="h-px flex-1 bg-slate-200" />
-        </div>
-        <Button variant="outline" className="w-full">
-          Continue with Google
         </Button>
         <p className="text-center text-sm text-slate-500">
           Don&apos;t have an account?{" "}

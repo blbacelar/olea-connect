@@ -26,7 +26,7 @@ const faqs = [
   {
     question: "How many seats are included?",
     answer:
-      "Seedling includes 5 seats, Roots includes 10, Canopy includes 15, and Harvest includes 20. Additional seats are $15 CAD each on any tier.",
+      "Seedling includes 5 seats, Roots includes 10, Canopy includes 15, and Harvest includes 20. Additional seats are $15 CAD one-time per seat on any tier.",
   },
   {
     question: "Can we upgrade or downgrade?",
@@ -47,6 +47,16 @@ const faqs = [
     question: "Are coaching and admin support included?",
     answer:
       "Coaching, admin support, and board retreat facilitation are available as add-ons. Canopy and Harvest members receive 10% off coaching and admin packages.",
+  },
+  {
+    question: "How does Olea Gives support access?",
+    answer:
+      "Olea Gives provides quarterly grant opportunities funded by Olea's generosity engine. There is no sliding-scale membership pricing; organizations with limited budgets can apply for an unrestricted Olea Gives gift.",
+  },
+  {
+    question: "What happens to our data if we cancel?",
+    answer:
+      "Your organization owns its data. After cancellation, you have a 30-day grace period to download or export it before it is removed from live systems.",
   },
 ];
 
