@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { useEffect, useState, useTransition } from "react";
 
 import { AuthCard } from "@/components/auth/AuthCard";
+import { PasswordInput } from "@/components/auth/PasswordInput";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -89,9 +90,8 @@ export default function LoginPage() {
               Forgot password?
             </Link>
           </div>
-          <Input
+          <PasswordInput
             id="loginPassword"
-            type="password"
             value={password}
             onChange={(event) => setPassword(event.target.value)}
             onKeyDown={(event) => {
@@ -111,12 +111,13 @@ export default function LoginPage() {
         ) : null}
         <label className="flex items-center gap-2 text-sm text-slate-500">
           <input
+            id="rememberFor30Days"
             type="checkbox"
             className="size-4 accent-olea-green"
             checked={rememberFor30Days}
             onChange={(event) => setRememberFor30Days(event.target.checked)}
           />
-          Remember me for 30 days
+          <span>Remember me for 30 days</span>
         </label>
         <Button
           className="w-full"

@@ -23,7 +23,10 @@ export function Sidebar({ collapsed, onCollapsedChange }: SidebarProps) {
   const pathname = usePathname();
   const session = useSession();
   const organization = session?.organization;
-  const navigationGroups = getNavigationGroups(session?.platformRoles);
+  const navigationGroups = getNavigationGroups(
+    session?.platformRoles,
+    session?.member.membershipRole,
+  );
   const ToggleIcon = collapsed ? PanelLeftOpen : PanelLeftClose;
 
   function isActiveRoute(href: string) {
@@ -156,7 +159,6 @@ export function Sidebar({ collapsed, onCollapsedChange }: SidebarProps) {
           </div>
         ))}
       </nav>
-
     </aside>
   );
 }

@@ -10,6 +10,7 @@ import {
 import { hasClaimedEmailEvent } from "@/lib/email/config";
 import {
   eventScheduleChangeEmail,
+  boardRecruitmentSurveyInvitationEmail,
   teamInvitationEmail,
   type TransactionalEmail,
 } from "@/lib/email/templates";
@@ -87,6 +88,28 @@ async function buildEmail(
     };
   }
 
+  if (event.event_type === "board_recruitment.survey_invitation") {
+    const payload = event.payload as {
+      recipient_email: string;
+      organization_name: string;
+      member_name: string;
+      survey_year: number;
+      invitation_path: string;
+      expires_at: string;
+    };
+
+    return {
+      recipientEmail: payload.recipient_email,
+      email: boardRecruitmentSurveyInvitationEmail({
+        organizationName: payload.organization_name,
+        memberName: payload.member_name,
+        surveyYear: payload.survey_year,
+        surveyUrl: new URL(payload.invitation_path, getAppUrl()).toString(),
+        expiresAt: payload.expires_at,
+      }),
+    };
+  }
+
   throw new Error(`Unsupported email event: ${event.event_type}`);
 }
 
@@ -116,7 +139,11 @@ export async function GET(request: Request) {
     "claim_email_integration_event",
   );
   if (claimError) {
-    logCritical("Unable to claim email integration event", claimError, requestContext);
+    logCritical(
+      "Unable to claim email integration event",
+      claimError,
+      requestContext,
+    );
     return NextResponse.json(
       { error: "Email worker could not claim an event." },
       { headers: noStoreHeaders, status: 500 },
@@ -124,10 +151,7 @@ export async function GET(request: Request) {
   }
   if (!hasClaimedEmailEvent(event)) {
     logInfo("Email worker found no queued event", requestContext);
-    return NextResponse.json(
-      { processed: false },
-      { headers: noStoreHeaders },
-    );
+    return NextResponse.json({ processed: false }, { headers: noStoreHeaders });
   }
 
   try {
@@ -153,7 +177,8 @@ export async function GET(request: Request) {
         { name: "environment", value: process.env.VERCEL_ENV ?? "development" },
       ],
     });
-    if (error || !data?.id) throw new Error(error?.message ?? "No email ID returned.");
+    if (error || !data?.id)
+      throw new Error(error?.message ?? "No email ID returned.");
 
     const { error: updateError } = await supabase
       .from("integration_events")
@@ -175,7 +200,8 @@ export async function GET(request: Request) {
       { headers: noStoreHeaders },
     );
   } catch (error) {
-    const message = error instanceof Error ? error.message : "Unknown email error";
+    const message =
+      error instanceof Error ? error.message : "Unknown email error";
     await supabase
       .from("integration_events")
       .update({

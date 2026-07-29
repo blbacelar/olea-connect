@@ -41,10 +41,32 @@ test.describe("@smoke @critical public entry points", () => {
       page.getByRole("heading", { name: "Welcome back" }),
     ).toBeVisible();
     await expect(page.getByLabel("Email address")).toBeVisible();
-    await expect(page.getByLabel("Password")).toBeVisible();
+    const password = page.getByRole("textbox", { name: "Password" });
+    await expect(password).toBeVisible();
+    await expect(password).toHaveAttribute(
+      "type",
+      "password",
+    );
+    await page.getByRole("button", { name: "Show password" }).click();
+    await expect(password).toHaveAttribute("type", "text");
+    await expect(
+      page.getByRole("button", { name: "Hide password" }),
+    ).toHaveAttribute("aria-pressed", "true");
+    await page.getByRole("button", { name: "Hide password" }).click();
+    await expect(password).toHaveAttribute(
+      "type",
+      "password",
+    );
     await expect(
       page.getByRole("checkbox", { name: "Remember me for 30 days" }),
     ).toBeVisible();
+    const rememberMe = page.getByRole("checkbox", {
+      name: "Remember me for 30 days",
+    });
+    await rememberMe.check();
+    await expect(rememberMe).toBeChecked();
+    await rememberMe.uncheck();
+    await expect(rememberMe).not.toBeChecked();
     await expect(
       page.getByRole("link", { name: "Forgot password?" }),
     ).toHaveAttribute("href", "/reset-password");
