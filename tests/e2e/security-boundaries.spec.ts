@@ -1,5 +1,5 @@
 import { createClient } from "@supabase/supabase-js";
-import { expect, test } from "@playwright/test";
+import { expect, test } from "../fixtures/browser.fixture";
 
 import { test as testWithData } from "../fixtures/test-data.fixture";
 import { getTestSupabaseEnvironment } from "../support/test-environment";

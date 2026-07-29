@@ -84,6 +84,7 @@ jobs:
         project: [chromium, firefox, webkit, mobile-chrome]
     env:
       REGRESSION_REF: ${{ github.event_name == 'workflow_dispatch' && inputs.ref || 'staging' }}
+      VERCEL_AUTOMATION_BYPASS_SECRET: ${{ secrets.VERCEL_AUTOMATION_BYPASS_SECRET }}
     steps:
       - uses: actions/checkout@v6
         with:

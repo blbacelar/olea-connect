@@ -12,9 +12,11 @@ export class AppShellPage {
   }
 
   async expectCompactHeader() {
-    const compactLogo = this.page.getByRole("link", {
-      name: "Olea Connects dashboard",
-    });
+    const compactLogo = this.page
+      .locator("header")
+      .getByRole("link", {
+        name: "Olea Connects Governance branded dashboard",
+      });
 
     await expect(compactLogo).toBeVisible();
     await expect(this.page.getByLabel("Open navigation")).toBeVisible();

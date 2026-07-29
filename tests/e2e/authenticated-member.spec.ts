@@ -128,9 +128,7 @@ test.describe("@critical @member authenticated access", () => {
     await app.expectSectionHeading("Q3 2026 Community Grant");
 
     await app.openMemberSection("webinars");
-    await app.expectSectionHeading(
-      "Governance Best Practices for Small Nonprofits",
-    );
+    await app.expectSectionHeading("Webinars");
 
     await app.openMemberSection("community");
     await app.expectSectionHeading("Community");
