@@ -67,6 +67,8 @@ test.describe("@smoke @critical platform UI coverage gate", () => {
 
     await templates.open();
     await templates.expectTemplateVisible("Board Self-Evaluation");
+    await templates.openTemplate("Board Self-Evaluation");
+    await templates.expectNoDashboardReturnLink();
     await app.expectNoServerError();
 
     await app.expectPageHeading("/settings/brand", "Brand profile");
