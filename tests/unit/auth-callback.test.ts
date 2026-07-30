@@ -6,8 +6,8 @@ const attemptUserWorkspaceProvisioning = vi.fn();
 const createAdminClient = vi.fn();
 const getPostActivationPath = vi.fn();
 
-vi.mock("@/utils/supabase/server", () => ({
-  createClient: vi.fn(async () => ({
+vi.mock("@supabase/ssr", () => ({
+  createServerClient: vi.fn(() => ({
     auth: {
       exchangeCodeForSession,
       getUser,
@@ -49,6 +49,36 @@ describe("auth callback", () => {
       "https://staging.oleaconnects.com/update-password",
     );
     expect(attemptUserWorkspaceProvisioning).not.toHaveBeenCalled();
+  });
+
+  it("preserves the callback request host so session cookies remain available after redirect", async () => {
+    const { GET } = await import("@/app/auth/callback/route");
+
+    const response = await GET(
+      new Request(
+        "http://localhost:3011/auth/callback?code=valid-code&next=/team/invitations/accept?token=token_123",
+        { headers: { host: "127.0.0.1:3011" } },
+      ),
+    );
+
+    expect(response.headers.get("location")).toBe(
+      "http://127.0.0.1:3011/team/invitations/accept?token=token_123",
+    );
+  });
+
+  it("does not redirect a verification callback to an untrusted host", async () => {
+    const { GET } = await import("@/app/auth/callback/route");
+
+    const response = await GET(
+      new Request(
+        "https://staging.oleaconnects.com/auth/callback?code=valid-code",
+        { headers: { host: "malicious.example" } },
+      ),
+    );
+
+    expect(response.headers.get("location")).toBe(
+      "https://staging.oleaconnects.com/dashboard",
+    );
   });
 
   it("keeps provisioning behavior for normal signup verification callbacks", async () => {
