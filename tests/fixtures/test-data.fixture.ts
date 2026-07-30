@@ -1,5 +1,7 @@
 import { createClient, type SupabaseClient } from "@supabase/supabase-js";
 
+import type { EdReviewCampaignStatus } from "@/lib/ed-review/domain";
+
 import { createTestIdentity } from "../factories/identity";
 import { getTestSupabaseEnvironment } from "../support/test-environment";
 import { test as base } from "./browser.fixture";
@@ -40,6 +42,14 @@ export type CreatedNotification = {
   id: string;
   userId: string;
   title: string;
+};
+
+export type EdReviewCycleState = {
+  status: EdReviewCampaignStatus;
+  campaigns: Array<{
+    status: EdReviewCampaignStatus;
+    title: string;
+  }>;
 };
 
 type EventStatus =
@@ -1195,6 +1205,59 @@ export class TestDataManager {
 
     if (error) throw error;
     return data;
+  }
+
+  async getEdReviewCycleState(
+    organizationId: string,
+  ): Promise<EdReviewCycleState | null> {
+    const { data: cycle, error: cycleError } = await this.supabase
+      .from("ed_review_cycles")
+      .select("id, status")
+      .eq("organization_id", organizationId)
+      .neq("status", "archived")
+      .order("review_year", { ascending: false })
+      .limit(1)
+      .maybeSingle();
+    if (cycleError) throw cycleError;
+    if (!cycle) return null;
+
+    const { data: campaigns, error: campaignError } = await this.supabase
+      .from("ed_review_campaigns")
+      .select("title, status")
+      .eq("cycle_id", cycle.id)
+      .order("created_at");
+    if (campaignError) throw campaignError;
+
+    return {
+      status: cycle.status as EdReviewCampaignStatus,
+      campaigns: (campaigns ?? []).map((campaign) => ({
+        status: campaign.status as EdReviewCampaignStatus,
+        title: campaign.title,
+      })),
+    };
+  }
+
+  async revokeEdReviewBoardChair(
+    organizationId: string,
+    userId: string,
+  ) {
+    const { data: cycle, error: cycleError } = await this.supabase
+      .from("ed_review_cycles")
+      .select("id")
+      .eq("organization_id", organizationId)
+      .neq("status", "archived")
+      .order("review_year", { ascending: false })
+      .limit(1)
+      .single();
+    if (cycleError) throw cycleError;
+
+    const { error } = await this.supabase
+      .from("ed_review_reviewer_assignments")
+      .delete()
+      .eq("cycle_id", cycle.id)
+      .eq("user_id", userId)
+      .eq("role", "board_chair");
+    if (error) throw error;
   }
 
   async createEventRegistration(

@@ -1,6 +1,7 @@
 import {
   BarChart3,
   CalendarDays,
+  ClipboardList,
   CircleHelp,
   CreditCard,
   FileText,
@@ -40,6 +41,12 @@ export const navigationGroups: NavigationItem[][] = [
       label: "Board Recruitment",
       href: "/modules/board-recruitment",
       icon: Users,
+      requiredOrganizationRoles: ["owner", "admin"],
+    },
+    {
+      label: "ED Review",
+      href: "/modules/ed-review",
+      icon: ClipboardList,
       requiredOrganizationRoles: ["owner", "admin"],
     },
     { label: "Community", href: "/community", icon: Users },

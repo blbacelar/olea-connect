@@ -127,6 +127,42 @@ export function boardRecruitmentSurveyInvitationEmail(input: {
   };
 }
 
+export function edReviewSurveyInvitationEmail(input: {
+  organizationName: string;
+  campaignTitle: string;
+  surveyUrl: string;
+  closesAt: string | null;
+}): TransactionalEmail {
+  const organizationName = escapeHtml(input.organizationName);
+  const campaignTitle = escapeHtml(input.campaignTitle);
+  const surveyUrl = escapeHtml(input.surveyUrl);
+  const closesAt = input.closesAt
+    ? new Intl.DateTimeFormat("en-CA", {
+        dateStyle: "long",
+        timeStyle: "short",
+        timeZone: "America/Vancouver",
+      }).format(new Date(input.closesAt))
+    : null;
+  const subject = `${input.organizationName}: confidential feedback survey`;
+  const closingCopy = closesAt
+    ? `<p>Please complete it by <strong>${closesAt}</strong>.</p>`
+    : "";
+
+  return {
+    subject,
+    text: `${input.organizationName} is inviting you to complete a confidential feedback survey: ${input.campaignTitle}. Your response is anonymous and is not connected to your email address. Complete it here: ${input.surveyUrl}.${closesAt ? ` Please complete it by ${closesAt}.` : ""}`,
+    html: layout({
+      preheader: "A confidential, anonymous feedback survey is ready.",
+      title: "Confidential feedback survey",
+      body: `<p>${organizationName} is inviting you to complete <strong>${campaignTitle}</strong>.</p><p>Your response is anonymous. The survey does not ask for your name or email address, and the response is not connected to this delivery email.</p>${closingCopy}`,
+      actionLabel: "Open anonymous survey",
+      actionUrl: surveyUrl,
+      footer:
+        "If you were not expecting this survey, you can safely ignore this email.",
+    }),
+  };
+}
+
 export function eventScheduleChangeEmail(input: {
   eventTitle: string;
   startsAt: string;

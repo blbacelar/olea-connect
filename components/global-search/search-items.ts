@@ -44,6 +44,14 @@ const baseCommandItems: CommandItem[] = [
     keywords: ["calendar", "workflow", "meetings", "board package"],
   },
   {
+    id: "ed-review-module",
+    title: "ED/CEO Annual Review",
+    description: "Run anonymous staff and partner surveys with Board Chair reporting.",
+    href: "/modules/ed-review",
+    type: "module",
+    keywords: ["ed", "ceo", "survey", "anonymous", "board chair", "feedback"],
+  },
+  {
     id: "community",
     title: "Community",
     description: "Join member discussions and spaces.",
