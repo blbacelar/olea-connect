@@ -41,7 +41,9 @@ export class EdReviewPage {
     const linkInput = this.page.getByLabel("New anonymous survey link");
     await expect(linkInput).toBeVisible();
     await expect(dialog).not.toBeVisible();
-    return linkInput.inputValue();
+    const surveyUrl = await linkInput.inputValue();
+    expect(new URL(surveyUrl).origin).toBe(new URL(this.page.url()).origin);
+    return surveyUrl;
   }
 
   async assignHrReviewer(name: string) {

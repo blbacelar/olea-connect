@@ -10,6 +10,7 @@ import {
   getResend,
 } from "@/lib/email/server";
 import { edReviewSurveyInvitationEmail } from "@/lib/email/templates";
+import { getSiteUrl } from "@/lib/site-metadata";
 import type {
   CompilationSummary,
   EdReviewCampaignKind,
@@ -88,13 +89,6 @@ type ReviewerAssignmentRow = {
   user_id: string;
   role: EdReviewReviewerRole;
 };
-
-function deploymentUrl() {
-  return (process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000").replace(
-    /\/$/,
-    "",
-  );
-}
 
 function isWorkspaceAdmin(role: string) {
   return role === "owner" || role === "admin";
@@ -490,7 +484,7 @@ export async function createEdReviewCampaign(input: {
     .single();
   if (error) throw error;
 
-  const publicUrl = `${deploymentUrl()}/modules/ed-review/survey/${token}`;
+  const publicUrl = `${getSiteUrl()}/modules/ed-review/survey/${token}`;
   const recipientEmails = [...new Set(input.recipientEmails ?? [])];
   let delivery: EdReviewCampaignDelivery | undefined;
 
