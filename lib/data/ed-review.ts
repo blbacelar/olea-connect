@@ -75,6 +75,27 @@ export type EdReviewData = {
   }>;
 };
 
+export type EdReviewBoardChairRecoveryData = {
+  cycle: {
+    id: string;
+    title: string;
+    reviewYear: number;
+  };
+  availableReviewers: Array<{
+    userId: string;
+    name: string;
+  }>;
+};
+
+export class EdReviewReviewerAssignmentRequiredError extends Error {
+  constructor() {
+    super(
+      "You need an explicit Board Chair or HR reviewer assignment to access this review.",
+    );
+    this.name = "EdReviewReviewerAssignmentRequiredError";
+  }
+}
+
 type CycleRow = {
   id: string;
   title: string;
@@ -173,9 +194,7 @@ async function ensureReviewerAccess() {
     .eq("user_id", session.member.id);
   if (assignmentError) throw assignmentError;
   if (!(assignments ?? []).length) {
-    throw new Error(
-      "You need an explicit Board Chair or HR reviewer assignment to access this review.",
-    );
+    throw new EdReviewReviewerAssignmentRequiredError();
   }
 
   return {
@@ -196,6 +215,39 @@ async function requireBoardChairAccess() {
     );
   }
   return context;
+}
+
+async function getActiveWorkspaceReviewers(
+  supabase: ReturnType<typeof createAdminClient>,
+  organizationId: string,
+) {
+  const { data: members, error: membersError } = await supabase
+    .from("organization_members")
+    .select("user_id")
+    .eq("organization_id", organizationId)
+    .eq("status", "active");
+  if (membersError) throw membersError;
+
+  const userIds = (members ?? []).map((member) => member.user_id);
+  if (!userIds.length) return [];
+
+  const { data: profiles, error: profilesError } = await supabase
+    .from("profiles")
+    .select("id, full_name")
+    .in("id", userIds);
+  if (profilesError) throw profilesError;
+
+  const names = new Map(
+    (profiles ?? []).map((profile) => [
+      profile.id,
+      profile.full_name || "Workspace member",
+    ]),
+  );
+
+  return userIds.map((userId) => ({
+    userId,
+    name: names.get(userId) ?? "Workspace member",
+  }));
 }
 
 export async function requireEdReviewAccess() {
@@ -272,23 +324,12 @@ export async function getEdReviewData(): Promise<EdReviewData> {
       names.set(profile.id, profile.full_name || "Assigned reviewer");
   }
 
-  const { data: members, error: membersError } = await supabase
-    .from("organization_members")
-    .select("user_id")
-    .eq("organization_id", cycle.organization_id)
-    .eq("status", "active");
-  if (membersError) throw membersError;
-  const memberUserIds = (members ?? []).map((member) => member.user_id);
-  if (memberUserIds.length) {
-    const { data: memberProfiles, error: memberProfilesError } = await supabase
-      .from("profiles")
-      .select("id, full_name")
-      .in("id", memberUserIds);
-    if (memberProfilesError) throw memberProfilesError;
-    for (const profile of memberProfiles ?? []) {
-      if (!names.has(profile.id))
-        names.set(profile.id, profile.full_name || "Workspace member");
-    }
+  const availableReviewers = await getActiveWorkspaceReviewers(
+    supabase,
+    cycle.organization_id,
+  );
+  for (const reviewer of availableReviewers) {
+    if (!names.has(reviewer.userId)) names.set(reviewer.userId, reviewer.name);
   }
 
   return {
@@ -317,10 +358,7 @@ export async function getEdReviewData(): Promise<EdReviewData> {
       role: reviewer.role as EdReviewReviewerRole,
       name: names.get(reviewer.user_id) ?? "Assigned reviewer",
     })),
-    availableReviewers: memberUserIds.map((userId) => ({
-      userId,
-      name: names.get(userId) ?? "Workspace member",
-    })),
+    availableReviewers,
     compilations: (compilationsResult.data ?? []).map((compilation) => ({
       id: compilation.id,
       version: compilation.version,
@@ -334,6 +372,29 @@ export async function getEdReviewData(): Promise<EdReviewData> {
       eventType: event.event_type,
       createdAt: event.created_at,
     })),
+  };
+}
+
+export async function getEdReviewBoardChairRecoveryData(): Promise<EdReviewBoardChairRecoveryData | null> {
+  const session = await requireMemberContext();
+  if (!isWorkspaceAdmin(session.member.membershipRole)) return null;
+
+  const cycle = await getCurrentCycle(session.organization.id);
+  if (!cycle) return null;
+
+  const supabase = createAdminClient();
+  const availableReviewers = await getActiveWorkspaceReviewers(
+    supabase,
+    cycle.organization_id,
+  );
+
+  return {
+    cycle: {
+      id: cycle.id,
+      title: cycle.title,
+      reviewYear: cycle.review_year,
+    },
+    availableReviewers,
   };
 }
 
@@ -376,6 +437,57 @@ export async function assignEdReviewReviewer(input: {
       actor_user_id: session.member.id,
       event_type: "reviewer_assigned",
       details: { reviewer_user_id: input.userId, role: input.role },
+    });
+  if (auditError) throw auditError;
+}
+
+export async function appointEdReviewBoardChair(input: {
+  cycleId: string;
+  userId: string;
+}) {
+  const session = await requireMemberContext();
+  if (!isWorkspaceAdmin(session.member.membershipRole)) {
+    throw new Error("Only organization owners and administrators can recover Board Chair access.");
+  }
+
+  const cycle = await getCurrentCycle(session.organization.id);
+  if (!cycle || cycle.id !== input.cycleId) {
+    throw new Error("That review cycle is unavailable.");
+  }
+
+  const supabase = createAdminClient();
+  const { data: membership, error: membershipError } = await supabase
+    .from("organization_members")
+    .select("user_id")
+    .eq("organization_id", cycle.organization_id)
+    .eq("user_id", input.userId)
+    .eq("status", "active")
+    .maybeSingle();
+  if (membershipError) throw membershipError;
+  if (!membership) {
+    throw new Error("Board Chairs must be active members of this workspace.");
+  }
+
+  const { error: assignmentError } = await supabase
+    .from("ed_review_reviewer_assignments")
+    .upsert(
+      {
+        cycle_id: cycle.id,
+        user_id: input.userId,
+        role: "board_chair",
+        granted_by: session.member.id,
+      },
+      { onConflict: "cycle_id,user_id,role" },
+    );
+  if (assignmentError) throw assignmentError;
+
+  const { error: auditError } = await supabase
+    .from("ed_review_audit_events")
+    .insert({
+      cycle_id: cycle.id,
+      actor_user_id: session.member.id,
+      event_type: "board_chair_recovery_assigned",
+      details: { reviewer_user_id: input.userId },
     });
   if (auditError) throw auditError;
 }

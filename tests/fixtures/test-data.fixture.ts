@@ -1237,6 +1237,29 @@ export class TestDataManager {
     };
   }
 
+  async revokeEdReviewBoardChair(
+    organizationId: string,
+    userId: string,
+  ) {
+    const { data: cycle, error: cycleError } = await this.supabase
+      .from("ed_review_cycles")
+      .select("id")
+      .eq("organization_id", organizationId)
+      .neq("status", "archived")
+      .order("review_year", { ascending: false })
+      .limit(1)
+      .single();
+    if (cycleError) throw cycleError;
+
+    const { error } = await this.supabase
+      .from("ed_review_reviewer_assignments")
+      .delete()
+      .eq("cycle_id", cycle.id)
+      .eq("user_id", userId)
+      .eq("role", "board_chair");
+    if (error) throw error;
+  }
+
   async createEventRegistration(
     event: CreatedEvent,
     attendee: CreatedOrganizationOwner | CreatedOrganizationMember,

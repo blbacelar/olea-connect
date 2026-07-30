@@ -7,6 +7,7 @@ import { z } from "zod";
 
 import {
   approveEdReviewCompilation,
+  appointEdReviewBoardChair,
   assignEdReviewReviewer,
   createEdReviewCampaign,
   getPublicEdReviewCampaign,
@@ -65,6 +66,11 @@ const reviewerAssignmentSchema = z.object({
   cycleId: z.string().uuid(),
   userId: z.string().uuid(),
   role: z.enum(["board_chair", "hr_reviewer", "privileged_auditor"]),
+});
+
+const boardChairRecoverySchema = z.object({
+  cycleId: z.string().uuid(),
+  userId: z.string().uuid(),
 });
 
 export async function createCampaignAction(formData: FormData) {
@@ -164,6 +170,16 @@ export async function assignReviewerAction(formData: FormData) {
   await assignEdReviewReviewer(input);
   revalidateReview();
   redirect(`${reviewPath}?tab=access`);
+}
+
+export async function appointBoardChairRecoveryAction(formData: FormData) {
+  const input = boardChairRecoverySchema.parse({
+    cycleId: formValue(formData, "cycleId"),
+    userId: formValue(formData, "userId"),
+  });
+  await appointEdReviewBoardChair(input);
+  revalidateReview();
+  redirect(`${reviewPath}?recovery=assigned`);
 }
 
 export async function approveCompilationAction(formData: FormData) {

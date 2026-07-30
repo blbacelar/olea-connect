@@ -106,6 +106,60 @@ test.describe("@critical anonymous ED/CEO review surveys", () => {
     }
   });
 
+  test("lets a workspace owner recover a missing Board Chair assignment without exposing the review", async ({
+    browser,
+    baseURL,
+    testData,
+  }) => {
+    if (!baseURL) throw new Error("Playwright baseURL is required.");
+    const owner = await testData.createOrganizationOwner({
+      activeSubscription: true,
+    });
+    const member = await testData.createOrganizationMember(owner);
+    const ownerContext = await browser.newContext({
+      baseURL,
+      storageState: await createAuthenticatedStorageState(
+        owner.email,
+        owner.password,
+        baseURL,
+      ),
+    });
+    const memberContext = await browser.newContext({
+      baseURL,
+      storageState: await createAuthenticatedStorageState(
+        member.email,
+        member.password,
+        baseURL,
+      ),
+    });
+
+    try {
+      const ownerPage = await ownerContext.newPage();
+      const ownerReview = new EdReviewPage(ownerPage);
+      await ownerReview.open();
+      await testData.revokeEdReviewBoardChair(
+        owner.organizationId,
+        owner.userId,
+      );
+
+      await ownerPage.reload();
+      await ownerReview.appointBoardChairFromRecovery(member.fullName);
+
+      const memberPage = await memberContext.newPage();
+      await memberPage.goto("/modules/ed-review");
+      await expect(
+        memberPage.getByRole("heading", { name: "ED/CEO annual review" }),
+      ).toBeVisible();
+      await memberPage.getByRole("tab", { name: "Campaigns" }).click();
+      await expect(
+        memberPage.getByRole("button", { name: "Create campaign" }),
+      ).toBeVisible();
+    } finally {
+      await ownerContext.close();
+      await memberContext.close();
+    }
+  });
+
   test("makes a public survey unavailable immediately when the Board Chair closes the review", async ({
     page,
     browser,

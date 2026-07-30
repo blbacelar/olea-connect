@@ -61,4 +61,18 @@ export class EdReviewPage {
         .getByText(name, { exact: true }),
     ).toBeVisible();
   }
+
+  async appointBoardChairFromRecovery(name: string) {
+    await expect(
+      this.page.getByRole("heading", { name: "Appoint a Board Chair" }),
+    ).toBeVisible();
+    await this.page.getByLabel("Active workspace member").click();
+    await this.page.getByRole("option", { name, exact: true }).click();
+    await this.page
+      .getByRole("button", { name: "Appoint Board Chair" })
+      .click();
+    await expect(
+      this.page.getByText("Board Chair access was assigned."),
+    ).toBeVisible();
+  }
 }
