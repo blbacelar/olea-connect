@@ -10,12 +10,12 @@ export default function EdReviewError({ reset }: { reset: () => void }) {
           Confidential review
         </p>
         <h1 className="mt-2 text-3xl font-bold text-slate-900">
-          This review is restricted
+          We could not load this confidential review
         </h1>
         <p className="mt-3 max-w-xl leading-7 text-slate-700">
-          Only an explicitly assigned Board Chair or HR reviewer can access this
-          confidential ED/CEO review. Ask the Board Chair to assign access if
-          you need to participate in the review process.
+          The review could not be loaded right now. Your access and confidential
+          feedback remain protected. Please try again, or contact support if the
+          problem continues.
         </p>
         <Button
           className="mt-5"

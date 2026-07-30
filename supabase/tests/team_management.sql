@@ -67,6 +67,45 @@ values
     '{"full_name":"Existing Account"}'::jsonb,
     now(),
     now()
+  ),
+  (
+    '42000000-0000-0000-0000-000000000006',
+    '00000000-0000-0000-0000-000000000000',
+    'authenticated',
+    'authenticated',
+    'seat-filler-one@example.com',
+    '',
+    now(),
+    '{}'::jsonb,
+    '{"full_name":"Seat Filler One"}'::jsonb,
+    now(),
+    now()
+  ),
+  (
+    '42000000-0000-0000-0000-000000000007',
+    '00000000-0000-0000-0000-000000000000',
+    'authenticated',
+    'authenticated',
+    'seat-filler-two@example.com',
+    '',
+    now(),
+    '{}'::jsonb,
+    '{"full_name":"Seat Filler Two"}'::jsonb,
+    now(),
+    now()
+  ),
+  (
+    '42000000-0000-0000-0000-000000000008',
+    '00000000-0000-0000-0000-000000000000',
+    'authenticated',
+    'authenticated',
+    'seat-filler-three@example.com',
+    '',
+    now(),
+    '{}'::jsonb,
+    '{"full_name":"Seat Filler Three"}'::jsonb,
+    now(),
+    now()
   );
 
 insert into public.organizations (id, name, slug, created_by)
@@ -98,6 +137,27 @@ values
     'member',
     'suspended',
     now()
+  ),
+  (
+    '52000000-0000-0000-0000-000000000001',
+    '42000000-0000-0000-0000-000000000006',
+    'member',
+    'active',
+    now()
+  ),
+  (
+    '52000000-0000-0000-0000-000000000001',
+    '42000000-0000-0000-0000-000000000007',
+    'member',
+    'active',
+    now()
+  ),
+  (
+    '52000000-0000-0000-0000-000000000001',
+    '42000000-0000-0000-0000-000000000008',
+    'member',
+    'active',
+    now()
   );
 
 insert into public.subscriptions (
@@ -111,7 +171,7 @@ insert into public.subscriptions (
 values (
   '62000000-0000-0000-0000-000000000001',
   '52000000-0000-0000-0000-000000000001',
-  'roots',
+  'seedling',
   'manual',
   'month',
   'active'
@@ -446,7 +506,7 @@ select is(
       '52000000-0000-0000-0000-000000000001'
     )
   ),
-  3,
+  6,
   'organization managers can retrieve the scoped team directory'
 );
 

@@ -1,9 +1,7 @@
 "use client";
 
 import * as React from "react";
-import Link from "next/link";
 import {
-  ArrowLeft,
   BarChart3,
   ClipboardList,
   Mail,
@@ -75,12 +73,6 @@ export function BoardRecruitmentWorkspace({
                 gaps, and prepare a board-ready recruitment report.
               </p>
             </div>
-            <Button asChild variant="outline">
-              <Link href="/templates">
-                <ArrowLeft className="size-4" />
-                Back to resources
-              </Link>
-            </Button>
           </div>
         </CardContent>
       </Card>

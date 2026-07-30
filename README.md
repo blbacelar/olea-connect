@@ -72,6 +72,16 @@ single long form. Its tabs support:
 - Milestones & Risks data tables with modal CRUD workflows and validation.
 - Annual Summary narrative sections and branded PDF reporting.
 
+### Confidential ED/CEO Review
+
+- Anonymous staff and partner feedback campaigns with tokenized public survey
+  links that are not tied to platform-user identities.
+- Explicit per-cycle Board Chair and HR reviewer access, reviewer-access audit
+  events, protected Board Chair summary compilation, and an AI-assisted draft
+  summary that must be reviewed before approval.
+- See [ED/CEO Review](./docs/ED_REVIEW.md) for the access model, operational
+  workflow, and verification coverage.
+
 ### Community, webinars, consulting, and sponsorship
 
 - Native community spaces with posts, comments, likes, edit/delete actions,

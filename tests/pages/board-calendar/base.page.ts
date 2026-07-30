@@ -40,7 +40,7 @@ export class BoardCalendarBasePage {
     await expect(this.page.getByText("Board portal").first()).toBeVisible();
     await expect(
       this.page.getByRole("link", { name: "Back to resources" }),
-    ).toBeVisible();
+    ).toHaveCount(0);
     await expect(
       this.page.getByRole("heading", { name: "Header information" }),
     ).toHaveCount(0);

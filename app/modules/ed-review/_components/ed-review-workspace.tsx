@@ -1,15 +1,15 @@
 "use client";
 
 import * as React from "react";
-import Link from "next/link";
 import {
-  ArrowLeft,
   Check,
   ClipboardCopy,
   ClipboardList,
   FileText,
   LockKeyhole,
+  Pencil,
   Plus,
+  Trash2,
   Users,
 } from "lucide-react";
 
@@ -19,8 +19,10 @@ import {
   compileEdReviewAction,
   createCampaignAction,
   dismissNewCampaignLinkAction,
+  revokeReviewerAccessAction,
   setCycleStatusAction,
   updateCompilationAction,
+  updateReviewerAccessAction,
 } from "@/app/modules/ed-review/actions";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -72,10 +74,14 @@ function formatDate(value: string | null) {
 export function EdReviewWorkspace({
   data,
   activeTab,
+  accessOutcome,
+  compileFailed = false,
   newCampaignLink,
 }: {
   data: EdReviewData;
   activeTab?: string;
+  accessOutcome?: string;
+  compileFailed?: boolean;
   newCampaignLink?: string;
 }) {
   const [tab, setTab] = React.useState<Tab>(
@@ -90,6 +96,9 @@ export function EdReviewWorkspace({
     0,
   );
   const canCompile = totalResponses >= data.cycle.minimumResponseCount;
+  const boardChairCount = data.reviewers.filter(
+    (reviewer) => reviewer.role === "board_chair",
+  ).length;
 
   return (
     <div className="mx-auto max-w-[1400px] space-y-6 p-4 md:p-8">
@@ -109,12 +118,6 @@ export function EdReviewWorkspace({
                 threshold-protected Board Chair summary.
               </p>
             </div>
-            <Button asChild variant="outline">
-              <Link href="/templates">
-                <ArrowLeft className="size-4" />
-                Back to resources
-              </Link>
-            </Button>
           </div>
         </CardContent>
       </Card>
@@ -277,6 +280,15 @@ export function EdReviewWorkspace({
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
+              {compileFailed ? (
+                <p
+                  className="rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-900"
+                  role="alert"
+                >
+                  The confidential summary could not be compiled. No review data
+                  was changed. Please try again shortly.
+                </p>
+              ) : null}
               <div className="flex flex-wrap items-center justify-between gap-3 rounded-lg border bg-slate-50 p-4 text-sm text-slate-700">
                 <span>
                   {canCompile
@@ -311,6 +323,24 @@ export function EdReviewWorkspace({
         </TabsContent>
 
         <TabsContent value="access">
+          {accessOutcome === "final-chair" ? (
+            <p
+              className="rounded-lg border border-amber-200 bg-amber-50 p-3 text-sm text-amber-900"
+              role="alert"
+            >
+              This change was not saved because the review must retain at least
+              one Board Chair. Assign another Board Chair first, then try
+              again.
+            </p>
+          ) : accessOutcome === "failed" ? (
+            <p
+              className="rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-900"
+              role="alert"
+            >
+              Confidential access could not be confirmed. Refresh this page
+              before trying again so you do not accidentally repeat a change.
+            </p>
+          ) : null}
           <div className="grid gap-5 lg:grid-cols-2">
             <Card>
               <CardHeader>
@@ -337,14 +367,30 @@ export function EdReviewWorkspace({
                 {data.reviewers.map((reviewer) => (
                   <div
                     key={reviewer.id}
-                    className="flex items-center justify-between rounded-lg border p-3"
+                    className="flex flex-wrap items-center justify-between gap-3 rounded-lg border p-3"
+                    data-testid={`ed-review-reviewer-${reviewer.id}`}
                   >
-                    <span className="font-semibold">{reviewer.name}</span>
-                    <Badge variant="outline">
-                      {reviewer.role.replace("_", " ")}
-                    </Badge>
+                    <div className="flex items-center gap-2">
+                      <span className="font-semibold">{reviewer.name}</span>
+                      <Badge variant="outline">
+                        {reviewer.role.replace("_", " ")}
+                      </Badge>
+                    </div>
+                    {data.isBoardChair && reviewer.role !== "privileged_auditor" ? (
+                      <ReviewerAccessActions
+                        boardChairCount={boardChairCount}
+                        cycleId={data.cycle.id}
+                        reviewer={reviewer}
+                      />
+                    ) : null}
                   </div>
                 ))}
+                {data.isBoardChair && boardChairCount === 1 ? (
+                  <p className="text-sm text-slate-600">
+                    This review needs at least one Board Chair. Assign another
+                    Board Chair before changing or removing the current access.
+                  </p>
+                ) : null}
               </CardContent>
             </Card>
             <Card>
@@ -638,6 +684,124 @@ function AssignReviewerDialog({
         </form>
       </DialogContent>
     </Dialog>
+  );
+}
+
+function ReviewerAccessActions({
+  boardChairCount,
+  cycleId,
+  reviewer,
+}: {
+  boardChairCount: number;
+  cycleId: string;
+  reviewer: EdReviewData["reviewers"][number];
+}) {
+  const [editOpen, setEditOpen] = React.useState(false);
+  const [removeOpen, setRemoveOpen] = React.useState(false);
+  const [role, setRole] = React.useState<"board_chair" | "hr_reviewer">(
+    reviewer.role === "board_chair" ? "board_chair" : "hr_reviewer",
+  );
+  const isOnlyBoardChair =
+    reviewer.role === "board_chair" && boardChairCount <= 1;
+  const lockReason =
+    "Assign another Board Chair before changing or removing this access.";
+
+  function handleEditOpenChange(open: boolean) {
+    if (open) {
+      setRole(reviewer.role === "board_chair" ? "board_chair" : "hr_reviewer");
+    }
+    setEditOpen(open);
+  }
+
+  return (
+    <div className="flex items-center gap-1">
+      <Dialog open={editOpen} onOpenChange={handleEditOpenChange}>
+        <DialogTrigger asChild>
+          <Button
+            aria-label={`Edit access for ${reviewer.name}`}
+            disabled={isOnlyBoardChair}
+            size="icon"
+            title={isOnlyBoardChair ? lockReason : "Edit access"}
+            variant="ghost"
+          >
+            <Pencil className="size-4" />
+          </Button>
+        </DialogTrigger>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Edit confidential access</DialogTitle>
+            <DialogDescription>
+              Change {reviewer.name}&apos;s access for this review only.
+            </DialogDescription>
+          </DialogHeader>
+          <form
+            action={updateReviewerAccessAction}
+            className="grid gap-4"
+            onSubmit={() => setEditOpen(false)}
+          >
+            <input type="hidden" name="assignmentId" value={reviewer.id} />
+            <input type="hidden" name="cycleId" value={cycleId} />
+            <input type="hidden" name="role" value={role} />
+            <div className="grid gap-2">
+              <Label>Confidential reviewer role</Label>
+              <Select
+                value={role}
+                onValueChange={(value) =>
+                  setRole(value as "board_chair" | "hr_reviewer")
+                }
+              >
+                <SelectTrigger aria-label="Updated confidential reviewer role">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="board_chair">Board Chair</SelectItem>
+                  <SelectItem value="hr_reviewer">HR reviewer</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <SubmitButton pendingText="Saving access...">Save access</SubmitButton>
+          </form>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={removeOpen} onOpenChange={setRemoveOpen}>
+        <DialogTrigger asChild>
+          <Button
+            aria-label={`Remove access for ${reviewer.name}`}
+            disabled={isOnlyBoardChair}
+            size="icon"
+            title={isOnlyBoardChair ? lockReason : "Remove access"}
+            variant="ghost"
+          >
+            <Trash2 className="size-4" />
+          </Button>
+        </DialogTrigger>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Remove confidential access?</DialogTitle>
+            <DialogDescription>
+              {reviewer.name} will no longer be able to open this ED/CEO
+              review. This does not change their organization membership.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="flex justify-end gap-3">
+            <Button type="button" variant="outline" onClick={() => setRemoveOpen(false)}>
+              Cancel
+            </Button>
+            <form
+              action={revokeReviewerAccessAction}
+              onSubmit={() => setRemoveOpen(false)}
+            >
+              <input type="hidden" name="assignmentId" value={reviewer.id} />
+              <input type="hidden" name="cycleId" value={cycleId} />
+              <SubmitButton variant="destructive" pendingText="Removing access...">
+                Remove access
+              </SubmitButton>
+            </form>
+          </div>
+        </DialogContent>
+      </Dialog>
+    </div>
   );
 }
 

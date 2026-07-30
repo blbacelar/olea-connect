@@ -90,8 +90,6 @@ export async function saveDynamicTemplateSession(
 
   if (error) throw error;
 
-  revalidatePath("/templates");
-
   return {
     id: data.id,
     resourceId: data.resource_id,

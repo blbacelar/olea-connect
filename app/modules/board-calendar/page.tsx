@@ -57,11 +57,6 @@ export default async function BoardCalendarModulePage({
       basePath={boardCalendarModule.path}
       data={editorData}
       eyebrow="Board portal"
-      headerAction={
-        <Button asChild variant="outline">
-          <Link href="/templates">Back to resources</Link>
-        </Button>
-      }
       newSessionLabel="Unsaved new calendar"
       savedSessionsLabel="Saved calendars"
       saveSession={saveDynamicTemplateSession}

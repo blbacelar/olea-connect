@@ -16,6 +16,9 @@ export class BoardRecruitmentPage {
         name: "Board recruitment, made visible",
       }),
     ).toBeVisible();
+    await expect(
+      this.page.getByRole("link", { name: "Back to resources" }),
+    ).toHaveCount(0);
   }
 
   tab(name: string) {
