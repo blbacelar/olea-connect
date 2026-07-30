@@ -106,7 +106,7 @@ test.describe("@critical anonymous ED/CEO review surveys", () => {
     }
   });
 
-  test("lets the Board Chair update and revoke a reviewer assignment", async ({
+  test("runs the confidential reviewer create, read, update, and delete lifecycle without duplicate roles", async ({
     browser,
     baseURL,
     testData,
@@ -138,10 +138,27 @@ test.describe("@critical anonymous ED/CEO review surveys", () => {
       const ownerReview = new EdReviewPage(ownerPage);
       await ownerReview.open();
       await ownerReview.assignHrReviewer(member.fullName);
+      await ownerReview.expectReviewerUnavailableForAssignment();
+      await ownerReview.expectReviewerRole(member.fullName, "hr reviewer");
+      await expect
+        .poll(() =>
+          testData.getEdReviewReviewerAssignments(
+            owner.organizationId,
+            member.userId,
+          ),
+        )
+        .toEqual([{ id: expect.any(String), role: "hr_reviewer" }]);
+
       await ownerReview.updateReviewerRole(member.fullName, "Board Chair");
-      await expect(
-        ownerPage.getByText("reviewer access updated", { exact: true }),
-      ).toBeVisible();
+      await ownerReview.expectReviewerRole(member.fullName, "board chair");
+      await expect
+        .poll(() =>
+          testData.getEdReviewReviewerAssignments(
+            owner.organizationId,
+            member.userId,
+          ),
+        )
+        .toEqual([{ id: expect.any(String), role: "board_chair" }]);
 
       const memberPage = await memberContext.newPage();
       await memberPage.goto("/modules/ed-review");
@@ -153,10 +170,20 @@ test.describe("@critical anonymous ED/CEO review surveys", () => {
         memberPage.getByRole("button", { name: "Create campaign" }),
       ).toBeVisible();
 
+      await ownerReview.updateReviewerRole(member.fullName, "HR reviewer");
+      await ownerReview.expectReviewerRole(member.fullName, "hr reviewer");
       await ownerReview.removeReviewerAccess(member.fullName);
       await expect(
         ownerPage.getByText("reviewer access revoked", { exact: true }),
       ).toBeVisible();
+      await expect
+        .poll(() =>
+          testData.getEdReviewReviewerAssignments(
+            owner.organizationId,
+            member.userId,
+          ),
+        )
+        .toEqual([]);
 
       await memberPage.reload();
       await expect(
@@ -205,6 +232,42 @@ test.describe("@critical anonymous ED/CEO review surveys", () => {
     await expect(page.locator("p[role='alert']")).toContainText(
       "This change was not saved because the review must retain at least one Board Chair.",
     );
+  });
+
+  test("handles a stale reviewer card after another session removes its access", async ({
+    browser,
+    baseURL,
+    testData,
+  }) => {
+    if (!baseURL) throw new Error("Playwright baseURL is required.");
+    const owner = await testData.createOrganizationOwner({
+      activeSubscription: true,
+    });
+    const member = await testData.createOrganizationMember(owner);
+    const ownerContext = await browser.newContext({
+      baseURL,
+      storageState: await createAuthenticatedStorageState(
+        owner.email,
+        owner.password,
+        baseURL,
+      ),
+    });
+
+    try {
+      const ownerPage = await ownerContext.newPage();
+      const ownerReview = new EdReviewPage(ownerPage);
+      await ownerReview.open();
+      await ownerReview.assignHrReviewer(member.fullName);
+
+      await testData.removeEdReviewReviewerAssignment(
+        owner.organizationId,
+        member.userId,
+      );
+      await ownerReview.removeReviewerAccess(member.fullName);
+      await ownerReview.expectStaleAssignmentMessage();
+    } finally {
+      await ownerContext.close();
+    }
   });
 
   test("lets a workspace owner recover a missing Board Chair assignment without exposing the review", async ({

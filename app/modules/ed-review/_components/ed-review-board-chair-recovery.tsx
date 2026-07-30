@@ -26,9 +26,11 @@ import type { EdReviewBoardChairRecoveryData } from "@/lib/data/ed-review";
 export function EdReviewBoardChairRecovery({
   data,
   appointed,
+  failed,
 }: {
   data: EdReviewBoardChairRecoveryData;
   appointed: boolean;
+  failed: boolean;
 }) {
   const [userId, setUserId] = React.useState("");
 
@@ -51,6 +53,15 @@ export function EdReviewBoardChairRecovery({
             <p className="mb-4 rounded-md border border-emerald-200 bg-emerald-50 p-3 text-sm font-medium text-emerald-900">
               Board Chair access was assigned. That person can now open this
               confidential review.
+            </p>
+          ) : null}
+          {failed ? (
+            <p
+              className="mb-4 rounded-md border border-red-200 bg-red-50 p-3 text-sm font-medium text-red-900"
+              role="alert"
+            >
+              Board Chair access could not be assigned. Refresh the page and
+              try again. If the problem continues, contact support.
             </p>
           ) : null}
           <form action={appointBoardChairRecoveryAction} className="grid gap-4">

@@ -65,6 +65,19 @@ export class EdReviewPage {
     ).toBeVisible();
   }
 
+  async expectReviewerUnavailableForAssignment() {
+    await this.page.getByRole("tab", { name: "Access & audit" }).click();
+    await this.page.getByRole("button", { name: "Assign reviewer" }).click();
+    const dialog = this.page.getByRole("dialog");
+    await expect(dialog.getByLabel("Workspace member")).toBeDisabled();
+    await expect(
+      dialog.getByText(
+        "A person can hold one reviewer role per review. Change an existing person's role from their reviewer card.",
+      ),
+    ).toBeVisible();
+    await this.page.keyboard.press("Escape");
+  }
+
   async updateReviewerRole(
     name: string,
     role: "Board Chair" | "HR reviewer",
@@ -80,6 +93,14 @@ export class EdReviewPage {
     await expect(
       this.page.getByText("reviewer access updated", { exact: true }),
     ).toBeVisible();
+  }
+
+  async expectReviewerRole(name: string, role: "board chair" | "hr reviewer") {
+    const reviewerCard = this.page
+      .locator('[data-testid^="ed-review-reviewer-"]')
+      .filter({ hasText: name });
+    await expect(reviewerCard).toHaveCount(1);
+    await expect(reviewerCard.getByText(role, { exact: true })).toBeVisible();
   }
 
   async removeReviewerAccess(name: string) {
@@ -112,6 +133,12 @@ export class EdReviewPage {
         "This review needs at least one Board Chair. Assign another Board Chair before changing or removing the current access.",
       ),
     ).toBeVisible();
+  }
+
+  async expectStaleAssignmentMessage() {
+    await expect(this.page.locator("p[role='alert']")).toContainText(
+      "This reviewer access was already changed. The latest reviewer list is now shown.",
+    );
   }
 
   async appointBoardChairFromRecovery(name: string) {

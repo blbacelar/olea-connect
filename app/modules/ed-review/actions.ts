@@ -51,8 +51,26 @@ function reviewerAccessFailurePath(error: unknown) {
     "Assign another Board Chair before changing or removing this access.",
   )
     ? "final-chair"
-    : "failed";
+    : message.includes("That reviewer assignment is unavailable.")
+      ? "stale-assignment"
+      : message.includes(
+            "Only an explicitly assigned Board Chair can manage review access.",
+          )
+        ? "permission-changed"
+        : "failed";
   return `${reviewPath}?tab=access&access=${reason}`;
+}
+
+function reviewerAssignmentFailurePath(error: unknown) {
+  const message = error instanceof Error ? error.message : "";
+  const reason = message.includes("already has confidential access")
+    ? "duplicate-reviewer"
+    : "assign-failed";
+  return `${reviewPath}?tab=access&access=${reason}`;
+}
+
+function boardChairRecoveryFailurePath() {
+  return `${reviewPath}?recovery=failed`;
 }
 
 const campaignSchema = z
@@ -77,7 +95,7 @@ const campaignSchema = z
 const reviewerAssignmentSchema = z.object({
   cycleId: z.string().uuid(),
   userId: z.string().uuid(),
-  role: z.enum(["board_chair", "hr_reviewer", "privileged_auditor"]),
+  role: z.enum(["board_chair", "hr_reviewer"]),
 });
 
 const reviewerAccessUpdateSchema = z.object({
@@ -190,7 +208,12 @@ export async function assignReviewerAction(formData: FormData) {
     userId: formValue(formData, "userId"),
     role: formValue(formData, "role"),
   });
-  await assignEdReviewReviewer(input);
+  try {
+    await assignEdReviewReviewer(input);
+  } catch (error) {
+    revalidateReview();
+    redirect(reviewerAssignmentFailurePath(error));
+  }
   revalidateReview();
   redirect(`${reviewPath}?tab=access`);
 }
@@ -231,7 +254,12 @@ export async function appointBoardChairRecoveryAction(formData: FormData) {
     cycleId: formValue(formData, "cycleId"),
     userId: formValue(formData, "userId"),
   });
-  await appointEdReviewBoardChair(input);
+  try {
+    await appointEdReviewBoardChair(input);
+  } catch {
+    revalidateReview();
+    redirect(boardChairRecoveryFailurePath());
+  }
   revalidateReview();
   redirect(`${reviewPath}?recovery=assigned`);
 }
