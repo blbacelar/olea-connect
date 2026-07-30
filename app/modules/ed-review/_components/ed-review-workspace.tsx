@@ -342,6 +342,22 @@ export function EdReviewWorkspace({
               Confidential access could not be confirmed. Refresh this page
               before trying again so you do not accidentally repeat a change.
             </p>
+          ) : accessOutcome === "stale-assignment" ? (
+            <p
+              className="rounded-lg border border-amber-200 bg-amber-50 p-3 text-sm text-amber-900"
+              role="alert"
+            >
+              This reviewer access was already changed. The latest reviewer
+              list is now shown.
+            </p>
+          ) : accessOutcome === "permission-changed" ? (
+            <p
+              className="rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-900"
+              role="alert"
+            >
+              Your Board Chair access changed before this update could be
+              saved. The latest reviewer list is now shown.
+            </p>
           ) : accessOutcome === "duplicate-reviewer" ? (
             <p
               className="rounded-lg border border-amber-200 bg-amber-50 p-3 text-sm text-amber-900"

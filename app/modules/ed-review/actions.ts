@@ -51,7 +51,13 @@ function reviewerAccessFailurePath(error: unknown) {
     "Assign another Board Chair before changing or removing this access.",
   )
     ? "final-chair"
-    : "failed";
+    : message.includes("That reviewer assignment is unavailable.")
+      ? "stale-assignment"
+      : message.includes(
+            "Only an explicitly assigned Board Chair can manage review access.",
+          )
+        ? "permission-changed"
+        : "failed";
   return `${reviewPath}?tab=access&access=${reason}`;
 }
 

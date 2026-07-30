@@ -52,6 +52,11 @@ export type EdReviewCycleState = {
   }>;
 };
 
+export type EdReviewReviewerAssignmentState = {
+  id: string;
+  role: "board_chair" | "hr_reviewer" | "privileged_auditor";
+};
+
 type EventStatus =
   | "draft"
   | "scheduled"
@@ -1235,6 +1240,54 @@ export class TestDataManager {
         title: campaign.title,
       })),
     };
+  }
+
+  async getEdReviewReviewerAssignments(
+    organizationId: string,
+    userId: string,
+  ): Promise<EdReviewReviewerAssignmentState[]> {
+    const { data: cycle, error: cycleError } = await this.supabase
+      .from("ed_review_cycles")
+      .select("id")
+      .eq("organization_id", organizationId)
+      .neq("status", "archived")
+      .order("review_year", { ascending: false })
+      .limit(1)
+      .maybeSingle();
+    if (cycleError) throw cycleError;
+    if (!cycle) return [];
+
+    const { data, error } = await this.supabase
+      .from("ed_review_reviewer_assignments")
+      .select("id, role")
+      .eq("cycle_id", cycle.id)
+      .eq("user_id", userId)
+      .order("created_at");
+    if (error) throw error;
+
+    return (data ?? []) as EdReviewReviewerAssignmentState[];
+  }
+
+  async removeEdReviewReviewerAssignment(
+    organizationId: string,
+    userId: string,
+  ) {
+    const { data: cycle, error: cycleError } = await this.supabase
+      .from("ed_review_cycles")
+      .select("id")
+      .eq("organization_id", organizationId)
+      .neq("status", "archived")
+      .order("review_year", { ascending: false })
+      .limit(1)
+      .single();
+    if (cycleError) throw cycleError;
+
+    const { error } = await this.supabase
+      .from("ed_review_reviewer_assignments")
+      .delete()
+      .eq("cycle_id", cycle.id)
+      .eq("user_id", userId);
+    if (error) throw error;
   }
 
   async revokeEdReviewBoardChair(
