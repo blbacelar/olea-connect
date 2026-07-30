@@ -1,6 +1,6 @@
 begin;
 
-select plan(21);
+select plan(27);
 
 insert into auth.users (
   id, instance_id, aud, role, email, encrypted_password, email_confirmed_at,
@@ -23,6 +23,37 @@ values ('93000000-0000-0000-0000-000000000001', '92000000-0000-0000-0000-0000000
 
 insert into public.ed_review_reviewer_assignments (cycle_id, user_id, role, granted_by)
 values ('93000000-0000-0000-0000-000000000001', '91000000-0000-0000-0000-000000000001', 'board_chair', '91000000-0000-0000-0000-000000000001');
+
+select throws_ok(
+  $$
+    insert into public.ed_review_reviewer_assignments (cycle_id, user_id, role, granted_by)
+    values (
+      '93000000-0000-0000-0000-000000000001',
+      '91000000-0000-0000-0000-000000000001',
+      'hr_reviewer',
+      '91000000-0000-0000-0000-000000000001'
+    )
+  $$,
+  '23505',
+  'duplicate key value violates unique constraint "ed_review_reviewer_assignments_one_role_per_user"',
+  'a platform user cannot hold more than one confidential reviewer role per review'
+);
+
+set local role service_role;
+select throws_ok(
+  $$
+    select public.assign_ed_review_reviewer_assignment(
+      '93000000-0000-0000-0000-000000000001'::uuid,
+      '91000000-0000-0000-0000-000000000001'::uuid,
+      'hr_reviewer'::public.ed_review_reviewer_role,
+      '91000000-0000-0000-0000-000000000001'::uuid
+    )
+  $$,
+  'P0001',
+  'This platform user already has confidential access. Use the edit control to change their role.',
+  'the secure assignment mutation rejects a duplicate reviewer before it can create a second role'
+);
+reset role;
 
 insert into public.ed_review_campaigns (id, cycle_id, kind, title, token_hash, status, opens_at, created_by)
 values ('94000000-0000-0000-0000-000000000001', '93000000-0000-0000-0000-000000000001', 'staff', 'Staff feedback', repeat('a', 64), 'open', now() - interval '1 minute', '91000000-0000-0000-0000-000000000001');
@@ -160,12 +191,27 @@ select is(
   'a rejected final Board Chair mutation leaves access intact'
 );
 
-insert into public.ed_review_reviewer_assignments (cycle_id, user_id, role, granted_by)
-values (
-  '93000000-0000-0000-0000-000000000001',
-  '91000000-0000-0000-0000-000000000002',
-  'board_chair',
-  '91000000-0000-0000-0000-000000000001'
+set local role service_role;
+select lives_ok(
+  $$
+    select public.assign_ed_review_reviewer_assignment(
+      '93000000-0000-0000-0000-000000000001'::uuid,
+      '91000000-0000-0000-0000-000000000002'::uuid,
+      'board_chair'::public.ed_review_reviewer_role,
+      '91000000-0000-0000-0000-000000000001'::uuid
+    )
+  $$,
+  'a Board Chair can assign a distinct active member as another Board Chair'
+);
+reset role;
+
+select is(
+  (select count(*)::integer from public.ed_review_audit_events
+    where cycle_id = '93000000-0000-0000-0000-000000000001'
+      and event_type = 'reviewer_assigned'
+      and details @> '{"reviewer_user_id":"91000000-0000-0000-0000-000000000002","role":"board_chair"}'::jsonb),
+  1,
+  'a successful reviewer assignment atomically records its audit event'
 );
 
 set local role service_role;
@@ -243,6 +289,31 @@ select is(
       and details @> '{"reviewer_user_id":"91000000-0000-0000-0000-000000000001","role":"hr_reviewer"}'::jsonb),
   1,
   'a reviewer access revocation atomically records its audit event'
+);
+
+delete from public.ed_review_reviewer_assignments
+where cycle_id = '93000000-0000-0000-0000-000000000001'
+  and user_id = '91000000-0000-0000-0000-000000000002';
+
+set local role service_role;
+select lives_ok(
+  $$
+    select public.appoint_ed_review_board_chair_recovery(
+      '93000000-0000-0000-0000-000000000001'::uuid,
+      '91000000-0000-0000-0000-000000000001'::uuid,
+      '91000000-0000-0000-0000-000000000001'::uuid
+    )
+  $$,
+  'an organization owner can recover Board Chair access without relying on the removed duplicate role key'
+);
+reset role;
+
+select is(
+  (select role::text from public.ed_review_reviewer_assignments
+    where cycle_id = '93000000-0000-0000-0000-000000000001'
+      and user_id = '91000000-0000-0000-0000-000000000001'),
+  'board_chair',
+  'Board Chair recovery restores one unique reviewer assignment'
 );
 
 select * from finish();

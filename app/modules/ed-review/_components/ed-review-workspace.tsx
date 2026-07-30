@@ -96,9 +96,11 @@ export function EdReviewWorkspace({
     0,
   );
   const canCompile = totalResponses >= data.cycle.minimumResponseCount;
-  const boardChairCount = data.reviewers.filter(
-    (reviewer) => reviewer.role === "board_chair",
-  ).length;
+  const boardChairCount = new Set(
+    data.reviewers
+      .filter((reviewer) => reviewer.role === "board_chair")
+      .map((reviewer) => reviewer.userId),
+  ).size;
 
   return (
     <div className="mx-auto max-w-[1400px] space-y-6 p-4 md:p-8">
@@ -340,6 +342,22 @@ export function EdReviewWorkspace({
               Confidential access could not be confirmed. Refresh this page
               before trying again so you do not accidentally repeat a change.
             </p>
+          ) : accessOutcome === "duplicate-reviewer" ? (
+            <p
+              className="rounded-lg border border-amber-200 bg-amber-50 p-3 text-sm text-amber-900"
+              role="alert"
+            >
+              This platform user already has confidential access. Use their edit
+              control to change their reviewer role instead.
+            </p>
+          ) : accessOutcome === "assign-failed" ? (
+            <p
+              className="rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-900"
+              role="alert"
+            >
+              Confidential access could not be assigned. Refresh this page and
+              try again.
+            </p>
           ) : null}
           <div className="grid gap-5 lg:grid-cols-2">
             <Card>
@@ -355,6 +373,9 @@ export function EdReviewWorkspace({
                   {data.isBoardChair ? (
                     <AssignReviewerDialog
                       cycleId={data.cycle.id}
+                      assignedReviewerUserIds={data.reviewers.map(
+                        (reviewer) => reviewer.userId,
+                      )}
                       reviewers={data.availableReviewers}
                     />
                   ) : null}
@@ -615,9 +636,11 @@ function SummaryTextarea({
 }
 
 function AssignReviewerDialog({
+  assignedReviewerUserIds,
   cycleId,
   reviewers,
 }: {
+  assignedReviewerUserIds: string[];
   cycleId: string;
   reviewers: EdReviewData["availableReviewers"];
 }) {
@@ -625,6 +648,9 @@ function AssignReviewerDialog({
   const [userId, setUserId] = React.useState("");
   const [role, setRole] = React.useState<"board_chair" | "hr_reviewer">(
     "hr_reviewer",
+  );
+  const availableReviewers = reviewers.filter(
+    (reviewer) => !assignedReviewerUserIds.includes(reviewer.userId),
   );
   return (
     <Dialog open={open} onOpenChange={setOpen}>
@@ -648,18 +674,32 @@ function AssignReviewerDialog({
           <input type="hidden" name="role" value={role} />
           <div className="grid gap-2">
             <Label>Workspace member</Label>
-            <Select value={userId} onValueChange={setUserId}>
+            <Select
+              disabled={availableReviewers.length === 0}
+              value={userId}
+              onValueChange={setUserId}
+            >
               <SelectTrigger aria-label="Workspace member">
-                <SelectValue placeholder="Select a workspace member" />
+                <SelectValue
+                  placeholder={
+                    availableReviewers.length
+                      ? "Select a workspace member"
+                      : "All members already have review access"
+                  }
+                />
               </SelectTrigger>
               <SelectContent>
-                {reviewers.map((reviewer) => (
+                {availableReviewers.map((reviewer) => (
                   <SelectItem key={reviewer.userId} value={reviewer.userId}>
                     {reviewer.name}
                   </SelectItem>
                 ))}
               </SelectContent>
             </Select>
+            <p className="text-sm text-slate-600">
+              A person can hold one reviewer role per review. Change an
+              existing person&apos;s role from their reviewer card.
+            </p>
           </div>
           <div className="grid gap-2">
             <Label>Confidential reviewer role</Label>

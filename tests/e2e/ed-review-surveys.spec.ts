@@ -138,6 +138,7 @@ test.describe("@critical anonymous ED/CEO review surveys", () => {
       const ownerReview = new EdReviewPage(ownerPage);
       await ownerReview.open();
       await ownerReview.assignHrReviewer(member.fullName);
+      await ownerReview.expectReviewerUnavailableForAssignment();
       await ownerReview.updateReviewerRole(member.fullName, "Board Chair");
       await expect(
         ownerPage.getByText("reviewer access updated", { exact: true }),

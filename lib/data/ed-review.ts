@@ -402,44 +402,22 @@ export async function getEdReviewBoardChairRecoveryData(): Promise<EdReviewBoard
 export async function assignEdReviewReviewer(input: {
   cycleId: string;
   userId: string;
-  role: EdReviewReviewerRole;
+  role: Extract<EdReviewReviewerRole, "board_chair" | "hr_reviewer">;
 }) {
   const { cycle, session, supabase } = await requireBoardChairAccess();
   if (cycle.id !== input.cycleId)
     throw new Error("That review cycle is unavailable.");
 
-  const { data: membership, error: membershipError } = await supabase
-    .from("organization_members")
-    .select("user_id")
-    .eq("organization_id", cycle.organization_id)
-    .eq("user_id", input.userId)
-    .eq("status", "active")
-    .maybeSingle();
-  if (membershipError) throw membershipError;
-  if (!membership)
-    throw new Error("Reviewers must be active members of this workspace.");
-
-  const { error } = await supabase
-    .from("ed_review_reviewer_assignments")
-    .upsert(
-      {
-        cycle_id: cycle.id,
-        user_id: input.userId,
-        role: input.role,
-        granted_by: session.member.id,
-      },
-      { onConflict: "cycle_id,user_id,role" },
-    );
+  const { error } = await supabase.rpc(
+    "assign_ed_review_reviewer_assignment",
+    {
+      p_actor_user_id: session.member.id,
+      p_cycle_id: cycle.id,
+      p_role: input.role,
+      p_user_id: input.userId,
+    },
+  );
   if (error) throw error;
-  const { error: auditError } = await supabase
-    .from("ed_review_audit_events")
-    .insert({
-      cycle_id: cycle.id,
-      actor_user_id: session.member.id,
-      event_type: "reviewer_assigned",
-      details: { reviewer_user_id: input.userId, role: input.role },
-    });
-  if (auditError) throw auditError;
 }
 
 const reviewerAccessMutationResultSchema = z.object({
@@ -525,40 +503,15 @@ export async function appointEdReviewBoardChair(input: {
   }
 
   const supabase = createAdminClient();
-  const { data: membership, error: membershipError } = await supabase
-    .from("organization_members")
-    .select("user_id")
-    .eq("organization_id", cycle.organization_id)
-    .eq("user_id", input.userId)
-    .eq("status", "active")
-    .maybeSingle();
-  if (membershipError) throw membershipError;
-  if (!membership) {
-    throw new Error("Board Chairs must be active members of this workspace.");
-  }
-
-  const { error: assignmentError } = await supabase
-    .from("ed_review_reviewer_assignments")
-    .upsert(
-      {
-        cycle_id: cycle.id,
-        user_id: input.userId,
-        role: "board_chair",
-        granted_by: session.member.id,
-      },
-      { onConflict: "cycle_id,user_id,role" },
-    );
-  if (assignmentError) throw assignmentError;
-
-  const { error: auditError } = await supabase
-    .from("ed_review_audit_events")
-    .insert({
-      cycle_id: cycle.id,
-      actor_user_id: session.member.id,
-      event_type: "board_chair_recovery_assigned",
-      details: { reviewer_user_id: input.userId },
-    });
-  if (auditError) throw auditError;
+  const { error } = await supabase.rpc(
+    "appoint_ed_review_board_chair_recovery",
+    {
+      p_actor_user_id: session.member.id,
+      p_cycle_id: cycle.id,
+      p_user_id: input.userId,
+    },
+  );
+  if (error) throw error;
 }
 
 export async function approveEdReviewCompilation(compilationId: string) {

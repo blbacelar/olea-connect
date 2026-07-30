@@ -34,6 +34,7 @@ export default async function EdReviewPage({
         <EdReviewBoardChairRecovery
           data={recovery}
           appointed={searchParams?.recovery === "assigned"}
+          failed={searchParams?.recovery === "failed"}
         />
       );
     }

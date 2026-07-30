@@ -65,6 +65,19 @@ export class EdReviewPage {
     ).toBeVisible();
   }
 
+  async expectReviewerUnavailableForAssignment() {
+    await this.page.getByRole("tab", { name: "Access & audit" }).click();
+    await this.page.getByRole("button", { name: "Assign reviewer" }).click();
+    const dialog = this.page.getByRole("dialog");
+    await expect(dialog.getByLabel("Workspace member")).toBeDisabled();
+    await expect(
+      dialog.getByText(
+        "A person can hold one reviewer role per review. Change an existing person's role from their reviewer card.",
+      ),
+    ).toBeVisible();
+    await this.page.keyboard.press("Escape");
+  }
+
   async updateReviewerRole(
     name: string,
     role: "Board Chair" | "HR reviewer",
