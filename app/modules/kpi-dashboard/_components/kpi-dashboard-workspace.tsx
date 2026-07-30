@@ -1,5 +1,4 @@
 import {
-  ArrowLeft,
   Archive,
   BarChart3,
   ClipboardList,
@@ -1420,13 +1419,7 @@ export function KpiDashboardWorkspace({
     <div className="space-y-5">
       <Card className="border-olea-green/15 bg-gradient-to-br from-white to-olea-light/50 shadow-soft">
         <CardContent className="p-5">
-          <div className="space-y-5">
-            <Button asChild className="w-full sm:w-auto" variant="outline">
-              <Link href="/templates">
-                <ArrowLeft className="h-4 w-4" />
-                Back to resources
-              </Link>
-            </Button>
+          <div>
             <div className="flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
               <div>
                 <p className="text-xs font-bold uppercase tracking-[0.16em] text-olea-green">

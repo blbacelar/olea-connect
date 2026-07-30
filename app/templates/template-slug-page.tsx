@@ -1,4 +1,4 @@
-import { ArrowLeft, BellRing, FileClock } from "lucide-react";
+import { BellRing, FileClock } from "lucide-react";
 import Link from "next/link";
 
 import { DynamicTemplateEditor } from "@/components/templates/DynamicTemplateEditor";
@@ -48,13 +48,6 @@ export async function TemplateSlugPage({
 
   return (
     <div className="space-y-6">
-      <Button asChild variant="ghost" className="-ml-3 text-slate-600">
-        <Link href="/templates">
-          <ArrowLeft className="size-4" />
-          Back to templates
-        </Link>
-      </Button>
-
       <Card className="overflow-hidden shadow-soft">
         <div className="h-2 bg-olea-orange" />
         <CardContent className="grid min-h-[520px] place-items-center p-6 text-center md:p-12">

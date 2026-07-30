@@ -95,7 +95,10 @@ export async function compileEdReviewWithAi(input: {
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        model: process.env.OPENROUTER_SURVEY_MODEL ?? "openai/gpt-5.4-nano",
+        // Keep the fallback compatible with the zero-data-retention requirement.
+        // The prior model has no eligible ZDR endpoint, which made every
+        // production compilation fail before a summary could be generated.
+        model: process.env.OPENROUTER_SURVEY_MODEL ?? "z-ai/glm-5.2",
         messages: [
           {
             role: "system",

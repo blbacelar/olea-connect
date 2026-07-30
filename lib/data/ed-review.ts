@@ -1,6 +1,7 @@
 import "server-only";
 
 import { createHash, randomBytes } from "node:crypto";
+import { z } from "zod";
 
 import { requireMemberContext } from "@/lib/data/member-context";
 import {
@@ -439,6 +440,74 @@ export async function assignEdReviewReviewer(input: {
       details: { reviewer_user_id: input.userId, role: input.role },
     });
   if (auditError) throw auditError;
+}
+
+const reviewerAccessMutationResultSchema = z.object({
+  reviewer_user_id: z.string().uuid(),
+  previous_role: z
+    .enum(["board_chair", "hr_reviewer", "privileged_auditor"])
+    .optional(),
+  role: z.enum(["board_chair", "hr_reviewer", "privileged_auditor"]),
+});
+
+type ReviewerAccessMutationResult = z.infer<
+  typeof reviewerAccessMutationResultSchema
+>;
+
+function parseReviewerAccessMutationResult(
+  value: unknown,
+): ReviewerAccessMutationResult {
+  return reviewerAccessMutationResultSchema.parse(value);
+}
+
+export async function updateEdReviewReviewerAssignment(input: {
+  cycleId: string;
+  assignmentId: string;
+  role: Extract<EdReviewReviewerRole, "board_chair" | "hr_reviewer">;
+}) {
+  const { cycle, session, supabase } = await requireBoardChairAccess();
+  if (cycle.id !== input.cycleId) {
+    throw new Error("That review cycle is unavailable.");
+  }
+
+  const { data, error } = await supabase.rpc(
+    "update_ed_review_reviewer_assignment",
+    {
+      p_cycle_id: cycle.id,
+      p_assignment_id: input.assignmentId,
+      p_next_role: input.role,
+      p_actor_user_id: session.member.id,
+    },
+  );
+  if (error) throw error;
+
+  const mutation = parseReviewerAccessMutationResult(data);
+
+  return mutation;
+}
+
+export async function revokeEdReviewReviewerAssignment(input: {
+  cycleId: string;
+  assignmentId: string;
+}) {
+  const { cycle, session, supabase } = await requireBoardChairAccess();
+  if (cycle.id !== input.cycleId) {
+    throw new Error("That review cycle is unavailable.");
+  }
+
+  const { data, error } = await supabase.rpc(
+    "revoke_ed_review_reviewer_assignment",
+    {
+      p_cycle_id: cycle.id,
+      p_assignment_id: input.assignmentId,
+      p_actor_user_id: session.member.id,
+    },
+  );
+  if (error) throw error;
+
+  const mutation = parseReviewerAccessMutationResult(data);
+
+  return mutation;
 }
 
 export async function appointEdReviewBoardChair(input: {

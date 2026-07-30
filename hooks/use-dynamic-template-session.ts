@@ -40,6 +40,8 @@ export function useDynamicTemplateSession({
   const [isCompleting, startCompleteTransition] = useTransition();
   const didMount = useRef(false);
   const editVersion = useRef(0);
+  const hasUnsavedEditsRef = useRef(false);
+  const isPersistingRef = useRef(false);
   const sessionRef = useRef(initialSession);
   const initialSessionKey = `${initialSession.id || "new"}:${initialSession.resourceId}:${initialSession.lastSavedAt}`;
   const previousInitialSessionKey = useRef(initialSessionKey);
@@ -84,6 +86,44 @@ export function useDynamicTemplateSession({
       currentSession.organizationId === initialSession.organizationId &&
       (currentSession.id === initialSession.id ||
         (!currentSession.id && Boolean(initialSession.id)));
+    const isSameResource =
+      currentSession.resourceId === initialSession.resourceId &&
+      currentSession.organizationId === initialSession.organizationId;
+    const requestedSessionId =
+      typeof window === "undefined"
+        ? null
+        : new URL(window.location.href).searchParams.get("session");
+    const isExplicitSessionSwitch =
+      Boolean(initialSession.id) &&
+      currentSession.id !== initialSession.id &&
+      requestedSessionId === initialSession.id;
+    const isExplicitNewSession =
+      !initialSession.id &&
+      Boolean(currentSession.id) &&
+      requestedSessionId === "new";
+
+    // Saving a new workbook can return server snapshots out of order. Any
+    // snapshot for the active resource must preserve local state unless the
+    // user explicitly navigated to a different saved workbook.
+    if (
+      isSameResource &&
+      (isPersistingRef.current || hasUnsavedEditsRef.current) &&
+      !isExplicitSessionSwitch &&
+      !isExplicitNewSession
+    ) {
+      setSession((current) => {
+        const nextSession = {
+          ...current,
+          id: current.id || initialSession.id,
+          lastSavedAt: initialSession.lastSavedAt,
+        };
+
+        sessionRef.current = nextSession;
+        return nextSession;
+      });
+      setSaveError("");
+      return;
+    }
 
     if (
       isSameSavedSession ||
@@ -91,6 +131,23 @@ export function useDynamicTemplateSession({
       isNewlyPersistedActiveSession ||
       isSameResourceRefresh
     ) {
+      // A route refresh can arrive while a newly created session still has local
+      // edits that have not reached the server. Keep those edits, but accept the
+      // persisted session ID so subsequent saves update the same workbook.
+      if (hasUnsavedEditsRef.current) {
+        setSession((current) => {
+          const nextSession = {
+            ...current,
+            id: initialSession.id || current.id,
+            lastSavedAt: initialSession.lastSavedAt,
+          };
+
+          sessionRef.current = nextSession;
+          return nextSession;
+        });
+        return;
+      }
+
       if (saveState !== "saved") return;
 
       setSession((current) => {
@@ -120,6 +177,7 @@ export function useDynamicTemplateSession({
 
   const updateValue = (path: FieldPath, value: TemplateValue) => {
     editVersion.current += 1;
+    hasUnsavedEditsRef.current = true;
     const current = sessionRef.current;
     const formData = setValue(current.formData, path, value);
     const nextSession = {
@@ -132,13 +190,14 @@ export function useDynamicTemplateSession({
 
     sessionRef.current = nextSession;
     setSession(nextSession);
-    setSaveState("unsaved");
+    if (!isPersistingRef.current) setSaveState("unsaved");
   };
 
   const updateData = (
     updater: (currentData: TemplateFormData) => TemplateFormData,
   ) => {
     editVersion.current += 1;
+    hasUnsavedEditsRef.current = true;
     const current = sessionRef.current;
     const formData = updater(current.formData);
     const nextSession = {
@@ -151,11 +210,12 @@ export function useDynamicTemplateSession({
 
     sessionRef.current = nextSession;
     setSession(nextSession);
-    setSaveState("unsaved");
+    if (!isPersistingRef.current) setSaveState("unsaved");
   };
 
   const updateTitle = (title: string) => {
     editVersion.current += 1;
+    hasUnsavedEditsRef.current = true;
     const nextSession = {
       ...sessionRef.current,
       title,
@@ -163,10 +223,14 @@ export function useDynamicTemplateSession({
 
     sessionRef.current = nextSession;
     setSession(nextSession);
-    setSaveState("unsaved");
+    if (!isPersistingRef.current) setSaveState("unsaved");
   };
 
   const persist = async (status: "draft" | "completed" = "draft") => {
+    if (isPersistingRef.current) return sessionRef.current;
+
+    isPersistingRef.current = true;
+    let saveFailed = false;
     const sessionSnapshot = sessionRef.current;
     const savedEditVersion = editVersion.current;
     const payload = toSavePayload({
@@ -195,14 +259,25 @@ export function useDynamicTemplateSession({
       });
       onSaved?.(saved, sessionSnapshot, hasNewerLocalEdits);
       setSaveError("");
+      hasUnsavedEditsRef.current = hasNewerLocalEdits;
       setSaveState(hasNewerLocalEdits ? "unsaved" : "saved");
       return saved;
     } catch (error) {
+      saveFailed = true;
+      hasUnsavedEditsRef.current = true;
       setSaveError(
         error instanceof Error ? error.message : "Unable to save this template.",
       );
       setSaveState("error");
       throw error;
+    } finally {
+      isPersistingRef.current = false;
+
+      // An edit can occur after the save response is reconciled but before the
+      // in-flight flag is released. Queue one more autosave for that edit.
+      if (!saveFailed && hasUnsavedEditsRef.current) {
+        setSaveState("unsaved");
+      }
     }
   };
 

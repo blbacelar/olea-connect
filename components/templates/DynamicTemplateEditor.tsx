@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, type ReactNode } from "react";
+import { useCallback, useEffect, type ReactNode } from "react";
 import { AlertCircle, Check, Clock, LoaderCircle, Save } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -75,6 +75,14 @@ export function DynamicTemplateEditor({
   const calendarEnabled =
     renderSectionsAsTabs &&
     Boolean(data.session.schemaSnapshot.presentation?.calendar?.enabled);
+  const replaceSessionUrl = useCallback((url: string) => {
+    if (calendarEnabled && typeof window !== "undefined") {
+      window.history.replaceState(window.history.state, "", url);
+      return;
+    }
+
+    router.replace(url, { scroll: false });
+  }, [calendarEnabled, router]);
   const {
     session,
     updateTitle,
@@ -94,7 +102,7 @@ export function DynamicTemplateEditor({
       if (!previousSession.id && saved.id && !hasNewerLocalEdits) {
         const savedSessionUrl = `${editorBasePath}?session=${saved.id}`;
 
-        router.replace(savedSessionUrl, { scroll: false });
+        replaceSessionUrl(savedSessionUrl);
       }
     },
     preserveSameResourceRefresh: calendarEnabled,
@@ -109,10 +117,8 @@ export function DynamicTemplateEditor({
     if (currentUrl.searchParams.get("session") === session.id) return;
 
     currentUrl.searchParams.set("session", session.id);
-    router.replace(`${currentUrl.pathname}${currentUrl.search}`, {
-      scroll: false,
-    });
-  }, [router, saveState, session.id]);
+    replaceSessionUrl(`${currentUrl.pathname}${currentUrl.search}`);
+  }, [replaceSessionUrl, saveState, session.id]);
 
   const errorsByPath = new Map(
     validationErrors.map((error) => [error.path, error.message]),

@@ -12,8 +12,10 @@ import {
   createEdReviewCampaign,
   getPublicEdReviewCampaign,
   requireEdReviewBoardChairAccess,
+  revokeEdReviewReviewerAssignment,
   getResponsesForCompilation,
   submitEdReviewResponse,
+  updateEdReviewReviewerAssignment,
   updateEdReviewCompilation,
 } from "@/lib/data/ed-review";
 import {
@@ -43,6 +45,16 @@ function revalidateReview() {
   revalidatePath(reviewPath);
 }
 
+function reviewerAccessFailurePath(error: unknown) {
+  const message = error instanceof Error ? error.message : "";
+  const reason = message.includes(
+    "Assign another Board Chair before changing or removing this access.",
+  )
+    ? "final-chair"
+    : "failed";
+  return `${reviewPath}?tab=access&access=${reason}`;
+}
+
 const campaignSchema = z
   .object({
     cycleId: z.string().uuid(),
@@ -66,6 +78,17 @@ const reviewerAssignmentSchema = z.object({
   cycleId: z.string().uuid(),
   userId: z.string().uuid(),
   role: z.enum(["board_chair", "hr_reviewer", "privileged_auditor"]),
+});
+
+const reviewerAccessUpdateSchema = z.object({
+  cycleId: z.string().uuid(),
+  assignmentId: z.string().uuid(),
+  role: z.enum(["board_chair", "hr_reviewer"]),
+});
+
+const reviewerAccessRevokeSchema = z.object({
+  cycleId: z.string().uuid(),
+  assignmentId: z.string().uuid(),
 });
 
 const boardChairRecoverySchema = z.object({
@@ -172,6 +195,37 @@ export async function assignReviewerAction(formData: FormData) {
   redirect(`${reviewPath}?tab=access`);
 }
 
+export async function updateReviewerAccessAction(formData: FormData) {
+  const input = reviewerAccessUpdateSchema.parse({
+    cycleId: formValue(formData, "cycleId"),
+    assignmentId: formValue(formData, "assignmentId"),
+    role: formValue(formData, "role"),
+  });
+  try {
+    await updateEdReviewReviewerAssignment(input);
+  } catch (error) {
+    revalidateReview();
+    redirect(reviewerAccessFailurePath(error));
+  }
+  revalidateReview();
+  redirect(`${reviewPath}?tab=access`);
+}
+
+export async function revokeReviewerAccessAction(formData: FormData) {
+  const input = reviewerAccessRevokeSchema.parse({
+    cycleId: formValue(formData, "cycleId"),
+    assignmentId: formValue(formData, "assignmentId"),
+  });
+  try {
+    await revokeEdReviewReviewerAssignment(input);
+  } catch (error) {
+    revalidateReview();
+    redirect(reviewerAccessFailurePath(error));
+  }
+  revalidateReview();
+  redirect(`${reviewPath}?tab=access`);
+}
+
 export async function appointBoardChairRecoveryAction(formData: FormData) {
   const input = boardChairRecoverySchema.parse({
     cycleId: formValue(formData, "cycleId"),
@@ -247,7 +301,13 @@ export async function compileEdReviewAction(formData: FormData) {
     staffResponses: responseGroups.get("staff") ?? [],
     partnerResponses: responseGroups.get("partner") ?? [],
   });
-  const generatedSummary = await compileEdReviewWithAi(metrics);
+  let generatedSummary;
+  try {
+    generatedSummary = await compileEdReviewWithAi(metrics);
+  } catch (error) {
+    console.error("ED review summary compilation failed.", error);
+    redirect(`${reviewPath}?tab=summary&compile=failed`);
+  }
   const { session, supabase } = boardChair;
   const { data: latest, error: versionError } = await supabase
     .from("ed_review_compilations")

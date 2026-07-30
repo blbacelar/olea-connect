@@ -8,6 +8,9 @@ export class EdReviewPage {
     await expect(
       this.page.getByRole("heading", { name: "ED/CEO annual review" }),
     ).toBeVisible();
+    await expect(
+      this.page.getByRole("link", { name: "Back to resources" }),
+    ).toHaveCount(0);
   }
 
   async openCampaigns() {
@@ -59,6 +62,55 @@ export class EdReviewPage {
       this.page
         .getByTestId("ed-review-reviewer-list")
         .getByText(name, { exact: true }),
+    ).toBeVisible();
+  }
+
+  async updateReviewerRole(
+    name: string,
+    role: "Board Chair" | "HR reviewer",
+  ) {
+    await this.page.getByRole("tab", { name: "Access & audit" }).click();
+    await this.page
+      .getByRole("button", { name: `Edit access for ${name}` })
+      .click();
+    const dialog = this.page.getByRole("dialog");
+    await dialog.getByLabel("Updated confidential reviewer role").click();
+    await this.page.getByRole("option", { name: role, exact: true }).click();
+    await dialog.getByRole("button", { name: "Save access" }).click();
+    await expect(
+      this.page.getByText("reviewer access updated", { exact: true }),
+    ).toBeVisible();
+  }
+
+  async removeReviewerAccess(name: string) {
+    await this.page.getByRole("tab", { name: "Access & audit" }).click();
+    await this.page
+      .getByRole("button", { name: `Remove access for ${name}` })
+      .click();
+    const dialog = this.page.getByRole("dialog");
+    await expect(
+      dialog.getByRole("heading", { name: "Remove confidential access?" }),
+    ).toBeVisible();
+    await dialog.getByRole("button", { name: "Remove access" }).click();
+    await expect(
+      this.page
+        .getByTestId("ed-review-reviewer-list")
+        .getByText(name, { exact: true }),
+    ).toHaveCount(0);
+  }
+
+  async expectSoleBoardChairAccessToBeProtected(name: string) {
+    await this.page.getByRole("tab", { name: "Access & audit" }).click();
+    await expect(
+      this.page.getByRole("button", { name: `Edit access for ${name}` }),
+    ).toBeDisabled();
+    await expect(
+      this.page.getByRole("button", { name: `Remove access for ${name}` }),
+    ).toBeDisabled();
+    await expect(
+      this.page.getByText(
+        "This review needs at least one Board Chair. Assign another Board Chair before changing or removing the current access.",
+      ),
     ).toBeVisible();
   }
 

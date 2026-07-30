@@ -67,6 +67,8 @@ test.describe("@smoke @critical platform UI coverage gate", () => {
 
     await templates.open();
     await templates.expectTemplateVisible("Board Self-Evaluation");
+    await templates.openTemplate("Board Self-Evaluation");
+    await templates.expectNoDashboardReturnLink();
     await app.expectNoServerError();
 
     await app.expectPageHeading("/settings/brand", "Brand profile");
@@ -92,6 +94,9 @@ test.describe("@smoke @critical platform UI coverage gate", () => {
       "/modules/kpi-dashboard?tab=setup",
       "KPI Dashboard and Board Reporting",
     );
+    await expect(
+      page.getByRole("link", { name: "Back to resources" }),
+    ).toHaveCount(0);
     await app.expectText("Board Dashboard");
     await app.expectText("Q1 Tracker");
     await app.expectText("Annual Summary");

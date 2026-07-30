@@ -29,6 +29,21 @@ export class BoardCalendarSetupPage extends BoardCalendarBasePage {
     await this.panel.getByLabel("Administrator email").fill(administratorEmail);
     await this.panel.getByLabel("Executive Director").fill(executiveDirector);
     await this.panel.getByLabel("Board Chair").fill(boardChair);
+
+    await expect(this.panel.getByLabel("Organization name")).toHaveValue(
+      organizationName,
+    );
+    await expect(this.panel.getByLabel("Fiscal year")).toHaveValue(fiscalYear);
+    await expect(this.panel.getByLabel("Administrator", { exact: true })).toHaveValue(
+      administrator,
+    );
+    await expect(this.panel.getByLabel("Administrator email")).toHaveValue(
+      administratorEmail,
+    );
+    await expect(this.panel.getByLabel("Executive Director")).toHaveValue(
+      executiveDirector,
+    );
+    await expect(this.panel.getByLabel("Board Chair")).toHaveValue(boardChair);
   }
 
   async addCommittee(name: string, chair: string) {

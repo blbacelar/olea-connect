@@ -61,6 +61,7 @@ describe("ED review AI compilation", () => {
     const [url, options] = fetchMock.mock.calls[0] as [string, RequestInit];
     expect(url).toBe("https://openrouter.ai/api/v1/chat/completions");
     const body = JSON.parse(String(options.body));
+    expect(body.model).toBe("z-ai/glm-5.2");
     expect(body.provider).toEqual({
       zdr: true,
       data_collection: "deny",

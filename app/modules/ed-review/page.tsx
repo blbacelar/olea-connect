@@ -2,6 +2,7 @@ import { cookies } from "next/headers";
 
 import { EdReviewWorkspace } from "@/app/modules/ed-review/_components/ed-review-workspace";
 import { EdReviewBoardChairRecovery } from "@/app/modules/ed-review/_components/ed-review-board-chair-recovery";
+import { EdReviewAccessRestricted } from "@/app/modules/ed-review/_components/ed-review-access-restricted";
 import {
   getEdReviewBoardChairRecoveryData,
   getEdReviewData,
@@ -13,7 +14,12 @@ export const dynamic = "force-dynamic";
 export default async function EdReviewPage({
   searchParams,
 }: {
-  searchParams?: { tab?: string; recovery?: string };
+  searchParams?: {
+    tab?: string;
+    recovery?: string;
+    compile?: string;
+    access?: string;
+  };
 }) {
   let data;
   try {
@@ -31,12 +37,14 @@ export default async function EdReviewPage({
         />
       );
     }
-    throw error;
+    return <EdReviewAccessRestricted />;
   }
   const newCampaignLink = cookies().get("ed_review_new_campaign_link")?.value;
   return (
     <EdReviewWorkspace
       activeTab={searchParams?.tab}
+      accessOutcome={searchParams?.access}
+      compileFailed={searchParams?.compile === "failed"}
       data={data}
       newCampaignLink={newCampaignLink}
     />

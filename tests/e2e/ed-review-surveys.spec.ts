@@ -106,6 +106,107 @@ test.describe("@critical anonymous ED/CEO review surveys", () => {
     }
   });
 
+  test("lets the Board Chair update and revoke a reviewer assignment", async ({
+    browser,
+    baseURL,
+    testData,
+  }) => {
+    if (!baseURL) throw new Error("Playwright baseURL is required.");
+    const owner = await testData.createOrganizationOwner({
+      activeSubscription: true,
+    });
+    const member = await testData.createOrganizationMember(owner);
+    const ownerContext = await browser.newContext({
+      baseURL,
+      storageState: await createAuthenticatedStorageState(
+        owner.email,
+        owner.password,
+        baseURL,
+      ),
+    });
+    const memberContext = await browser.newContext({
+      baseURL,
+      storageState: await createAuthenticatedStorageState(
+        member.email,
+        member.password,
+        baseURL,
+      ),
+    });
+
+    try {
+      const ownerPage = await ownerContext.newPage();
+      const ownerReview = new EdReviewPage(ownerPage);
+      await ownerReview.open();
+      await ownerReview.assignHrReviewer(member.fullName);
+      await ownerReview.updateReviewerRole(member.fullName, "Board Chair");
+      await expect(
+        ownerPage.getByText("reviewer access updated", { exact: true }),
+      ).toBeVisible();
+
+      const memberPage = await memberContext.newPage();
+      await memberPage.goto("/modules/ed-review");
+      await expect(
+        memberPage.getByRole("heading", { name: "ED/CEO annual review" }),
+      ).toBeVisible();
+      await memberPage.getByRole("tab", { name: "Campaigns" }).click();
+      await expect(
+        memberPage.getByRole("button", { name: "Create campaign" }),
+      ).toBeVisible();
+
+      await ownerReview.removeReviewerAccess(member.fullName);
+      await expect(
+        ownerPage.getByText("reviewer access revoked", { exact: true }),
+      ).toBeVisible();
+
+      await memberPage.reload();
+      await expect(
+        memberPage.getByRole("heading", { name: "This review is restricted" }),
+      ).toBeVisible();
+    } finally {
+      await ownerContext.close();
+      await memberContext.close();
+    }
+  });
+
+  test("protects the final Board Chair assignment from edit or removal", async ({
+    browser,
+    baseURL,
+    testData,
+  }) => {
+    if (!baseURL) throw new Error("Playwright baseURL is required.");
+    const owner = await testData.createOrganizationOwner({
+      activeSubscription: true,
+    });
+    const ownerContext = await browser.newContext({
+      baseURL,
+      storageState: await createAuthenticatedStorageState(
+        owner.email,
+        owner.password,
+        baseURL,
+      ),
+    });
+
+    try {
+      const ownerPage = await ownerContext.newPage();
+      const ownerReview = new EdReviewPage(ownerPage);
+      await ownerReview.open();
+      await ownerReview.expectSoleBoardChairAccessToBeProtected(owner.fullName);
+    } finally {
+      await ownerContext.close();
+    }
+  });
+
+  test("shows a safe message when a stale reviewer change would remove the final Board Chair", async ({
+    page,
+  }) => {
+    const reviewer = new EdReviewPage(page);
+    await reviewer.open();
+    await page.goto("/modules/ed-review?tab=access&access=final-chair");
+    await expect(page.locator("p[role='alert']")).toContainText(
+      "This change was not saved because the review must retain at least one Board Chair.",
+    );
+  });
+
   test("lets a workspace owner recover a missing Board Chair assignment without exposing the review", async ({
     browser,
     baseURL,
