@@ -179,6 +179,35 @@ test.describe("@critical Board Recruitment Toolkit", () => {
     await expect(page.getByText(/Anonymous view/)).toBeVisible();
   });
 
+  test("lets directors collapse and expand an individual skills category", async ({
+    page,
+  }) => {
+    const recruitment = new BoardRecruitmentPage(page);
+    const category = "Professional Expertise";
+    const categoryCard = page.getByTestId(`skill-category-${category}`);
+    const categoryToggle = categoryCard.getByRole("button", {
+      name: `${category} skills`,
+    });
+    const categoryContent = categoryCard.getByTestId(
+      `skill-category-content-${category}`,
+    );
+
+    await recruitment.open("matrix");
+    await expect(categoryToggle).toHaveAttribute("aria-expanded", "true");
+    await expect(categoryContent).toBeVisible();
+
+    await categoryToggle.click();
+    await expect(categoryToggle).toHaveAttribute("aria-expanded", "false");
+    await expect(categoryContent).toBeHidden();
+    await expect(
+      categoryCard.getByRole("button", { name: "Add skill" }),
+    ).toBeVisible();
+
+    await categoryToggle.click();
+    await expect(categoryToggle).toHaveAttribute("aria-expanded", "true");
+    await expect(categoryContent).toBeVisible();
+  });
+
   test("assigns skills to members and updates single-holder risk after deactivation", async ({
     page,
   }) => {

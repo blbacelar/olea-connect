@@ -7,6 +7,7 @@ import {
   ArrowLeft,
   BarChart3,
   Check,
+  ChevronDown,
   ChevronRight,
   ClipboardList,
   Mail,
@@ -96,6 +97,22 @@ export function Matrix({ data }: { data: RecruitmentData }) {
   const activeDirectors = data.members.filter(
     (member) => member.active && member.memberType === "director",
   );
+  const [collapsedCategories, setCollapsedCategories] = React.useState<
+    Set<string>
+  >(() => new Set());
+
+  const toggleCategory = (category: string) => {
+    setCollapsedCategories((current) => {
+      const next = new Set(current);
+      if (next.has(category)) {
+        next.delete(category);
+      } else {
+        next.add(category);
+      }
+      return next;
+    });
+  };
+
   return (
     <div className="space-y-6">
       <SectionHeader
@@ -117,24 +134,42 @@ export function Matrix({ data }: { data: RecruitmentData }) {
           const categoryRow = data.skills.find(
             (skill) => skill.categoryName === category,
           );
+          const isExpanded = !collapsedCategories.has(category);
+          const contentId = `skill-category-content-${categoryRow?.categoryId ?? category}`;
           return (
             <Card key={category} data-testid={`skill-category-${category}`}>
               <CardHeader>
                 <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-                  <div>
-                    <CardTitle>{category}</CardTitle>
-                    <CardDescription>
-                      {
-                        categorySkills.filter((skill) =>
-                          activeDirectors.some((member) =>
-                            responseFor(data, member.id, skill.id),
-                          ),
-                        ).length
-                      }{" "}
-                      of {categorySkills.length} skills covered by active
-                      directors
-                    </CardDescription>
-                  </div>
+                  <button
+                    type="button"
+                    className="group flex min-w-0 flex-1 items-start justify-between gap-3 text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-olea-green focus-visible:ring-offset-2"
+                    aria-label={`${category} skills`}
+                    aria-expanded={isExpanded}
+                    aria-controls={contentId}
+                    onClick={() => toggleCategory(category)}
+                  >
+                    <div>
+                      <CardTitle>{category}</CardTitle>
+                      <CardDescription>
+                        {
+                          categorySkills.filter((skill) =>
+                            activeDirectors.some((member) =>
+                              responseFor(data, member.id, skill.id),
+                            ),
+                          ).length
+                        }{" "}
+                        of {categorySkills.length} skills covered by active
+                        directors
+                      </CardDescription>
+                    </div>
+                    <ChevronDown
+                      aria-hidden="true"
+                      className={cn(
+                        "mt-1 size-5 shrink-0 text-slate-500 transition-transform group-hover:text-slate-900",
+                        !isExpanded && "-rotate-90",
+                      )}
+                    />
+                  </button>
                   {categoryRow && (
                     <ModalForm
                       title={`Add skill to ${category}`}
@@ -163,7 +198,12 @@ export function Matrix({ data }: { data: RecruitmentData }) {
                   )}
                 </div>
               </CardHeader>
-              <CardContent className="space-y-3">
+              <CardContent
+                id={contentId}
+                data-testid={`skill-category-content-${category}`}
+                className="space-y-3"
+                hidden={!isExpanded}
+              >
                 {categorySkills.map((skill) => {
                   const holders = activeDirectors.filter((member) =>
                     responseFor(data, member.id, skill.id),
