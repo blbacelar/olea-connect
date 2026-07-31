@@ -108,7 +108,11 @@ export function TeamWorkspace({ team }: { team: TeamData }) {
     <div>
       <PageHeader
         title="Team"
-        description="Invite colleagues and manage access to your organization."
+        description={
+          team.canManage
+            ? "Invite colleagues and manage access to your organization."
+            : "View the members of your organization."
+        }
         action={
           <div className="flex flex-wrap items-center gap-4">
             <span className="text-[13.5px] text-slate-500">
@@ -117,9 +121,11 @@ export function TeamWorkspace({ team }: { team: TeamData }) {
               </strong>{" "}
               total seats reserved
             </span>
-            <Button asChild variant="outline" size="sm">
-              <Link href="/subscription">Manage seats</Link>
-            </Button>
+            {team.canManage ? (
+              <Button asChild variant="outline" size="sm">
+                <Link href="/subscription">Manage seats</Link>
+              </Button>
+            ) : null}
           </div>
         }
       />
@@ -135,11 +141,10 @@ export function TeamWorkspace({ team }: { team: TeamData }) {
 
       <SectionHeading>Members</SectionHeading>
       <div className="mb-8 overflow-hidden rounded-xl border bg-white shadow-soft">
-        {(team.canManage ? team.members : [team.currentMember]).map((member) => {
+        {team.members.map((member) => {
           const isCurrentMember = member.id === team.currentMember.id;
-          const membershipRole =
-            "membershipRole" in member ? member.membershipRole : member.role;
-          const status = "status" in member ? member.status : "active";
+          const membershipRole = member.role;
+          const status = member.status;
           const name = member.name;
 
           return (

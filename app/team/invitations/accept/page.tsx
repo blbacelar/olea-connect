@@ -1,5 +1,8 @@
 import type { Metadata } from "next";
 
+import { getPendingTeamInvitation } from "@/lib/team/invitations";
+import { createClient } from "@/utils/supabase/server";
+
 import { InvitationAcceptance } from "./invitation-acceptance";
 
 export const metadata: Metadata = {
@@ -7,10 +10,25 @@ export const metadata: Metadata = {
   description: "Accept your Olea Connects team invitation.",
 };
 
-export default function AcceptTeamInvitationPage({
+export default async function AcceptTeamInvitationPage({
   searchParams,
 }: {
   searchParams?: { token?: string };
 }) {
-  return <InvitationAcceptance token={searchParams?.token ?? ""} />;
+  const token = searchParams?.token ?? "";
+  const [invitation, supabase] = await Promise.all([
+    getPendingTeamInvitation(token),
+    createClient(),
+  ]);
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  return (
+    <InvitationAcceptance
+      token={token}
+      invitationEmail={invitation?.email ?? null}
+      signedInEmail={user?.email ?? null}
+    />
+  );
 }

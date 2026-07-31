@@ -30,11 +30,9 @@ export async function getTeamData(): Promise<TeamData> {
           .eq("status", "pending")
           .order("created_at", { ascending: false })
       : Promise.resolve({ data: [], error: null }),
-    canManage
-      ? supabase.rpc("get_team_directory", {
-          target_organization_id: session.organization.id,
-        })
-      : Promise.resolve({ data: [], error: null }),
+    supabase.rpc("get_team_directory", {
+      target_organization_id: session.organization.id,
+    }),
   ]);
 
   if (memberError) throw memberError;

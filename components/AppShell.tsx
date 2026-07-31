@@ -24,6 +24,7 @@ const publicRoutes = [
   "/auth",
   "/onboarding",
   "/legal",
+  "/team/invitations/accept",
 ];
 
 const sidebarStorageKey = "olea-connects-sidebar-collapsed";
