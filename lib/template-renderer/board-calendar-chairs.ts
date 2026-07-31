@@ -68,14 +68,48 @@ function normalizeChair(
   };
 }
 
+function normalizeAdministrator(
+  formData: TemplateFormData,
+  members: WorkspaceMemberOption[],
+) {
+  const savedName = getString(formData.administrator);
+  const savedEmail = getString(formData.administrator_email);
+  const memberId = getString(formData.administrator_user_id);
+
+  if (!savedName && !memberId) {
+    return {
+      administrator: "",
+      administrator_email: "",
+      administrator_user_id: "",
+    };
+  }
+
+  const member = memberId
+    ? findMember(members, memberId, savedName)
+    : findMember(members, "", savedName) ??
+      findMember(members, "", savedEmail);
+  if (!member) {
+    throw new Error(
+      "Administrator must be assigned to an active workspace member. Choose a member from the directory.",
+    );
+  }
+
+  return {
+    administrator: getMemberDisplayName(member),
+    administrator_email: member.email,
+    administrator_user_id: member.id,
+  };
+}
+
 /**
- * Converts legacy display-name assignments to active workspace member IDs and
- * rejects chair data that cannot be tied to the current organization.
+ * Converts legacy Board Calendar people assignments to active workspace member
+ * IDs and rejects data that cannot be tied to the current organization.
  */
-export function normalizeBoardCalendarChairAssignments(
+export function normalizeBoardCalendarMemberAssignments(
   formData: TemplateFormData,
   members: WorkspaceMemberOption[],
 ): TemplateFormData {
+  const administrator = normalizeAdministrator(formData, members);
   const boardChair = normalizeChair(
     {
       chair: formData.board_chair,
@@ -94,6 +128,7 @@ export function normalizeBoardCalendarChairAssignments(
 
   return {
     ...formData,
+    ...administrator,
     board_chair: boardChair.chair as string,
     board_chair_user_id: boardChair.chair_user_id as string,
     committees,

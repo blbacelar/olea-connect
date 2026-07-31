@@ -14,7 +14,7 @@ import {
   buildBoardCalendarReportHtml,
   isBoardCalendarSchema,
 } from "@/lib/template-renderer/board-calendar-report-html";
-import { normalizeBoardCalendarChairAssignments } from "@/lib/template-renderer/board-calendar-chairs";
+import { normalizeBoardCalendarMemberAssignments } from "@/lib/template-renderer/board-calendar-chairs";
 import { renderHtmlToPdfBuffer } from "@/lib/template-renderer/html-pdf-export";
 import { renderTemplatePdfBuffer } from "@/lib/template-renderer/pdf-export";
 import { validateTemplateData } from "@/lib/template-renderer/validation";
@@ -47,23 +47,19 @@ export async function saveDynamicTemplateSession(
     throw new Error("This template belongs to another organization.");
   }
 
-  const validationErrors = validateTemplateData(
-    payload.schemaSnapshot,
-    payload.formData,
-  );
-
-  if (payload.status === "completed" && validationErrors.length > 0) {
-    throw new Error("Please complete required fields before marking complete.");
-  }
-
   const supabase = await createClient();
   const formData = isBoardCalendarSchema(payload.schemaSnapshot)
-    ? await normalizeBoardCalendarChairFormData({
+    ? await normalizeBoardCalendarMemberFormData({
         formData: payload.formData,
         organizationId: organization.id,
         supabase,
       })
     : payload.formData;
+  const validationErrors = validateTemplateData(payload.schemaSnapshot, formData);
+
+  if (payload.status === "completed" && validationErrors.length > 0) {
+    throw new Error("Please complete required fields before marking complete.");
+  }
   const brandingSnapshot = payload.id
     ? payload.brandingSnapshot
     : await createBrandingSnapshot(supabase, organization.brand);
@@ -114,7 +110,7 @@ export async function saveDynamicTemplateSession(
   } as DynamicTemplateSession;
 }
 
-async function normalizeBoardCalendarChairFormData({
+async function normalizeBoardCalendarMemberFormData({
   formData,
   organizationId,
   supabase,
@@ -129,7 +125,7 @@ async function normalizeBoardCalendarChairFormData({
 
   if (error) throw error;
 
-  return normalizeBoardCalendarChairAssignments(
+  return normalizeBoardCalendarMemberAssignments(
     formData,
     ((data ?? []) as Array<{
       user_id: string;
