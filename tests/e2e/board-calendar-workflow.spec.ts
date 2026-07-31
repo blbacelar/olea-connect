@@ -75,7 +75,7 @@ test.describe("@critical Board Calendar & Operational Workflow", () => {
       await boardCalendar.openNewModuleCalendar();
     });
 
-    await test.step("configure setup, committees, and generated task rules", async () => {
+    await test.step("configure setup and generated task rules", async () => {
       await boardCalendar.setup.fillBasics({
         organizationName: "E2E Governance Lab",
         fiscalYear: "2026",
@@ -83,18 +83,7 @@ test.describe("@critical Board Calendar & Operational Workflow", () => {
         executiveDirector: "Executive Tester",
         boardChairEmail: authenticatedMember.email,
       });
-      await boardCalendar.setup.addCommittee(
-        "Finance Committee",
-        authenticatedMember.email,
-      );
-      await boardCalendar.setup.addCommittee(
-        "Governance Committee",
-        authenticatedMember.email,
-      );
-      await boardCalendar.setup.expectCommittee(
-        "Finance Committee",
-        authenticatedMember.email,
-      );
+      await boardCalendar.setup.expectCommitteesAreManagedInDirectoryOnly();
       await boardCalendar.setup.addTaskRule({
         label: "Prepare board briefing",
         days: "10",
@@ -109,13 +98,19 @@ test.describe("@critical Board Calendar & Operational Workflow", () => {
         appliesTo: "Board Meeting",
         responsible: "Board Chair",
       });
-      await boardCalendar.setup.expectCommittee(
-        "Finance Committee",
-        authenticatedMember.email,
-      );
     });
 
     await test.step("manage committee directory from a table and edit modal", async () => {
+      await boardCalendar.directory.addCommittee({
+        name: "Finance Committee",
+        chair: authenticatedMember.fullName,
+        chairEmail: authenticatedMember.email,
+      });
+      await boardCalendar.directory.addCommittee({
+        name: "Governance Committee",
+        chair: authenticatedMember.fullName,
+        chairEmail: authenticatedMember.email,
+      });
       await boardCalendar.directory.expectCommittee(
         "Finance Committee",
         authenticatedMember.fullName,

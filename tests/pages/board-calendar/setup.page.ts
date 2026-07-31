@@ -46,38 +46,6 @@ export class BoardCalendarSetupPage extends BoardCalendarBasePage {
     }
   }
 
-  async addCommittee(name: string, chairEmail?: string) {
-    const committeeLabels = this.panel.getByLabel(/Committee \d+ name/);
-    const previousCommitteeCount = await committeeLabels.count();
-    await this.panel.getByRole("button", { name: "Add committee" }).click();
-    await expect(committeeLabels).toHaveCount(previousCommitteeCount + 1);
-
-    const committeeCount = previousCommitteeCount + 1;
-    await this.panel.getByLabel(`Committee ${committeeCount} name`).fill(name);
-    if (chairEmail) {
-      await this.chooseWorkspaceMember(
-        `Committee ${committeeCount} chair`,
-        chairEmail,
-      );
-    }
-    await expect(this.panel.getByLabel(`Committee ${committeeCount} name`)).toHaveValue(
-      name,
-    );
-    if (chairEmail) {
-      await expect(
-        this.panel.getByLabel(`Committee ${committeeCount} chair`),
-      ).toContainText(chairEmail);
-    }
-  }
-
-  async expectCommittee(name: string, chairEmail: string) {
-    await this.chooseWorkspaceView("Setup");
-    await expect(this.panel.getByLabel(/Committee \d+ name/).first()).toHaveValue(name);
-    await expect(this.panel.getByLabel(/Committee \d+ chair/).first()).toContainText(
-      chairEmail,
-    );
-  }
-
   async expectChairIsWorkspaceMemberOnly() {
     await this.chooseWorkspaceView("Setup");
     await expect(this.panel.getByLabel("Board Chair")).toBeVisible();
@@ -93,6 +61,17 @@ export class BoardCalendarSetupPage extends BoardCalendarBasePage {
       this.panel.getByRole("textbox", { name: "Administrator" }),
     ).toHaveCount(0);
     await expect(this.panel.getByLabel("Administrator email")).toHaveCount(0);
+  }
+
+  async expectCommitteesAreManagedInDirectoryOnly() {
+    await this.chooseWorkspaceView("Setup");
+    await expect(
+      this.panel.getByRole("heading", { name: "Committees" }),
+    ).toHaveCount(0);
+    await expect(
+      this.panel.getByRole("button", { name: "Add committee" }),
+    ).toHaveCount(0);
+    await expect(this.panel.getByLabel(/Committee \d+ name/)).toHaveCount(0);
   }
 
   private async chooseWorkspaceMember(label: string, email: string) {

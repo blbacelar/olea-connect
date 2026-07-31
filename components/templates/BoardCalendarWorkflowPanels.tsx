@@ -225,18 +225,10 @@ export function BoardCalendarSetupPanel({
   workspaceMembers: WorkspaceMemberOption[];
 }) {
   const setup = buildBoardCalendarSetup(data);
-  const committees = getRows(data, "committees");
   const taskRules = getRows(data, "operational_task_rules");
 
   function updateTopLevel(key: string, value: string) {
     onChange([key], value);
-  }
-
-  function updateCommittee(index: number, field: string, value: string) {
-    onDataChange((currentData) => ({
-      ...currentData,
-      committees: updateRow(getRows(currentData, "committees"), index, field, value),
-    }));
   }
 
   function assignBoardChair(member: WorkspaceMemberOption | null) {
@@ -253,46 +245,6 @@ export function BoardCalendarSetupPanel({
       administrator: member ? getWorkspaceMemberDisplayName(member) : "",
       administrator_email: member?.email ?? "",
       administrator_user_id: member?.id ?? "",
-    }));
-  }
-
-  function assignCommitteeChair(
-    index: number,
-    member: WorkspaceMemberOption | null,
-  ) {
-    onDataChange((currentData) => ({
-      ...currentData,
-      committees: getRows(currentData, "committees").map((committee, committeeIndex) =>
-        committeeIndex === index
-          ? {
-              ...committee,
-              chair: member ? getWorkspaceMemberDisplayName(member) : "",
-              chair_user_id: member?.id ?? "",
-            }
-          : committee,
-      ),
-    }));
-  }
-
-  function addCommittee() {
-    if (committees.length >= 8) return;
-    onDataChange((currentData) => {
-      const currentCommittees = getRows(currentData, "committees");
-      if (currentCommittees.length >= 8) return currentData;
-      return {
-        ...currentData,
-        committees: [
-          ...currentCommittees,
-          { name: "", chair: "", chair_user_id: "", notes: "" },
-        ],
-      };
-    });
-  }
-
-  function removeCommittee(index: number) {
-    onDataChange((currentData) => ({
-      ...currentData,
-      committees: removeRow(getRows(currentData, "committees"), index),
     }));
   }
 
@@ -417,65 +369,6 @@ export function BoardCalendarSetupPanel({
             onMemberChange={assignBoardChair}
           />
         </Field>
-      </div>
-
-      <div className="space-y-3">
-        <div className="flex flex-wrap items-center justify-between gap-3">
-          <div>
-            <h4 className="font-semibold text-slate-950">Committees</h4>
-            <p className="text-sm text-slate-500">
-              Add only the committees you need, up to 8.
-            </p>
-          </div>
-          <Button
-            type="button"
-            variant="outline"
-            size="sm"
-            disabled={committees.length >= 8}
-            onClick={addCommittee}
-          >
-            <Plus className="size-4" />
-            Add committee
-          </Button>
-        </div>
-        <div className="space-y-3">
-          {committees.map((committee, index) => (
-            <div
-              key={index}
-              className="grid gap-3 rounded-xl border bg-slate-50 p-3 md:grid-cols-[1fr_1fr_auto]"
-            >
-              <Input
-                aria-label={`Committee ${index + 1} name`}
-                placeholder="Committee name"
-                value={getString(committee, "name")}
-                onChange={(event) =>
-                  updateCommittee(index, "name", event.target.value)
-                }
-              />
-              <WorkspaceMemberSelect
-                ariaLabel={`Committee ${index + 1} chair`}
-                memberId={getString(committee, "chair_user_id")}
-                members={workspaceMembers}
-                savedMemberName={getString(committee, "chair")}
-                onMemberChange={(member) => assignCommitteeChair(index, member)}
-              />
-              <Button
-                type="button"
-                variant="ghost"
-                className="text-red-700 hover:bg-red-50 hover:text-red-800"
-                onClick={() => removeCommittee(index)}
-              >
-                <Trash2 className="size-4" />
-                Remove
-              </Button>
-            </div>
-          ))}
-          {!committees.length ? (
-            <p className="rounded-lg border border-dashed p-4 text-sm text-slate-500">
-              No committees yet. Add one only if this board uses committees.
-            </p>
-          ) : null}
-        </div>
       </div>
 
       <div className="space-y-3">
@@ -1015,6 +908,7 @@ export function DirectoryTablePanel({
 
   useEffect(() => {
     if (editingCommitteeIndex === null) return;
+    if (editingCommitteeIndex >= committees.length) return;
     const nextCommittee = committees[editingCommitteeIndex];
     if (!nextCommittee) {
       setEditingCommitteeIndex(null);
@@ -1022,19 +916,10 @@ export function DirectoryTablePanel({
     }
   }, [committees, editingCommitteeIndex]);
 
-  function addCommittee() {
+  function openNewCommitteeEditor() {
     if (committees.length >= 8) return;
-    onDataChange((currentData) => {
-      const currentCommittees = getRows(currentData, "committees");
-      if (currentCommittees.length >= 8) return currentData;
-      return {
-        ...currentData,
-        committees: [
-          ...currentCommittees,
-          { name: "", chair: "", chair_user_id: "", notes: "" },
-        ],
-      };
-    });
+    setEditingCommitteeIndex(committees.length);
+    setCommitteeDraft({ name: "", chair: "", chair_user_id: "", notes: "" });
   }
 
   function openCommitteeEditor(index: number) {
@@ -1063,11 +948,14 @@ export function DirectoryTablePanel({
     if (editingCommitteeIndex === null || !committeeDraft) return;
     onDataChange((currentData) => ({
       ...currentData,
-      committees: getRows(currentData, "committees").map((committee, index) =>
-        index === editingCommitteeIndex
-          ? { ...committee, ...committeeDraft }
-          : committee,
-      ),
+      committees:
+        editingCommitteeIndex >= getRows(currentData, "committees").length
+          ? [...getRows(currentData, "committees"), committeeDraft]
+          : getRows(currentData, "committees").map((committee, index) =>
+              index === editingCommitteeIndex
+                ? { ...committee, ...committeeDraft }
+                : committee,
+            ),
     }));
     closeCommitteeEditor();
   }
@@ -1124,7 +1012,7 @@ export function DirectoryTablePanel({
             variant="outline"
             size="sm"
             disabled={committees.length >= 8}
-            onClick={addCommittee}
+            onClick={openNewCommitteeEditor}
           >
             <Plus className="size-4" />
             Add committee
@@ -1248,64 +1136,6 @@ export function DirectoryTablePanel({
               No directory entries match the current filters.
             </p>
           ) : null}
-
-          <Dialog
-            open={editingCommitteeIndex !== null}
-            onOpenChange={(open) => {
-              if (!open) closeCommitteeEditor();
-            }}
-          >
-            <DialogContent>
-              <DialogHeader>
-                <DialogTitle>Edit directory entry</DialogTitle>
-                <DialogDescription>
-                  Update the committee name, chair, and internal notes.
-                </DialogDescription>
-              </DialogHeader>
-              {committeeDraft && editingCommittee ? (
-                <div className="space-y-4">
-                  <Field label="Committee name">
-                    <Input
-                      aria-label={`Committee ${(editingCommitteeIndex ?? 0) + 1} name`}
-                      value={getString(committeeDraft, "name")}
-                      onChange={(event) =>
-                        updateCommitteeDraft("name", event.target.value)
-                      }
-                    />
-                  </Field>
-                  <Field label="Chair">
-                    <WorkspaceMemberSelect
-                      ariaLabel={`Committee ${(editingCommitteeIndex ?? 0) + 1} chair`}
-                      memberId={getString(committeeDraft, "chair_user_id")}
-                      members={workspaceMembers}
-                      savedMemberName={getString(committeeDraft, "chair")}
-                      onMemberChange={assignCommitteeDraftChair}
-                    />
-                  </Field>
-                  <Field label="Notes">
-                    <Textarea
-                      aria-label={`Committee ${(editingCommitteeIndex ?? 0) + 1} notes`}
-                      value={getString(committeeDraft, "notes")}
-                      placeholder="Add context, meeting cadence, or contact details."
-                      onChange={(event) =>
-                        updateCommitteeDraft("notes", event.target.value)
-                      }
-                    />
-                  </Field>
-                </div>
-              ) : null}
-              <DialogFooter>
-                <DialogClose asChild>
-                  <Button type="button" variant="outline">
-                    Cancel
-                  </Button>
-                </DialogClose>
-                <Button type="button" onClick={saveCommitteeDraft}>
-                  Save directory entry
-                </Button>
-              </DialogFooter>
-            </DialogContent>
-          </Dialog>
         </>
       ) : (
         <p className="rounded-lg border border-dashed p-4 text-sm text-slate-500">
@@ -1313,6 +1143,68 @@ export function DirectoryTablePanel({
           working groups.
         </p>
       )}
+
+      <Dialog
+        open={editingCommitteeIndex !== null}
+        onOpenChange={(open) => {
+          if (!open) closeCommitteeEditor();
+        }}
+      >
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>
+              {editingCommittee ? "Edit directory entry" : "Add directory entry"}
+            </DialogTitle>
+            <DialogDescription>
+              {editingCommittee
+                ? "Update the committee name, chair, and internal notes."
+                : "Create a committee directory entry with an assigned workspace member."}
+            </DialogDescription>
+          </DialogHeader>
+          {committeeDraft ? (
+            <div className="space-y-4">
+              <Field label="Committee name">
+                <Input
+                  aria-label={`Committee ${(editingCommitteeIndex ?? 0) + 1} name`}
+                  value={getString(committeeDraft, "name")}
+                  onChange={(event) =>
+                    updateCommitteeDraft("name", event.target.value)
+                  }
+                />
+              </Field>
+              <Field label="Chair">
+                <WorkspaceMemberSelect
+                  ariaLabel={`Committee ${(editingCommitteeIndex ?? 0) + 1} chair`}
+                  memberId={getString(committeeDraft, "chair_user_id")}
+                  members={workspaceMembers}
+                  savedMemberName={getString(committeeDraft, "chair")}
+                  onMemberChange={assignCommitteeDraftChair}
+                />
+              </Field>
+              <Field label="Notes">
+                <Textarea
+                  aria-label={`Committee ${(editingCommitteeIndex ?? 0) + 1} notes`}
+                  value={getString(committeeDraft, "notes")}
+                  placeholder="Add context, meeting cadence, or contact details."
+                  onChange={(event) =>
+                    updateCommitteeDraft("notes", event.target.value)
+                  }
+                />
+              </Field>
+            </div>
+          ) : null}
+          <DialogFooter>
+            <DialogClose asChild>
+              <Button type="button" variant="outline">
+                Cancel
+              </Button>
+            </DialogClose>
+            <Button type="button" onClick={saveCommitteeDraft}>
+              Save directory entry
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </section>
   );
 }

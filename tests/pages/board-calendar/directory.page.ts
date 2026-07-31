@@ -13,6 +13,35 @@ export class BoardCalendarDirectoryPage extends BoardCalendarBasePage {
     await expect(row).toContainText(chair);
   }
 
+  async addCommittee({
+    chair,
+    chairEmail,
+    name,
+    notes,
+  }: {
+    chair: string;
+    chairEmail: string;
+    name: string;
+    notes?: string;
+  }) {
+    await this.chooseWorkspaceView("Directory");
+    await this.panel.getByRole("button", { name: "Add committee" }).click();
+
+    const dialog = this.page.getByRole("dialog", { name: "Add directory entry" });
+    await expect(dialog).toBeVisible();
+    await dialog.getByLabel(/Committee \d+ name/).fill(name);
+    await dialog.getByLabel(/Committee \d+ chair/).click();
+    await this.page
+      .getByRole("option", { name: new RegExp(chairEmail, "i") })
+      .click();
+    if (notes) {
+      await dialog.getByLabel(/Committee \d+ notes/).fill(notes);
+    }
+    await dialog.getByRole("button", { name: "Save directory entry" }).click();
+    await expect(dialog).toHaveCount(0);
+    await this.expectCommittee(name, chair);
+  }
+
   async updateCommittee(
     index: number,
     {
