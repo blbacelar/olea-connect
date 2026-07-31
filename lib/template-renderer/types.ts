@@ -118,6 +118,12 @@ export interface TemplateExportRecord {
   generatedBy: string | null;
 }
 
+export interface WorkspaceMemberOption {
+  id: string;
+  name: string;
+  email: string;
+}
+
 export interface DynamicTemplateEditorData {
   organization: Organization;
   template: {
@@ -139,6 +145,7 @@ export interface DynamicTemplateEditorData {
     updatedAt: string;
   }>;
   exports: TemplateExportRecord[];
+  workspaceMembers: WorkspaceMemberOption[];
 }
 
 export type FieldPath = Array<string | number>;

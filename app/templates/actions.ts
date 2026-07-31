@@ -14,6 +14,7 @@ import {
   buildBoardCalendarReportHtml,
   isBoardCalendarSchema,
 } from "@/lib/template-renderer/board-calendar-report-html";
+import { normalizeBoardCalendarChairAssignments } from "@/lib/template-renderer/board-calendar-chairs";
 import { renderHtmlToPdfBuffer } from "@/lib/template-renderer/html-pdf-export";
 import { renderTemplatePdfBuffer } from "@/lib/template-renderer/pdf-export";
 import { validateTemplateData } from "@/lib/template-renderer/validation";
@@ -56,6 +57,13 @@ export async function saveDynamicTemplateSession(
   }
 
   const supabase = await createClient();
+  const formData = isBoardCalendarSchema(payload.schemaSnapshot)
+    ? await normalizeBoardCalendarChairFormData({
+        formData: payload.formData,
+        organizationId: organization.id,
+        supabase,
+      })
+    : payload.formData;
   const brandingSnapshot = payload.id
     ? payload.brandingSnapshot
     : await createBrandingSnapshot(supabase, organization.brand);
@@ -63,7 +71,7 @@ export async function saveDynamicTemplateSession(
     organization_id: organization.id,
     resource_id: payload.resourceId,
     title: payload.title,
-    form_data: payload.formData,
+    form_data: formData,
     branding_snapshot: brandingSnapshot,
     definition_version: payload.schemaVersion,
     schema_snapshot: payload.schemaSnapshot,
@@ -104,6 +112,38 @@ export async function saveDynamicTemplateSession(
     status: data.status,
     lastSavedAt: data.last_saved_at,
   } as DynamicTemplateSession;
+}
+
+async function normalizeBoardCalendarChairFormData({
+  formData,
+  organizationId,
+  supabase,
+}: {
+  formData: TemplateFormData;
+  organizationId: string;
+  supabase: Awaited<ReturnType<typeof createClient>>;
+}) {
+  const { data, error } = await supabase.rpc("get_team_directory", {
+    target_organization_id: organizationId,
+  });
+
+  if (error) throw error;
+
+  return normalizeBoardCalendarChairAssignments(
+    formData,
+    ((data ?? []) as Array<{
+      user_id: string;
+      email: string;
+      full_name: string;
+      status: "invited" | "active" | "suspended";
+    }>)
+      .filter((directoryMember) => directoryMember.status === "active")
+      .map((directoryMember) => ({
+        id: directoryMember.user_id,
+        email: directoryMember.email,
+        name: directoryMember.full_name,
+      })),
+  );
 }
 
 export async function generateTemplateExport({

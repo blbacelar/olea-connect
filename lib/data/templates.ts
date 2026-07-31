@@ -7,6 +7,7 @@ import type {
   TemplateExportRecord,
   TemplateFieldSchema,
   TemplateFormData,
+  WorkspaceMemberOption,
 } from "@/lib/template-renderer/types";
 import type { MembershipTier, Template, TemplateSession } from "@/lib/types";
 import { createClient } from "@/utils/supabase/server";
@@ -302,6 +303,29 @@ export async function getDynamicTemplateEditorData(
   };
   const schemaSnapshot =
     normalizeTemplateSchema(existing?.schema_snapshot) ?? schema;
+  const { data: directory, error: directoryError } = schemaSnapshot.presentation?.calendar
+    ?.enabled
+    ? await supabase.rpc("get_team_directory", {
+        target_organization_id: organization.id,
+      })
+    : { data: [], error: null };
+
+  if (directoryError) throw directoryError;
+
+  const workspaceMembers: WorkspaceMemberOption[] = (
+    (directory ?? []) as Array<{
+      user_id: string;
+      email: string;
+      full_name: string;
+      status: "invited" | "active" | "suspended";
+    }>
+  )
+    .filter((directoryMember) => directoryMember.status === "active")
+    .map((directoryMember) => ({
+      id: directoryMember.user_id,
+      email: directoryMember.email,
+      name: directoryMember.full_name,
+    }));
   const session: DynamicTemplateSession = {
     id: existing?.id ?? "",
     resourceId: resource.id,
@@ -365,5 +389,6 @@ export async function getDynamicTemplateEditorData(
       status: instance.status as DynamicTemplateSession["status"],
       updatedAt: instance.updated_at,
     })),
+    workspaceMembers,
   };
 }

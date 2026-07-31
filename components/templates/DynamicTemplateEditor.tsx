@@ -301,6 +301,7 @@ export function DynamicTemplateEditor({
             templateInstanceId={session.id}
             organizationName={session.brandingSnapshot.organizationName}
             sections={session.schemaSnapshot.sections}
+            workspaceMembers={data.workspaceMembers}
             generateExport={generateExport}
             createDownloadUrl={createDownloadUrl}
             onChange={updateValue}

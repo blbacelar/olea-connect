@@ -66,6 +66,7 @@ import type {
   TemplateFormData,
   TemplateSection,
   TemplateValue,
+  WorkspaceMemberOption,
 } from "@/lib/template-renderer/types";
 import type { BrandProfile } from "@/lib/types";
 import { setValue } from "@/lib/template-renderer/schema";
@@ -165,6 +166,7 @@ export function BoardCalendarWorkbench({
   templateInstanceId,
   organizationName,
   sections,
+  workspaceMembers,
   generateExport,
   createDownloadUrl,
   onChange,
@@ -176,6 +178,7 @@ export function BoardCalendarWorkbench({
   templateInstanceId?: string;
   organizationName: string;
   sections: TemplateSection[];
+  workspaceMembers: WorkspaceMemberOption[];
   generateExport: (input: {
     templateInstanceId: string;
     format: TemplateExportFormat;
@@ -854,6 +857,7 @@ export function BoardCalendarWorkbench({
           <TabsContent value="directory" className="mt-0">
             <DirectoryTablePanel
               data={data}
+              workspaceMembers={workspaceMembers}
               onDataChange={onDataChange}
             />
           </TabsContent>
@@ -865,6 +869,7 @@ export function BoardCalendarWorkbench({
           <TabsContent value="settings" className="mt-0 space-y-5">
             <BoardCalendarSetupPanel
               data={data}
+              workspaceMembers={workspaceMembers}
               onChange={onChange}
               onDataChange={onDataChange}
             />
