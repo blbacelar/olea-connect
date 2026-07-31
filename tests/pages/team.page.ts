@@ -11,6 +11,18 @@ export class TeamPage {
     await expect(this.page.getByText(email)).toBeVisible();
   }
 
+  async expectDirectoryMembers(...emails: string[]) {
+    for (const email of emails) {
+      await this.expectMemberEmail(email);
+    }
+  }
+
+  async expectMemberManagementControlsHidden() {
+    await expect(this.page.getByTestId("send-invite")).toHaveCount(0);
+    await expect(this.page.getByRole("link", { name: "Manage seats" })).toHaveCount(0);
+    await expect(this.page.getByRole("button", { name: /^Remove / })).toHaveCount(0);
+  }
+
   async inviteMember(email: string) {
     await this.open();
     await this.page.getByLabel("Team member email").fill(email);
