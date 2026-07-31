@@ -120,6 +120,22 @@ export function toDateKey(date: Date) {
   return `${year}-${month}-${day}`;
 }
 
+export function isCalendarEventUpcoming(
+  event: Pick<CalendarViewEvent, "dateKey" | "time">,
+  now = new Date(),
+) {
+  if (!event.dateKey) return false;
+
+  const todayKey = toDateKey(now);
+  if (event.dateKey > todayKey) return true;
+  if (event.dateKey < todayKey) return false;
+
+  const eventMinutes = parseCalendarTimeToMinutes(event.time);
+  if (eventMinutes === null) return true;
+
+  return eventMinutes >= now.getHours() * 60 + now.getMinutes();
+}
+
 export function getMonthIndex(value: unknown) {
   if (typeof value !== "string") return null;
   const normalized = value.trim().toLowerCase();
