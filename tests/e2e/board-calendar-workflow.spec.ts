@@ -35,12 +35,12 @@ test.describe("@critical Board Calendar & Operational Workflow", () => {
     await boardCalendar.setup.fillBasics({
       organizationName: `E2E Board Calendar Module ${Date.now()}`,
       fiscalYear: "2026",
-      administrator: "Bruno QA",
-      administratorEmail: "bruno.qa@example.com",
+      administratorEmail: authenticatedMember.email,
       executiveDirector: "Executive Tester",
       boardChairEmail: authenticatedMember.email,
     });
     await boardCalendar.setup.expectChairIsWorkspaceMemberOnly();
+    await boardCalendar.setup.expectAdministratorIsWorkspaceMemberOnly();
     await boardCalendar.expectSessionPersisted();
     await expect(page).toHaveURL(/\/modules\/board-calendar\?session=/);
   });
@@ -79,8 +79,7 @@ test.describe("@critical Board Calendar & Operational Workflow", () => {
       await boardCalendar.setup.fillBasics({
         organizationName: "E2E Governance Lab",
         fiscalYear: "2026",
-        administrator: "Bruno QA",
-        administratorEmail: "bruno.qa@example.com",
+        administratorEmail: authenticatedMember.email,
         executiveDirector: "Executive Tester",
         boardChairEmail: authenticatedMember.email,
       });

@@ -8,14 +8,12 @@ export class BoardCalendarSetupPage extends BoardCalendarBasePage {
   }
 
   async fillBasics({
-    administrator,
     administratorEmail,
     boardChairEmail,
     executiveDirector,
     fiscalYear,
     organizationName,
   }: {
-    administrator: string;
     administratorEmail: string;
     boardChairEmail?: string;
     executiveDirector: string;
@@ -25,8 +23,7 @@ export class BoardCalendarSetupPage extends BoardCalendarBasePage {
     await this.chooseWorkspaceView("Setup");
     await this.panel.getByLabel("Organization name").fill(organizationName);
     await this.panel.getByLabel("Fiscal year").fill(fiscalYear);
-    await this.panel.getByLabel("Administrator", { exact: true }).fill(administrator);
-    await this.panel.getByLabel("Administrator email").fill(administratorEmail);
+    await this.chooseWorkspaceMember("Administrator", administratorEmail);
     await this.panel.getByLabel("Executive Director").fill(executiveDirector);
     if (boardChairEmail) {
       await this.chooseWorkspaceMember("Board Chair", boardChairEmail);
@@ -36,10 +33,7 @@ export class BoardCalendarSetupPage extends BoardCalendarBasePage {
       organizationName,
     );
     await expect(this.panel.getByLabel("Fiscal year")).toHaveValue(fiscalYear);
-    await expect(this.panel.getByLabel("Administrator", { exact: true })).toHaveValue(
-      administrator,
-    );
-    await expect(this.panel.getByLabel("Administrator email")).toHaveValue(
+    await expect(this.panel.getByLabel("Administrator")).toContainText(
       administratorEmail,
     );
     await expect(this.panel.getByLabel("Executive Director")).toHaveValue(
@@ -90,6 +84,15 @@ export class BoardCalendarSetupPage extends BoardCalendarBasePage {
     await expect(
       this.panel.getByRole("textbox", { name: "Board Chair" }),
     ).toHaveCount(0);
+  }
+
+  async expectAdministratorIsWorkspaceMemberOnly() {
+    await this.chooseWorkspaceView("Setup");
+    await expect(this.panel.getByLabel("Administrator")).toBeVisible();
+    await expect(
+      this.panel.getByRole("textbox", { name: "Administrator" }),
+    ).toHaveCount(0);
+    await expect(this.panel.getByLabel("Administrator email")).toHaveCount(0);
   }
 
   private async chooseWorkspaceMember(label: string, email: string) {

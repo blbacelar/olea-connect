@@ -147,28 +147,34 @@ function getAgmMilestoneRowKey(milestone: TemplateRecord, index: number) {
 
 function WorkspaceMemberSelect({
   ariaLabel,
+  emptyOptionLabel = "No member assigned",
   memberId,
   members,
   onMemberChange,
-  savedChairName,
+  savedMemberEmail,
+  savedMemberName,
 }: {
   ariaLabel: string;
+  emptyOptionLabel?: string;
   memberId: string;
   members: WorkspaceMemberOption[];
   onMemberChange: (member: WorkspaceMemberOption | null) => void;
-  savedChairName: string;
+  savedMemberEmail?: string;
+  savedMemberName: string;
 }) {
-  const normalizedSavedChairName = savedChairName.trim().toLocaleLowerCase();
+  const normalizedSavedMemberName = savedMemberName.trim().toLocaleLowerCase();
+  const normalizedSavedMemberEmail = savedMemberEmail?.trim().toLocaleLowerCase();
   const matchingSavedMember = members.find((member) => {
     const displayName = getWorkspaceMemberDisplayName(member).toLocaleLowerCase();
     return (
-      displayName === normalizedSavedChairName ||
-      member.email.toLocaleLowerCase() === normalizedSavedChairName
+      displayName === normalizedSavedMemberName ||
+      member.email.toLocaleLowerCase() === normalizedSavedMemberName ||
+      member.email.toLocaleLowerCase() === normalizedSavedMemberEmail
     );
   });
   const selectedMemberId = memberId || matchingSavedMember?.id || "unassigned";
-  const hasUnlinkedSavedChair = Boolean(
-    savedChairName && !memberId && !matchingSavedMember,
+  const hasUnlinkedSavedMember = Boolean(
+    savedMemberName && !memberId && !matchingSavedMember,
   );
 
   return (
@@ -187,7 +193,7 @@ function WorkspaceMemberSelect({
           <SelectValue placeholder="Choose a workspace member" />
         </SelectTrigger>
         <SelectContent>
-          <SelectItem value="unassigned">No chair assigned</SelectItem>
+          <SelectItem value="unassigned">{emptyOptionLabel}</SelectItem>
           {members.map((member) => (
             <SelectItem key={member.id} value={member.id}>
               {getWorkspaceMemberDisplayName(member)} ({member.email})
@@ -195,9 +201,9 @@ function WorkspaceMemberSelect({
           ))}
         </SelectContent>
       </Select>
-      {hasUnlinkedSavedChair ? (
+      {hasUnlinkedSavedMember ? (
         <p className="text-xs leading-5 text-amber-700">
-          Previously saved as {savedChairName}. Select an active workspace
+          Previously saved as {savedMemberName}. Select an active workspace
           member before saving changes.
         </p>
       ) : null}
@@ -238,6 +244,15 @@ export function BoardCalendarSetupPanel({
       ...currentData,
       board_chair: member ? getWorkspaceMemberDisplayName(member) : "",
       board_chair_user_id: member?.id ?? "",
+    }));
+  }
+
+  function assignAdministrator(member: WorkspaceMemberOption | null) {
+    onDataChange((currentData) => ({
+      ...currentData,
+      administrator: member ? getWorkspaceMemberDisplayName(member) : "",
+      administrator_email: member?.email ?? "",
+      administrator_user_id: member?.id ?? "",
     }));
   }
 
@@ -371,21 +386,18 @@ export function BoardCalendarSetupPanel({
           />
         </Field>
         <Field label="Administrator">
-          <Input
-            aria-label="Administrator"
-            value={setup.administrator}
-            onChange={(event) => updateTopLevel("administrator", event.target.value)}
+          <WorkspaceMemberSelect
+            ariaLabel="Administrator"
+            emptyOptionLabel="No administrator assigned"
+            memberId={getTopLevelString(data, "administrator_user_id")}
+            members={workspaceMembers}
+            savedMemberEmail={setup.administratorEmail}
+            savedMemberName={setup.administrator}
+            onMemberChange={assignAdministrator}
           />
-        </Field>
-        <Field label="Administrator email">
-          <Input
-            aria-label="Administrator email"
-            type="email"
-            value={setup.administratorEmail}
-            onChange={(event) =>
-              updateTopLevel("administrator_email", event.target.value)
-            }
-          />
+          <p className="text-xs leading-5 text-slate-500">
+            The selected workspace member&apos;s email is used automatically.
+          </p>
         </Field>
         <Field label="Executive Director">
           <Input
@@ -401,7 +413,7 @@ export function BoardCalendarSetupPanel({
             ariaLabel="Board Chair"
             memberId={getTopLevelString(data, "board_chair_user_id")}
             members={workspaceMembers}
-            savedChairName={setup.boardChair}
+            savedMemberName={setup.boardChair}
             onMemberChange={assignBoardChair}
           />
         </Field>
@@ -444,7 +456,7 @@ export function BoardCalendarSetupPanel({
                 ariaLabel={`Committee ${index + 1} chair`}
                 memberId={getString(committee, "chair_user_id")}
                 members={workspaceMembers}
-                savedChairName={getString(committee, "chair")}
+                savedMemberName={getString(committee, "chair")}
                 onMemberChange={(member) => assignCommitteeChair(index, member)}
               />
               <Button
@@ -1266,7 +1278,7 @@ export function DirectoryTablePanel({
                       ariaLabel={`Committee ${(editingCommitteeIndex ?? 0) + 1} chair`}
                       memberId={getString(committeeDraft, "chair_user_id")}
                       members={workspaceMembers}
-                      savedChairName={getString(committeeDraft, "chair")}
+                      savedMemberName={getString(committeeDraft, "chair")}
                       onMemberChange={assignCommitteeDraftChair}
                     />
                   </Field>
