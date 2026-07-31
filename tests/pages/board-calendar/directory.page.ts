@@ -17,10 +17,12 @@ export class BoardCalendarDirectoryPage extends BoardCalendarBasePage {
     index: number,
     {
       chair,
+      chairEmail,
       name,
       notes,
     }: {
       chair: string;
+      chairEmail: string;
       name: string;
       notes: string;
     },
@@ -31,10 +33,16 @@ export class BoardCalendarDirectoryPage extends BoardCalendarBasePage {
     const dialog = this.page.getByRole("dialog", { name: "Edit directory entry" });
     await expect(dialog).toBeVisible();
     await dialog.getByLabel(`Committee ${index} name`).fill(name);
-    await dialog.getByLabel(`Committee ${index} chair`).fill(chair);
+    await dialog.getByLabel(`Committee ${index} chair`).click();
+    await this.page
+      .getByRole("option", { name: new RegExp(chairEmail, "i") })
+      .click();
     await dialog.getByLabel(`Committee ${index} notes`).fill(notes);
     await dialog.getByRole("button", { name: "Save directory entry" }).click();
     await expect(dialog).toHaveCount(0);
+    await expect(
+      this.panel.locator("tbody tr").nth(index - 1),
+    ).toContainText(chair);
   }
 
   async expectCommitteeDetails(

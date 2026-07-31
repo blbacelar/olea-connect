@@ -10,14 +10,14 @@ export class BoardCalendarSetupPage extends BoardCalendarBasePage {
   async fillBasics({
     administrator,
     administratorEmail,
-    boardChair,
+    boardChairEmail,
     executiveDirector,
     fiscalYear,
     organizationName,
   }: {
     administrator: string;
     administratorEmail: string;
-    boardChair: string;
+    boardChairEmail?: string;
     executiveDirector: string;
     fiscalYear: string;
     organizationName: string;
@@ -28,7 +28,9 @@ export class BoardCalendarSetupPage extends BoardCalendarBasePage {
     await this.panel.getByLabel("Administrator", { exact: true }).fill(administrator);
     await this.panel.getByLabel("Administrator email").fill(administratorEmail);
     await this.panel.getByLabel("Executive Director").fill(executiveDirector);
-    await this.panel.getByLabel("Board Chair").fill(boardChair);
+    if (boardChairEmail) {
+      await this.chooseWorkspaceMember("Board Chair", boardChairEmail);
+    }
 
     await expect(this.panel.getByLabel("Organization name")).toHaveValue(
       organizationName,
@@ -43,10 +45,14 @@ export class BoardCalendarSetupPage extends BoardCalendarBasePage {
     await expect(this.panel.getByLabel("Executive Director")).toHaveValue(
       executiveDirector,
     );
-    await expect(this.panel.getByLabel("Board Chair")).toHaveValue(boardChair);
+    if (boardChairEmail) {
+      await expect(this.panel.getByLabel("Board Chair")).toContainText(
+        boardChairEmail,
+      );
+    }
   }
 
-  async addCommittee(name: string, chair: string) {
+  async addCommittee(name: string, chairEmail?: string) {
     const committeeLabels = this.panel.getByLabel(/Committee \d+ name/);
     const previousCommitteeCount = await committeeLabels.count();
     await this.panel.getByRole("button", { name: "Add committee" }).click();
@@ -54,21 +60,41 @@ export class BoardCalendarSetupPage extends BoardCalendarBasePage {
 
     const committeeCount = previousCommitteeCount + 1;
     await this.panel.getByLabel(`Committee ${committeeCount} name`).fill(name);
-    await this.panel.getByLabel(`Committee ${committeeCount} chair`).fill(chair);
+    if (chairEmail) {
+      await this.chooseWorkspaceMember(
+        `Committee ${committeeCount} chair`,
+        chairEmail,
+      );
+    }
     await expect(this.panel.getByLabel(`Committee ${committeeCount} name`)).toHaveValue(
       name,
     );
-    await expect(this.panel.getByLabel(`Committee ${committeeCount} chair`)).toHaveValue(
-      chair,
+    if (chairEmail) {
+      await expect(
+        this.panel.getByLabel(`Committee ${committeeCount} chair`),
+      ).toContainText(chairEmail);
+    }
+  }
+
+  async expectCommittee(name: string, chairEmail: string) {
+    await this.chooseWorkspaceView("Setup");
+    await expect(this.panel.getByLabel(/Committee \d+ name/).first()).toHaveValue(name);
+    await expect(this.panel.getByLabel(/Committee \d+ chair/).first()).toContainText(
+      chairEmail,
     );
   }
 
-  async expectCommittee(name: string, chair: string) {
+  async expectChairIsWorkspaceMemberOnly() {
     await this.chooseWorkspaceView("Setup");
-    await expect(this.panel.getByLabel(/Committee \d+ name/).first()).toHaveValue(name);
-    await expect(this.panel.getByLabel(/Committee \d+ chair/).first()).toHaveValue(
-      chair,
-    );
+    await expect(this.panel.getByLabel("Board Chair")).toBeVisible();
+    await expect(
+      this.panel.getByRole("textbox", { name: "Board Chair" }),
+    ).toHaveCount(0);
+  }
+
+  private async chooseWorkspaceMember(label: string, email: string) {
+    await this.panel.getByLabel(label).click();
+    await this.page.getByRole("option", { name: new RegExp(email, "i") }).click();
   }
 
   async addTaskRule({

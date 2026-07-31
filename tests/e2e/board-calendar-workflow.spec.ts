@@ -26,6 +26,7 @@ test.describe("@critical Board Calendar & Operational Workflow", () => {
 
   test("opens as a first-class module and keeps saved sessions on the module route", async ({
     page,
+    authenticatedMember,
   }) => {
     const boardCalendar = new BoardCalendarPage(page);
 
@@ -37,8 +38,9 @@ test.describe("@critical Board Calendar & Operational Workflow", () => {
       administrator: "Bruno QA",
       administratorEmail: "bruno.qa@example.com",
       executiveDirector: "Executive Tester",
-      boardChair: "Chair Tester",
+      boardChairEmail: authenticatedMember.email,
     });
+    await boardCalendar.setup.expectChairIsWorkspaceMemberOnly();
     await boardCalendar.expectSessionPersisted();
     await expect(page).toHaveURL(/\/modules\/board-calendar\?session=/);
   });
@@ -57,6 +59,7 @@ test.describe("@critical Board Calendar & Operational Workflow", () => {
 
   test("covers calendar CRUD, duplicate scheduling, validation, and persistence", async ({
     page,
+    authenticatedMember,
   }) => {
     const boardCalendar = new BoardCalendarPage(page);
     const eventDate = getFutureDateKey(14);
@@ -79,11 +82,20 @@ test.describe("@critical Board Calendar & Operational Workflow", () => {
         administrator: "Bruno QA",
         administratorEmail: "bruno.qa@example.com",
         executiveDirector: "Executive Tester",
-        boardChair: "Chair Tester",
+        boardChairEmail: authenticatedMember.email,
       });
-      await boardCalendar.setup.addCommittee("Finance Committee", "Treasurer");
-      await boardCalendar.setup.addCommittee("Governance Committee", "Chair Tester");
-      await boardCalendar.setup.expectCommittee("Finance Committee", "Treasurer");
+      await boardCalendar.setup.addCommittee(
+        "Finance Committee",
+        authenticatedMember.email,
+      );
+      await boardCalendar.setup.addCommittee(
+        "Governance Committee",
+        authenticatedMember.email,
+      );
+      await boardCalendar.setup.expectCommittee(
+        "Finance Committee",
+        authenticatedMember.email,
+      );
       await boardCalendar.setup.addTaskRule({
         label: "Prepare board briefing",
         days: "10",
@@ -98,36 +110,43 @@ test.describe("@critical Board Calendar & Operational Workflow", () => {
         appliesTo: "Board Meeting",
         responsible: "Board Chair",
       });
-      await boardCalendar.setup.expectCommittee("Finance Committee", "Treasurer");
+      await boardCalendar.setup.expectCommittee(
+        "Finance Committee",
+        authenticatedMember.email,
+      );
     });
 
     await test.step("manage committee directory from a table and edit modal", async () => {
-      await boardCalendar.directory.expectCommittee("Finance Committee", "Treasurer");
+      await boardCalendar.directory.expectCommittee(
+        "Finance Committee",
+        authenticatedMember.fullName,
+      );
       await boardCalendar.directory.expectCommittee(
         "Governance Committee",
-        "Chair Tester",
+        authenticatedMember.fullName,
       );
       await boardCalendar.directory.updateCommittee(1, {
         name: "Finance / Audit Committee",
-        chair: "Treasurer QA",
+        chair: authenticatedMember.fullName,
+        chairEmail: authenticatedMember.email,
         notes: "Reviews financial reporting and budget readiness.",
       });
       await boardCalendar.directory.expectCommitteeDetails(1, {
         name: "Finance / Audit Committee",
-        chair: "Treasurer QA",
+        chair: authenticatedMember.fullName,
         notes: "Reviews financial reporting and budget readiness.",
       });
       await boardCalendar.directory.filterByNotes("Has notes");
       await boardCalendar.directory.expectCommittee(
         "Finance / Audit Committee",
-        "Treasurer QA",
+        authenticatedMember.fullName,
       );
       await boardCalendar.directory.expectCommitteeHidden("Governance Committee");
       await boardCalendar.directory.clearFilters();
       await boardCalendar.directory.filterByNotes("No notes");
       await boardCalendar.directory.expectCommittee(
         "Governance Committee",
-        "Chair Tester",
+        authenticatedMember.fullName,
       );
       await boardCalendar.directory.expectCommitteeHidden(
         "Finance / Audit Committee",

@@ -38,11 +38,13 @@ import {
   calculateAgmMilestoneDate,
   syncBoardCalendarGeneratedTasks,
 } from "@/lib/template-renderer/board-calendar-editor";
+import { getWorkspaceMemberDisplayName } from "@/lib/template-renderer/board-calendar-chairs";
 import { setValue } from "@/lib/template-renderer/schema";
 import type {
   FieldPath,
   TemplateFormData,
   TemplateValue,
+  WorkspaceMemberOption,
 } from "@/lib/template-renderer/types";
 
 type TemplateRecord = Record<string, unknown>;
@@ -143,16 +145,78 @@ function getAgmMilestoneRowKey(milestone: TemplateRecord, index: number) {
     : `agm-empty-${index}`;
 }
 
+function WorkspaceMemberSelect({
+  ariaLabel,
+  memberId,
+  members,
+  onMemberChange,
+  savedChairName,
+}: {
+  ariaLabel: string;
+  memberId: string;
+  members: WorkspaceMemberOption[];
+  onMemberChange: (member: WorkspaceMemberOption | null) => void;
+  savedChairName: string;
+}) {
+  const normalizedSavedChairName = savedChairName.trim().toLocaleLowerCase();
+  const matchingSavedMember = members.find((member) => {
+    const displayName = getWorkspaceMemberDisplayName(member).toLocaleLowerCase();
+    return (
+      displayName === normalizedSavedChairName ||
+      member.email.toLocaleLowerCase() === normalizedSavedChairName
+    );
+  });
+  const selectedMemberId = memberId || matchingSavedMember?.id || "unassigned";
+  const hasUnlinkedSavedChair = Boolean(
+    savedChairName && !memberId && !matchingSavedMember,
+  );
+
+  return (
+    <div className="space-y-1.5">
+      <Select
+        value={selectedMemberId}
+        onValueChange={(value) => {
+          onMemberChange(
+            value === "unassigned"
+              ? null
+              : members.find((member) => member.id === value) ?? null,
+          );
+        }}
+      >
+        <SelectTrigger aria-label={ariaLabel}>
+          <SelectValue placeholder="Choose a workspace member" />
+        </SelectTrigger>
+        <SelectContent>
+          <SelectItem value="unassigned">No chair assigned</SelectItem>
+          {members.map((member) => (
+            <SelectItem key={member.id} value={member.id}>
+              {getWorkspaceMemberDisplayName(member)} ({member.email})
+            </SelectItem>
+          ))}
+        </SelectContent>
+      </Select>
+      {hasUnlinkedSavedChair ? (
+        <p className="text-xs leading-5 text-amber-700">
+          Previously saved as {savedChairName}. Select an active workspace
+          member before saving changes.
+        </p>
+      ) : null}
+    </div>
+  );
+}
+
 export function BoardCalendarSetupPanel({
   data,
   onChange,
   onDataChange,
+  workspaceMembers,
 }: {
   data: TemplateFormData;
   onChange: (path: FieldPath, value: TemplateValue) => void;
   onDataChange: (
     updater: (currentData: TemplateFormData) => TemplateFormData,
   ) => void;
+  workspaceMembers: WorkspaceMemberOption[];
 }) {
   const setup = buildBoardCalendarSetup(data);
   const committees = getRows(data, "committees");
@@ -169,6 +233,32 @@ export function BoardCalendarSetupPanel({
     }));
   }
 
+  function assignBoardChair(member: WorkspaceMemberOption | null) {
+    onDataChange((currentData) => ({
+      ...currentData,
+      board_chair: member ? getWorkspaceMemberDisplayName(member) : "",
+      board_chair_user_id: member?.id ?? "",
+    }));
+  }
+
+  function assignCommitteeChair(
+    index: number,
+    member: WorkspaceMemberOption | null,
+  ) {
+    onDataChange((currentData) => ({
+      ...currentData,
+      committees: getRows(currentData, "committees").map((committee, committeeIndex) =>
+        committeeIndex === index
+          ? {
+              ...committee,
+              chair: member ? getWorkspaceMemberDisplayName(member) : "",
+              chair_user_id: member?.id ?? "",
+            }
+          : committee,
+      ),
+    }));
+  }
+
   function addCommittee() {
     if (committees.length >= 8) return;
     onDataChange((currentData) => {
@@ -178,7 +268,7 @@ export function BoardCalendarSetupPanel({
         ...currentData,
         committees: [
           ...currentCommittees,
-          { name: "", chair: "", notes: "" },
+          { name: "", chair: "", chair_user_id: "", notes: "" },
         ],
       };
     });
@@ -307,10 +397,12 @@ export function BoardCalendarSetupPanel({
           />
         </Field>
         <Field label="Board Chair">
-          <Input
-            aria-label="Board Chair"
-            value={setup.boardChair}
-            onChange={(event) => updateTopLevel("board_chair", event.target.value)}
+          <WorkspaceMemberSelect
+            ariaLabel="Board Chair"
+            memberId={getTopLevelString(data, "board_chair_user_id")}
+            members={workspaceMembers}
+            savedChairName={setup.boardChair}
+            onMemberChange={assignBoardChair}
           />
         </Field>
       </div>
@@ -348,13 +440,12 @@ export function BoardCalendarSetupPanel({
                   updateCommittee(index, "name", event.target.value)
                 }
               />
-              <Input
-                aria-label={`Committee ${index + 1} chair`}
-                placeholder="Committee chair"
-                value={getString(committee, "chair")}
-                onChange={(event) =>
-                  updateCommittee(index, "chair", event.target.value)
-                }
+              <WorkspaceMemberSelect
+                ariaLabel={`Committee ${index + 1} chair`}
+                memberId={getString(committee, "chair_user_id")}
+                members={workspaceMembers}
+                savedChairName={getString(committee, "chair")}
+                onMemberChange={(member) => assignCommitteeChair(index, member)}
               />
               <Button
                 type="button"
@@ -875,11 +966,13 @@ export function StaffTaskListPanel({
 export function DirectoryTablePanel({
   data,
   onDataChange,
+  workspaceMembers,
 }: {
   data: TemplateFormData;
   onDataChange: (
     updater: (currentData: TemplateFormData) => TemplateFormData,
   ) => void;
+  workspaceMembers: WorkspaceMemberOption[];
 }) {
   const committees = getRows(data, "committees");
   const [editingCommitteeIndex, setEditingCommitteeIndex] = useState<number | null>(
@@ -924,7 +1017,10 @@ export function DirectoryTablePanel({
       if (currentCommittees.length >= 8) return currentData;
       return {
         ...currentData,
-        committees: [...currentCommittees, { name: "", chair: "", notes: "" }],
+        committees: [
+          ...currentCommittees,
+          { name: "", chair: "", chair_user_id: "", notes: "" },
+        ],
       };
     });
   }
@@ -941,6 +1037,14 @@ export function DirectoryTablePanel({
 
   function updateCommitteeDraft(field: string, value: unknown) {
     setCommitteeDraft((current) => ({ ...(current ?? {}), [field]: value }));
+  }
+
+  function assignCommitteeDraftChair(member: WorkspaceMemberOption | null) {
+    setCommitteeDraft((current) => ({
+      ...(current ?? {}),
+      chair: member ? getWorkspaceMemberDisplayName(member) : "",
+      chair_user_id: member?.id ?? "",
+    }));
   }
 
   function saveCommitteeDraft() {
@@ -1158,12 +1262,12 @@ export function DirectoryTablePanel({
                     />
                   </Field>
                   <Field label="Chair">
-                    <Input
-                      aria-label={`Committee ${(editingCommitteeIndex ?? 0) + 1} chair`}
-                      value={getString(committeeDraft, "chair")}
-                      onChange={(event) =>
-                        updateCommitteeDraft("chair", event.target.value)
-                      }
+                    <WorkspaceMemberSelect
+                      ariaLabel={`Committee ${(editingCommitteeIndex ?? 0) + 1} chair`}
+                      memberId={getString(committeeDraft, "chair_user_id")}
+                      members={workspaceMembers}
+                      savedChairName={getString(committeeDraft, "chair")}
+                      onMemberChange={assignCommitteeDraftChair}
                     />
                   </Field>
                   <Field label="Notes">
