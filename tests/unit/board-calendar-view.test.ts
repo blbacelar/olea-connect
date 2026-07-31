@@ -7,6 +7,7 @@ import {
   getTemplateMonthIndex,
   getTemplateYear,
   getWeekDays,
+  isCalendarEventUpcoming,
   parseDateKey,
   toDateKey,
 } from "@/lib/template-renderer/calendar-view";
@@ -179,5 +180,40 @@ describe("board calendar view helpers", () => {
     });
 
     expect(colors.get("Board Meeting")).toBe("#1A6B6B");
+  });
+
+  it("treats meeting counts as upcoming only after comparing date and time", () => {
+    const now = new Date(2026, 6, 31, 12, 0);
+
+    expect(
+      isCalendarEventUpcoming(
+        { dateKey: "2026-07-30", time: "10:00 AM" },
+        now,
+      ),
+    ).toBe(false);
+    expect(
+      isCalendarEventUpcoming(
+        { dateKey: "2026-07-31", time: "11:59 AM" },
+        now,
+      ),
+    ).toBe(false);
+    expect(
+      isCalendarEventUpcoming(
+        { dateKey: "2026-07-31", time: "12:00 PM" },
+        now,
+      ),
+    ).toBe(true);
+    expect(isCalendarEventUpcoming({ dateKey: "2026-07-31", time: "" }, now)).toBe(
+      true,
+    );
+    expect(
+      isCalendarEventUpcoming(
+        { dateKey: "2026-08-01", time: "8:00 AM" },
+        now,
+      ),
+    ).toBe(true);
+    expect(isCalendarEventUpcoming({ dateKey: null, time: "" }, now)).toBe(
+      false,
+    );
   });
 });

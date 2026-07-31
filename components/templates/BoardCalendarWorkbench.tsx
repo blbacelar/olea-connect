@@ -54,6 +54,7 @@ import {
   getTemplateYear,
   getWeekDays,
   groupEventsByDate,
+  isCalendarEventUpcoming,
   monthNames,
   toDateKey,
   weekdayNames,
@@ -195,8 +196,8 @@ export function BoardCalendarWorkbench({
   const eventsByDate = useMemo(() => groupEventsByDate(events), [events]);
   const configuredYear = getTemplateYear(data);
   const configuredMonth = getTemplateMonthIndex(data);
-  const todayKey = toDateKey(new Date());
   const todayDate = new Date();
+  const todayKey = toDateKey(todayDate);
   const [mode, setMode] = useState<CalendarMode>("month");
   const [activeTab, setActiveTab] = useState<BoardCalendarModuleTab>("dashboard");
   const [anchorDate, setAnchorDate] = useState(todayDate);
@@ -248,15 +249,18 @@ export function BoardCalendarWorkbench({
   const monthIndex = anchorDate.getMonth();
   const year = anchorDate.getFullYear();
   const isSelectedDateInPast = selectedDateKey < todayKey;
+  const meetingEvents = events.filter((event) => event.source === "meeting");
+  const upcomingMeetingEvents = meetingEvents.filter((event) =>
+    isCalendarEventUpcoming(event, todayDate),
+  );
   const nextEvent =
-    events.find((event) => event.dateKey && event.dateKey >= todayKey) ??
+    events.find((event) => isCalendarEventUpcoming(event, todayDate)) ??
     events.find((event) => event.dateKey);
-  const boardMeetings = events.filter(
+  const boardMeetings = upcomingMeetingEvents.filter(
     (event) => event.category === "Board Meeting",
   ).length;
-  const meetingEvents = events.filter((event) => event.source === "meeting");
   const upcomingEvents = events
-    .filter((event) => event.dateKey && event.dateKey >= todayKey)
+    .filter((event) => isCalendarEventUpcoming(event, todayDate))
     .slice(0, 5);
   const hasDatedEvents = events.some((event) => Boolean(event.dateKey));
   const categories = Array.from(
@@ -626,9 +630,9 @@ export function BoardCalendarWorkbench({
                   >
                     <Icon className="size-4" />
                     {tab.label}
-                    {tab.value === "meetings" && meetingEvents.length ? (
+                    {tab.value === "meetings" && upcomingMeetingEvents.length ? (
                       <span className="rounded-full bg-olea-orange px-2 py-0.5 text-[11px] font-bold text-white">
-                        {meetingEvents.length}
+                        {upcomingMeetingEvents.length}
                       </span>
                     ) : null}
                   </TabsTrigger>
@@ -657,7 +661,7 @@ export function BoardCalendarWorkbench({
                 icon={ListChecks}
                 label="Board meetings"
                 value={String(boardMeetings)}
-                detail="Generated from calendar entries"
+                detail="Upcoming board meetings"
               />
             </div>
 
@@ -837,6 +841,7 @@ export function BoardCalendarWorkbench({
           <TabsContent value="meetings" className="mt-0">
             <MeetingsTablePanel
               meetings={meetingEvents}
+              upcomingMeetingCount={upcomingMeetingEvents.length}
               onEditEvent={editCalendarEntry}
             />
           </TabsContent>
@@ -912,9 +917,11 @@ function SummaryCard({
 
 function MeetingsTablePanel({
   meetings,
+  upcomingMeetingCount,
   onEditEvent,
 }: {
   meetings: CalendarViewEvent[];
+  upcomingMeetingCount: number;
   onEditEvent: (event: CalendarViewEvent) => void;
 }) {
   return (
@@ -934,7 +941,11 @@ function MeetingsTablePanel({
             Only entries created as Meeting or Event appear here.
           </p>
         </div>
-        <Badge variant="outline">{meetings.length} total</Badge>
+        {upcomingMeetingCount ? (
+          <Badge variant="outline">
+            {upcomingMeetingCount} upcoming
+          </Badge>
+        ) : null}
       </div>
 
       {meetings.length ? (
