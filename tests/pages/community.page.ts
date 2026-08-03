@@ -19,7 +19,7 @@ export class CommunityPage {
     ).toBeVisible();
     await expect(this.page.getByText("Native Olea community")).toBeVisible();
     await expect(
-      this.page.getByRole("heading", { name: "Olea Connects Community" }),
+      this.page.getByRole("heading", { name: "Olea Connects™ Community" }),
     ).toBeVisible();
   }
 
@@ -112,9 +112,10 @@ export class CommunityPage {
   async processModerationUntilPostHidden(
     request: APIRequestContext,
     title: string,
+    eventId?: string,
   ) {
     for (let attempt = 0; attempt < 20; attempt += 1) {
-      await this.processModerationQueue(request);
+      await this.processModerationQueue(request, eventId);
 
       if ((await this.page.getByRole("heading", { name: title }).count()) === 0) {
         return;
@@ -208,11 +209,14 @@ export class CommunityPage {
     await publishButton.click();
   }
 
-  async processModerationQueue(request: APIRequestContext) {
+  async processModerationQueue(request: APIRequestContext, eventId?: string) {
     const secret = process.env.CRON_SECRET;
     if (!secret) throw new Error("CRON_SECRET is required for moderation tests.");
 
-    const response = await request.get("/api/v1/community/moderation/process", {
+    const path = eventId
+      ? `/api/v1/community/moderation/process?eventId=${encodeURIComponent(eventId)}`
+      : "/api/v1/community/moderation/process";
+    const response = await request.get(path, {
       headers: {
         authorization: `Bearer ${secret}`,
       },

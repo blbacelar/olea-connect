@@ -33,7 +33,7 @@ export function ProductPreview() {
               <span className="grid size-7 place-items-center rounded-lg bg-white/15 text-xs font-bold">
                 O
               </span>
-              <span className="text-xs font-bold sm:text-sm">Olea Connects</span>
+              <span className="text-xs font-bold sm:text-sm">Olea Connects™</span>
             </div>
             <nav className="mt-4 space-y-1">
               {navItems.map((item) => {

@@ -45,7 +45,7 @@ export class TeamPage {
       .getByRole("alert")
       .filter({ hasText: "Invite not sent" });
     await expect(alert).toContainText("Invite not sent");
-    await expect(alert).toContainText("already registered with Olea Connects");
+    await expect(alert).toContainText("already registered with Olea Connects™");
     await expect(
       this.page.getByRole("group", { name: `Invitation for ${email}` }),
     ).toHaveCount(0);

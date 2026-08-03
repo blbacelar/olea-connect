@@ -1,6 +1,6 @@
 # Input Validation Contract
 
-Olea Connects validates user-entered data at both the browser and server boundaries. Client-side filtering improves feedback while typing, but server-side validation is the source of truth before any value reaches persistence.
+Olea Connects™ validates user-entered data at both the browser and server boundaries. Client-side filtering improves feedback while typing, but server-side validation is the source of truth before any value reaches persistence.
 
 Zod is the schema authority for shared primitive and payload validation. Schemas are strict at trust boundaries, use `safeParse` when converting untrusted input into an application result, and avoid coercion that could silently turn malformed text into a valid value.
 

@@ -66,8 +66,8 @@ export default async function SignupSuccessPage({
         activationFailed
           ? "Your payment is safe, but workspace setup needs to be retried."
           : activationCompleted
-            ? "Your Olea Connects workspace is active."
-          : "Your Olea Connects membership is being activated."
+            ? "Your Olea Connects™ workspace is active."
+          : "Your Olea Connects™ membership is being activated."
       }
     >
       <div className="text-center">
@@ -80,7 +80,7 @@ export default async function SignupSuccessPage({
             : activationCompleted
               ? "Continue to your dashboard. If you are asked to sign in, use the same email address you used during checkout."
               : activationPendingVerification
-                ? "We sent a confirmation email from Olea Connects. Open that email and confirm your address before signing in."
+                ? "We sent a confirmation email from Olea Connects™. Open that email and confirm your address before signing in."
                 : "We are finalizing your activation. If your dashboard is not ready yet, sign in and retry activation once."}
         </p>
         {activationFailed ? (

@@ -1,6 +1,6 @@
-# Olea Connects
+# Olea Connects™
 
-Olea Connects is a branded governance document platform for Canadian nonprofit
+Olea Connects™ is a branded governance document platform for Canadian nonprofit
 organizations. Members subscribe to a plan, set their organization brand once,
 use tier-aware templates, generate board-ready PDFs/DOCX files, manage team
 seats, and access grants, webinars, and community features.
@@ -145,7 +145,7 @@ Copy environment variables:
 cp .env.example .env.local
 ```
 
-Port `3000` is used by another local app, so run Olea Connects on `3001`:
+Port `3000` is used by another local app, so run Olea Connects™ on `3001`:
 
 ```bash
 npm run dev -- -p 3001

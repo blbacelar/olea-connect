@@ -546,7 +546,7 @@ export function BoardPackagesPanel({
                 type="url"
                 value={form.url}
                 onChange={(event) => updateForm("url", event.target.value)}
-                placeholder="https://... only when the file is stored outside Olea Connects"
+                placeholder="https://... only when the file is stored outside Olea Connects™"
               />
             </div>
 
@@ -1169,7 +1169,7 @@ function buildBoardPackageIndexHtml(
           ? `<a href="${escapeHtml(path)}">${escapeHtml(path)}</a>`
           : status === "linked" && packageDocument.url
             ? `<a href="${escapeHtml(packageDocument.url)}" target="_blank" rel="noopener noreferrer">${escapeHtml(packageDocument.url)}</a>`
-            : "Open Olea Connects to retry this private file.";
+            : "Open Olea Connects™ to retry this private file.";
 
       return `<tr>
         <td>${escapeHtml(packageDocument.name)}</td>
@@ -1309,7 +1309,7 @@ function buildBoardPackageIndexHtml(
         </div>
         <div>
           <span>Prepared by</span>
-          <strong>Olea Connects</strong>
+          <strong>Olea Connects™</strong>
         </div>
       </section>
       ${

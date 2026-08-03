@@ -26,7 +26,7 @@ export function FinalCta() {
             className="mt-8 h-12 bg-olea-gold px-7 text-base text-olea-ink hover:bg-olea-gold/90"
           >
             <Link href="/signup">
-              Join Olea Connects
+              Join Olea Connects™
               <ArrowRight className="size-4" />
             </Link>
           </Button>

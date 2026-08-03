@@ -101,7 +101,7 @@ export default function SignupPaymentPage() {
                   Payment is completed securely
                 </p>
                 <p className="mt-1 text-sm leading-6 text-slate-500">
-                  Olea Connects never receives or stores your card number or
+                  Olea Connects™ never receives or stores your card number or
                   security code.
                 </p>
               </div>

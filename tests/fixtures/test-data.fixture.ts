@@ -964,6 +964,35 @@ export class TestDataManager {
     return postId;
   }
 
+  async getPendingCommunityPostModerationEventId(
+    authorUserId: string,
+    title: string,
+  ) {
+    const { data: post, error: postError } = await this.supabase
+      .from("community_posts")
+      .select("id")
+      .eq("author_user_id", authorUserId)
+      .eq("title", title)
+      .eq("status", "published")
+      .order("created_at", { ascending: false })
+      .limit(1)
+      .single();
+    if (postError) throw postError;
+
+    const { data: event, error: eventError } = await this.supabase
+      .from("integration_events")
+      .select("id")
+      .eq("provider", "community_moderation")
+      .contains("payload", { postId: post.id, targetType: "post" })
+      .in("status", ["pending", "failed"])
+      .order("created_at", { ascending: false })
+      .limit(1)
+      .single();
+    if (eventError) throw eventError;
+
+    return event.id as string;
+  }
+
   async createCommunityComment(
     author: CreatedOrganizationOwner | CreatedOrganizationMember,
     options: {

@@ -18,7 +18,7 @@ export function SponsorshipPage() {
         <div className="mx-auto max-w-[1200px] px-4 py-12 sm:px-8 md:py-16">
           <section className="mb-20 text-center">
             <p className="text-sm font-bold uppercase tracking-[0.2em] text-[#556b2f]">
-              Olea Connects sponsorships
+              Olea Connects™ sponsorships
             </p>
             <h1 className="mx-auto mt-4 max-w-4xl text-balance text-4xl font-bold leading-tight text-[#3d4920] sm:text-5xl">
               Partner with Us to Strengthen Nonprofit Resilience

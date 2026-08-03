@@ -41,7 +41,7 @@ export default function LegalDocumentPage({
             className="text-lg font-bold text-olea-dark hover:text-olea-green"
             href="/"
           >
-            Olea Connects
+            Olea Connects™
           </Link>
           <Link
             className="text-sm font-semibold text-olea-green underline-offset-4 hover:underline"
@@ -54,7 +54,7 @@ export default function LegalDocumentPage({
         <article className="overflow-hidden rounded-[14px] border bg-white shadow-soft">
           <div className="border-b bg-gradient-to-br from-white to-olea-light/60 px-6 py-8 md:px-12 md:py-12">
             <p className="text-xs font-bold uppercase tracking-[0.16em] text-olea-green">
-              Olea Connects legal document
+              Olea Connects™ legal document
             </p>
             <h1 className="mt-3 max-w-3xl text-3xl font-bold tracking-tight text-olea-dark md:text-5xl">
               {document.title}

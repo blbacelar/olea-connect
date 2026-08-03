@@ -122,7 +122,7 @@ Trace sequence:
    error, then replay only after the upstream issue is fixed.
 
 Stripe webhooks themselves are replayed from the Stripe Dashboard or Stripe CLI,
-not from Olea Connects. Olea Connects only replays internal outbox events.
+not from Olea Connects™. Olea Connects™ only replays internal outbox events.
 
 ## Database Restore Procedure
 

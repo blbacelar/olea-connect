@@ -1,12 +1,12 @@
 # Project Handoff
 
-This document is the first stop for a developer taking over Olea Connects. It
+This document is the first stop for a developer taking over Olea Connects™. It
 explains what the product does, how the code is organized, what is production
 critical, and how to work safely without disturbing the demo branch.
 
 ## Product Summary
 
-Olea Connects helps nonprofit organizations create branded governance documents
+Olea Connects™ helps nonprofit organizations create branded governance documents
 without starting from blank templates. A member signs up for a paid plan, sets
 organization branding, gains tier-based access to templates, edits forms in the
 browser, and exports board-ready PDF/DOCX files using their logo, colors, and
@@ -82,7 +82,7 @@ if the copy is likely to become user-facing product text.
 ### Board Calendar Portal
 
 This is the most complex module currently in the app. It should behave like a
-board portal guided by the CEO prototype HTML, while using Olea Connects
+board portal guided by the CEO prototype HTML, while using Olea Connects™
 components, auth, branding, and persistence:
 
 - Users can create more than one workbook/session.
@@ -132,7 +132,7 @@ components, auth, branding, and persistence:
 4. Team page calculates seats reserved as active members plus pending invites.
 5. Invites are created through Supabase RPC and queued as email events.
 6. Invitations can only be created for email addresses that do not already have
-   an Olea Connects auth account. Existing account moves are a support/admin
+   an Olea Connects™ auth account. Existing account moves are a support/admin
    operation, not a self-serve invite flow.
 7. Invited user creates or signs into the invited email address and accepts the
    tokenized invitation.

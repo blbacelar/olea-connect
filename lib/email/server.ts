@@ -16,7 +16,7 @@ export function getResend() {
 export function getEmailSender() {
   return (
     process.env.EMAIL_FROM ??
-    "Olea Connects <notifications@olivesocialimpact.com>"
+    "Olea Connects™ <notifications@olivesocialimpact.com>"
   );
 }
 

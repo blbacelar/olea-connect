@@ -67,7 +67,7 @@ testWithData.describe("native community authenticated visual walkthrough", () =>
       await page.getByRole("link", { name: "Community" }).click();
       await expect(page).toHaveURL("/community");
       await expect(
-        page.getByRole("heading", { name: "Olea Connects Community" }),
+        page.getByRole("heading", { name: "Olea Connects™ Community" }),
       ).toBeVisible();
       await pauseForReview();
 

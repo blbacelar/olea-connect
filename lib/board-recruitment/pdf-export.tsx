@@ -266,8 +266,8 @@ export async function renderBoardRecruitmentPdfBuffer(
       title={`${data.workspace.organizationName} Board Recruitment Report`}
       author={data.workspace.organizationName}
       subject="Board Recruitment Toolkit report"
-      creator="Olea Connects"
-      producer="Olea Connects"
+      creator="Olea Connects™"
+      producer="Olea Connects™"
     >
       <Page size="LETTER" style={styles.cover}>
         <View

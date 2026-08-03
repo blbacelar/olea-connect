@@ -356,8 +356,8 @@ function KpiDashboardDocument({
       title={`${data.dashboard.organizationName} ${data.dashboard.title}`}
       author={data.dashboard.organizationName}
       subject="KPI Dashboard and Board Reporting"
-      creator="Olea Connects"
-      producer="Olea Connects"
+      creator="Olea Connects™"
+      producer="Olea Connects™"
       keywords="KPI, board reporting, nonprofit governance"
     >
       <Page size="LETTER" style={styles.cover}>

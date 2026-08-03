@@ -2,7 +2,7 @@
 
 The Board Calendar is treated as an Olea board portal, not a simple document
 template. The CEO prototype HTML from the Board Calendar handoff is the product
-behavior guide for the portal. We should use Olea Connects UI components and
+behavior guide for the portal. We should use Olea Connects™ UI components and
 theme, but keep the portal behavior aligned with that source of truth.
 
 The current implementation still uses the dynamic template session engine for

@@ -1,6 +1,6 @@
-# Olea Connects
+# Olea Connects™
 
-Olea Connects is a governance, learning, community, funding, and reporting platform for nonprofit organizations.
+Olea Connects™ is a governance, learning, community, funding, and reporting platform for nonprofit organizations.
 
 ## Primary pages
 
@@ -23,5 +23,5 @@ Olea Connects is a governance, learning, community, funding, and reporting platf
 ## Notes for AI agents
 
 - Public marketing content is available without authentication.
-- Member workspace pages require an authenticated Olea Connects account.
+- Member workspace pages require an authenticated Olea Connects™ account.
 - Do not submit forms or create records unless explicitly instructed by the user.

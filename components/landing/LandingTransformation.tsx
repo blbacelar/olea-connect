@@ -34,7 +34,7 @@ export function LandingTransformation() {
             </h2>
           </div>
           <p className="max-w-2xl text-lg leading-8 text-slate-600">
-            Olea Connects brings the practical pieces of nonprofit operations
+            Olea Connects™ brings the practical pieces of nonprofit operations
             into one welcoming home base, so your team can move from searching
             and formatting to making decisions and serving your community.
           </p>

@@ -153,7 +153,7 @@ async function handleLifecycleNotification(
       severity: "success",
       type: "billing_payment_succeeded",
       title: "Payment received",
-      body: "Your Olea Connects membership payment was successful.",
+      body: "Your Olea Connects™ membership payment was successful.",
       idempotencyKey: `billing_payment_succeeded:${event.id}`,
     });
   } else if (event.type === "customer.subscription.deleted") {
@@ -161,7 +161,7 @@ async function handleLifecycleNotification(
       severity: "warning",
       type: "billing_subscription_canceled",
       title: "Membership canceled",
-      body: "Your Olea Connects membership is no longer active.",
+      body: "Your Olea Connects™ membership is no longer active.",
       idempotencyKey: `billing_subscription_canceled:${event.id}`,
     });
   } else if (

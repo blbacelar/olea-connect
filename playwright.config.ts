@@ -39,6 +39,11 @@ export default defineConfig({
           command: "npm run build && npm run start -- -p 3011",
           env: {
             ...process.env,
+            // E2E validates deterministic local moderation rules. Set this to
+            // "false" explicitly when running a dedicated OpenRouter integration test.
+            COMMUNITY_MODERATION_DISABLE_AI:
+              process.env.COMMUNITY_MODERATION_DISABLE_AI ?? "true",
+            COMMUNITY_MODERATION_DISABLE_AUTOMATIC_WORKER: "true",
             NEXT_PUBLIC_APP_URL: localBaseUrl,
             NEXT_PUBLIC_SITE_URL: localBaseUrl,
           },

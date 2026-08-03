@@ -5,18 +5,18 @@ import { SponsorshipPage } from "@/components/sponsorship/SponsorshipPage";
 export const metadata: Metadata = {
   title: "Sponsorships | Strengthen nonprofit resilience",
   description:
-    "Partner with Olea Connects to strengthen nonprofit resilience through collaboration, community, and shared impact.",
+    "Partner with Olea Connects™ to strengthen nonprofit resilience through collaboration, community, and shared impact.",
   alternates: { canonical: "/sponsorship" },
   openGraph: {
     type: "website",
     url: "/sponsorship",
-    title: "Partner with Olea Connects to strengthen nonprofit resilience",
+    title: "Partner with Olea Connects™ to strengthen nonprofit resilience",
     description:
       "Explore five sponsorship pathways and the Catalyst Impact Circle.",
   },
   twitter: {
     card: "summary_large_image",
-    title: "Olea Connects sponsorships",
+    title: "Olea Connects™ sponsorships",
     description:
       "Explore five sponsorship pathways and the Catalyst Impact Circle.",
   },

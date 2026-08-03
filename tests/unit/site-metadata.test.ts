@@ -1,5 +1,6 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 
+import { brandName } from "@/lib/brand";
 import {
   buildSiteMetadata,
   getSiteUrl,
@@ -34,8 +35,8 @@ describe("site metadata", () => {
     );
     expect(metadata.description).toBe(siteDescription);
     expect(metadata.openGraph).toMatchObject({
-      siteName: "Olea Connects",
-      title: "Olea Connects | Governance, branded.",
+      siteName: brandName,
+      title: `${brandName} | Governance, branded.`,
       description: siteDescription,
     });
     expect(metadata.openGraph?.images).toEqual([
@@ -47,7 +48,7 @@ describe("site metadata", () => {
     ]);
     expect(metadata.twitter).toMatchObject({
       card: "summary_large_image",
-      title: "Olea Connects | Governance, branded.",
+      title: `${brandName} | Governance, branded.`,
       description: siteDescription,
       images: ["/opengraph-image"],
     });

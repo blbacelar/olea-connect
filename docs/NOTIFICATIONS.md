@@ -1,6 +1,6 @@
 # Notifications
 
-Olea Connects uses persisted, user-scoped notifications for member lifecycle
+Olea Connects™ uses persisted, user-scoped notifications for member lifecycle
 updates. The notification bell should always reflect unread rows in
 `public.notifications`, not hard-coded UI state.
 

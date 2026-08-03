@@ -6,8 +6,8 @@ import { createClient } from "@/utils/supabase/server";
 import { InvitationAcceptance } from "./invitation-acceptance";
 
 export const metadata: Metadata = {
-  title: "Accept team invitation | Olea Connects",
-  description: "Accept your Olea Connects team invitation.",
+  title: "Accept team invitation | Olea Connects™",
+  description: "Accept your Olea Connects™ team invitation.",
 };
 
 export default async function AcceptTeamInvitationPage({
