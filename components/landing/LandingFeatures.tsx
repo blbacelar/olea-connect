@@ -56,7 +56,7 @@ export function LandingFeatures() {
         <SectionIntro
           eyebrow="What you get"
           title="Useful on Monday morning, not someday."
-          description="Every part of Olea Connects is designed to reduce administrative friction and help your organization build capacity at its own pace."
+          description="Every part of Olea Connects™ is designed to reduce administrative friction and help your organization build capacity at its own pace."
           centered
         />
         <div className="mt-12 grid gap-4 md:grid-cols-2 lg:grid-cols-3">

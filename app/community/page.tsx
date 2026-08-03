@@ -10,6 +10,7 @@ import { PageHeader } from "@/components/PageHeader";
 import { SectionHeading } from "@/components/SectionHeading";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { brandName } from "@/lib/brand";
 import { getCommunityHome } from "@/lib/data/community";
 
 import { CommunityFeed } from "./community-feed";
@@ -33,12 +34,17 @@ export default async function CommunityPage() {
         />
         <EmptyPanel
           title="Community is coming soon"
-          description="The Olea Connects community has not been seeded in this environment yet."
+          description="The Olea Connects™ community has not been seeded in this environment yet."
           icon={<MessageSquareText className="size-5" />}
         />
       </div>
     );
   }
+
+  const communityName =
+    community.name === "Olea Connects Community"
+      ? `${brandName} Community`
+      : community.name;
 
   return (
     <div>
@@ -65,7 +71,7 @@ export default async function CommunityPage() {
               Native Olea community
             </p>
             <h2 className="mt-1 text-lg font-semibold text-slate-900">
-              {community.name}
+              {communityName}
             </h2>
           </div>
           <span className="inline-flex items-center gap-2 rounded-full bg-white px-3 py-1.5 text-sm font-medium text-slate-600 shadow-sm ring-1 ring-slate-200">

@@ -75,7 +75,7 @@ export function Sidebar({ collapsed, onCollapsedChange }: SidebarProps) {
           <span
             className="mx-auto flex size-10 items-center justify-center rounded-full bg-green-100 text-lg"
             aria-label={`${organization?.tier ?? "Member"} workspace`}
-            title={`${organization?.name ?? "Olea Connects"} · ${
+            title={`${organization?.name ?? "Olea Connects™"} · ${
               organization?.tier ?? "member"
             }`}
           >
@@ -88,7 +88,7 @@ export function Sidebar({ collapsed, onCollapsedChange }: SidebarProps) {
             data-testid="workspace-organization-name"
             className="truncate text-[14.5px] font-semibold text-slate-800"
           >
-            {organization?.name ?? "Olea Connects"}
+            {organization?.name ?? "Olea Connects™"}
           </p>
           <span className="mt-1.5 inline-flex items-center gap-1 rounded-full bg-green-100 px-2.5 py-1 text-xs font-semibold capitalize text-green-800">
             <span aria-hidden="true">🌿</span> {organization?.tier ?? "member"}

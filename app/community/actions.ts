@@ -113,6 +113,10 @@ async function queueCommunityModeration(
 }
 
 function triggerCommunityModerationWorker() {
+  if (process.env.COMMUNITY_MODERATION_DISABLE_AUTOMATIC_WORKER === "true") {
+    return;
+  }
+
   const secret = process.env.CRON_SECRET;
   const appUrl =
     process.env.NEXT_PUBLIC_APP_URL ??

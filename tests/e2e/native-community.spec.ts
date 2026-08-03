@@ -849,9 +849,15 @@ testWithData.describe("@critical native community member experience", () => {
         "Suspicious download",
         "Please review this resource before opening it.",
       );
+      const moderationEventId =
+        await testData.getPendingCommunityPostModerationEventId(
+          member.userId,
+          "Suspicious download",
+        );
       await community.processModerationUntilPostHidden(
         request,
         "Suspicious download",
+        moderationEventId,
       );
     } finally {
       await context.close();
@@ -889,9 +895,15 @@ testWithData.describe("@critical native community member experience", () => {
         "A post that should not publish",
         "This is stupid and does not belong in a respectful community.",
       );
+      const moderationEventId =
+        await testData.getPendingCommunityPostModerationEventId(
+          member.userId,
+          "A post that should not publish",
+        );
       await community.processModerationUntilPostHidden(
         request,
         "A post that should not publish",
+        moderationEventId,
       );
     } finally {
       await context.close();

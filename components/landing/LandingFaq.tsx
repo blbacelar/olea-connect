@@ -4,7 +4,7 @@ import { SectionIntro } from "@/components/landing/SectionIntro";
 
 const faqs = [
   {
-    question: "Who is Olea Connects for?",
+    question: "Who is Olea Connects™ for?",
     answer:
       "Registered nonprofits, societies, charities, and community organizations at any size or stage are welcome. Resources are written primarily for a Canadian context, while international members can also join.",
   },
@@ -16,7 +16,7 @@ const faqs = [
   {
     question: "Is there a free trial?",
     answer:
-      "No. Olea Connects does not offer a free trial. The founding-member offer gives the first 50 organizations 15% off Year 1 instead.",
+      "No. Olea Connects™ does not offer a free trial. The founding-member offer gives the first 50 organizations 15% off Year 1 instead.",
   },
   {
     question: "What is the founding-member offer?",

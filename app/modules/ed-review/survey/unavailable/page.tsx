@@ -26,7 +26,7 @@ export default function UnavailableEdReviewSurveyPage() {
         </CardHeader>
         <CardContent>
           <Button asChild variant="outline">
-            <Link href="/">Return to Olea Connects</Link>
+            <Link href="/">Return to Olea Connects™</Link>
           </Button>
         </CardContent>
       </Card>

@@ -32,7 +32,7 @@ export function LandingHero() {
           <div className="mt-8 flex flex-wrap gap-3">
             <Button asChild size="lg" className="h-12 px-7 text-base">
               <Link href="/signup">
-                Join Olea Connects
+                Join Olea Connects™
                 <ArrowRight className="size-4" />
               </Link>
             </Button>
@@ -59,7 +59,7 @@ export function LandingHero() {
               here.”
             </p>
             <p className="mt-1 text-xs font-bold uppercase tracking-wider text-slate-600">
-              The Olea Connects promise
+              The Olea Connects™ promise
             </p>
           </div>
         </div>

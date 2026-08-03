@@ -16,7 +16,7 @@ export const sponsorshipTiers: SponsorshipTier[] = [
     description:
       "You're planting. Testing the soil. Exploring what it means to invest in nonprofit resilience.",
     features: [
-      "Part of the Olea Connects community for collaboration and networking",
+      "Part of the Olea Connects™ community for collaboration and networking",
       "Logo on our platform",
       "Quarterly newsletter mention",
       "Quarterly impact stories",
@@ -32,7 +32,7 @@ export const sponsorshipTiers: SponsorshipTier[] = [
     description:
       "You're deepening your commitment and building relationships within the nonprofit sector.",
     features: [
-      "Part of the Olea Connects community for collaboration and networking",
+      "Part of the Olea Connects™ community for collaboration and networking",
       "Logo on our platform",
       "Quarterly newsletter mention",
       "Quarterly impact stories",
@@ -52,7 +52,7 @@ export const sponsorshipTiers: SponsorshipTier[] = [
     description:
       "You're leading. Creating stability that becomes foundation for others. Your thought leadership shapes the sector.",
     features: [
-      "Part of the Olea Connects community for collaboration and networking",
+      "Part of the Olea Connects™ community for collaboration and networking",
       "Logo on our platform",
       "Quarterly newsletter mention",
       "Quarterly impact stories",
@@ -76,7 +76,7 @@ export const sponsorshipTiers: SponsorshipTier[] = [
     description:
       "You're stewarding. The sector trusts your judgment. Your legacy shapes the next generation.",
     features: [
-      "Part of the Olea Connects community for collaboration and networking",
+      "Part of the Olea Connects™ community for collaboration and networking",
       "Logo on our platform",
       "Quarterly newsletter mention",
       "Quarterly impact stories",
@@ -103,7 +103,7 @@ export const sponsorshipTiers: SponsorshipTier[] = [
     description:
       "You're the rare leader who doesn't just build—you catalyze change that lasts generations.",
     features: [
-      "Part of the Olea Connects community for collaboration and networking",
+      "Part of the Olea Connects™ community for collaboration and networking",
       "Logo on our platform",
       "Quarterly newsletter mention",
       "Quarterly impact stories",

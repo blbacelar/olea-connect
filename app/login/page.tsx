@@ -37,7 +37,7 @@ export default function LoginPage() {
     const needsEmailVerification = searchParams.get("verify") === "email";
     setMessage(
       needsEmailVerification
-        ? "Payment received. Check your inbox for a confirmation email from Olea Connects, confirm your address, then sign in."
+        ? "Payment received. Check your inbox for a confirmation email from Olea Connects™, confirm your address, then sign in."
         : paymentSucceeded
           ? "Payment received. Sign in to finish setting up your membership."
           : "",

@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 
+import { brandName } from "@/lib/brand";
 import type { KpiDashboardData } from "@/lib/data/kpi-dashboard";
 import { renderKpiDashboardPdfBuffer } from "@/lib/kpi-dashboard/pdf-export";
 import type { BrandProfile } from "@/lib/types";
@@ -111,8 +112,8 @@ describe("KPI dashboard PDF export", () => {
     expect(pdf.pageCount).toBe(5);
     expect(pdf.metadata).toMatchObject({
       author: "Olea QA Foundation",
-      creator: "Olea Connects",
-      producer: "Olea Connects",
+      creator: brandName,
+      producer: brandName,
       subject: "KPI Dashboard and Board Reporting",
       title: "Olea QA Foundation KPI Dashboard and Board Reporting",
     });

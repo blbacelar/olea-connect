@@ -38,7 +38,7 @@ function memberInitials(name: string) {
 
 function getInviteErrorMessage(message: string) {
   if (message.includes("already has an Olea Connects account")) {
-    return "This email is already registered with Olea Connects. Invite a new email address, or contact support if this person needs to be moved into your workspace.";
+    return "This email is already registered with Olea Connects™. Invite a new email address, or contact support if this person needs to be moved into your workspace.";
   }
 
   return message;

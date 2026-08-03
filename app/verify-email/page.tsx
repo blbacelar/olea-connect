@@ -64,7 +64,7 @@ export default function VerifyEmailPage() {
           {paymentComplete
             ? "Your payment was received. Confirm your email before accessing the dashboard."
             : "Confirm your email before accessing the dashboard."}{" "}
-          The secure link will return you to Olea Connects and continue setup
+          The secure link will return you to Olea Connects™ and continue setup
           automatically.
         </p>
         {message ? (

@@ -30,7 +30,7 @@ export function LandingWorkflow() {
         <SectionIntro
           eyebrow="How it works"
           title="From sign-up to board-ready in three steps."
-          description="Olea Connects is designed to feel simple from the first login, even when your organization is busy and your team is small."
+          description="Olea Connects™ is designed to feel simple from the first login, even when your organization is busy and your team is small."
           centered
         />
         <div className="relative mt-14 grid gap-8 md:grid-cols-3">

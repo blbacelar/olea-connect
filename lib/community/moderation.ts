@@ -159,7 +159,7 @@ export async function moderateCommunityPost(input: {
       "Content-Type": "application/json",
       "HTTP-Referer":
         process.env.NEXT_PUBLIC_APP_URL ?? "https://oleaconnects.com",
-      "X-OpenRouter-Title": "Olea Connects",
+      "X-OpenRouter-Title": "Olea Connects™",
     },
     body: JSON.stringify({
       model: openRouterModerationModel,

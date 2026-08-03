@@ -501,7 +501,7 @@ export function BoardCalendarWorkbench({
     const calendarLines = [
       "BEGIN:VCALENDAR",
       "VERSION:2.0",
-      "PRODID:-//Olea Connects//Board Calendar//EN",
+      "PRODID:-//Olea Connects™//Board Calendar//EN",
       `X-WR-CALNAME:${escapeIcsText(organizationName)} Board Calendar`,
     ];
 

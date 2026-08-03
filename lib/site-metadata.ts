@@ -1,8 +1,10 @@
 import type { Metadata } from "next";
 
+import { brandName } from "@/lib/brand";
+
 const fallbackSiteUrl = "https://staging.oleaconnects.com";
 
-export const siteTitle = "Olea Connects";
+export const siteTitle = brandName;
 export const siteDescription =
   "Board-ready governance templates, webinars, grants, and community support for Canadian nonprofits.";
 
@@ -38,7 +40,7 @@ export function buildSiteMetadata(siteUrl = getSiteUrl()): Metadata {
       "Canadian nonprofits",
       "nonprofit board documents",
       "governance tools",
-      "Olea Connects",
+      brandName,
     ],
     alternates: {
       canonical: "/",
@@ -59,7 +61,7 @@ export function buildSiteMetadata(siteUrl = getSiteUrl()): Metadata {
           url: socialImage,
           width: 1200,
           height: 630,
-          alt: "Olea Connects governance platform for Canadian nonprofits",
+          alt: "Olea Connects™ governance platform for Canadian nonprofits",
         },
       ],
     },

@@ -229,7 +229,7 @@ export function BoardEvaluationPdf({
   return (
     <Document
       title={`${organization.name} Board Self-Evaluation`}
-      author="Olea Connects"
+      author="Olea Connects™"
     >
       <Page size="LETTER" style={styles.cover}>
         <View

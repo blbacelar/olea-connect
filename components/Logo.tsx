@@ -1,6 +1,8 @@
 import Image from "next/image";
 import Link from "next/link";
 
+import { brandName } from "@/lib/brand";
+
 export function Logo({
   compact = false,
   href = "/dashboard",
@@ -11,7 +13,7 @@ export function Logo({
   return (
     <Link
       href={href}
-      aria-label="Olea Connects Governance branded dashboard"
+      aria-label="Olea Connects™ Governance branded dashboard"
       className="inline-flex shrink-0 items-center gap-3"
     >
       <Image
@@ -24,7 +26,7 @@ export function Logo({
       />
       <span className={compact ? "sr-only" : undefined}>
         <span className="block text-[15px] font-bold leading-tight text-olea-green">
-          Olea Connects
+          {brandName}
         </span>
         <span className="block text-[11px] font-medium text-slate-600">
           Governance, branded.

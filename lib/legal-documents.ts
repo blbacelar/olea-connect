@@ -4,12 +4,12 @@ export const LEGAL_DOCUMENTS = {
     version: "2026-07-24",
     href: "/legal/terms",
     summary:
-      "These terms describe membership access, billing, renewals, cancellations, and acceptable use of Olea Connects.",
+      "These terms describe membership access, billing, renewals, cancellations, and acceptable use of Olea Connects™.",
     sections: [
       {
         heading: "1. The service",
         paragraphs: [
-          "Olea Connects provides governance tools, branded templates, community resources, webinars, consulting workflows, and related services to subscribing organizations.",
+          "Olea Connects™ provides governance tools, branded templates, community resources, webinars, consulting workflows, and related services to subscribing organizations.",
           "Your organization may use the service only through authorized accounts and according to the plan, seat limits, and access permissions associated with its subscription.",
         ],
       },
@@ -17,7 +17,7 @@ export const LEGAL_DOCUMENTS = {
         heading: "2. Accounts and acceptable use",
         paragraphs: [
           "You are responsible for keeping account credentials private, maintaining accurate account information, and notifying us promptly if you suspect unauthorized access.",
-          "You must not use Olea Connects to break the law, interfere with the service, evade access controls, upload malicious code, or submit content that you do not have permission to share.",
+          "You must not use Olea Connects™ to break the law, interfere with the service, evade access controls, upload malicious code, or submit content that you do not have permission to share.",
         ],
       },
       {
@@ -41,13 +41,13 @@ export const LEGAL_DOCUMENTS = {
     version: "2026-07-24",
     href: "/legal/privacy",
     summary:
-      "This policy explains what personal information Olea Connects collects, why it is used, and how it is protected.",
+      "This policy explains what personal information Olea Connects™ collects, why it is used, and how it is protected.",
     sections: [
       {
         heading: "1. Information we collect",
         paragraphs: [
           "We collect account and contact details, organization information, subscription and billing records, content submitted to the service, support requests, and technical information needed to operate and secure the platform.",
-          "Payment card details are handled by our hosted payment provider. Olea Connects receives the payment and subscription information needed to manage access and billing, not the full card number or security code.",
+          "Payment card details are handled by our hosted payment provider. Olea Connects™ receives the payment and subscription information needed to manage access and billing, not the full card number or security code.",
         ],
       },
       {
@@ -82,14 +82,14 @@ export const LEGAL_DOCUMENTS = {
       {
         heading: "1. Your organization's content",
         paragraphs: [
-          "Your organization owns the documents, posts, schedules, metrics, meeting materials, consulting requests, and other content it submits to Olea Connects.",
+          "Your organization owns the documents, posts, schedules, metrics, meeting materials, consulting requests, and other content it submits to Olea Connects™.",
           "You are responsible for ensuring that your organization has the rights and permissions needed to upload, store, and share that content with the people you authorize.",
         ],
       },
       {
         heading: "2. Limited service license",
         paragraphs: [
-          "You grant Olea Connects a limited, non-exclusive right to host, secure, back up, display, transform, and process your content only as needed to provide, maintain, and improve the service.",
+          "You grant Olea Connects™ a limited, non-exclusive right to host, secure, back up, display, transform, and process your content only as needed to provide, maintain, and improve the service.",
           "This permission ends when the content is deleted or the service relationship ends, except where processing or retention is required for security, legal, audit, backup, or dispute-resolution purposes.",
         ],
       },
@@ -112,7 +112,7 @@ export const LEGAL_DOCUMENTS = {
       {
         heading: "1. Confidential information",
         paragraphs: [
-          "Confidential information includes board materials, personal information, financial information, unpublished plans, credentials, consulting requests, and other non-public organizational content shared through Olea Connects.",
+          "Confidential information includes board materials, personal information, financial information, unpublished plans, credentials, consulting requests, and other non-public organizational content shared through Olea Connects™.",
         ],
       },
       {
@@ -123,9 +123,9 @@ export const LEGAL_DOCUMENTS = {
         ],
       },
       {
-        heading: "3. Olea Connects responsibilities",
+        heading: "3. Olea Connects™ responsibilities",
         paragraphs: [
-          "Olea Connects personnel and service providers may access confidential content only when needed to operate, secure, maintain, or support the service. Access is subject to appropriate confidentiality and security obligations.",
+          "Olea Connects™ personnel and service providers may access confidential content only when needed to operate, secure, maintain, or support the service. Access is subject to appropriate confidentiality and security obligations.",
           "We may disclose information when required by law, legal process, or an urgent need to protect users, the service, or the public, while taking reasonable steps to limit the disclosure.",
         ],
       },

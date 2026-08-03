@@ -1,3 +1,5 @@
+import { brandName } from "@/lib/brand";
+
 export type TransactionalEmail = {
   subject: string;
   html: string;
@@ -52,7 +54,7 @@ function layout({
 <table role="presentation" width="100%" cellspacing="0" cellpadding="0"><tr><td align="center">
 <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="background:#ffffff;border:1px solid #e5e7eb;border-radius:14px;max-width:600px">
 <tr><td style="padding:30px 34px">
-<p style="color:${brand.green};font-size:19px;font-weight:800;margin:0 0 26px">Olea Connects</p>
+<p style="color:${brand.green};font-size:19px;font-weight:800;margin:0 0 26px">${brandName}</p>
 <h1 style="color:#172033;font-size:28px;line-height:1.2;margin:0 0 18px">${title}</h1>
 <div style="color:#526079;font-size:15px;line-height:1.7">${body}</div>
 ${action}
@@ -83,7 +85,7 @@ export function teamInvitationEmail(input: {
     subject,
     text,
     html: layout({
-      preheader: `Join ${organizationName} on Olea Connects.`,
+      preheader: `Join ${organizationName} on ${brandName}.`,
       title: "You’re invited",
       body: `<p>${organizationName} invited you to collaborate as <strong>${role}</strong>.</p><p>This invitation expires ${expiry}.</p>`,
       actionLabel: "Accept invitation",
@@ -181,8 +183,8 @@ export function eventScheduleChangeEmail(input: {
     ? `${input.eventTitle} has been canceled`
     : `${input.eventTitle} has been rescheduled`;
   const text = canceled
-    ? `${input.eventTitle} has been canceled. View your Olea Connects events: ${input.webinarsUrl}`
-    : `${input.eventTitle} is now scheduled for ${eventTime}. View your Olea Connects events: ${input.webinarsUrl}`;
+    ? `${input.eventTitle} has been canceled. View your ${brandName} events: ${input.webinarsUrl}`
+    : `${input.eventTitle} is now scheduled for ${eventTime}. View your ${brandName} events: ${input.webinarsUrl}`;
 
   return {
     subject,
@@ -191,12 +193,12 @@ export function eventScheduleChangeEmail(input: {
       preheader: subject,
       title: canceled ? "Event canceled" : "Event rescheduled",
       body: canceled
-        ? `<p><strong>${eventTitle}</strong> has been canceled.</p><p>You can find your latest live sessions and recordings in Olea Connects.</p>`
+        ? `<p><strong>${eventTitle}</strong> has been canceled.</p><p>You can find your latest live sessions and recordings in ${brandName}.</p>`
         : `<p><strong>${eventTitle}</strong> has been rescheduled.</p><p>The new time is <strong>${eventTime}</strong>.</p>`,
       actionLabel: "View events",
       actionUrl: input.webinarsUrl,
       footer:
-        "You received this because you registered for this Olea Connects event.",
+        `You received this because you registered for this ${brandName} event.`,
     }),
   };
 }

@@ -300,7 +300,7 @@ Set secrets:
 npx supabase secrets set \
   RESEND_API_KEY="..." \
   SEND_EMAIL_HOOK_SECRET="..." \
-  EMAIL_FROM="Olea Connects <notifications@olivesocialimpact.com>" \
+  EMAIL_FROM="Olea Connects™ <notifications@olivesocialimpact.com>" \
   EMAIL_REPLY_TO="hello@olivesocialimpact.com" \
   EMAIL_ENVIRONMENT="production" \
   --project-ref <project-ref>

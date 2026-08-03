@@ -7,7 +7,7 @@ import { getPublicRecruitmentSurvey } from "@/lib/data/board-recruitment-survey"
 export const dynamic = "force-dynamic";
 
 export const metadata: Metadata = {
-  title: "Board skills survey | Olea Connects",
+  title: "Board skills survey | Olea Connects™",
   description: "Complete your organization's secure board skills survey.",
 };
 
@@ -24,7 +24,7 @@ export default async function BoardRecruitmentSurveyPage({
       <main className="mx-auto max-w-2xl p-6 md:p-12">
         <div className="rounded-2xl border bg-white p-8 shadow-soft">
           <p className="text-xs font-bold uppercase tracking-[0.12em] text-olea-green">
-            Olea Connects
+            Olea Connects™
           </p>
           <h1 className="mt-3 text-3xl font-bold text-slate-900">
             Survey link unavailable

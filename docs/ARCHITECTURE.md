@@ -1,6 +1,6 @@
 # Architecture
 
-Olea Connects is a Next.js App Router application backed by Supabase and Stripe.
+Olea Connects™ is a Next.js App Router application backed by Supabase and Stripe.
 Most authorization is enforced twice: globally in middleware for route access
 and in Supabase/Postgres through RLS/RPC policies for data access.
 
@@ -179,7 +179,7 @@ Database concepts:
 
 The Board Calendar is a board portal that currently uses the dynamic template
 session engine for storage and exports. The CEO prototype HTML is the source of
-truth for the portal behavior, while Olea Connects owns the final UI theme,
+truth for the portal behavior, while Olea Connects™ owns the final UI theme,
 auth, persistence, branding, and platform chrome.
 
 The portal has additional client-side logic:

@@ -86,7 +86,7 @@ async function getPortalUpdateProducts() {
 async function getBillingPortalConfigurationParams() {
   return {
     business_profile: {
-      headline: "Manage your Olea Connects membership and payment details.",
+      headline: "Manage your Olea Connects™ membership and payment details.",
     },
     features: {
       customer_update: {
