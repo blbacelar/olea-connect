@@ -8,9 +8,15 @@ export const kpiDashboardModule = {
   resourceSlug: "kpi-dashboard-board-reporting",
 } as const;
 
+export const accreditationModule = {
+  path: "/modules/accreditation",
+  resourceSlug: "imagine-canada-accreditation-prep",
+} as const;
+
 const modulePathByResourceSlug = new Map<string, string>([
   [boardCalendarModule.resourceSlug, boardCalendarModule.path],
   [kpiDashboardModule.resourceSlug, kpiDashboardModule.path],
+  [accreditationModule.resourceSlug, accreditationModule.path],
 ]);
 
 export function getResourceHref(resourceSlug: string) {
