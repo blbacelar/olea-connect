@@ -9,6 +9,7 @@ import {
 import type { AccreditationWorkspaceData } from "@/lib/accreditation/types";
 import { createClient } from "@/utils/supabase/server";
 
+import { hasAccreditationWorkspaceAccess } from "./accreditation-access";
 import { requireMemberContext } from "./member-context";
 
 export async function getAccreditationWorkspaceData(): Promise<AccreditationWorkspaceData> {
@@ -47,15 +48,13 @@ export async function getAccreditationWorkspaceData(): Promise<AccreditationWork
   if (planAccessError) throw planAccessError;
   if (directAccessError) throw directAccessError;
 
-  const hasPlanAccess = (planAccess ?? []).some(
-    (access) => access.plan_id === organization.tier,
-  );
-  const now = new Date().toISOString();
-  const hasDirectAccess = (directAccess ?? []).some(
-    (access) => !access.ends_at || access.ends_at > now,
-  );
+  const hasAccess = hasAccreditationWorkspaceAccess({
+    directAccess: directAccess ?? [],
+    organizationTier: organization.tier,
+    planAccess: planAccess ?? [],
+  });
 
-  if (!hasDirectAccess && !hasPlanAccess) {
+  if (!hasAccess) {
     throw new Error("Your plan does not include this accreditation workspace.");
   }
 
