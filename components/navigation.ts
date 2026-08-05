@@ -44,6 +44,11 @@ export const navigationGroups: NavigationItem[][] = [
       requiredOrganizationRoles: ["owner", "admin"],
     },
     {
+      label: "Accreditation",
+      href: "/modules/accreditation",
+      icon: ShieldCheck,
+    },
+    {
       label: "ED Review",
       href: "/modules/ed-review",
       icon: ClipboardList,
