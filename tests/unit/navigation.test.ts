@@ -20,6 +20,10 @@ describe("application navigation", () => {
     expect(navigationLabelsFor([])).toContain("KPI Dashboard");
   });
 
+  it("shows the Grant Platform module to regular members", () => {
+    expect(navigationLabelsFor([])).toContain("Grant Platform");
+  });
+
   it("hides Board Recruitment from regular organization members", () => {
     expect(navigationLabelsFor([], "member")).not.toContain(
       "Board Recruitment",

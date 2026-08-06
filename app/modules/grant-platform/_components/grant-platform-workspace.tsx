@@ -3,11 +3,12 @@
 import {
   ArrowRight,
   BarChart3,
-  BookOpen,
   CalendarClock,
   CircleCheckBig,
   FileText,
   LayoutGrid,
+  ReceiptText,
+  Send,
   Settings2,
   ShieldCheck,
   Sparkles,
@@ -16,11 +17,18 @@ import {
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 
+import {
+  saveGrantPlatformApplication,
+  withdrawGrantPlatformApplication,
+} from "@/app/modules/grant-platform/actions";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Textarea } from "@/components/ui/textarea";
 import type { GrantPlatformWorkspaceData } from "@/lib/data/grant-platform";
+import { grantFocusAreaLabels, grantStatusLabels } from "@/lib/grants/domain";
 
 type GrantPlatformTab = "overview" | "pipeline" | "reports" | "settings";
 
@@ -39,17 +47,136 @@ function resolveTab(value?: string): GrantPlatformTab {
 
 function getSectionIcon(sectionId: string) {
   switch (sectionId) {
-    case "dashboard":
-      return FileText;
     case "pipeline":
       return Users;
-    case "coaching":
-      return BookOpen;
+    case "workflow":
+      return Sparkles;
     case "reports":
       return BarChart3;
     default:
       return Settings2;
   }
+}
+
+function formatCurrency(cents: number) {
+  return new Intl.NumberFormat("en-CA", {
+    currency: "CAD",
+    maximumFractionDigits: 0,
+    style: "currency",
+  }).format(cents / 100);
+}
+
+function getWorkflowSelection(data: GrantPlatformWorkspaceData) {
+  const selectedRound =
+    data.rounds.find((round) => round.existingApplicationId) ??
+    data.rounds.find((round) => round.status === "open") ??
+    data.rounds[0] ??
+    null;
+
+  const activeApplication = selectedRound
+    ? data.applications.find((application) => application.id === selectedRound.existingApplicationId) ??
+      data.applications.find((application) => application.roundId === selectedRound.id) ??
+      null
+    : null;
+
+  return {
+    activeApplication,
+    selectedRound,
+  };
+}
+
+function ApplicationWorkflowPanel({ data }: { data: GrantPlatformWorkspaceData }) {
+  const [draftMessage] = useState<string | null>(null);
+  const { activeApplication, selectedRound } = getWorkflowSelection(data);
+  const actionState = activeApplication
+    ? data.workflowState[activeApplication.id]
+    : null;
+
+  return (
+    <Card className="shadow-soft">
+      <CardHeader>
+        <CardTitle className="text-lg">Application workflow</CardTitle>
+      </CardHeader>
+      <CardContent className="space-y-4">
+        <p className="text-sm leading-6 text-slate-600">
+          Save a draft or submit a live application from the same workspace that tracks your funding pipeline and reporting readiness.
+        </p>
+        {!selectedRound ? (
+          <div className="rounded-lg border border-slate-200 bg-slate-50 p-4 text-sm text-slate-600">
+            No grant rounds are currently accepting applications.
+          </div>
+        ) : activeApplication ? (
+          <div className="rounded-lg border border-slate-200 bg-slate-50 p-4">
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <div>
+                <p className="font-semibold text-slate-900">{activeApplication.roundName}</p>
+                <p className="text-sm text-slate-600">{grantStatusLabels[activeApplication.status as keyof typeof grantStatusLabels] ?? activeApplication.status}</p>
+              </div>
+              <div className="text-right text-sm text-slate-600">
+                <p>{formatCurrency(activeApplication.requestedAmountCents)}</p>
+                <p className="text-xs text-slate-500">Requested amount</p>
+              </div>
+            </div>
+            {actionState ? (
+              <div className="mt-3 flex flex-wrap gap-2 text-xs text-slate-600">
+                {actionState.canEdit ? <span className="rounded-full bg-olea-light px-2.5 py-1 text-olea-green">Draft editing enabled</span> : null}
+                {actionState.canWithdraw ? <span className="rounded-full bg-white px-2.5 py-1">Withdraw available</span> : null}
+                {actionState.canReview ? <span className="rounded-full bg-white px-2.5 py-1">Leadership review active</span> : null}
+              </div>
+            ) : null}
+            {actionState?.canWithdraw ? (
+              <form action={withdrawGrantPlatformApplication} className="mt-4">
+                <input name="applicationId" type="hidden" value={activeApplication.id} />
+                <Button size="sm" type="submit" variant="outline">
+                  Withdraw application
+                </Button>
+              </form>
+            ) : null}
+          </div>
+        ) : (
+          <form action={saveGrantPlatformApplication} className="space-y-4 rounded-lg border border-slate-200 bg-slate-50 p-4">
+            <input name="roundId" type="hidden" value={selectedRound?.id ?? ""} />
+            <label className="block text-sm font-semibold text-slate-700">
+              Focus area
+              <select className="mt-2 w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm" defaultValue="operational_capacity" name="focusArea">
+                {Object.entries(grantFocusAreaLabels).map(([value, label]) => (
+                  <option key={value} value={value}>
+                    {label}
+                  </option>
+                ))}
+              </select>
+            </label>
+            <label className="block text-sm font-semibold text-slate-700">
+              Requested amount (CAD)
+              <Input className="mt-2" defaultValue="5000" min="1" name="requestedAmount" type="number" />
+            </label>
+            <label className="block text-sm font-semibold text-slate-700">
+              Annual revenue (CAD)
+              <Input className="mt-2" defaultValue="100000" min="0" name="annualRevenue" type="number" />
+            </label>
+            <label className="block text-sm font-semibold text-slate-700">
+              Narrative
+              <Textarea className="mt-2 min-h-[140px]" defaultValue="We are preparing a focused request to expand our operational capacity and support the delivery of programs for the community we serve." name="fundingRequest" />
+            </label>
+            <label className="block text-sm font-semibold text-slate-700">
+              Expected outcome
+              <Textarea className="mt-2" defaultValue="This investment will allow us to strengthen delivery and report measurable impact to our supporters." name="expectedOutcome" />
+            </label>
+            <div className="flex flex-wrap gap-3">
+              <Button name="intent" type="submit" value="draft" variant="outline">
+                Save draft
+              </Button>
+              <Button name="intent" type="submit" value="submit">
+                <Send className="mr-2 size-4" />
+                Submit application
+              </Button>
+            </div>
+          </form>
+        )}
+        {draftMessage ? <p className="text-sm text-olea-green">{draftMessage}</p> : null}
+      </CardContent>
+    </Card>
+  );
 }
 
 export function GrantPlatformWorkspace({
@@ -110,13 +237,8 @@ export function GrantPlatformWorkspace({
 
         <TabsContent value="overview" className="space-y-5">
           <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-            {[
-              { label: "Active grants", value: "12", icon: FileText },
-              { label: "Upcoming deadlines", value: "5", icon: CalendarClock },
-              { label: "Collaboration threads", value: "18", icon: Users },
-              { label: "Board-ready reports", value: "4", icon: BarChart3 },
-            ].map((item) => {
-              const Icon = item.icon;
+            {data.metrics.map((item) => {
+              const Icon = item.label === "Open rounds" ? FileText : item.label === "Applications" ? ReceiptText : item.label === "Awarded" ? CircleCheckBig : CalendarClock;
               return (
                 <Card key={item.label} className="shadow-soft">
                   <CardContent className="flex items-center gap-3 p-4">
@@ -126,6 +248,7 @@ export function GrantPlatformWorkspace({
                     <div>
                       <p className="text-2xl font-semibold text-slate-900">{item.value}</p>
                       <p className="text-sm text-slate-500">{item.label}</p>
+                      <p className="text-xs text-slate-500">{item.detail}</p>
                     </div>
                   </CardContent>
                 </Card>
@@ -165,17 +288,33 @@ export function GrantPlatformWorkspace({
 
         <TabsContent value="pipeline" className="space-y-5">
           <div className="grid gap-4 lg:grid-cols-[1.1fr_0.9fr]">
+            <ApplicationWorkflowPanel data={data} />
             <Card className="shadow-soft">
               <CardHeader>
-                <CardTitle className="text-lg">Current funding priorities</CardTitle>
+                <CardTitle className="text-lg">Funding rounds</CardTitle>
               </CardHeader>
               <CardContent className="space-y-3">
-                {data.sections.slice(0, 3).map((section) => (
-                  <div key={section.id} className="rounded-lg border bg-slate-50 p-4">
-                    <p className="font-semibold text-slate-900">{section.title}</p>
-                    <p className="mt-1 text-sm text-slate-600">{section.description}</p>
-                  </div>
-                ))}
+                {data.rounds.length ? (
+                  data.rounds.map((round) => (
+                    <div key={round.id} className="rounded-lg border bg-slate-50 p-4">
+                      <div className="flex flex-wrap items-center justify-between gap-2">
+                        <div>
+                          <p className="font-semibold text-slate-900">{round.name}</p>
+                          <p className="text-sm text-slate-600">{round.programName} • {round.programType}</p>
+                        </div>
+                        <Badge className="bg-white text-slate-700">{round.status}</Badge>
+                      </div>
+                      <p className="mt-2 text-sm text-slate-600">{round.description}</p>
+                      <div className="mt-3 flex flex-wrap gap-3 text-sm text-slate-500">
+                        <span>Closes: {round.closesAt ? new Date(round.closesAt).toLocaleDateString() : "TBD"}</span>
+                        <span>Budget: ${(round.budgetCents / 100).toLocaleString()}</span>
+                        <span>Awards: {round.availableAwards}</span>
+                      </div>
+                    </div>
+                  ))
+                ) : (
+                  <p className="text-sm text-slate-500">No grant rounds are available yet.</p>
+                )}
               </CardContent>
             </Card>
             <Card className="shadow-soft">
@@ -199,14 +338,32 @@ export function GrantPlatformWorkspace({
         </TabsContent>
 
         <TabsContent value="reports" className="space-y-5">
-          <div className="grid gap-4 lg:grid-cols-3">
+          <div className="grid gap-4 lg:grid-cols-2">
             <Card className="shadow-soft">
               <CardHeader>
-                <CardTitle className="text-lg">Reporting cadence</CardTitle>
+                <CardTitle className="text-lg">Recent applications</CardTitle>
               </CardHeader>
-              <CardContent className="space-y-3 text-sm text-slate-600">
-                <p>Track quarterly performance, funder updates, and internal milestones in one place.</p>
-                <p className="rounded-lg border bg-slate-50 p-3">Board-ready snapshots are prepared from the same source of truth used by the pipeline.</p>
+              <CardContent className="space-y-3">
+                {data.applications.length ? (
+                  data.applications.map((application) => (
+                    <div key={application.id} className="rounded-lg border bg-slate-50 p-4">
+                      <div className="flex items-center justify-between gap-2">
+                        <div>
+                          <p className="font-semibold text-slate-900">{application.roundName}</p>
+                          <p className="text-sm text-slate-600">{application.focusArea}</p>
+                        </div>
+                        <Badge className="bg-white text-slate-700">{application.status}</Badge>
+                      </div>
+                      <div className="mt-3 flex flex-wrap gap-3 text-sm text-slate-500">
+                        <span>Requested: ${(application.requestedAmountCents / 100).toLocaleString()}</span>
+                        <span>Updated: {new Date(application.updatedAt).toLocaleDateString()}</span>
+                        <span>Award: {application.awardStatus ?? "pending"}</span>
+                      </div>
+                    </div>
+                  ))
+                ) : (
+                  <p className="text-sm text-slate-500">No applications have been submitted yet.</p>
+                )}
               </CardContent>
             </Card>
             <Card className="shadow-soft">
@@ -216,15 +373,6 @@ export function GrantPlatformWorkspace({
               <CardContent className="space-y-3 text-sm text-slate-600">
                 <p>Keep financial, program, and narrative updates aligned for funders and leadership.</p>
                 <p className="rounded-lg border bg-slate-50 p-3">Every report can be exported or reviewed without leaving the workspace.</p>
-              </CardContent>
-            </Card>
-            <Card className="shadow-soft">
-              <CardHeader>
-                <CardTitle className="text-lg">Next review</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-3 text-sm text-slate-600">
-                <p>Schedule the next review cycle around upcoming grant deadlines and board milestones.</p>
-                <p className="rounded-lg border bg-slate-50 p-3">This keeps the program team aligned with the same standards used across the platform.</p>
               </CardContent>
             </Card>
           </div>
@@ -237,21 +385,21 @@ export function GrantPlatformWorkspace({
                 <CardTitle className="text-lg">Workspace configuration</CardTitle>
               </CardHeader>
               <CardContent className="space-y-3 text-sm text-slate-600">
-                <p>Define the organization context, service area, and collaboration rules that shape the grant workflow.</p>
+                <p>Use the organization context and current round data as the source of truth for grant operations.</p>
                 <div className="rounded-lg border bg-slate-50 p-4">
                   <p className="font-semibold text-slate-900">Included details</p>
                   <ul className="mt-2 space-y-2">
                     <li className="flex items-start gap-2">
                       <CircleCheckBig className="mt-0.5 size-4 shrink-0 text-olea-green" />
-                      <span>Organization-specific settings for grant operations</span>
+                      <span>Organization-specific grant operations context</span>
                     </li>
                     <li className="flex items-start gap-2">
                       <CircleCheckBig className="mt-0.5 size-4 shrink-0 text-olea-green" />
-                      <span>Ownership and partner management for submission readiness</span>
+                      <span>Current funding round visibility</span>
                     </li>
                     <li className="flex items-start gap-2">
                       <CircleCheckBig className="mt-0.5 size-4 shrink-0 text-olea-green" />
-                      <span>Review and reporting workflows aligned to leadership needs</span>
+                      <span>Leadership review and reporting readiness</span>
                     </li>
                   </ul>
                 </div>
