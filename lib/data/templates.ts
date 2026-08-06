@@ -1,6 +1,7 @@
 import "server-only";
 
 import { normalizeTemplateSchema } from "@/lib/template-renderer/schema";
+import { buildGrantPlatformTemplate } from "@/lib/templates/grant-platform";
 import type {
   DynamicTemplateEditorData,
   DynamicTemplateSession,
@@ -73,7 +74,7 @@ export async function getTemplates(): Promise<Template[]> {
     }
   }
 
-  return (resources ?? []).map((resource) => {
+  const mappedTemplates = (resources ?? []).map((resource) => {
     const allowedPlans = accessByResource.get(resource.id) ?? [];
     const requiredTier =
       allowedPlans.toSorted((left, right) => planRank[left] - planRank[right])[0] ??
@@ -105,6 +106,31 @@ export async function getTemplates(): Promise<Template[]> {
           45 * 24 * 60 * 60 * 1000,
     };
   });
+
+  const grantPlatformTemplate = buildGrantPlatformTemplate();
+  const hasGrantPlatformTemplate = mappedTemplates.some(
+    (template) => template.slug === grantPlatformTemplate.slug,
+  );
+
+  if (hasGrantPlatformTemplate) {
+    return mappedTemplates;
+  }
+
+  return [
+    ...mappedTemplates,
+    {
+      id: grantPlatformTemplate.slug,
+      slug: grantPlatformTemplate.slug,
+      name: grantPlatformTemplate.name,
+      description: grantPlatformTemplate.summary,
+      category: grantPlatformTemplate.category,
+      requiredTier: "seedling" as MembershipTier,
+      available: true,
+      estimatedTime: "~20 min",
+      status: "Ready to review",
+      isNew: true,
+    },
+  ];
 }
 
 export async function getTemplateBySlug(slug: string) {

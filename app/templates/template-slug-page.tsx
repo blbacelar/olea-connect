@@ -1,6 +1,8 @@
 import { BellRing, FileClock } from "lucide-react";
 import Link from "next/link";
 
+import { GrantPlatformWorkspace } from "@/app/modules/grant-platform/_components/grant-platform-workspace";
+
 import { DynamicTemplateEditor } from "@/components/templates/DynamicTemplateEditor";
 import { TierBadge } from "@/components/TierBadge";
 import { Button } from "@/components/ui/button";
@@ -31,6 +33,13 @@ export async function TemplateSlugPage({
   slug: string;
   sessionId?: string;
 }) {
+  if (slug === "grant-platform") {
+    const { getGrantPlatformData } = await import("@/lib/data/grant-platform");
+    const data = await getGrantPlatformData();
+
+    return <GrantPlatformWorkspace activeTab="overview" data={data} />;
+  }
+
   const editorData = await getDynamicTemplateEditorData(slug, sessionId);
   if (editorData) {
     return (
