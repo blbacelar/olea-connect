@@ -520,7 +520,7 @@ function EditorTab({
     <div className="grid gap-5 xl:grid-cols-[minmax(0,1fr)_360px]">
       <Card>
         <CardContent className="p-5">
-          <div className="grid gap-4 md:grid-cols-[260px_1fr]">
+          <div className="space-y-4">
             <div>
               <Label htmlFor="templatePicker">Template</Label>
               <Select value={template.code} onValueChange={selectTemplate}>
@@ -536,14 +536,9 @@ function EditorTab({
                 </SelectContent>
               </Select>
             </div>
-            <div className="rounded-xl border bg-olea-light/40 p-4">
-              <p className="text-xs font-bold uppercase tracking-[0.18em] text-olea-green">
-                Imagine Canada requirement
-              </p>
-              <p className="mt-2 text-sm leading-6 text-slate-700">
-                {template.icRequirement}
-              </p>
-            </div>
+            <p className="text-sm leading-6 text-slate-500">
+              <span className="font-medium text-slate-700">Requirement</span>: {template.icRequirement}
+            </p>
           </div>
 
           <form action={submit} className="mt-6 space-y-5">
