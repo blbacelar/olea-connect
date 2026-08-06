@@ -49,6 +49,11 @@ export const navigationGroups: NavigationItem[][] = [
       icon: ShieldCheck,
     },
     {
+      label: "Grant Platform",
+      href: "/modules/grant-platform",
+      icon: Gift,
+    },
+    {
       label: "ED Review",
       href: "/modules/ed-review",
       icon: ClipboardList,

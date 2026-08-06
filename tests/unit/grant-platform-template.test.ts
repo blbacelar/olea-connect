@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 
+import { getGrantPlatformApplicationActionState } from "@/lib/grants/workflow";
 import { getResourceHref } from "@/lib/modules";
 import { buildGrantPlatformTemplate } from "@/lib/templates/grant-platform";
 
@@ -18,5 +19,23 @@ describe("grant platform template content", () => {
 
   it("maps the grant platform slug to the module route", () => {
     expect(getResourceHref("grant-platform")).toBe("/modules/grant-platform");
+  });
+
+  it("classifies workflow actions from application status", () => {
+    expect(getGrantPlatformApplicationActionState("draft")).toMatchObject({
+      canEdit: true,
+      canWithdraw: true,
+      canReview: false,
+    });
+    expect(getGrantPlatformApplicationActionState("submitted")).toMatchObject({
+      canEdit: false,
+      canWithdraw: true,
+      canReview: true,
+    });
+    expect(getGrantPlatformApplicationActionState("approved")).toMatchObject({
+      canEdit: false,
+      canWithdraw: false,
+      canReview: false,
+    });
   });
 });
