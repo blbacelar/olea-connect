@@ -13,10 +13,16 @@ export const accreditationModule = {
   resourceSlug: "imagine-canada-accreditation-prep",
 } as const;
 
+export const grantPlatformModule = {
+  path: "/modules/grant-platform",
+  resourceSlug: "grant-platform",
+} as const;
+
 const modulePathByResourceSlug = new Map<string, string>([
   [boardCalendarModule.resourceSlug, boardCalendarModule.path],
   [kpiDashboardModule.resourceSlug, kpiDashboardModule.path],
   [accreditationModule.resourceSlug, accreditationModule.path],
+  [grantPlatformModule.resourceSlug, grantPlatformModule.path],
 ]);
 
 export function getResourceHref(resourceSlug: string) {
