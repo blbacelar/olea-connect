@@ -92,7 +92,7 @@ export async function getGrantPlatformData(): Promise<GrantPlatformWorkspaceData
       ? application.grant_awards[0]
       : application.grant_awards;
 
-    const statusSummary = {
+    const statusSummaryMap: Record<string, string> = {
       draft: "Draft package in progress",
       submitted: "Submitted and awaiting review",
       in_review: "Under review by the team",
@@ -100,17 +100,9 @@ export async function getGrantPlatformData(): Promise<GrantPlatformWorkspaceData
       approved: "Awarded and ready for delivery",
       declined: "Declined and needs review",
       withdrawn: "Withdrawn by the applicant",
-    }[application.status as keyof typeof {
-      draft: "Draft package in progress",
-      submitted: "Submitted and awaiting review",
-      in_review: "Under review by the team",
-      shortlisted: "Shortlisted for follow-up",
-      approved: "Awarded and ready for delivery",
-      declined: "Declined and needs review",
-      withdrawn: "Withdrawn by the applicant",
-    }] ?? "Activity tracked";
+    };
 
-    const nextMilestone = {
+    const nextMilestoneMap: Record<string, string> = {
       draft: "Gather evidence and finalize the narrative",
       submitted: "Prepare the review package and follow-up notes",
       in_review: "Collect stakeholder feedback and decisions",
@@ -118,15 +110,10 @@ export async function getGrantPlatformData(): Promise<GrantPlatformWorkspaceData
       approved: "Kick off reporting and delivery milestones",
       declined: "Review learning notes and eligibility gaps",
       withdrawn: "Archive the request and note the decision",
-    }[application.status as keyof typeof {
-      draft: "Gather evidence and finalize the narrative",
-      submitted: "Prepare the review package and follow-up notes",
-      in_review: "Collect stakeholder feedback and decisions",
-      shortlisted: "Confirm the next decision checkpoint",
-      approved: "Kick off reporting and delivery milestones",
-      declined: "Review learning notes and eligibility gaps",
-      withdrawn: "Archive the request and note the decision",
-    }] ?? "Track the current milestone";
+    };
+
+    const statusSummary = statusSummaryMap[application.status] ?? "Activity tracked";
+    const nextMilestone = nextMilestoneMap[application.status] ?? "Track the current milestone";
 
     return {
       id: application.id,
