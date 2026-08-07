@@ -15,6 +15,14 @@ describe("grant platform template content", () => {
       expect.arrayContaining(["dashboard", "pipeline", "coaching", "reports", "settings"]),
     );
     expect(template.sections[0]?.title).toBe("Dashboard");
+    expect(template.settingsOptions.map((option) => option.id)).toEqual(
+      expect.arrayContaining(["workflow", "reporting", "team-access", "notifications"]),
+    );
+    expect(template.settingsOptions[0]?.title).toBe("Application workflow");
+    expect(template.workflowStages.map((stage) => stage.id)).toEqual(
+      expect.arrayContaining(["intake", "drafting", "submission", "review", "decision", "reporting"]),
+    );
+    expect(template.workflowStages[0]?.title).toBe("Intake and eligibility");
   });
 
   it("maps the grant platform slug to the module route", () => {

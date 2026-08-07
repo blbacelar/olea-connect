@@ -204,6 +204,18 @@ function ApplicationForm({
           placeholder="Describe the practical outcome your organization expects to report back."
         />
       </label>
+      <label className="mt-4 block text-sm font-semibold text-slate-700">
+        Supporting documents
+        <input
+          className="mt-2 block w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm shadow-sm file:mr-3 file:rounded-md file:border-0 file:bg-olea-green file:px-3 file:py-2 file:text-sm file:font-medium file:text-white"
+          multiple
+          name="attachments"
+          type="file"
+        />
+        <span className="mt-2 block text-sm font-normal text-slate-500">
+          PDF, Word, Excel, PowerPoint, images, CSV, and plain text files up to 25 MB each.
+        </span>
+      </label>
       <div className="mt-5 flex flex-wrap gap-3">
         <Button name="intent" type="submit" value="draft" variant="outline">
           Save draft
