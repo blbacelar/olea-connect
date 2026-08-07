@@ -75,11 +75,20 @@ export async function getGrantPlatformData(): Promise<GrantPlatformWorkspaceData
       .order("updated_at", { ascending: false }),
   ]);
 
-  if (organizationError) throw organizationError;
-  if (roundsError) throw roundsError;
-  if (applicationsError) throw applicationsError;
+  if (organizationError) {
+    console.error("grant-platform: failed to load organization record", organizationError);
+  }
+  if (roundsError) {
+    console.error("grant-platform: failed to load grant rounds", roundsError);
+  }
+  if (applicationsError) {
+    console.error("grant-platform: failed to load grant applications", applicationsError);
+  }
 
-  const visibleApplications = (applications ?? []).filter((application) => {
+  const safeRounds = roundsError ? [] : rounds ?? [];
+  const safeApplications = applicationsError ? [] : applications ?? [];
+
+  const visibleApplications = safeApplications.filter((application) => {
     if (canViewReports || canViewBudgets) return true;
     return application.status !== "approved" && application.status !== "declined";
   });
@@ -137,7 +146,7 @@ export async function getGrantPlatformData(): Promise<GrantPlatformWorkspaceData
     normalizedApplications.map((application) => [application.roundId, application.id]),
   );
 
-  const normalizedRounds = (rounds ?? []).map((round) => {
+  const normalizedRounds = safeRounds.map((round) => {
     const program = Array.isArray(round.grant_programs)
       ? round.grant_programs[0]
       : round.grant_programs;
