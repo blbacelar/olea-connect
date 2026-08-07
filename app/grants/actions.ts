@@ -12,6 +12,11 @@ import {
 import { createAdminClient } from "@/utils/supabase/admin";
 import { createClient } from "@/utils/supabase/server";
 import { parseFormBoolean, parseStrictDecimal, parseStrictInteger } from "@/lib/input-validation";
+import {
+  buildGrantAttachmentStoragePath,
+  getGrantAttachmentBucket,
+  validateGrantAttachmentFile,
+} from "@/lib/grants/storage";
 
 type GrantDecision = "in_review" | "shortlisted" | "approved" | "declined";
 
@@ -28,6 +33,12 @@ function getBoolean(formData: FormData, key: string) {
 function getMoneyCents(formData: FormData, key: string) {
   const amount = parseStrictDecimal(getText(formData, key), key, 0);
   return Math.round(amount * 100);
+}
+
+function getGrantAttachments(formData: FormData) {
+  return formData
+    .getAll("attachments")
+    .filter((value): value is File => value instanceof File && value.size > 0);
 }
 
 function getNullableMoneyCents(formData: FormData, key: string) {
@@ -202,6 +213,35 @@ export async function saveGrantApplication(formData: FormData) {
   const { data, error } = await query.select("id").single();
   if (error) throw error;
   if (!data) throw new Error("This application could not be saved.");
+
+  const attachments = getGrantAttachments(formData);
+  if (attachments.length > 0) {
+    const admin = createAdminClient();
+    for (const attachment of attachments) {
+      validateGrantAttachmentFile(attachment);
+      const filePath = buildGrantAttachmentStoragePath(organization.id, data.id, attachment.name);
+      const { error: uploadError } = await admin.storage
+        .from(getGrantAttachmentBucket())
+        .upload(filePath, attachment, {
+          contentType: attachment.type || undefined,
+          upsert: false,
+        });
+
+      if (uploadError) throw uploadError;
+
+      const { error: metadataError } = await admin.from("grant_application_attachments").insert({
+        application_id: data.id,
+        content_type: attachment.type || null,
+        file_name: attachment.name,
+        file_path: filePath,
+        organization_id: organization.id,
+        size_bytes: attachment.size,
+        uploaded_by: member.id,
+      });
+
+      if (metadataError) throw metadataError;
+    }
+  }
 
   revalidatePath("/grants");
 }
