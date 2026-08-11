@@ -55,10 +55,9 @@ import { grantFocusAreaLabels, grantStatusLabels } from "@/lib/grants/domain";
 import { getGrantPlatformUiAccess } from "@/lib/grants/permissions";
 import { getGrantPlatformCollaborationChecklist, getGrantPlatformCollaborationNote, getGrantPlatformPipelineSnapshot } from "@/lib/grants/workflow";
 
-type GrantPlatformTab = "overview" | "pipeline" | "dashboard" | "finance" | "tips" | "calendar" | "funders" | "reports" | "partners" | "vault" | "settings";
+type GrantPlatformTab = "pipeline" | "dashboard" | "finance" | "tips" | "calendar" | "funders" | "reports" | "partners" | "vault" | "settings";
 
 const tabOptions = [
-  { value: "overview", label: "Overview", icon: LayoutGrid },
   { value: "pipeline", label: "Pipeline", icon: Users },
   { value: "dashboard", label: "Dashboard", icon: BarChart3 },
   { value: "finance", label: "Funding & Budget", icon: ReceiptText },
@@ -72,9 +71,9 @@ const tabOptions = [
 ] as const;
 
 function resolveTab(value?: string): GrantPlatformTab {
-  return value === "pipeline" || value === "dashboard" || value === "finance" || value === "tips" || value === "calendar" || value === "funders" || value === "reports" || value === "partners" || value === "vault" || value === "settings"
+  return value === "dashboard" || value === "finance" || value === "tips" || value === "calendar" || value === "funders" || value === "reports" || value === "partners" || value === "vault" || value === "settings"
     ? value
-    : "overview";
+    : "pipeline";
 }
 
 function getSectionIcon(sectionId: string) {
@@ -780,67 +779,6 @@ export function GrantPlatformWorkspace({
             ))}
           </TabsList>
         </div>
-
-        <TabsContent value="overview" className="space-y-5">
-          <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-            {data.metrics.map((item) => {
-              const Icon = item.label === "Open rounds" ? FileText : item.label === "Applications" ? ReceiptText : item.label === "Awarded" ? CircleCheckBig : CalendarClock;
-              return (
-                <Card key={item.label} className="shadow-soft">
-                  <CardContent className="flex items-center gap-3 p-4">
-                    <div className="grid size-10 place-items-center rounded-xl bg-olea-light text-olea-green">
-                      <Icon className="size-5" />
-                    </div>
-                    <div>
-                      <p className="text-2xl font-semibold text-slate-900">{item.value}</p>
-                      <p className="text-sm text-slate-500">{item.label}</p>
-                      <p className="text-xs text-slate-500">{item.detail}</p>
-                    </div>
-                  </CardContent>
-                </Card>
-              );
-            })}
-          </div>
-          <div className="grid gap-4 lg:grid-cols-3">
-            {data.notes.map((note) => (
-              <Card key={note.label} className="shadow-soft">
-                <CardContent className="p-4">
-                  <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">{note.label}</p>
-                  <p className="mt-2 text-sm font-medium text-slate-900">{note.value}</p>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
-
-          <div className="grid gap-4 lg:grid-cols-2">
-            {data.sections.map((section) => {
-              const Icon = getSectionIcon(section.id);
-              return (
-                <Card key={section.id} className="shadow-soft">
-                  <CardHeader>
-                    <CardTitle className="flex items-center gap-2 text-lg">
-                      <span className="grid size-8 place-items-center rounded-lg bg-olea-light text-olea-green">
-                        <Icon className="size-4" />
-                      </span>
-                      {section.title}
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent className="space-y-3">
-                    <p className="text-sm leading-6 text-slate-600">{section.description}</p>
-                    <ul className="space-y-2">
-                      {section.highlights.map((highlight) => (
-                        <li key={highlight} className="flex items-start gap-2 text-sm text-slate-600">
-                          <CircleCheckBig className="mt-0.5 size-4 shrink-0 text-olea-green" />
-                          <span>{highlight}</span>
-                        </li>
-                      ))}
-                    </ul>
-                  </CardContent>
-                </Card>
-              );
-            })}
-          </div>
-        </TabsContent>
 
         <TabsContent value="pipeline" className="space-y-5">
           <GrantPipelineTable canEditGrants={canEditGrants} data={data} onSwitchTab={changeTab} />
