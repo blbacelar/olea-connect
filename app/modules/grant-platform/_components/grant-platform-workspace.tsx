@@ -831,19 +831,29 @@ export function GrantPlatformWorkspace({
               </CardContent>
             </Card>
             <Card className="shadow-soft">
-              <CardHeader>
+              <CardHeader className="flex flex-row items-center justify-between gap-2 pb-2">
                 <CardTitle className="text-lg">Leadership clarity</CardTitle>
+                <div className="group relative">
+                  <button
+                    type="button"
+                    className="grid size-7 place-items-center rounded-full bg-slate-100 text-slate-600 transition hover:bg-olea-green hover:text-white"
+                    aria-label="Leadership clarity help"
+                  >
+                    <HelpCircle className="size-4" />
+                  </button>
+                  <div className="pointer-events-none absolute right-0 top-9 z-30 w-80 scale-95 rounded-xl border border-slate-200 bg-white p-4 shadow-xl opacity-0 transition-all duration-150 group-hover:pointer-events-auto group-hover:scale-100 group-hover:opacity-100">
+                    <p className="mb-2 font-bold text-slate-900 text-xs">Leadership Clarity Guidelines</p>
+                    <p className="mb-2 text-xs text-slate-600">Keep financial, program, and narrative updates aligned for funders and leadership.</p>
+                    <p className="font-semibold text-slate-900 text-xs mb-1">Board-ready checkpoints:</p>
+                    <ul className="space-y-1 text-xs text-slate-600">
+                      <li>• Confirm current status, requested amount, and milestone readiness.</li>
+                      <li>• Highlight narrative or evidence gaps before review.</li>
+                      <li>• Keep an auditable trail of updates and decisions.</li>
+                    </ul>
+                  </div>
+                </div>
               </CardHeader>
               <CardContent className="space-y-3 text-sm text-slate-600">
-                <p>Keep financial, program, and narrative updates aligned for funders and leadership.</p>
-                <div className="rounded-lg border bg-slate-50 p-3">
-                  <p className="font-semibold text-slate-900">Board-ready checkpoints</p>
-                  <ul className="mt-2 space-y-2">
-                    <li>• Confirm the current status, requested amount, and milestone readiness.</li>
-                    <li>• Highlight any narrative or evidence gaps before the next review.</li>
-                    <li>• Keep an auditable trail of the latest updates and decisions.</li>
-                  </ul>
-                </div>
                 {data.applications.length ? (() => {
                   const application = data.applications[0];
                   const snapshot = getGrantPlatformPipelineSnapshot(application?.status, application?.deadlineAt ?? null);
@@ -859,7 +869,9 @@ export function GrantPlatformWorkspace({
                       ) : null}
                     </div>
                   );
-                })() : null}
+                })() : (
+                  <p className="text-xs text-slate-500">No active application focus tracked.</p>
+                )}
               </CardContent>
             </Card>
             </div>
