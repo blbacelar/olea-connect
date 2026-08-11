@@ -1,7 +1,7 @@
 "use client";
 
-import { Handshake, MessageSquareText, Plus, ShieldCheck } from "lucide-react";
-import { useState } from "react";
+import { Edit3, Handshake, HelpCircle, Plus, Search, ShieldCheck } from "lucide-react";
+import { useMemo, useState } from "react";
 
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -9,6 +9,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Textarea } from "@/components/ui/textarea";
 
 export function GrantFundersPanel() {
@@ -47,10 +48,29 @@ export function GrantFundersPanel() {
     },
   ]);
 
+  const [searchQuery, setSearchQuery] = useState("");
+  const [statusFilter, setStatusFilter] = useState("all");
   const [addModalOpen, setAddModalOpen] = useState(false);
   const [selectedFunder, setSelectedFunder] = useState<{ id: string; name: string; notes: string } | null>(null);
   const [editNotesModalOpen, setEditNotesModalOpen] = useState(false);
   const [notesInput, setNotesInput] = useState("");
+
+  const filteredFunders = useMemo(() => {
+    return funders.filter((funder) => {
+      const matchesSearch =
+        funder.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        funder.grants.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        funder.notes.toLowerCase().includes(searchQuery.toLowerCase());
+
+      const matchesStatus =
+        statusFilter === "all" ||
+        (statusFilter === "active" && funder.activeRelationship) ||
+        (statusFilter === "pipeline" && !funder.activeRelationship && funder.status !== "Declined") ||
+        (statusFilter === "declined" && funder.status === "Declined");
+
+      return matchesSearch && matchesStatus;
+    });
+  }, [funders, searchQuery, statusFilter]);
 
   const handleAddFunderSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -97,7 +117,7 @@ export function GrantFundersPanel() {
   return (
     <div className="space-y-6">
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <h2 className="text-2xl font-bold text-navy-blue">🤝 Funder Relationships</h2>
+        <h2 className="text-2xl font-bold text-navy-blue">Funder Relationships</h2>
         <Button
           type="button"
           className="gap-2 bg-orange-600 font-bold text-white hover:bg-orange-700"
@@ -108,81 +128,124 @@ export function GrantFundersPanel() {
         </Button>
       </div>
 
-      {/* Funders List Card */}
+      {/* Funders DataTable Card */}
       <Card className="shadow-soft">
-        <CardHeader>
+        <CardHeader className="flex flex-row items-center justify-between gap-2 pb-3">
           <CardTitle className="flex items-center gap-2 text-lg">
             <Handshake className="size-5 text-olea-green" />
             Funder Roster & History
           </CardTitle>
-        </CardHeader>
-        <CardContent className="divide-y divide-slate-100 p-0">
-          {funders.map((funder) => (
-            <div
-              key={funder.id}
-              className="group cursor-pointer p-4 transition-colors hover:bg-slate-50/80"
-              onDoubleClick={() => handleEditNotesClick(funder)}
+          <div className="group relative">
+            <button
+              type="button"
+              className="grid size-7 place-items-center rounded-full bg-slate-100 text-slate-600 transition hover:bg-olea-green hover:text-white"
+              aria-label="How to track funder relationships"
             >
-              <div className="flex flex-wrap items-start justify-between gap-2">
-                <div>
-                  <p className="font-bold text-base text-navy-blue">{funder.name}</p>
-                  <p className="mt-0.5 text-xs text-slate-600">{funder.grants}</p>
-                </div>
-                <div className="flex items-center gap-2">
-                  {funder.activeRelationship ? (
-                    <Badge className="bg-emerald-100 font-bold text-emerald-800">✓ Active relationship</Badge>
-                  ) : (
-                    <Badge variant="outline">{funder.status}</Badge>
-                  )}
-                </div>
-              </div>
-
-              {funder.notes ? (
-                <div className="mt-2 rounded border border-slate-100 bg-slate-50 p-2.5 text-xs text-slate-700">
-                  <p className="font-semibold text-slate-900">📝 Notes:</p>
-                  <p className="mt-0.5">{funder.notes}</p>
-                </div>
-              ) : null}
-
-              <div className="mt-2 flex items-center justify-between text-xs text-slate-400">
-                <span className="text-orange-600 font-medium group-hover:underline">
-                  📝 Double-click to add or edit notes
-                </span>
-                <Button
-                  size="sm"
-                  variant="ghost"
-                  className="h-7 text-xs text-slate-600"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    handleEditNotesClick(funder);
-                  }}
-                >
-                  Edit Notes
-                </Button>
+              <HelpCircle className="size-4" />
+            </button>
+            <div className="pointer-events-none absolute right-0 top-9 z-30 w-80 scale-95 rounded-xl border border-slate-200 bg-white p-4 shadow-xl opacity-0 transition-all duration-150 group-hover:pointer-events-auto group-hover:scale-100 group-hover:opacity-100">
+              <p className="mb-2 font-bold text-slate-900 text-xs">How to Track Funder Relationships</p>
+              <div className="space-y-2 text-xs text-slate-600">
+                <p>✓ <strong>Add Funder:</strong> Register new foundations or government program officers.</p>
+                <p>✓ <strong>Notes & Feedback:</strong> Click &quot;Edit Notes&quot; or double-click to record program officer contacts and guidance.</p>
+                <p>✓ <strong>Track Success:</strong> Maintain historical memory across cycles so your team understands funder expectations.</p>
               </div>
             </div>
-          ))}
-        </CardContent>
-      </Card>
-
-      {/* Guide Card */}
-      <Card className="border-l-4 border-olea-green bg-slate-50 shadow-soft">
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2 text-base text-navy-blue">
-            <ShieldCheck className="size-5 text-olea-green" />
-            How to Track Funder Relationships:
-          </CardTitle>
+          </div>
         </CardHeader>
-        <CardContent className="space-y-2 text-xs text-slate-600">
-          <p>
-            ✓ <strong>Add Funder:</strong> Click &quot;+ Add Funder Relationship&quot; button to register new organizations.
-          </p>
-          <p>
-            ✓ <strong>Add Notes:</strong> Double-click any funder to record contact details, feedback, and officer guidance.
-          </p>
-          <p>
-            ✓ <strong>Track Success:</strong> Maintain historical memory across cycles so team members understand funder expectations.
-          </p>
+        <CardContent className="p-0">
+          {/* Table Search & Filter Toolbar */}
+          <div className="flex flex-wrap items-center gap-3 border-b border-slate-100 p-3 bg-slate-50/50">
+            <div className="relative flex-1 min-w-[200px]">
+              <Search className="absolute left-3 top-2.5 size-4 text-slate-400" />
+              <Input
+                placeholder="Search funders, programs, or notes..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="h-9 pl-9 text-xs bg-white"
+              />
+            </div>
+            <div className="w-[160px]">
+              <select
+                value={statusFilter}
+                onChange={(e) => setStatusFilter(e.target.value)}
+                className="h-9 w-full rounded-md border border-slate-300 bg-white px-3 text-xs"
+              >
+                <option value="all">All Relationships</option>
+                <option value="active">Active Relationship</option>
+                <option value="pipeline">Pipeline / Prospect</option>
+                <option value="declined">Declined</option>
+              </select>
+            </div>
+          </div>
+
+          <Table>
+            <TableHeader className="bg-slate-100/70">
+              <TableRow>
+                <TableHead className="w-[200px]">Funder Name</TableHead>
+                <TableHead className="w-[260px]">Grants / Programs</TableHead>
+                <TableHead className="w-[140px]">Relationship Status</TableHead>
+                <TableHead>Notes & Insights</TableHead>
+                <TableHead className="w-[100px] text-right">Actions</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {filteredFunders.length ? (
+                filteredFunders.map((funder) => (
+                  <TableRow
+                    key={funder.id}
+                    className="group cursor-pointer hover:bg-slate-50/80"
+                    onDoubleClick={() => handleEditNotesClick(funder)}
+                  >
+                    <TableCell className="font-semibold text-slate-900 text-xs">
+                      {funder.name}
+                    </TableCell>
+                    <TableCell className="text-xs text-slate-600">
+                      {funder.grants}
+                    </TableCell>
+                    <TableCell>
+                      {funder.activeRelationship ? (
+                        <Badge className="bg-emerald-100 font-bold text-emerald-800 text-[11px]">
+                          ✓ Active partner
+                        </Badge>
+                      ) : (
+                        <Badge variant="outline" className="text-[11px] text-slate-700">
+                          {funder.status}
+                        </Badge>
+                      )}
+                    </TableCell>
+                    <TableCell className="text-xs text-slate-600 max-w-[320px]">
+                      {funder.notes ? (
+                        <p className="line-clamp-2">{funder.notes}</p>
+                      ) : (
+                        <span className="italic text-slate-400">No notes added yet</span>
+                      )}
+                    </TableCell>
+                    <TableCell className="text-right">
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        className="h-8 gap-1 text-xs text-slate-600 hover:text-olea-green"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleEditNotesClick(funder);
+                        }}
+                      >
+                        <Edit3 className="size-3.5" />
+                        Edit Notes
+                      </Button>
+                    </TableCell>
+                  </TableRow>
+                ))
+              ) : (
+                <TableRow>
+                  <TableCell colSpan={5} className="h-24 text-center text-xs text-slate-500">
+                    No funder relationships found matching your filters.
+                  </TableCell>
+                </TableRow>
+              )}
+            </TableBody>
+          </Table>
         </CardContent>
       </Card>
 
@@ -233,8 +296,8 @@ export function GrantFundersPanel() {
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
-              <MessageSquareText className="size-5 text-olea-green" />
-              📝 Funder Notes: {selectedFunder?.name}
+              <Edit3 className="size-5 text-olea-green" />
+              Funder Notes: {selectedFunder?.name}
             </DialogTitle>
             <DialogDescription>
               Record communication notes, meeting feedback, and key contacts for this funder.
