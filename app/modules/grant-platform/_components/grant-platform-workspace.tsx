@@ -8,6 +8,7 @@ import {
   FileText,
   FolderOpen,
   GitBranch,
+  HelpCircle,
   LayoutGrid,
   ReceiptText,
   Send,
@@ -586,13 +587,34 @@ function PartnersPanel({
   return (
     <div className="space-y-5">
       <Card className="shadow-soft">
-        <CardHeader>
-          <CardTitle className="text-lg">👥 Partners & Collaborators</CardTitle>
+        <CardHeader className="flex flex-row items-center justify-between gap-2 pb-2">
+          <CardTitle className="flex items-center gap-2 text-lg">
+            <Users className="size-5 text-olea-green" />
+            Partners & Collaborators
+          </CardTitle>
+          <div className="group relative">
+            <button
+              type="button"
+              className="grid size-7 place-items-center rounded-full bg-slate-100 text-slate-600 transition hover:bg-olea-green hover:text-white"
+              aria-label="How to use partners"
+            >
+              <HelpCircle className="size-4" />
+            </button>
+            <div className="pointer-events-none absolute right-0 top-9 z-30 w-80 scale-95 rounded-xl border border-slate-200 bg-white p-4 shadow-xl opacity-0 transition-all duration-150 group-hover:pointer-events-auto group-hover:scale-100 group-hover:opacity-100">
+              <p className="mb-2 font-bold text-slate-900 text-xs">How to Use This</p>
+              <div className="space-y-2 text-xs text-slate-600">
+                <p><strong>Track Potential Partners:</strong> Add organizations you want to collaborate with on future grants.</p>
+                <p><strong>Note Their Strengths:</strong> Document what they&apos;re good at (evaluation, community reach, research, etc.).</p>
+                <p><strong>Keep Contact Info:</strong> Store emails and contacts in one place.</p>
+                <p><strong>Reference When Planning Grants:</strong> When researching new opportunities, check here to see which partners might be a good fit.</p>
+              </div>
+            </div>
+          </div>
         </CardHeader>
         <CardContent>
           <p className="mb-5 text-sm text-slate-600">Track organizations, institutions, and individuals who can collaborate on future grant opportunities.</p>
           <Button
-            className="mb-5"
+            className="mb-5 bg-olea-green text-white hover:bg-olea-green/90"
             disabled={!canEditOrgProfile}
             onClick={() => {
               setSelectedPartnerId(null);
@@ -612,24 +634,16 @@ function PartnersPanel({
                   setDialogOpen(true);
                 }}
               >
-                <h4 className="mb-2 text-base font-semibold text-slate-900">👤 {partner.name}</h4>
-                <p className="mb-3 text-xs text-slate-600"><strong>Type:</strong> {partner.partnerType}</p>
-                <p className="mb-3 text-xs text-slate-600"><strong>Contact:</strong> {partner.contactName}</p>
-                <p className="mb-3 text-xs text-slate-600"><strong>Email:</strong> {partner.email}</p>
-                <p className="mb-3 text-xs text-slate-600"><strong>Focus Areas:</strong> {partner.focusAreas}</p>
-                <p className="font-bold text-olea-green">{partner.status}</p>
+                <h4 className="mb-2 text-base font-semibold text-slate-900">{partner.name}</h4>
+                <p className="mb-2 text-xs text-slate-600"><strong>Type:</strong> {partner.partnerType}</p>
+                <p className="mb-2 text-xs text-slate-600"><strong>Contact:</strong> {partner.contactName}</p>
+                <p className="mb-2 text-xs text-slate-600"><strong>Email:</strong> {partner.email}</p>
+                <p className="mb-2 text-xs text-slate-600"><strong>Focus Areas:</strong> {partner.focusAreas}</p>
+                <p className="font-bold text-olea-green text-xs">{partner.status}</p>
                 <p className="mt-2 text-[11px] text-slate-500">{partner.lastCollaboration ?? partner.addedNote ?? "Click to edit"}</p>
-                <p className="mt-2 text-[11px] italic text-olea-orange">👆 Click to edit</p>
+                <p className="mt-1 text-[11px] italic text-olea-orange">Click to edit</p>
               </div>
             ))}
-          </div>
-
-          <h3 className="mt-8 text-lg font-semibold text-slate-900">How to Use This</h3>
-          <div className="mt-4 rounded-lg border-l-4 border-olea-green bg-olea-light p-4">
-            <p className="mb-2 text-sm text-slate-700"><strong>Track Potential Partners:</strong> Add organizations you want to collaborate with on future grants</p>
-            <p className="mb-2 text-sm text-slate-700"><strong>Note Their Strengths:</strong> Document what they&apos;re good at (evaluation, community reach, research, etc.)</p>
-            <p className="mb-2 text-sm text-slate-700"><strong>Keep Contact Info:</strong> Store emails and contacts in one place</p>
-            <p className="text-sm text-slate-700"><strong>Reference When Planning Grants:</strong> When researching new opportunities, check here to see which partners might be a good fit</p>
           </div>
         </CardContent>
       </Card>
