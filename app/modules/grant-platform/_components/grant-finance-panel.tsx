@@ -9,6 +9,7 @@ import {
   DollarSign,
   FileText,
   PieChart,
+  ReceiptText,
   ShieldCheck,
   TrendingUp,
 } from "lucide-react";
@@ -70,8 +71,8 @@ export function GrantFinancePanel() {
     {
       name: "Youth Leadership Initiative",
       status: "Approved",
-      statusBadgeClass: "bg-emerald-500 text-white",
-      requested: "$45,000",
+      statusBadgeClass: "bg-olea-green text-white",
+      requested: "$42,000",
       awarded: "$42,000",
       received: "$25,000",
       percent: "59%",
@@ -80,7 +81,7 @@ export function GrantFinancePanel() {
     {
       name: "Health & Wellness Program",
       status: "Declined",
-      statusBadgeClass: "bg-rose-500 text-white",
+      statusBadgeClass: "bg-slate-400 text-white",
       requested: "$65,000",
       awarded: "-",
       received: "-",
@@ -90,25 +91,33 @@ export function GrantFinancePanel() {
 
   const upcomingObligations = [
     {
-      title: "Interim Report Due: Jun 20, 2026",
-      grant: "Youth Leadership Initiative - $42,000 approved",
-      statusNote: "✓ Expected: First installment already received ($25K)",
+      type: "Payment Received",
+      grant: "Youth Leadership Initiative: $25,000 (1st installment)",
+      statusNote: "Received Jan 15",
       borderColor: "border-olea-green",
       bgColor: "bg-olea-light/40",
       textColor: "text-olea-green",
     },
     {
-      title: "Final Report Due: Dec 20, 2026",
-      grant: "Youth Leadership Initiative - Final disbursement",
-      statusNote: "⏳ Expected: Final payment of $17,000 on completion",
-      borderColor: "border-olea-green",
-      bgColor: "bg-olea-light/40",
-      textColor: "text-amber-600",
+      type: "Report Deadline",
+      grant: "Youth Leadership Initiative: Interim Report due",
+      statusNote: "Due Jun 20",
+      borderColor: "border-navy-blue",
+      bgColor: "bg-slate-50",
+      textColor: "text-navy-blue",
     },
     {
-      title: "BC Community Gaming Grant Decision: by Apr 30, 2026",
+      type: "Final Payment Due",
+      grant: "Youth Leadership Initiative: $17,000 (2nd installment)",
+      statusNote: "Due Dec 20",
+      borderColor: "border-emerald-500",
+      bgColor: "bg-emerald-50",
+      textColor: "text-emerald-700",
+    },
+    {
+      type: "Funder Decision Expected",
       grant: "Decision expected on $50,000 application",
-      statusNote: "⏰ 70 days away",
+      statusNote: "70 days away",
       borderColor: "border-orange-500",
       bgColor: "bg-orange-50",
       textColor: "text-orange-600",
@@ -117,28 +126,32 @@ export function GrantFinancePanel() {
 
   const financialInsights = [
     {
-      title: "✅ Win Rate",
+      title: "Win Rate",
       text: "1 approved out of 3 decisions = 33% success rate",
       detail: "Industry average: 20-25% - you're above average!",
       borderColor: "border-olea-green",
+      icon: CheckCircle2,
     },
     {
-      title: "⚠️ Cash Flow Alert",
+      title: "Cash Flow Alert",
       text: "59% of awarded funds received. Remaining $17K due by Dec 2026.",
       detail: "Plan: Budget this final installment for Q4.",
       borderColor: "border-orange-500",
+      icon: AlertTriangle,
     },
     {
-      title: "🎯 Funding Conversion",
+      title: "Funding Conversion",
       text: "Requested: $177K | Awarded: $42K (24%)",
       detail: "Pending: $50K more could close gap to 43%",
       borderColor: "border-blue-500",
+      icon: TrendingUp,
     },
     {
-      title: "📊 Funder Performance",
+      title: "Funder Performance",
       text: "Community Foundation: 100% success rate (1/1)",
       detail: "Province of BC: 0% (1 pending). Keep trying!",
       borderColor: "border-emerald-500",
+      icon: PieChart,
     },
   ];
 
@@ -182,7 +195,10 @@ export function GrantFinancePanel() {
 
   return (
     <div className="space-y-6">
-      <h2 className="text-2xl font-bold text-navy-blue">💰 Funding & Budget Overview</h2>
+      <div className="flex items-center gap-2">
+        <ReceiptText className="size-6 text-navy-blue" />
+        <h2 className="text-2xl font-bold text-navy-blue">Funding & Budget Overview</h2>
+      </div>
 
       {/* KPI Stats Grid */}
       <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
@@ -208,7 +224,7 @@ export function GrantFinancePanel() {
         <CardHeader>
           <CardTitle className="flex items-center gap-2 text-lg">
             <PieChart className="size-5 text-olea-green" />
-            📊 Grant Funding Status
+            Grant Funding Status
           </CardTitle>
         </CardHeader>
         <CardContent className="p-0">
@@ -248,104 +264,102 @@ export function GrantFinancePanel() {
         </CardContent>
       </Card>
 
-      {/* Payment Schedule & Compliance */}
-      <Card className="shadow-soft">
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2 text-lg">
-            <Calendar className="size-5 text-olea-green" />
-            📅 Payment Schedule & Compliance
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-3">
-          <p className="text-xs font-bold uppercase tracking-wider text-navy-blue">Upcoming Financial Obligations</p>
-          {upcomingObligations.map((ob, idx) => (
-            <div key={idx} className={`rounded-lg border-l-4 ${ob.borderColor} ${ob.bgColor} p-3 text-xs space-y-1`}>
-              <p className="font-bold text-slate-900">{ob.title}</p>
-              <p className="text-slate-600">{ob.grant}</p>
-              <p className={`font-semibold ${ob.textColor}`}>{ob.statusNote}</p>
-            </div>
-          ))}
-        </CardContent>
-      </Card>
-
-      {/* Financial Insights */}
-      <div className="space-y-3">
-        <h3 className="flex items-center gap-2 text-lg font-bold text-navy-blue">
-          <TrendingUp className="size-5 text-olea-green" />
-          💡 Financial Insights
-        </h3>
-        <div className="grid gap-4 md:grid-cols-2">
-          {financialInsights.map((insight) => (
-            <Card key={insight.title} className={`border-l-4 ${insight.borderColor} shadow-soft`}>
-              <CardContent className="p-4 space-y-1.5 text-xs">
-                <p className="font-bold text-sm text-navy-blue">{insight.title}</p>
-                <p className="text-slate-700">{insight.text}</p>
-                <p className="text-slate-500">{insight.detail}</p>
-              </CardContent>
-            </Card>
-          ))}
-        </div>
-      </div>
-
-      {/* Budget Tracking by Grant */}
-      <Card className="shadow-soft">
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2 text-lg">
-            <FileText className="size-5 text-olea-green" />
-            📄 Budget Tracking by Grant
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="rounded-lg border border-slate-200 bg-white p-4 space-y-4">
-            <div className="flex items-center justify-between border-b border-slate-100 pb-2">
-              <span className="font-bold text-navy-blue">Youth Leadership Initiative</span>
-              <Badge className="bg-emerald-100 text-emerald-800">$42,000 Approved</Badge>
-            </div>
-
-            <div className="space-y-3">
-              {budgetBreakdown.map((item) => (
-                <div key={item.category} className="space-y-1">
-                  <div className="flex justify-between text-xs font-medium">
-                    <span className="text-slate-800">{item.category}</span>
-                    <span className={`font-bold ${item.textColor}`}>
-                      ${item.used.toLocaleString()} / ${item.total.toLocaleString()}
-                    </span>
-                  </div>
-                  <div className="h-2 w-full overflow-hidden rounded-full bg-slate-100">
-                    <div className={`h-full ${item.color}`} style={{ width: `${item.percent}%` }} />
-                  </div>
+      {/* Payment Schedule & Financial Insights Grid */}
+      <div className="grid gap-6 lg:grid-cols-2">
+        {/* Payment Schedule */}
+        <Card className="shadow-soft">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2 text-lg">
+              <Calendar className="size-5 text-olea-green" />
+              Payment Schedule & Compliance
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-3">
+            {upcomingObligations.map((item, idx) => (
+              <div key={idx} className={`rounded-lg border-l-4 ${item.borderColor} ${item.bgColor} p-3 text-xs space-y-1`}>
+                <div className="flex items-center justify-between font-bold text-slate-900">
+                  <span>{item.type}</span>
+                  <span className={item.textColor}>{item.statusNote}</span>
                 </div>
-              ))}
-            </div>
-
-            <div className="border-t border-slate-100 pt-3 text-right text-xs">
-              <p className="font-bold text-slate-900">Total Used: $31,000 / $42,000 (74%)</p>
-              <p className="text-slate-500">$11,000 remaining for final expenses</p>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* For Finance Director Box */}
-      <Card className="border-l-4 border-navy-blue bg-slate-50 shadow-soft">
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2 text-base text-navy-blue">
-            <ShieldCheck className="size-5 text-navy-blue" />
-            📋 For Finance Director
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <p className="mb-3 text-xs font-semibold text-slate-700">Key Responsibilities Tracked Here:</p>
-          <div className="grid gap-2 text-xs text-slate-600 md:grid-cols-2">
-            {financeDirectorResponsibilities.map((resp, i) => (
-              <div key={i} className="flex items-center gap-2">
-                <CheckCircle2 className="size-3.5 text-olea-green shrink-0" />
-                <span>{resp}</span>
+                <p className="text-slate-600">{item.grant}</p>
               </div>
             ))}
-          </div>
-        </CardContent>
-      </Card>
+          </CardContent>
+        </Card>
+
+        {/* Financial Insights */}
+        <Card className="shadow-soft">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2 text-lg">
+              <TrendingUp className="size-5 text-olea-green" />
+              Financial Insights
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-3">
+            {financialInsights.map((insight, idx) => {
+              const Icon = insight.icon;
+              return (
+                <div key={idx} className={`rounded-lg border-l-4 ${insight.borderColor} bg-slate-50 p-3 text-xs space-y-1`}>
+                  <div className="flex items-center gap-1.5 font-bold text-slate-900">
+                    <Icon className="size-4 text-olea-green" />
+                    <span>{insight.title}</span>
+                  </div>
+                  <p className="text-slate-700 font-medium">{insight.text}</p>
+                  <p className="text-slate-500">{insight.detail}</p>
+                </div>
+              );
+            })}
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Budget Breakdown by Grant & Finance Director SOP */}
+      <div className="grid gap-6 lg:grid-cols-2">
+        {/* Itemized Budget Tracking */}
+        <Card className="shadow-soft">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2 text-lg">
+              <FileText className="size-5 text-olea-green" />
+              Budget Tracking (Youth Leadership Initiative - $42K)
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            {budgetBreakdown.map((b) => (
+              <div key={b.category} className="space-y-1.5">
+                <div className="flex justify-between text-xs font-semibold">
+                  <span className="text-slate-800">{b.category}</span>
+                  <span className={b.textColor}>
+                    ${b.used.toLocaleString()} / ${b.total.toLocaleString()} ({b.percent}%)
+                  </span>
+                </div>
+                <div className="h-2 w-full overflow-hidden rounded-full bg-slate-100">
+                  <div className={`h-full ${b.color}`} style={{ width: `${b.percent}%` }} />
+                </div>
+              </div>
+            ))}
+          </CardContent>
+        </Card>
+
+        {/* Finance Director Checklist */}
+        <Card className="border-l-4 border-olea-green shadow-soft">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2 text-lg">
+              <ShieldCheck className="size-5 text-olea-green" />
+              For Finance Director
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <ul className="space-y-2 text-xs text-slate-700">
+              {financeDirectorResponsibilities.map((item, idx) => (
+                <li key={idx} className="flex items-start gap-2">
+                  <CheckCircle2 className="size-4 shrink-0 text-olea-green mt-0.5" />
+                  <span>{item}</span>
+                </li>
+              ))}
+            </ul>
+          </CardContent>
+        </Card>
+      </div>
     </div>
   );
 }

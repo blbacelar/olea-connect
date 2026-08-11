@@ -6,10 +6,14 @@ import {
   CheckCircle2,
   Clock,
   Download,
+  FileCheck,
+  FileSpreadsheet,
+  FileText,
   PieChart,
   ShieldAlert,
   Sparkles,
   TrendingUp,
+
 } from "lucide-react";
 import { useState } from "react";
 
@@ -109,39 +113,46 @@ export function GrantFunderReportsPanel() {
 
   const recommendations = [
     {
-      type: "✓ Strong Track Record",
+      title: "Strong Track Record",
       borderColor: "border-olea-green",
       bgColor: "bg-olea-light/40",
       text: "50% overall win rate is above industry average (20-25%). Community Foundation at 100% indicates excellent fit with their priorities.",
+      icon: CheckCircle2,
     },
     {
-      type: "⚠️ Action Item: Province of BC",
+      title: "Action Item: Province of BC",
       borderColor: "border-orange-500",
       bgColor: "bg-orange-50",
       text: "With 2 applications: 1 approved ($50K), 1 pending. Investigate what worked in the approved proposal and replicate for future applications.",
+      icon: ShieldAlert,
     },
     {
-      type: "⚠️ Review Needed: Arts Council + Health Ministry",
+      title: "Review Needed: Arts Council + Health Ministry",
       borderColor: "border-rose-500",
       bgColor: "bg-rose-50",
       text: "0% approval rate. Either these funders aren't a good fit (consider removing from pipeline), or your applications need revision. Recommended: Skip future cycles or redesign approach.",
+      icon: ShieldAlert,
     },
     {
-      type: "💡 Strategic Recommendation",
+      title: "Strategic Recommendation",
       borderColor: "border-emerald-500",
       bgColor: "bg-emerald-50",
       text: "Focus future efforts on Community Foundation and similar funders. Investigate patterns in their funding priorities. Build on success, not on failed attempts.",
+      icon: Sparkles,
     },
   ];
 
   const handleExportDownload = (format: string) => {
-    alert(`💾 Starting export of Funder Performance Data in ${format.toUpperCase()} format...\nFile will save to your downloads folder.`);
+    alert(`Starting export of Funder Performance Data in ${format.toUpperCase()} format...\nFile will save to your downloads folder.`);
     setExportModalOpen(false);
   };
 
   return (
     <div className="space-y-6">
-      <h2 className="text-2xl font-bold text-navy-blue">📈 Funder Performance Reports</h2>
+      <div className="flex items-center gap-2">
+        <TrendingUp className="size-6 text-navy-blue" />
+        <h2 className="text-2xl font-bold text-navy-blue">Funder Performance Reports</h2>
+      </div>
 
       {/* Quick Actions Buttons */}
       <div className="flex flex-wrap gap-2">
@@ -185,7 +196,7 @@ export function GrantFunderReportsPanel() {
         <CardHeader>
           <CardTitle className="flex items-center gap-2 text-lg">
             <PieChart className="size-5 text-olea-green" />
-            🤝 Funder Performance Overview
+            Funder Performance Overview
           </CardTitle>
         </CardHeader>
         <CardContent className="p-0">
@@ -260,16 +271,22 @@ export function GrantFunderReportsPanel() {
         <CardHeader>
           <CardTitle className="flex items-center gap-2 text-lg">
             <TrendingUp className="size-5 text-olea-green" />
-            📈 Funding Insights & Recommendations
+            Funding Insights & Recommendations
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-3">
-          {recommendations.map((rec, i) => (
-            <div key={i} className={`rounded-lg border-l-4 ${rec.borderColor} ${rec.bgColor} p-3 text-xs space-y-1`}>
-              <p className="font-bold text-slate-900">{rec.type}</p>
-              <p className="text-slate-600 leading-relaxed">{rec.text}</p>
-            </div>
-          ))}
+          {recommendations.map((rec, i) => {
+            const Icon = rec.icon;
+            return (
+              <div key={i} className={`rounded-lg border-l-4 ${rec.borderColor} ${rec.bgColor} p-3 text-xs space-y-1`}>
+                <div className="flex items-center gap-1.5 font-bold text-slate-900">
+                  <Icon className="size-4 text-olea-green" />
+                  <span>{rec.title}</span>
+                </div>
+                <p className="text-slate-600 leading-relaxed">{rec.text}</p>
+              </div>
+            );
+          })}
         </CardContent>
       </Card>
 
@@ -279,9 +296,9 @@ export function GrantFunderReportsPanel() {
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <BarChart3 className="size-5 text-olea-green" />
-              {activeReportModal === "overview" && "📊 Funder Overview Summary"}
-              {activeReportModal === "success" && "✅ Success Rate Analysis"}
-              {activeReportModal === "trends" && "📈 Funding Trends & Recommendations"}
+              {activeReportModal === "overview" && "Funder Overview Summary"}
+              {activeReportModal === "success" && "Success Rate Analysis"}
+              {activeReportModal === "trends" && "Funding Trends & Recommendations"}
             </DialogTitle>
           </DialogHeader>
 
@@ -296,8 +313,8 @@ export function GrantFunderReportsPanel() {
                   <li><strong>Provincial Health Ministry:</strong> 1 App | 0 Approved (Declined) | $0 Awarded</li>
                 </ul>
                 <div className="rounded border border-emerald-200 bg-emerald-50 p-2 text-emerald-800 font-semibold mt-2">
-                  ✓ Overall Win Rate: 50% (Industry average: 20-25%)
-                  <br />✓ Total Awarded: $92,000
+                  Overall Win Rate: 50% (Industry average: 20-25%)
+                  <br />Total Awarded: $92,000
                 </div>
               </div>
             )}
@@ -306,10 +323,10 @@ export function GrantFunderReportsPanel() {
               <div className="space-y-2">
                 <p className="font-bold text-slate-900">Rankings & Recommendations:</p>
                 <div className="space-y-1.5">
-                  <p>🥇 <strong>Community Foundation: 100%</strong> (1/1 approved - $42,000) - Focus here, highest alignment.</p>
-                  <p>🥈 <strong>Province of BC: 50%</strong> (1/2 approved - $50,000) - Investigate winning narrative elements.</p>
-                  <p>❌ <strong>Arts Council: 0%</strong> (Pending decision) - Review feedback once decision is announced.</p>
-                  <p>❌ <strong>Health Ministry: 0%</strong> (Declined) - Exceeded 75% Govt limit. Diversify funding sources.</p>
+                  <p>1. <strong>Community Foundation: 100%</strong> (1/1 approved - $42,000) - Focus here, highest alignment.</p>
+                  <p>2. <strong>Province of BC: 50%</strong> (1/2 approved - $50,000) - Investigate winning narrative elements.</p>
+                  <p>3. <strong>Arts Council: 0%</strong> (Pending decision) - Review feedback once decision is announced.</p>
+                  <p>4. <strong>Health Ministry: 0%</strong> (Declined) - Exceeded 75% Govt limit. Diversify funding sources.</p>
                 </div>
               </div>
             )}
@@ -351,7 +368,7 @@ export function GrantFunderReportsPanel() {
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <Download className="size-5 text-olea-green" />
-              💾 Export Funder Performance Data
+              Export Funder Performance Data
             </DialogTitle>
             <DialogDescription>
               Select export format for board reporting and executive summary.

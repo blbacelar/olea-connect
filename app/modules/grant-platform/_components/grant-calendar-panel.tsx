@@ -47,7 +47,10 @@ export function GrantCalendarPanel() {
 
   return (
     <div className="space-y-6">
-      <h2 className="text-2xl font-bold text-navy-blue">📅 Grant Deadlines</h2>
+      <div className="flex items-center gap-2">
+        <CalendarDays className="size-6 text-navy-blue" />
+        <h2 className="text-2xl font-bold text-navy-blue">Grant Deadlines</h2>
+      </div>
 
       <Card className="shadow-soft">
         <CardHeader>

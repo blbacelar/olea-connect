@@ -87,7 +87,10 @@ export function GrantDashboardPanel() {
 
   return (
     <div className="space-y-6">
-      <h2 className="text-2xl font-bold text-navy-blue">📊 Dashboard</h2>
+      <div className="flex items-center gap-2">
+        <BarChart3 className="size-6 text-navy-blue" />
+        <h2 className="text-2xl font-bold text-navy-blue">Dashboard</h2>
+      </div>
 
       {/* 6 Status Pipeline Cards */}
       <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
