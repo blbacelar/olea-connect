@@ -15,6 +15,13 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 
 interface RequestWriterDialogProps {
@@ -26,6 +33,7 @@ export function RequestWriterDialog({ grantName, trigger }: RequestWriterDialogP
   const [open, setOpen] = useState(false);
   const [pending, setPending] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
+  const [grantType, setGrantType] = useState("community_arts");
 
   async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -73,6 +81,7 @@ export function RequestWriterDialog({ grantName, trigger }: RequestWriterDialogP
         ) : null}
 
         <form className="space-y-4" onSubmit={handleSubmit}>
+          <input type="hidden" name="grantType" value={grantType} />
           <div className="grid gap-3">
             <div className="space-y-1">
               <Label htmlFor="writer-name">Your Name</Label>
@@ -84,13 +93,18 @@ export function RequestWriterDialog({ grantName, trigger }: RequestWriterDialogP
             </div>
             <div className="space-y-1">
               <Label htmlFor="writer-type">Grant Type / Category</Label>
-              <select className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm" id="writer-type" name="grantType">
-                <option value="community_arts">Community Arts & Culture</option>
-                <option value="youth_mentorship">Youth Development & Leadership</option>
-                <option value="health_wellness">Health & Wellness</option>
-                <option value="capital_equipment">Capital & Equipment Grant</option>
-                <option value="other">Other Grant Type</option>
-              </select>
+              <Select value={grantType} onValueChange={setGrantType}>
+                <SelectTrigger id="writer-type" className="w-full">
+                  <SelectValue placeholder="Select grant type" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="community_arts">Community Arts & Culture</SelectItem>
+                  <SelectItem value="youth_mentorship">Youth Development & Leadership</SelectItem>
+                  <SelectItem value="health_wellness">Health & Wellness</SelectItem>
+                  <SelectItem value="capital_equipment">Capital & Equipment Grant</SelectItem>
+                  <SelectItem value="other">Other Grant Type</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
             <div className="space-y-1">
               <Label htmlFor="writer-timeline">Timeline / Preferred Turnaround</Label>
