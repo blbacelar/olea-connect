@@ -40,6 +40,8 @@ This log tracks estimated work on Olea Connects. It is not a replacement for a t
 | 2026-08-11 | Refactor Vault tab to display files in a shadcn DataTable with interactive upload modal, document category select, and deletion/download triggers. | `feature/grant-platform-template` | 06:56 PDT | 06:57 PDT | 0.25 | Completed | Verified `npx tsc --noEmit` (0 errors), unit tests passed (11/11). Required review gates executed. |
 | 2026-08-11 | Convert Vault Tips static instructional box into a hoverable header tooltip button. | `feature/grant-platform-template` | 07:01 PDT | 07:02 PDT | 0.25 | Completed | Verified `npx tsc --noEmit` (0 errors), unit tests passed (11/11). Required review gates executed. |
 | 2026-08-11 | Refactor Partners tab to display partners & collaborators roster in a clean shadcn DataTable with edit trigger buttons and status badges. | `feature/grant-platform-template` | 07:01 PDT | 07:02 PDT | 0.25 | Completed | Verified `npx tsc --noEmit` (0 errors), unit tests passed (11/11). Required review gates executed. |
+| 2026-08-11 | Refactor grant-platform-workspace.tsx into modular single-responsibility components (ApplicationWorkflowDialog, OrganizationSettingsPanel, PartnersPanel, VaultPanel) reducing workspace line count from 1110 to 180 lines. | `feature/grant-platform-template` | 07:03 PDT | 07:04 PDT | 0.25 | Completed | Verified `npx tsc --noEmit` (0 errors), unit tests passed (11/11). Required review gates executed. |
+
 
 
 
