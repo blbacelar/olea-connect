@@ -7,6 +7,7 @@ import {
   CircleCheckBig,
   FileText,
   FolderOpen,
+  GitBranch,
   LayoutGrid,
   ReceiptText,
   Send,
@@ -116,7 +117,8 @@ function getWorkflowSelection(data: GrantPlatformWorkspaceData) {
   };
 }
 
-function ApplicationWorkflowPanel({ data }: { data: GrantPlatformWorkspaceData }) {
+export function ApplicationWorkflowDialog({ data }: { data: GrantPlatformWorkspaceData }) {
+  const [open, setOpen] = useState(false);
   const [draftMessage] = useState<string | null>(null);
   const [statusMessage, setStatusMessage] = useState<string | null>(null);
   const [statusValue, setStatusValue] = useState("draft");
@@ -173,147 +175,137 @@ function ApplicationWorkflowPanel({ data }: { data: GrantPlatformWorkspaceData }
   }
 
   return (
-    <Card className="shadow-soft">
-      <CardHeader>
-        <CardTitle className="text-lg">Application workflow</CardTitle>
-      </CardHeader>
-      <CardContent className="space-y-4">
-        <p className="text-sm leading-6 text-slate-600">
-          Save a draft or submit a live application from the same workspace that tracks your funding pipeline and reporting readiness.
-        </p>
-        <div className="grid gap-3 md:grid-cols-2">
-          {workflowStages.map((stage) => (
-            <div key={stage.key} className={`rounded-lg border p-3 ${stage.active ? "border-olea-green bg-olea-light/50" : "border-slate-200 bg-white"}`}>
-              <p className="font-semibold text-slate-900">{stage.title}</p>
-              <p className="mt-1 text-sm text-slate-600">{stage.description}</p>
-            </div>
-          ))}
-        </div>
-        {!selectedRound ? (
-          <div className="rounded-lg border border-slate-200 bg-slate-50 p-4 text-sm text-slate-600">
-            No grant rounds are currently accepting applications.
+    <Dialog open={open} onOpenChange={setOpen}>
+      <Button
+        type="button"
+        variant="outline"
+        className="gap-2 bg-slate-100 font-medium text-slate-800 hover:bg-slate-200"
+        onClick={() => setOpen(true)}
+      >
+        <GitBranch className="size-4 text-olea-green" />
+        Application Workflow
+      </Button>
+      <DialogContent className="sm:max-w-2xl max-h-[85vh] overflow-y-auto">
+        <DialogHeader>
+          <DialogTitle className="flex items-center gap-2 text-xl">
+            <GitBranch className="size-5 text-olea-green" />
+            Application Workflow
+          </DialogTitle>
+          <DialogDescription>
+            Track request stages, update workflow status, and submit grant applications.
+          </DialogDescription>
+        </DialogHeader>
+
+        <div className="space-y-4 py-2">
+          <div className="grid gap-3 sm:grid-cols-2">
+            {workflowStages.map((stage) => (
+              <div
+                key={stage.key}
+                className={`rounded-lg border p-3 ${
+                  stage.active ? "border-olea-green bg-olea-light/50" : "border-slate-200 bg-white"
+                }`}
+              >
+                <p className="font-semibold text-slate-900">{stage.title}</p>
+                <p className="mt-1 text-xs text-slate-600">{stage.description}</p>
+              </div>
+            ))}
           </div>
-        ) : activeApplication ? (
-          <div className="rounded-lg border border-slate-200 bg-slate-50 p-4">
-            <div className="flex flex-wrap items-center justify-between gap-2">
-              <div>
-                <p className="font-semibold text-slate-900">{activeApplication.roundName}</p>
-                <p className="text-sm text-slate-600">{grantStatusLabels[activeApplication.status as keyof typeof grantStatusLabels] ?? activeApplication.status}</p>
-              </div>
-              <div className="text-right text-sm text-slate-600">
-                <p>{formatCurrency(activeApplication.requestedAmountCents)}</p>
-                <p className="text-xs text-slate-500">Requested amount</p>
-              </div>
+
+          {!selectedRound ? (
+            <div className="rounded-lg border border-slate-200 bg-slate-50 p-4 text-sm text-slate-600">
+              No grant rounds are currently accepting applications.
             </div>
-            {actionState ? (
-              <div className="mt-3 flex flex-wrap gap-2 text-xs text-slate-600">
-                {actionState.canEdit ? <span className="rounded-full bg-olea-light px-2.5 py-1 text-olea-green">Draft editing enabled</span> : null}
-                {actionState.canWithdraw ? <span className="rounded-full bg-white px-2.5 py-1">Withdraw available</span> : null}
-                {actionState.canReview ? <span className="rounded-full bg-white px-2.5 py-1">Leadership review active</span> : null}
+          ) : activeApplication ? (
+            <div className="rounded-lg border border-slate-200 bg-slate-50 p-4">
+              <div className="flex flex-wrap items-center justify-between gap-2">
+                <div>
+                  <p className="font-semibold text-slate-900">{activeApplication.roundName}</p>
+                  <p className="text-xs text-slate-600">{activeApplication.focusArea}</p>
+                </div>
+                <Badge className="bg-white text-slate-700">{activeApplication.status}</Badge>
               </div>
-            ) : null}
-            {actionState?.canWithdraw ? (
-              <form action={withdrawGrantPlatformApplication} className="mt-4">
-                <input name="applicationId" type="hidden" value={activeApplication.id} />
-                <Button size="sm" type="submit" variant="outline">
-                  Withdraw application
-                </Button>
-              </form>
-            ) : null}
-            <form className="mt-4 space-y-3" onSubmit={handleStatusUpdate}>
-              <div className="flex flex-wrap items-center gap-2">
-                <input name="applicationId" type="hidden" value={activeApplication.id} />
-                <select
-                  className="h-9 rounded-md border border-slate-300 bg-white px-3 text-sm"
-                  name="status"
-                  onChange={(event) => setStatusValue(event.target.value)}
-                  value={statusValue}
-                >
-                  <option value="draft">Draft</option>
-                  <option value="submitted">Submitted</option>
-                  <option value="in_review">In review</option>
-                  <option value="shortlisted">Shortlisted</option>
-                  <option value="approved">Approved</option>
-                  <option value="declined">Declined</option>
-                  <option value="withdrawn">Withdrawn</option>
-                </select>
-                <Button size="sm" type="submit" variant="outline">
+              <p className="mt-2 text-xs text-slate-600">{activeApplication.summary}</p>
+
+              <form onSubmit={handleStatusUpdate} className="mt-4 space-y-3 border-t border-slate-200 pt-3">
+                <input type="hidden" name="applicationId" value={activeApplication.id} />
+                <div className="grid gap-3 sm:grid-cols-2">
+                  <label className="text-xs font-semibold text-slate-700">
+                    Workflow status
+                    <select
+                      className="mt-1 h-9 w-full rounded-md border border-slate-300 bg-white px-3 text-xs"
+                      name="status"
+                      value={statusValue}
+                      onChange={(e) => setStatusValue(e.target.value)}
+                    >
+                      <option value="draft">Draft (Intake)</option>
+                      <option value="submitted">Submitted</option>
+                      <option value="in_review">Under review</option>
+                      <option value="shortlisted">Shortlisted</option>
+                      <option value="approved">Approved</option>
+                    </select>
+                  </label>
+                  <label className="text-xs font-semibold text-slate-700">
+                    Collaboration note
+                    <Input
+                      className="mt-1 h-9 text-xs"
+                      name="collaborationNote"
+                      placeholder="Add review notes..."
+                      value={noteValue}
+                      onChange={(e) => setNoteValue(e.target.value)}
+                    />
+                  </label>
+                </div>
+                <Button size="sm" type="submit" className="bg-navy-blue text-white">
                   Update status
                 </Button>
-              </div>
-              <label className="block text-sm font-semibold text-slate-700">
-                Collaboration note
-                <Textarea
-                  className="mt-2 min-h-[90px]"
-                  name="collaborationNote"
-                  onChange={(event) => setNoteValue(event.target.value)}
-                  placeholder="Note the follow-up, owner, or board prep item."
-                  value={noteValue}
-                />
+                {statusMessage ? <p className="text-xs text-olea-green font-medium">{statusMessage}</p> : null}
+              </form>
+
+              {activeApplication.collaborationNote ? (
+                <div className="mt-3 rounded border bg-white p-2.5 text-xs text-slate-600">
+                  <p className="font-semibold text-slate-900">Latest team note:</p>
+                  <p className="mt-1">{getGrantPlatformCollaborationNote(activeApplication.collaborationNote)}</p>
+                </div>
+              ) : null}
+            </div>
+          ) : (
+            <form action={saveGrantPlatformApplication} className="space-y-3 rounded-lg border border-slate-200 bg-slate-50 p-4">
+              <input type="hidden" name="roundId" value={selectedRound.id} />
+              <input type="hidden" name="focusArea" value={selectedRound.programType ?? "Community"} />
+              <p className="font-semibold text-slate-900 text-sm">Submit new request for {selectedRound.name}</p>
+              <label className="block text-xs text-slate-700">
+                Requested amount (CAD)
+                <Input className="mt-1 text-xs" name="requestedAmount" placeholder="50000" type="number" />
               </label>
-            </form>
-            {statusMessage ? <p className="mt-2 text-sm text-olea-green">{statusMessage}</p> : null}
-            {getGrantPlatformCollaborationNote(activeApplication.collaborationNote ?? null) ? (
-              <div className="mt-4 rounded-lg border border-olea-green/20 bg-olea-light/60 p-4">
-                <p className="font-semibold text-slate-900">Saved follow-up note</p>
-                <p className="mt-2 text-sm text-slate-600">{getGrantPlatformCollaborationNote(activeApplication.collaborationNote ?? null)}</p>
+              <label className="block text-xs text-slate-700">
+                Summary
+                <Textarea className="mt-1 text-xs" defaultValue="Expansion of youth leadership mentorship program across regional centers." name="summary" />
+              </label>
+              <label className="block text-xs text-slate-700">
+                Expected outcome
+                <Textarea className="mt-1 text-xs" defaultValue="This investment will allow us to strengthen delivery and report measurable impact." name="expectedOutcome" />
+              </label>
+              <div className="flex flex-wrap gap-2 pt-1">
+                <Button size="sm" name="intent" type="submit" value="draft" variant="outline">
+                  Save draft
+                </Button>
+                <Button size="sm" name="intent" type="submit" value="submit" className="bg-olea-green text-white">
+                  <Send className="mr-1.5 size-3.5" />
+                  Submit application
+                </Button>
               </div>
-            ) : null}
-            <div className="mt-4 rounded-lg border border-slate-200 bg-white p-4">
-              <p className="font-semibold text-slate-900">Next actions</p>
-              <ul className="mt-2 space-y-2 text-sm text-slate-600">
-                {getGrantPlatformCollaborationChecklist(activeApplication.status, activeApplication.deadlineAt ?? null).map((item) => (
-                  <li key={item.title} className="rounded-md border border-slate-200 bg-slate-50 p-3">
-                    <p className="font-semibold text-slate-900">{item.title}</p>
-                    <p className="mt-1 text-sm text-slate-600">{item.detail}</p>
-                  </li>
-                ))}
-              </ul>
-            </div>
-          </div>
-        ) : (
-          <form action={saveGrantPlatformApplication} className="space-y-4 rounded-lg border border-slate-200 bg-slate-50 p-4">
-            <input name="roundId" type="hidden" value={selectedRound?.id ?? ""} />
-            <label className="block text-sm font-semibold text-slate-700">
-              Focus area
-              <select className="mt-2 w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm" defaultValue="operational_capacity" name="focusArea">
-                {Object.entries(grantFocusAreaLabels).map(([value, label]) => (
-                  <option key={value} value={value}>
-                    {label}
-                  </option>
-                ))}
-              </select>
-            </label>
-            <label className="block text-sm font-semibold text-slate-700">
-              Requested amount (CAD)
-              <Input className="mt-2" defaultValue="5000" min="1" name="requestedAmount" type="number" />
-            </label>
-            <label className="block text-sm font-semibold text-slate-700">
-              Annual revenue (CAD)
-              <Input className="mt-2" defaultValue="100000" min="0" name="annualRevenue" type="number" />
-            </label>
-            <label className="block text-sm font-semibold text-slate-700">
-              Narrative
-              <Textarea className="mt-2 min-h-[140px]" defaultValue="We are preparing a focused request to expand our operational capacity and support the delivery of programs for the community we serve." name="fundingRequest" />
-            </label>
-            <label className="block text-sm font-semibold text-slate-700">
-              Expected outcome
-              <Textarea className="mt-2" defaultValue="This investment will allow us to strengthen delivery and report measurable impact to our supporters." name="expectedOutcome" />
-            </label>
-            <div className="flex flex-wrap gap-3">
-              <Button name="intent" type="submit" value="draft" variant="outline">
-                Save draft
-              </Button>
-              <Button name="intent" type="submit" value="submit">
-                <Send className="mr-2 size-4" />
-                Submit application
-              </Button>
-            </div>
-          </form>
-        )}
-        {draftMessage ? <p className="text-sm text-olea-green">{draftMessage}</p> : null}
-      </CardContent>
-    </Card>
+            </form>
+          )}
+          {draftMessage ? <p className="text-xs text-olea-green">{draftMessage}</p> : null}
+        </div>
+
+        <DialogFooter>
+          <Button variant="outline" onClick={() => setOpen(false)}>
+            Close
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
   );
 }
 
@@ -344,151 +336,130 @@ function OrganizationSettingsPanel({
   const fundingSourceOptions = ["Foundation Grants", "Individual Donors", "Government Funding", "Corporate Sponsorships", "Earned Revenue", "Fundraising Events"];
 
   return (
-    <div className="grid gap-4 lg:grid-cols-[1.1fr_0.9fr]">
-      <Card className="shadow-soft">
-        <CardHeader>
-          <CardTitle className="text-lg">⚙️ Organization Settings</CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-5">
-          <div id="teamManagementSection" className="space-y-4">
-            <div>
-              <h3 className="text-lg font-semibold text-slate-900">👥 Team Members & Permissions</h3>
-              <p className="mt-2 text-sm text-slate-600">Manage who has access to the platform and what they can do.</p>
-            </div>
-            <div className="overflow-x-auto rounded-lg border border-slate-200">
-              <table className="min-w-full divide-y divide-slate-200 text-sm">
-                <thead className="bg-slate-50 text-left text-xs uppercase tracking-wide text-slate-500">
-                  <tr>
-                    <th className="px-4 py-3">Name</th>
-                    <th className="px-4 py-3">Email</th>
-                    <th className="px-4 py-3">Role</th>
-                    <th className="px-4 py-3">Status</th>
-                    <th className="px-4 py-3">Actions</th>
+    <Card className="shadow-soft">
+      <CardHeader>
+        <CardTitle className="flex items-center gap-2 text-lg">
+          <Settings2 className="size-5 text-olea-green" />
+          Organization Settings
+        </CardTitle>
+      </CardHeader>
+      <CardContent className="space-y-6">
+        <div id="teamManagementSection" className="space-y-4">
+          <div>
+            <h3 className="text-lg font-semibold text-slate-900">Team Members & Permissions</h3>
+            <p className="mt-1 text-sm text-slate-600">Manage who has access to the platform and what they can do.</p>
+          </div>
+          <div className="overflow-x-auto rounded-lg border border-slate-200">
+            <table className="min-w-full divide-y divide-slate-200 text-sm">
+              <thead className="bg-slate-50 text-left text-xs uppercase tracking-wide text-slate-500">
+                <tr>
+                  <th className="px-4 py-3">Name</th>
+                  <th className="px-4 py-3">Email</th>
+                  <th className="px-4 py-3">Role</th>
+                  <th className="px-4 py-3">Status</th>
+                  <th className="px-4 py-3">Actions</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-200 bg-white">
+                {data.teamMembers.map((member) => (
+                  <tr key={member.id}>
+                    <td className="px-4 py-3 font-medium text-slate-900">{member.displayName}</td>
+                    <td className="px-4 py-3 text-slate-600">{member.email}</td>
+                    <td className="px-4 py-3">
+                      <Badge className="bg-orange-500 text-white">{member.role.toUpperCase()}</Badge>
+                    </td>
+                    <td className="px-4 py-3">
+                      <span className="font-semibold text-olea-green">Active</span>
+                    </td>
+                    <td className="px-4 py-3">
+                      <Button size="sm" variant="outline" disabled={!canManageTeam}>
+                        Edit
+                      </Button>
+                    </td>
                   </tr>
-                </thead>
-                <tbody className="divide-y divide-slate-200 bg-white">
-                  {data.teamMembers.map((member) => (
-                    <tr key={member.id}>
-                      <td className="px-4 py-3 font-medium text-slate-900">{member.displayName}</td>
-                      <td className="px-4 py-3 text-slate-600">{member.email}</td>
-                      <td className="px-4 py-3">
-                        <Badge className="bg-orange-500 text-white">{member.role.toUpperCase()}</Badge>
-                      </td>
-                      <td className="px-4 py-3">
-                        <span className="font-semibold text-olea-green">● {member.status}</span>
-                      </td>
-                      <td className="px-4 py-3">
-                        <Button size="sm" variant="outline" disabled={!canManageTeam}>
-                          Edit
-                        </Button>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-            <Button disabled={!canManageTeam} className="w-fit">
-              + Invite Team Member
-            </Button>
-            <div className="rounded-lg border border-slate-200 bg-slate-50 p-4">
-              <p className="mb-3 font-semibold text-slate-900">Permission Levels:</p>
-              <div className="space-y-1 text-sm leading-7 text-slate-600">
-                <p><strong>Admin:</strong> Full access - manage everything, team members, settings</p>
-                <p><strong>Grant Manager:</strong> Edit grants, view all, add team notes, no budget edits</p>
-                <p><strong>Finance:</strong> View all grants, edit budgets, review reports, no grant edits</p>
-                <p><strong>Partner:</strong> View/edit only their own grants, add notes</p>
-                <p><strong>Viewer:</strong> Read-only access to reports and pipeline</p>
-              </div>
+                ))}
+              </tbody>
+            </table>
+          </div>
+          <Button disabled={!canManageTeam} className="w-fit">
+            + Invite Team Member
+          </Button>
+          <div className="rounded-lg border border-slate-200 bg-slate-50 p-4">
+            <p className="mb-3 font-semibold text-slate-900">Permission Levels:</p>
+            <div className="space-y-1 text-sm leading-7 text-slate-600">
+              <p><strong>Admin:</strong> Full access - manage everything, team members, settings</p>
+              <p><strong>Grant Manager:</strong> Edit grants, view all, add team notes, no budget edits</p>
+              <p><strong>Finance:</strong> View all grants, edit budgets, review reports, no grant edits</p>
+              <p><strong>Partner:</strong> View/edit only their own grants, add notes</p>
+              <p><strong>Viewer:</strong> Read-only access to reports and pipeline</p>
             </div>
           </div>
+        </div>
 
-          <div className="space-y-4 pt-2">
-            <h3 className="text-lg font-semibold text-slate-900">Organization Details</h3>
-            <form action={settingsFormAction} className="space-y-4">
+        <div className="space-y-4 pt-4 border-t border-slate-200">
+          <h3 className="text-lg font-semibold text-slate-900">Organization Details</h3>
+          <form action={settingsFormAction} className="space-y-4 max-w-2xl">
+            <div className="form-group">
+              <label className="block text-sm font-medium text-slate-700">Organization Name</label>
+              <input className="mt-2 w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm disabled:bg-slate-100" defaultValue={data.organizationName} disabled />
+            </div>
+
+            <div className="grid gap-4 md:grid-cols-2">
               <div className="form-group">
-                <label className="block text-sm font-medium text-slate-700">Organization Name</label>
-                <input className="mt-2 w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm disabled:bg-slate-100" defaultValue={data.organizationName} disabled />
+                <label className="block text-sm font-medium text-slate-700">Organization Type</label>
+                <select
+                  className="mt-2 w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm disabled:bg-slate-100"
+                  defaultValue={data.organizationSettings.organizationType}
+                  disabled={disabled}
+                  name="organizationType"
+                >
+                  <option>Grassroots (under $250K/yr)</option>
+                  <option>Growing ($250K-$1M)</option>
+                  <option>Established ($1M+)</option>
+                </select>
               </div>
 
-              <div className="grid gap-4 md:grid-cols-2">
-                <div className="form-group">
-                  <label className="block text-sm font-medium text-slate-700">Organization Type</label>
-                  <select
-                    className="mt-2 w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm disabled:bg-slate-100"
-                    defaultValue={data.organizationSettings.organizationType}
-                    disabled={disabled}
-                    name="organizationType"
-                  >
-                    <option>Grassroots (under $250K/yr)</option>
-                    <option>Growing ($250K-$1M)</option>
-                    <option>Established ($1M+)</option>
-                  </select>
-                </div>
-
-                <div className="form-group">
-                  <label className="block text-sm font-medium text-slate-700">Current Annual Revenue</label>
-                  <input
-                    className="mt-2 w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm disabled:bg-slate-100"
-                    defaultValue={data.organizationSettings.currentAnnualRevenueCents ? formatCurrencyDisplay(data.organizationSettings.currentAnnualRevenueCents) : ""}
-                    disabled={disabled}
-                    name="currentAnnualRevenue"
-                    placeholder="$450,000"
-                    type="text"
-                  />
-                </div>
+              <div className="form-group">
+                <label className="block text-sm font-medium text-slate-700">Current Annual Revenue</label>
+                <input
+                  className="mt-2 w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm disabled:bg-slate-100"
+                  defaultValue={data.organizationSettings.currentAnnualRevenueCents ? formatCurrencyDisplay(data.organizationSettings.currentAnnualRevenueCents) : ""}
+                  disabled={disabled}
+                  name="currentAnnualRevenue"
+                  placeholder="$450,000"
+                  type="text"
+                />
               </div>
-
-              <div className="form-group space-y-3">
-                <label className="block text-sm font-medium text-slate-700">Funding Sources (Select All That Apply)</label>
-                <div className="grid gap-3 md:grid-cols-2">
-                  {fundingSourceOptions.map((source) => (
-                    <label key={source} className="flex items-center gap-2 text-sm font-normal text-slate-700">
-                      <input defaultChecked={data.organizationSettings.fundingSources.includes(source)} disabled={disabled} name="fundingSources" type="checkbox" value={source} />
-                      {source}
-                    </label>
-                  ))}
-                </div>
-              </div>
-
-              <div className="rounded-lg bg-amber-100 px-4 py-3 text-sm text-amber-900">
-                Only Admins can edit organization settings.
-              </div>
-
-              <div>
-                <Button disabled={disabled} type="submit">
-                  Save organization settings
-                </Button>
-              </div>
-              {settingsState.message ? (
-                <p className={`text-sm ${settingsState.success ? "text-olea-green" : "text-red-600"}`}>{settingsState.message}</p>
-              ) : null}
-            </form>
-          </div>
-        </CardContent>
-      </Card>
-
-      <Card className="shadow-soft">
-        <CardHeader>
-          <CardTitle className="text-lg">Settings summary</CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-3 text-sm text-slate-600">
-          {data.notes.map((note) => (
-            <div key={note.label} className="rounded-lg border border-slate-200 bg-slate-50 p-4">
-              <p className="font-semibold text-slate-900">{note.label}</p>
-              <p className="mt-1">{note.value}</p>
             </div>
-          ))}
-          <div className="rounded-lg border border-olea-green/20 bg-olea-light/50 p-4">
-            <p className="font-semibold text-slate-900">Platform safeguards</p>
-            <ul className="mt-2 space-y-2">
-              <li>Role-based visibility for sensitive funding work</li>
-              <li>Clear review paths for leadership and program staff</li>
-              <li>Consistent auditability for board-facing reporting</li>
-            </ul>
-          </div>
-        </CardContent>
-      </Card>
-    </div>
+
+            <div className="form-group space-y-3">
+              <label className="block text-sm font-medium text-slate-700">Funding Sources (Select All That Apply)</label>
+              <div className="grid gap-3 md:grid-cols-2">
+                {fundingSourceOptions.map((source) => (
+                  <label key={source} className="flex items-center gap-2 text-sm font-normal text-slate-700">
+                    <input defaultChecked={data.organizationSettings.fundingSources.includes(source)} disabled={disabled} name="fundingSources" type="checkbox" value={source} />
+                    {source}
+                  </label>
+                ))}
+              </div>
+            </div>
+
+            <div className="rounded-lg bg-amber-100 px-4 py-3 text-sm text-amber-900">
+              Only Admins can edit organization settings.
+            </div>
+
+            <div>
+              <Button disabled={disabled} type="submit">
+                Save organization settings
+              </Button>
+            </div>
+            {settingsState.message ? (
+              <p className={`text-sm ${settingsState.success ? "text-olea-green" : "text-red-600"}`}>{settingsState.message}</p>
+            ) : null}
+          </form>
+        </div>
+      </CardContent>
+    </Card>
   );
 }
 
@@ -782,38 +753,6 @@ export function GrantPlatformWorkspace({
 
         <TabsContent value="pipeline" className="space-y-5">
           <GrantPipelineTable canEditGrants={canEditGrants} data={data} onSwitchTab={changeTab} />
-          <div className="grid gap-4 lg:grid-cols-[1.1fr_0.9fr]">
-            <ApplicationWorkflowPanel data={data} />
-            <Card className="shadow-soft">
-              <CardHeader className="flex flex-row items-center justify-between gap-2">
-                <CardTitle className="text-lg">Funding rounds</CardTitle>
-                {canEditGrants ? <AddGrantDialog /> : null}
-              </CardHeader>
-              <CardContent className="space-y-3">
-                {data.rounds.length ? (
-                  data.rounds.map((round) => (
-                    <div key={round.id} className="rounded-lg border bg-slate-50 p-4">
-                      <div className="flex flex-wrap items-center justify-between gap-2">
-                        <div>
-                          <p className="font-semibold text-slate-900">{round.name}</p>
-                          <p className="text-sm text-slate-600">{round.programName} • {round.programType}</p>
-                        </div>
-                        <Badge className="bg-white text-slate-700">{round.status}</Badge>
-                      </div>
-                      <p className="mt-2 text-sm text-slate-600">{round.description}</p>
-                      <div className="mt-3 flex flex-wrap gap-3 text-sm text-slate-500">
-                        <span>Closes: {round.closesAt ? new Date(round.closesAt).toLocaleDateString() : "TBD"}</span>
-                        <span>Budget: ${(round.budgetCents / 100).toLocaleString()}</span>
-                        <span>Awards: {round.availableAwards}</span>
-                      </div>
-                    </div>
-                  ))
-                ) : (
-                  <p className="text-sm text-slate-500">No grant rounds are available yet.</p>
-                )}
-              </CardContent>
-            </Card>
-          </div>
         </TabsContent>
 
         <TabsContent value="dashboard" className="space-y-5">
