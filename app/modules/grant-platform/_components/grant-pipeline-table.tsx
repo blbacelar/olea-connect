@@ -23,6 +23,13 @@ import { ApplicationWorkflowDialog } from "@/app/modules/grant-platform/_compone
 import { updateGrantPlatformApplicationStatus } from "@/app/modules/grant-platform/actions";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
@@ -231,18 +238,19 @@ export function GrantPipelineTable({ canEditGrants, data, onSwitchTab }: GrantPi
           />
         </div>
         <div className="w-[180px]">
-          <select
-            value={statusFilter}
-            onChange={(e) => setStatusFilter(e.target.value)}
-            className="h-9 w-full rounded-md border border-slate-300 bg-white px-3 text-sm"
-          >
-            <option value="all">All Statuses</option>
-            <option value="planning">Planning</option>
-            <option value="in_progress">In Progress</option>
-            <option value="applied">Applied</option>
-            <option value="approved">Approved</option>
-            <option value="declined">Declined</option>
-          </select>
+          <Select value={statusFilter} onValueChange={setStatusFilter}>
+            <SelectTrigger className="h-9">
+              <SelectValue placeholder="All Statuses" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All Statuses</SelectItem>
+              <SelectItem value="planning">Planning</SelectItem>
+              <SelectItem value="in_progress">In Progress</SelectItem>
+              <SelectItem value="applied">Applied</SelectItem>
+              <SelectItem value="approved">Approved</SelectItem>
+              <SelectItem value="declined">Declined</SelectItem>
+            </SelectContent>
+          </Select>
         </div>
       </div>
 
@@ -319,22 +327,28 @@ export function GrantPipelineTable({ canEditGrants, data, onSwitchTab }: GrantPi
                           Change Status:
                         </label>
                         <div className="flex flex-wrap items-center gap-2">
-                          <select
-                            defaultValue={grant.status}
-                            className="h-9 rounded-md border border-olea-green bg-white px-3 text-sm font-semibold text-slate-900"
-                            onChange={(e) => {
-                              setStatusMessages((prev) => ({
-                                ...prev,
-                                [grant.id]: `Status updated to ${e.target.value}. Team notified.`,
-                              }));
-                            }}
-                          >
-                            <option value="planning">Planning</option>
-                            <option value="in_progress">In Progress</option>
-                            <option value="applied">Applied</option>
-                            <option value="approved">Approved</option>
-                            <option value="declined">Declined</option>
-                          </select>
+                          <div className="w-[180px]">
+                            <Select
+                              defaultValue={grant.status}
+                              onValueChange={(val) => {
+                                setStatusMessages((prev) => ({
+                                  ...prev,
+                                  [grant.id]: `Status updated to ${val}. Team notified.`,
+                                }));
+                              }}
+                            >
+                              <SelectTrigger className="h-9 font-semibold text-slate-900 bg-white border-olea-green">
+                                <SelectValue placeholder="Select status" />
+                              </SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value="planning">Planning</SelectItem>
+                                <SelectItem value="in_progress">In Progress</SelectItem>
+                                <SelectItem value="applied">Applied</SelectItem>
+                                <SelectItem value="approved">Approved</SelectItem>
+                                <SelectItem value="declined">Declined</SelectItem>
+                              </SelectContent>
+                            </Select>
+                          </div>
                           <span className="text-xs text-slate-500">Status changes instantly • Team is notified</span>
                         </div>
                         {statusMessages[grant.id] ? (

@@ -15,6 +15,13 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { createGrantPlatformGrant } from "@/app/modules/grant-platform/actions";
 
@@ -22,6 +29,7 @@ export function AddGrantDialog() {
   const [open, setOpen] = useState(false);
   const [pending, setPending] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
+  const [status, setStatus] = useState("planning");
 
   async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -37,6 +45,7 @@ export function AddGrantDialog() {
     if (result.success) {
       setOpen(false);
       event.currentTarget.reset();
+      setStatus("planning");
     }
   }
 
@@ -56,12 +65,13 @@ export function AddGrantDialog() {
           </DialogDescription>
         </DialogHeader>
         <form className="space-y-4" onSubmit={handleSubmit}>
+          <input type="hidden" name="status" value={status} />
           <div className="grid gap-4 md:grid-cols-2">
             <div className="space-y-2 md:col-span-2">
               <Label htmlFor="grant-name">Grant name</Label>
-              <Input id="grant-name" name="name" placeholder="e.g. BC Community Gaming Grant" required />
+              <Input id="grant-name" name="name" placeholder="e.g. Youth Leadership Fund 2026" required />
             </div>
-            <div className="space-y-2">
+            <div className="space-y-2 md:col-span-2">
               <Label htmlFor="funder-name">Funder</Label>
               <Input id="funder-name" name="funderName" placeholder="e.g. Province of BC" />
             </div>
@@ -75,13 +85,18 @@ export function AddGrantDialog() {
             </div>
             <div className="space-y-2">
               <Label htmlFor="status">Current status</Label>
-              <select className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm" id="status" name="status" defaultValue="planning">
-                <option value="planning">Planning</option>
-                <option value="in_progress">In Progress</option>
-                <option value="applied">Applied</option>
-                <option value="approved">Approved</option>
-                <option value="declined">Declined</option>
-              </select>
+              <Select value={status} onValueChange={setStatus}>
+                <SelectTrigger id="status" className="w-full">
+                  <SelectValue placeholder="Select status" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="planning">Planning</SelectItem>
+                  <SelectItem value="in_progress">In Progress</SelectItem>
+                  <SelectItem value="applied">Applied</SelectItem>
+                  <SelectItem value="approved">Approved</SelectItem>
+                  <SelectItem value="declined">Declined</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
             <div className="space-y-2 md:col-span-2">
               <Label htmlFor="notes">Notes</Label>

@@ -10,6 +10,7 @@ import {
   GitBranch,
   HelpCircle,
   LayoutGrid,
+  Paperclip,
   ReceiptText,
   Send,
   Settings2,
@@ -50,6 +51,13 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Textarea } from "@/components/ui/textarea";
 import type { GrantPlatformWorkspaceData } from "@/lib/data/grant-platform";
@@ -232,18 +240,19 @@ export function ApplicationWorkflowDialog({ data }: { data: GrantPlatformWorkspa
                 <div className="grid gap-3 sm:grid-cols-2">
                   <label className="text-xs font-semibold text-slate-700">
                     Workflow status
-                    <select
-                      className="mt-1 h-9 w-full rounded-md border border-slate-300 bg-white px-3 text-xs"
-                      name="status"
-                      value={statusValue}
-                      onChange={(e) => setStatusValue(e.target.value)}
-                    >
-                      <option value="draft">Draft (Intake)</option>
-                      <option value="submitted">Submitted</option>
-                      <option value="in_review">Under review</option>
-                      <option value="shortlisted">Shortlisted</option>
-                      <option value="approved">Approved</option>
-                    </select>
+                    <input type="hidden" name="status" value={statusValue} />
+                    <Select value={statusValue} onValueChange={setStatusValue}>
+                      <SelectTrigger className="mt-1 h-9 text-xs">
+                        <SelectValue placeholder="Select status" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="draft">Draft (Intake)</SelectItem>
+                        <SelectItem value="submitted">Submitted</SelectItem>
+                        <SelectItem value="in_review">Under review</SelectItem>
+                        <SelectItem value="shortlisted">Shortlisted</SelectItem>
+                        <SelectItem value="approved">Approved</SelectItem>
+                      </SelectContent>
+                    </Select>
                   </label>
                   <label className="text-xs font-semibold text-slate-700">
                     Collaboration note
@@ -333,6 +342,7 @@ function OrganizationSettingsPanel({
     message: "",
     success: false,
   });
+  const [orgType, setOrgType] = useState(data.organizationSettings.organizationType);
   const disabled = !canEditOrgProfile;
   const fundingSourceOptions = ["Foundation Grants", "Individual Donors", "Government Funding", "Corporate Sponsorships", "Earned Revenue", "Fundraising Events"];
 
@@ -346,9 +356,30 @@ function OrganizationSettingsPanel({
       </CardHeader>
       <CardContent className="space-y-6">
         <div id="teamManagementSection" className="space-y-4">
-          <div>
-            <h3 className="text-lg font-semibold text-slate-900">Team Members & Permissions</h3>
-            <p className="mt-1 text-sm text-slate-600">Manage who has access to the platform and what they can do.</p>
+          <div className="flex flex-row items-center justify-between gap-2">
+            <div>
+              <h3 className="text-lg font-semibold text-slate-900">Team Members & Permissions</h3>
+              <p className="mt-1 text-sm text-slate-600">Manage who has access to the platform and what they can do.</p>
+            </div>
+            <div className="group relative">
+              <button
+                type="button"
+                className="grid size-7 place-items-center rounded-full bg-slate-100 text-slate-600 transition hover:bg-olea-green hover:text-white"
+                aria-label="Permission levels info"
+              >
+                <HelpCircle className="size-4" />
+              </button>
+              <div className="pointer-events-none absolute right-0 top-9 z-30 w-80 scale-95 rounded-xl border border-slate-200 bg-white p-4 shadow-xl opacity-0 transition-all duration-150 group-hover:pointer-events-auto group-hover:scale-100 group-hover:opacity-100">
+                <p className="mb-2 font-bold text-slate-900 text-xs">Permission Levels Guidelines</p>
+                <div className="space-y-1.5 text-xs text-slate-600">
+                  <p><strong>Admin:</strong> Full access - manage everything, team members, settings.</p>
+                  <p><strong>Grant Manager:</strong> Edit grants, view all, add team notes, no budget edits.</p>
+                  <p><strong>Finance:</strong> View all grants, edit budgets, review reports, no grant edits.</p>
+                  <p><strong>Partner:</strong> View/edit only their own grants, add notes.</p>
+                  <p><strong>Viewer:</strong> Read-only access to reports and pipeline.</p>
+                </div>
+              </div>
+            </div>
           </div>
           <div className="overflow-x-auto rounded-lg border border-slate-200">
             <table className="min-w-full divide-y divide-slate-200 text-sm">
@@ -385,16 +416,6 @@ function OrganizationSettingsPanel({
           <Button disabled={!canManageTeam} className="w-fit">
             + Invite Team Member
           </Button>
-          <div className="rounded-lg border border-slate-200 bg-slate-50 p-4">
-            <p className="mb-3 font-semibold text-slate-900">Permission Levels:</p>
-            <div className="space-y-1 text-sm leading-7 text-slate-600">
-              <p><strong>Admin:</strong> Full access - manage everything, team members, settings</p>
-              <p><strong>Grant Manager:</strong> Edit grants, view all, add team notes, no budget edits</p>
-              <p><strong>Finance:</strong> View all grants, edit budgets, review reports, no grant edits</p>
-              <p><strong>Partner:</strong> View/edit only their own grants, add notes</p>
-              <p><strong>Viewer:</strong> Read-only access to reports and pipeline</p>
-            </div>
-          </div>
         </div>
 
         <div className="space-y-4 pt-4 border-t border-slate-200">
@@ -408,16 +429,17 @@ function OrganizationSettingsPanel({
             <div className="grid gap-4 md:grid-cols-2">
               <div className="form-group">
                 <label className="block text-sm font-medium text-slate-700">Organization Type</label>
-                <select
-                  className="mt-2 w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm disabled:bg-slate-100"
-                  defaultValue={data.organizationSettings.organizationType}
-                  disabled={disabled}
-                  name="organizationType"
-                >
-                  <option>Grassroots (under $250K/yr)</option>
-                  <option>Growing ($250K-$1M)</option>
-                  <option>Established ($1M+)</option>
-                </select>
+                <input type="hidden" name="organizationType" value={orgType} />
+                <Select disabled={disabled} value={orgType} onValueChange={setOrgType}>
+                  <SelectTrigger className="mt-2 w-full">
+                    <SelectValue placeholder="Select Organization Type" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="Grassroots (under $250K/yr)">Grassroots (under $250K/yr)</SelectItem>
+                    <SelectItem value="Growing ($250K-$1M)">Growing ($250K-$1M)</SelectItem>
+                    <SelectItem value="Established ($1M+)">Established ($1M+)</SelectItem>
+                  </SelectContent>
+                </Select>
               </div>
 
               <div className="form-group">
@@ -483,7 +505,9 @@ function PartnerDialog({
     message: "",
     success: false,
   });
-  const title = partner ? "✏️ Edit Partner Details" : "+ Add Partner";
+  const [partnerType, setPartnerType] = useState(partner?.partnerType ?? "Community Organization");
+  const [partnerStatus, setPartnerStatus] = useState(partner?.status ?? "Active Collaborator");
+  const title = partner ? "Edit Partner Details" : "Add Partner";
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -501,16 +525,22 @@ function PartnerDialog({
               Partner Name
               <Input disabled={!canEditOrgProfile} name="partnerName" placeholder="Organization or individual name" defaultValue={partner?.name ?? ""} />
             </label>
-            <label className="space-y-2 text-sm font-medium text-slate-700">
-              Partner Type
-              <select disabled={!canEditOrgProfile} name="partnerType" defaultValue={partner?.partnerType ?? "Community Organization"} className="h-10 rounded-md border border-slate-300 bg-white px-3 text-sm disabled:bg-slate-100">
-                <option>Community Organization</option>
-                <option>Academic Institution</option>
-                <option>Government Agency</option>
-                <option>Individual / Board Advisor</option>
-                <option>For-Profit Partner</option>
-              </select>
-            </label>
+            <div className="space-y-2 text-sm font-medium text-slate-700">
+              <label>Partner Type</label>
+              <input type="hidden" name="partnerType" value={partnerType} />
+              <Select disabled={!canEditOrgProfile} value={partnerType} onValueChange={setPartnerType}>
+                <SelectTrigger className="w-full">
+                  <SelectValue placeholder="Select partner type" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="Community Organization">Community Organization</SelectItem>
+                  <SelectItem value="Academic Institution">Academic Institution</SelectItem>
+                  <SelectItem value="Government Agency">Government Agency</SelectItem>
+                  <SelectItem value="Individual / Board Advisor">Individual / Board Advisor</SelectItem>
+                  <SelectItem value="For-Profit Partner">For-Profit Partner</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
             <label className="space-y-2 text-sm font-medium text-slate-700">
               Name of primary contact
               <Input disabled={!canEditOrgProfile} name="partnerContact" placeholder="Name of primary contact" defaultValue={partner?.contactName ?? ""} />
@@ -527,17 +557,23 @@ function PartnerDialog({
               Focus Areas
               <Input disabled={!canEditOrgProfile} name="partnerFocus" placeholder="e.g., Arts, Culture, Youth Programs (comma-separated)" defaultValue={partner?.focusAreas ?? ""} />
             </label>
+            <div className="space-y-2 text-sm font-medium text-slate-700 md:col-span-2">
+              <label>Status</label>
+              <input type="hidden" name="partnerStatus" value={partnerStatus} />
+              <Select disabled={!canEditOrgProfile} value={partnerStatus} onValueChange={setPartnerStatus}>
+                <SelectTrigger className="w-full">
+                  <SelectValue placeholder="Select status" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="Active Collaborator">Active Collaborator</SelectItem>
+                  <SelectItem value="Good for Evaluation">Good for Evaluation</SelectItem>
+                  <SelectItem value="Strategic Partner">Strategic Partner</SelectItem>
+                  <SelectItem value="Potential Collaborator">Potential Collaborator</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
             <label className="space-y-2 text-sm font-medium text-slate-700 md:col-span-2">
-              Status
-              <select disabled={!canEditOrgProfile} name="partnerStatus" defaultValue={partner?.status ?? "Active Collaborator"} className="h-10 rounded-md border border-slate-300 bg-white px-3 text-sm disabled:bg-slate-100">
-                <option>Active Collaborator</option>
-                <option>Good for Evaluation</option>
-                <option>Strategic Partner</option>
-                <option>Potential Collaborator</option>
-              </select>
-            </label>
-            <label className="space-y-2 text-sm font-medium text-slate-700 md:col-span-2">
-              <strong>📝 Partner Notes & History</strong>
+              <strong>Partner Notes & History</strong>
               <Textarea disabled={!canEditOrgProfile} name="partnerNotes" placeholder="Add notes about this partnership: what they're good at, collaboration history, key contacts, follow-up items, etc." defaultValue={partner?.notes ?? ""} className="min-h-[120px]" />
               <p className="text-xs text-slate-500">Use this space to track partnership history, what works well, challenges, and ideas for future collaboration.</p>
             </label>
@@ -657,21 +693,28 @@ function VaultPanel({ data }: { data: GrantPlatformWorkspaceData }) {
   return (
     <Card className="shadow-soft">
       <CardHeader>
-        <CardTitle className="text-lg">📁 Cross-Grant File Vault</CardTitle>
+        <CardTitle className="text-lg flex items-center gap-2">
+          <FolderOpen className="size-5 text-olea-green" />
+          Cross-Grant File Vault
+        </CardTitle>
       </CardHeader>
       <CardContent className="space-y-4">
-        <Button className="bg-olea-orange text-white hover:bg-olea-orange/90">
-          📎 Upload to Vault
+        <Button className="gap-2 bg-olea-orange text-white hover:bg-olea-orange/90">
+          <Paperclip className="size-4" />
+          Upload to Vault
         </Button>
         <p className="text-sm text-slate-600">Store reusable files, templates, and resources that can be used across multiple grants.</p>
 
         <div className="overflow-hidden rounded-lg border border-slate-200 bg-white shadow-sm">
-          <div className="border-b border-slate-200 bg-slate-100 px-4 py-3 font-semibold text-slate-900">📁 Vault Files</div>
+          <div className="border-b border-slate-200 bg-slate-100 px-4 py-3 font-semibold text-slate-900 flex items-center gap-2">
+            <FileText className="size-4 text-slate-600" />
+            Vault Files
+          </div>
           <div className="divide-y divide-slate-200">
             {data.vaultItems.map((item) => (
               <div key={item.id} className="p-4">
                 <div className="mb-2 flex items-center justify-between gap-4">
-                  <span className="font-bold text-slate-900">📄 {item.fileName}</span>
+                  <span className="font-bold text-slate-900">{item.fileName}</span>
                   <span className="text-xs text-slate-500">Uploaded: {new Date(item.createdAt).toLocaleDateString("en-CA", { month: "short", day: "numeric", year: "numeric" })}</span>
                 </div>
                 <p className="mb-3 text-xs text-slate-600">{item.contentType ?? "Reusable file"}</p>
@@ -690,9 +733,9 @@ function VaultPanel({ data }: { data: GrantPlatformWorkspaceData }) {
 
         <div className="rounded-lg border-l-4 border-olea-green bg-olea-light p-4">
           <p className="mb-2 font-semibold text-slate-900">Vault Tips:</p>
-          <p className="mb-2 text-sm text-slate-600">✓ Store templates and reusable documents here</p>
-          <p className="mb-2 text-sm text-slate-600">✓ Download files when working on a grant</p>
-          <p className="text-sm text-slate-600">✓ Keep files updated as best practices evolve</p>
+          <p className="mb-1 text-sm text-slate-600">• Store templates and reusable documents here</p>
+          <p className="mb-1 text-sm text-slate-600">• Download files when working on a grant</p>
+          <p className="text-sm text-slate-600">• Keep files updated as best practices evolve</p>
         </div>
       </CardContent>
     </Card>

@@ -9,6 +9,13 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Textarea } from "@/components/ui/textarea";
 
@@ -146,9 +153,9 @@ export function GrantFundersPanel() {
             <div className="pointer-events-none absolute right-0 top-9 z-30 w-80 scale-95 rounded-xl border border-slate-200 bg-white p-4 shadow-xl opacity-0 transition-all duration-150 group-hover:pointer-events-auto group-hover:scale-100 group-hover:opacity-100">
               <p className="mb-2 font-bold text-slate-900 text-xs">How to Track Funder Relationships</p>
               <div className="space-y-2 text-xs text-slate-600">
-                <p>✓ <strong>Add Funder:</strong> Register new foundations or government program officers.</p>
-                <p>✓ <strong>Notes & Feedback:</strong> Click &quot;Edit Notes&quot; or double-click to record program officer contacts and guidance.</p>
-                <p>✓ <strong>Track Success:</strong> Maintain historical memory across cycles so your team understands funder expectations.</p>
+                <p>• <strong>Add Funder:</strong> Register new foundations or government program officers.</p>
+                <p>• <strong>Notes & Feedback:</strong> Click &quot;Edit Notes&quot; or double-click to record program officer contacts and guidance.</p>
+                <p>• <strong>Track Success:</strong> Maintain historical memory across cycles so your team understands funder expectations.</p>
               </div>
             </div>
           </div>
@@ -165,17 +172,18 @@ export function GrantFundersPanel() {
                 className="h-9 pl-9 text-xs bg-white"
               />
             </div>
-            <div className="w-[160px]">
-              <select
-                value={statusFilter}
-                onChange={(e) => setStatusFilter(e.target.value)}
-                className="h-9 w-full rounded-md border border-slate-300 bg-white px-3 text-xs"
-              >
-                <option value="all">All Relationships</option>
-                <option value="active">Active Relationship</option>
-                <option value="pipeline">Pipeline / Prospect</option>
-                <option value="declined">Declined</option>
-              </select>
+            <div className="w-[170px]">
+              <Select value={statusFilter} onValueChange={setStatusFilter}>
+                <SelectTrigger className="h-9 text-xs bg-white">
+                  <SelectValue placeholder="All Relationships" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Relationships</SelectItem>
+                  <SelectItem value="active">Active Relationship</SelectItem>
+                  <SelectItem value="pipeline">Pipeline / Prospect</SelectItem>
+                  <SelectItem value="declined">Declined</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
           </div>
 
@@ -206,7 +214,7 @@ export function GrantFundersPanel() {
                     <TableCell>
                       {funder.activeRelationship ? (
                         <Badge className="bg-emerald-100 font-bold text-emerald-800 text-[11px]">
-                          ✓ Active partner
+                          Active partner
                         </Badge>
                       ) : (
                         <Badge variant="outline" className="text-[11px] text-slate-700">
