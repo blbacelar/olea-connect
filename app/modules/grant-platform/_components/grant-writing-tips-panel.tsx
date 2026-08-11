@@ -17,46 +17,46 @@ export function GrantWritingTipsPanel() {
   const stageCoaching = [
     {
       id: "planning",
-      title: "📋 Planning Stage",
+      title: "Planning Stage",
       items: [
-        "✓ Research the funder: mission, past grants, average award size, timeline",
-        "✓ Read ALL guidelines carefully - write down what they emphasize",
-        "✓ Identify decision criteria - what does this funder value most?",
-        "✓ Assess fit: Is this grant 90%+ aligned with our work? If not, skip it",
-        "✓ Determine your angle - What makes OUR approach unique?",
+        "• Research the funder: mission, past grants, average award size, timeline",
+        "• Read ALL guidelines carefully - write down what they emphasize",
+        "• Identify decision criteria - what does this funder value most?",
+        "• Assess fit: Is this grant 90%+ aligned with our work? If not, skip it",
+        "• Determine your angle - What makes OUR approach unique?",
       ],
     },
     {
       id: "drafting",
-      title: "✍️ Drafting Stage",
+      title: "Drafting Stage",
       items: [
-        '✓ Problem Statement: Show data, not emotion. "50% of youth lack mentorship" (with source)',
-        '✓ Solution: Be specific. Not "provide mentorship" but "matched 1:1 mentoring, monthly check-ins, 12-month commitment"',
-        "✓ Impact: Connect to funder priorities. Exactly what results will they see?",
-        "✓ Timeline: Month-by-month for first year, show concrete milestones",
-        "✓ Sustainability: How will this continue after grant funding ends?",
+        '• Problem Statement: Show data, not emotion. "50% of youth lack mentorship" (with source)',
+        '• Solution: Be specific. Not "provide mentorship" but "matched 1:1 mentoring, monthly check-ins, 12-month commitment"',
+        "• Impact: Connect to funder priorities. Exactly what results will they see?",
+        "• Timeline: Month-by-month for first year, show concrete milestones",
+        "• Sustainability: How will this continue after grant funding ends?",
       ],
     },
     {
       id: "refinement",
-      title: "🔍 Refinement Stage",
+      title: "Refinement Stage",
       items: [
-        "✓ Read it aloud - awkward wording will jump out",
-        "✓ Cut 20% of words - tight writing beats verbose writing",
-        "✓ Check: Did we answer THEIR question or answer what we wanted to say?",
-        "✓ Evidence: Every claim should have data or example backup",
-        "✓ Proof read 3x and have someone else read it 1x",
+        "• Read it aloud - awkward wording will jump out",
+        "• Cut 20% of words - tight writing beats verbose writing",
+        "• Check: Did we answer THEIR question or answer what we wanted to say?",
+        "• Evidence: Every claim should have data or example backup",
+        "• Proof read 3x and have someone else read it 1x",
       ],
     },
     {
       id: "submission",
-      title: "✅ Before Submission",
+      title: "Before Submission",
       items: [
-        "✓ Budget matches narrative - if you say 2 staff, budget should show 2 staff",
-        "✓ All signatures/approvals: Board approval, partner letters, funder requests",
-        "✓ Format check: Font size, margins, page limits - follow exactly",
-        "✓ Required attachments: Org documents, 501c3, audit, demo resumes",
-        "✓ Backup files: Save, email to team, upload to platform",
+        "• Budget matches narrative - if you say 2 staff, budget should show 2 staff",
+        "• All signatures/approvals: Board approval, partner letters, funder requests",
+        "• Format check: Font size, margins, page limits - follow exactly",
+        "• Required attachments: Org documents, 501c3, audit, demo resumes",
+        "• Backup files: Save, email to team, upload to platform",
       ],
     },
   ];
@@ -91,14 +91,17 @@ export function GrantWritingTipsPanel() {
 
   return (
     <div className="space-y-6">
-      <h2 className="text-2xl font-bold text-navy-blue">📚 Grant Writing Coaching Hub</h2>
+      <h2 className="text-2xl font-bold text-navy-blue flex items-center gap-2">
+        <BookOpen className="size-6 text-olea-green" />
+        Grant Writing Coaching Hub
+      </h2>
 
       {/* Writer Support Promo Card */}
       <div className="flex flex-col gap-4 rounded-xl border border-orange-200 bg-orange-500 p-5 text-white shadow-soft sm:flex-row sm:items-center sm:justify-between">
         <div className="space-y-1">
           <p className="flex items-center gap-2 font-bold text-base">
             <Sparkles className="size-5 text-amber-200" />
-            ✨ Grant Writer Support Coming Soon
+            Grant Writer Support Coming Soon
           </p>
           <p className="text-xs leading-relaxed opacity-95">
             We&apos;re building a network of expert grant writers. Interested in professional writing support? Let us know and
@@ -119,7 +122,7 @@ export function GrantWritingTipsPanel() {
         <CardHeader>
           <CardTitle className="flex items-center gap-2 text-lg">
             <Target className="size-5 text-olea-green" />
-            🎯 Coaching by Grant Stage
+            Coaching by Grant Stage
           </CardTitle>
         </CardHeader>
         <CardContent className="divide-y divide-slate-100 p-0">
@@ -146,7 +149,7 @@ export function GrantWritingTipsPanel() {
         <CardHeader>
           <CardTitle className="flex items-center gap-2 text-lg text-navy-blue">
             <AlertTriangle className="size-5 text-orange-500" />
-            ⚠️ Top 5 Grant Writing Mistakes
+            Top 5 Grant Writing Mistakes
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-3">

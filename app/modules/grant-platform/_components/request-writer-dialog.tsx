@@ -44,7 +44,7 @@ export function RequestWriterDialog({ grantName, trigger }: RequestWriterDialogP
     await new Promise((resolve) => setTimeout(resolve, 600));
 
     setPending(false);
-    setMessage("✅ Request received! We'll contact you within 2 business days with matched writer options.");
+    setMessage("Request received! We'll contact you within 2 business days with matched writer options.");
 
     setTimeout(() => {
       setOpen(false);
