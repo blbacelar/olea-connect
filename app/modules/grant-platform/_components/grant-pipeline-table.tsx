@@ -150,15 +150,15 @@ export function GrantPipelineTable({ canEditGrants, data, onSwitchTab }: GrantPi
   const getStatusBadge = (status: string) => {
     switch (status) {
       case "planning":
-        return <Badge className="bg-amber-100 text-amber-800 hover:bg-amber-100">📋 Planning</Badge>;
+        return <Badge className="bg-amber-100 text-amber-800 hover:bg-amber-100">Planning</Badge>;
       case "in_progress":
-        return <Badge className="bg-blue-100 text-blue-800 hover:bg-blue-100">✍️ In Progress</Badge>;
+        return <Badge className="bg-blue-100 text-blue-800 hover:bg-blue-100">In Progress</Badge>;
       case "applied":
-        return <Badge className="bg-purple-100 text-purple-800 hover:bg-purple-100">📤 Applied</Badge>;
+        return <Badge className="bg-purple-100 text-purple-800 hover:bg-purple-100">Applied</Badge>;
       case "approved":
-        return <Badge className="bg-emerald-100 text-emerald-800 hover:bg-emerald-100">✅ Approved</Badge>;
+        return <Badge className="bg-emerald-100 text-emerald-800 hover:bg-emerald-100">Approved</Badge>;
       case "declined":
-        return <Badge className="bg-rose-100 text-rose-800 hover:bg-rose-100">❌ Declined</Badge>;
+        return <Badge className="bg-rose-100 text-rose-800 hover:bg-rose-100">Declined</Badge>;
       default:
         return <Badge className="bg-slate-100 text-slate-800">{status}</Badge>;
     }
@@ -185,7 +185,7 @@ export function GrantPipelineTable({ canEditGrants, data, onSwitchTab }: GrantPi
     if (!confirmationNumber.trim()) return;
 
     setSubmissionSuccessMsg(
-      `✅ GRANT SUBMISSION RECORDED!\nFunder Confirmation #: ${confirmationNumber.trim()}\nStatus changed to: 📤 Applied.`
+      `GRANT SUBMISSION RECORDED!\nFunder Confirmation #: ${confirmationNumber.trim()}\nStatus changed to: Applied.`
     );
     setTimeout(() => {
       setSubmissionModalOpen(false);
@@ -197,7 +197,7 @@ export function GrantPipelineTable({ canEditGrants, data, onSwitchTab }: GrantPi
   return (
     <div className="space-y-6">
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <h2 className="text-2xl font-bold text-navy-blue">🔗 Grant Pipeline</h2>
+        <h2 className="text-2xl font-bold text-navy-blue">Grant Pipeline</h2>
         <div className="flex flex-wrap items-center gap-2">
           {canEditGrants ? <AddGrantDialog /> : null}
           <Button
@@ -205,8 +205,9 @@ export function GrantPipelineTable({ canEditGrants, data, onSwitchTab }: GrantPi
             className="bg-olea-green text-white hover:bg-olea-green/90"
             onClick={() => onSwitchTab("partners")}
           >
-            👥 Add Partner
+            Add Partner
           </Button>
+          <ApplicationWorkflowDialog data={data} />
           <RequestWriterDialog />
           <Button
             type="button"
@@ -214,7 +215,7 @@ export function GrantPipelineTable({ canEditGrants, data, onSwitchTab }: GrantPi
             className="bg-slate-100 text-slate-800"
             onClick={() => window.print()}
           >
-            📊 Export Board Report
+            Export Board Report
           </Button>
         </div>
       </div>
@@ -223,7 +224,7 @@ export function GrantPipelineTable({ canEditGrants, data, onSwitchTab }: GrantPi
       <div className="flex flex-wrap items-center gap-3 rounded-lg border border-slate-200 bg-white p-3 shadow-soft">
         <div className="flex-1 min-w-[200px]">
           <Input
-            placeholder="🔍 Search grants or funders..."
+            placeholder="Search grants or funders..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             className="h-9"
@@ -236,11 +237,11 @@ export function GrantPipelineTable({ canEditGrants, data, onSwitchTab }: GrantPi
             className="h-9 w-full rounded-md border border-slate-300 bg-white px-3 text-sm"
           >
             <option value="all">All Statuses</option>
-            <option value="planning">📋 Planning</option>
-            <option value="in_progress">✍️ In Progress</option>
-            <option value="applied">📤 Applied</option>
-            <option value="approved">✅ Approved</option>
-            <option value="declined">❌ Declined</option>
+            <option value="planning">Planning</option>
+            <option value="in_progress">In Progress</option>
+            <option value="applied">Applied</option>
+            <option value="approved">Approved</option>
+            <option value="declined">Declined</option>
           </select>
         </div>
       </div>
@@ -315,7 +316,7 @@ export function GrantPipelineTable({ canEditGrants, data, onSwitchTab }: GrantPi
 
                       <div className="mt-3 rounded-lg border border-olea-green/30 bg-olea-light/40 p-3 space-y-2">
                         <label className="block text-xs font-bold uppercase tracking-wider text-slate-800">
-                          📊 Change Status:
+                          Change Status:
                         </label>
                         <div className="flex flex-wrap items-center gap-2">
                           <select
@@ -324,17 +325,17 @@ export function GrantPipelineTable({ canEditGrants, data, onSwitchTab }: GrantPi
                             onChange={(e) => {
                               setStatusMessages((prev) => ({
                                 ...prev,
-                                [grant.id]: `⚡ Status updated to ${e.target.value}. Team notified.`,
+                                [grant.id]: `Status updated to ${e.target.value}. Team notified.`,
                               }));
                             }}
                           >
-                            <option value="planning">📋 Planning</option>
-                            <option value="in_progress">✍️ In Progress</option>
-                            <option value="applied">📤 Applied</option>
-                            <option value="approved">✅ Approved</option>
-                            <option value="declined">❌ Declined</option>
+                            <option value="planning">Planning</option>
+                            <option value="in_progress">In Progress</option>
+                            <option value="applied">Applied</option>
+                            <option value="approved">Approved</option>
+                            <option value="declined">Declined</option>
                           </select>
-                          <span className="text-xs text-slate-500">⚡ Status changes instantly • Team is notified</span>
+                          <span className="text-xs text-slate-500">Status changes instantly • Team is notified</span>
                         </div>
                         {statusMessages[grant.id] ? (
                           <p className="text-xs font-medium text-olea-green">{statusMessages[grant.id]}</p>
@@ -348,8 +349,8 @@ export function GrantPipelineTable({ canEditGrants, data, onSwitchTab }: GrantPi
                         <h3 className="flex items-center gap-2 text-sm font-bold text-slate-900">
                           <Sparkles className="size-4 text-olea-green" />
                           {grant.status === "in_progress"
-                            ? "✍️ Draft Writing Coaching (Drafting Stage)"
-                            : "📋 Planning Stage Coaching"}
+                            ? "Draft Writing Coaching (Drafting Stage)"
+                            : "Planning Stage Coaching"}
                         </h3>
                         {grant.status === "in_progress" ? (
                           <div className="space-y-1.5 text-xs leading-relaxed text-slate-700">
@@ -370,7 +371,7 @@ export function GrantPipelineTable({ canEditGrants, data, onSwitchTab }: GrantPi
                                 grantName={grant.name}
                                 trigger={
                                   <Button size="sm" className="bg-olea-green text-white hover:bg-olea-green/90">
-                                    ✨ Express Interest in Writer Support
+                                    Express Interest in Writer Support
                                   </Button>
                                 }
                               />
@@ -378,10 +379,10 @@ export function GrantPipelineTable({ canEditGrants, data, onSwitchTab }: GrantPi
                           </div>
                         ) : (
                           <div className="space-y-1 text-xs text-slate-700">
-                            <p>✓ Research funder mission and past grants</p>
-                            <p>✓ Read ALL guidelines carefully</p>
-                            <p>✓ Assess fit: Is this 90%+ aligned?</p>
-                            <p>✓ Define your unique angle</p>
+                            <p>• Research funder mission and past grants</p>
+                            <p>• Read ALL guidelines carefully</p>
+                            <p>• Assess fit: Is this 90%+ aligned?</p>
+                            <p>• Define your unique angle</p>
                           </div>
                         )}
                       </div>
@@ -409,7 +410,7 @@ export function GrantPipelineTable({ canEditGrants, data, onSwitchTab }: GrantPi
                             </label>
                           ))}
                         </div>
-                        <p className="text-xs text-slate-500">📝 All required files uploaded below ✓</p>
+                        <p className="text-xs text-slate-500">All required files uploaded below</p>
                         <div className="flex flex-wrap gap-2 pt-1">
                           <Button
                             size="sm"
@@ -442,7 +443,7 @@ export function GrantPipelineTable({ canEditGrants, data, onSwitchTab }: GrantPi
                         <div className="flex items-center justify-between">
                           <h4 className="flex items-center gap-2 text-sm font-bold text-emerald-900">
                             <CheckCircle2 className="size-4 text-emerald-600" />
-                            🎉 Approved - Post-Award Management
+                            Approved - Post-Award Management
                           </h4>
                           <span className="text-xs font-semibold text-emerald-700">Awarded: {grant.awardDate}</span>
                         </div>
@@ -532,13 +533,13 @@ export function GrantPipelineTable({ canEditGrants, data, onSwitchTab }: GrantPi
                       <div className="flex items-center justify-between">
                         <h4 className="flex items-center gap-2 text-sm font-bold text-navy-blue">
                           <Paperclip className="size-4 text-olea-green" />
-                          📁 Grant Files & Attachments
+                          Grant Files & Attachments
                         </h4>
                         <Button
                           size="sm"
                           variant="outline"
                           className="gap-1.5 text-xs"
-                          onClick={() => alert("📎 File upload modal initialized. Choose your document.")}
+                          onClick={() => alert("File upload modal initialized. Choose your document.")}
                         >
                           <Plus className="size-3.5" />
                           Upload File
@@ -547,7 +548,7 @@ export function GrantPipelineTable({ canEditGrants, data, onSwitchTab }: GrantPi
                       <div className="space-y-1.5 text-xs text-slate-700">
                         {grant.files.map((file) => (
                           <div key={file.name} className="flex items-center justify-between rounded border border-slate-100 p-2">
-                            <span className="font-medium text-slate-800">📄 {file.name}</span>
+                            <span className="font-medium text-slate-800">{file.name}</span>
                             <span className="text-slate-400">{file.date}</span>
                           </div>
                         ))}
@@ -567,14 +568,14 @@ export function GrantPipelineTable({ canEditGrants, data, onSwitchTab }: GrantPi
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <ExternalLink className="size-5 text-orange-600" />
-              🌐 Open Funder Portal
+              Open Funder Portal
             </DialogTitle>
             <DialogDescription>
               You are launching the official BC Community Gaming Grant Application Portal.
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-3 text-xs text-slate-700">
-            <p className="font-semibold text-slate-900">📋 Submission Steps:</p>
+            <p className="font-semibold text-slate-900">Submission Steps:</p>
             <ol className="list-decimal pl-4 space-y-1">
               <li>Log in to your funder portal account</li>
               <li>Select &quot;BC Community Gaming Grant&quot;</li>
