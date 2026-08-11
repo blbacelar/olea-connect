@@ -39,6 +39,8 @@ This log tracks estimated work on Olea Connects. It is not a replacement for a t
 | 2026-08-11 | Eliminate all emojis across Grant Platform module (Vault, Pipeline, Coaching, Partners, Settings, Funders), refactor all select inputs to shadcn Select, convert Permission Levels to tooltip, and add strict no-emoji rule to AGENTS.md. | `feature/grant-platform-template` | 06:50 PDT | 06:54 PDT | 0.25 | Completed | Verified `npx tsc --noEmit` (0 errors), unit tests passed (11/11). Required review gates executed. |
 | 2026-08-11 | Refactor Vault tab to display files in a shadcn DataTable with interactive upload modal, document category select, and deletion/download triggers. | `feature/grant-platform-template` | 06:56 PDT | 06:57 PDT | 0.25 | Completed | Verified `npx tsc --noEmit` (0 errors), unit tests passed (11/11). Required review gates executed. |
 | 2026-08-11 | Convert Vault Tips static instructional box into a hoverable header tooltip button. | `feature/grant-platform-template` | 07:01 PDT | 07:02 PDT | 0.25 | Completed | Verified `npx tsc --noEmit` (0 errors), unit tests passed (11/11). Required review gates executed. |
+| 2026-08-11 | Refactor Partners tab to display partners & collaborators roster in a clean shadcn DataTable with edit trigger buttons and status badges. | `feature/grant-platform-template` | 07:01 PDT | 07:02 PDT | 0.25 | Completed | Verified `npx tsc --noEmit` (0 errors), unit tests passed (11/11). Required review gates executed. |
+
 
 
 
