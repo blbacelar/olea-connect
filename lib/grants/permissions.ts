@@ -99,7 +99,9 @@ export function getGrantPlatformUiAccess(role: string | null | undefined) {
 
   return {
     canEditGrants: canAccessGrantPlatform(normalizedRole, "editGrants"),
+    canEditOrgProfile: canAccessGrantPlatform(normalizedRole, "editOrgProfile"),
     canEditTeamNotes: canAccessGrantPlatform(normalizedRole, "editTeamNotes"),
+    canManageTeam: canAccessGrantPlatform(normalizedRole, "manageTeam"),
     canViewBoard: canAccessGrantPlatform(normalizedRole, "viewBoard"),
     canViewBudgets: canAccessGrantPlatform(normalizedRole, "viewBudgets"),
     canViewReports: canAccessGrantPlatform(normalizedRole, "viewReports"),

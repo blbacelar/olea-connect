@@ -10,6 +10,7 @@ import {
 import React from "react";
 
 import type { BrandProfile } from "@/lib/types";
+import { buildPdfFooter, normalizePdfBrand } from "@/lib/pdf/brand-export";
 import { getEmbeddedLogo } from "@/lib/template-renderer/logo-data";
 import { activeDirectorHolders } from "./metrics";
 import { calculateTerm, coverageLevel, officerLabels } from "./domain";
@@ -217,11 +218,18 @@ const styles = StyleSheet.create({
   footerText: {
     position: "absolute",
     left: 38,
+    right: 132,
+    top: 748,
+    color: "#718096",
+    fontSize: 7,
+  },
+  footerPage: {
+    position: "absolute",
     right: 38,
     top: 748,
     color: "#718096",
     fontSize: 7,
-    textAlign: "center",
+    fontFamily: "Helvetica-Bold",
   },
   callout: {
     padding: 12,
@@ -247,11 +255,11 @@ export async function renderBoardRecruitmentPdfBuffer(
   brand: BrandProfile,
   identified: boolean,
 ) {
-  const safeBrand: ReportBrand = {
-    ...brand,
-    primaryColor: safeColor(brand.primaryColor, "#446B52"),
-    secondaryColor: safeColor(brand.secondaryColor, "#F4EFE4"),
-  };
+  const safeBrand: ReportBrand = normalizePdfBrand(
+    brand,
+    "#446B52",
+    "#F4EFE4",
+  ) as ReportBrand;
   const logo = getEmbeddedLogo(brand.logoUrl);
   const activeDirectors = data.members.filter(
     (member) => member.active && member.memberType === "director",
@@ -259,7 +267,7 @@ export async function renderBoardRecruitmentPdfBuffer(
   const gaps = data.skills.filter(
     (skill) => activeDirectorHolders(data, skill.id).length === 0,
   );
-  const footer = buildFooter(safeBrand);
+  const footer = buildPdfFooter(safeBrand, "Board Recruitment Toolkit");
 
   return renderToBuffer(
     <Document
@@ -451,12 +459,13 @@ function ReportPage({
       </View>
       {children}
       <View style={styles.footerRule} fixed />
+      <Text style={styles.footerText} fixed wrap={false}>
+        {footer}
+      </Text>
       <Text
-        style={styles.footerText}
+        style={styles.footerPage}
         fixed
-        render={({ pageNumber, totalPages }) =>
-          `${footer}  ·  Page ${pageNumber} of ${totalPages}`
-        }
+        render={({ pageNumber, totalPages }) => `Page ${pageNumber} of ${totalPages}`}
       />
     </Page>
   );
@@ -762,22 +771,6 @@ function DataRow({ cells, widths }: { cells: string[]; widths: string[] }) {
       ))}
     </View>
   );
-}
-
-function buildFooter(brand: ReportBrand) {
-  return [
-    brand.organizationName,
-    brand.address ? `Address: ${brand.address}` : null,
-    brand.phone ? `Phone: ${brand.phone}` : null,
-    brand.contactEmail ? `Email: ${brand.contactEmail}` : null,
-    brand.website ? `Web: ${brand.website.replace(/^https?:\/\//i, "")}` : null,
-  ]
-    .filter(Boolean)
-    .join("  |  ");
-}
-
-function safeColor(value: string | undefined, fallback: string) {
-  return /^#[0-9a-f]{6}$/i.test(value ?? "") ? value! : fallback;
 }
 
 function formatDate(value: Date) {

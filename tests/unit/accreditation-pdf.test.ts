@@ -72,9 +72,6 @@ describe("accreditation PDF export", () => {
       logoInitials: "OC",
       primaryColor: "#14532d",
       secondaryColor: "#dcfce7",
-      address: "",
-      phone: "",
-      contactEmail: "",
       website: "",
     });
 
