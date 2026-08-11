@@ -649,38 +649,89 @@ function PartnersPanel({
           </div>
         </CardHeader>
         <CardContent>
-          <p className="mb-5 text-sm text-slate-600">Track organizations, institutions, and individuals who can collaborate on future grant opportunities.</p>
-          <Button
-            className="mb-5 bg-olea-green text-white hover:bg-olea-green/90"
-            disabled={!canEditOrgProfile}
-            onClick={() => {
-              setSelectedPartnerId(null);
-              setDialogOpen(true);
-            }}
-          >
-            + Add Partner
-          </Button>
+          <div className="flex flex-wrap items-center justify-between gap-4 mb-5">
+            <p className="text-sm text-slate-600">Track organizations, institutions, and individuals who can collaborate on future grant opportunities.</p>
+            <Button
+              className="bg-olea-green text-white hover:bg-olea-green/90"
+              disabled={!canEditOrgProfile}
+              onClick={() => {
+                setSelectedPartnerId(null);
+                setDialogOpen(true);
+              }}
+            >
+              + Add Partner
+            </Button>
+          </div>
 
-          <div className="grid gap-4 lg:grid-cols-2">
-            {data.partners.map((partner) => (
-              <div
-                key={partner.id}
-                className="cursor-pointer rounded-lg border border-slate-200 bg-white p-4 shadow-sm transition hover:border-olea-green hover:shadow-md"
-                onClick={() => {
-                  setSelectedPartnerId(partner.id);
-                  setDialogOpen(true);
-                }}
-              >
-                <h4 className="mb-2 text-base font-semibold text-slate-900">{partner.name}</h4>
-                <p className="mb-2 text-xs text-slate-600"><strong>Type:</strong> {partner.partnerType}</p>
-                <p className="mb-2 text-xs text-slate-600"><strong>Contact:</strong> {partner.contactName}</p>
-                <p className="mb-2 text-xs text-slate-600"><strong>Email:</strong> {partner.email}</p>
-                <p className="mb-2 text-xs text-slate-600"><strong>Focus Areas:</strong> {partner.focusAreas}</p>
-                <p className="font-bold text-olea-green text-xs">{partner.status}</p>
-                <p className="mt-2 text-[11px] text-slate-500">{partner.lastCollaboration ?? partner.addedNote ?? "Click to edit"}</p>
-                <p className="mt-1 text-[11px] italic text-olea-orange">Click to edit</p>
-              </div>
-            ))}
+          {/* Partners Data Table */}
+          <div className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-soft">
+            <Table>
+              <TableHeader className="bg-slate-100/70">
+                <TableRow>
+                  <TableHead className="w-[220px]">Partner Name</TableHead>
+                  <TableHead className="w-[180px]">Type</TableHead>
+                  <TableHead className="w-[200px]">Primary Contact & Email</TableHead>
+                  <TableHead>Focus Areas</TableHead>
+                  <TableHead className="w-[150px]">Status</TableHead>
+                  <TableHead className="w-[100px] text-right">Actions</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {data.partners.length ? (
+                  data.partners.map((partner) => (
+                    <TableRow
+                      key={partner.id}
+                      className="cursor-pointer hover:bg-slate-50/80"
+                      onClick={() => {
+                        setSelectedPartnerId(partner.id);
+                        setDialogOpen(true);
+                      }}
+                    >
+                      <TableCell className="font-semibold text-slate-900 text-xs">
+                        {partner.name}
+                      </TableCell>
+                      <TableCell className="text-xs text-slate-600">
+                        <Badge variant="outline" className="bg-slate-50 text-slate-700">
+                          {partner.partnerType}
+                        </Badge>
+                      </TableCell>
+                      <TableCell className="text-xs text-slate-600 space-y-0.5">
+                        <p className="font-medium text-slate-800">{partner.contactName}</p>
+                        <p className="text-slate-500">{partner.email}</p>
+                      </TableCell>
+                      <TableCell className="text-xs text-slate-600">
+                        {partner.focusAreas}
+                      </TableCell>
+                      <TableCell>
+                        <Badge className="bg-emerald-100 font-bold text-emerald-800 text-[11px]">
+                          {partner.status}
+                        </Badge>
+                      </TableCell>
+                      <TableCell className="text-right">
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          className="h-8 text-xs text-slate-700"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setSelectedPartnerId(partner.id);
+                            setDialogOpen(true);
+                          }}
+                        >
+                          Edit
+                        </Button>
+                      </TableCell>
+                    </TableRow>
+                  ))
+                ) : (
+                  <TableRow>
+                    <TableCell colSpan={6} className="py-8 text-center text-xs text-slate-500">
+                      No partners recorded yet. Click &quot;+ Add Partner&quot; to register your first partner organization.
+                    </TableCell>
+                  </TableRow>
+                )}
+              </TableBody>
+            </Table>
           </div>
         </CardContent>
       </Card>
