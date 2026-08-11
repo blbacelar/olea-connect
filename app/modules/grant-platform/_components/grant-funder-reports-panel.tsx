@@ -9,11 +9,11 @@ import {
   FileCheck,
   FileSpreadsheet,
   FileText,
+  HelpCircle,
   PieChart,
   ShieldAlert,
   Sparkles,
   TrendingUp,
-
 } from "lucide-react";
 import { useState } from "react";
 
@@ -266,28 +266,34 @@ export function GrantFunderReportsPanel() {
         </CardContent>
       </Card>
 
-      {/* Funding Trends & Insights */}
+      {/* Funding Trends & Insights Tooltip */}
       <Card className="shadow-soft">
-        <CardHeader>
+        <CardHeader className="flex flex-row items-center justify-between gap-2">
           <CardTitle className="flex items-center gap-2 text-lg">
             <TrendingUp className="size-5 text-olea-green" />
             Funding Insights & Recommendations
           </CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-3">
-          {recommendations.map((rec, i) => {
-            const Icon = rec.icon;
-            return (
-              <div key={i} className={`rounded-lg border-l-4 ${rec.borderColor} ${rec.bgColor} p-3 text-xs space-y-1`}>
-                <div className="flex items-center gap-1.5 font-bold text-slate-900">
-                  <Icon className="size-4 text-olea-green" />
-                  <span>{rec.title}</span>
-                </div>
-                <p className="text-slate-600 leading-relaxed">{rec.text}</p>
+          <div className="group relative">
+            <button
+              type="button"
+              className="grid size-7 place-items-center rounded-full bg-slate-100 text-slate-600 transition hover:bg-olea-green hover:text-white"
+              aria-label="Funding insights help"
+            >
+              <HelpCircle className="size-4" />
+            </button>
+            <div className="pointer-events-none absolute right-0 top-9 z-30 w-80 scale-95 rounded-xl border border-slate-200 bg-white p-4 shadow-xl opacity-0 transition-all duration-150 group-hover:pointer-events-auto group-hover:scale-100 group-hover:opacity-100">
+              <p className="mb-2 font-bold text-slate-900 text-xs">Funding Insights & Recommendations</p>
+              <div className="space-y-2.5 text-xs text-slate-600">
+                {recommendations.map((rec, i) => (
+                  <div key={i} className="space-y-0.5">
+                    <p className="font-semibold text-slate-900">{rec.title}</p>
+                    <p className="text-[11px] text-slate-600 leading-normal">{rec.text}</p>
+                  </div>
+                ))}
               </div>
-            );
-          })}
-        </CardContent>
+            </div>
+          </div>
+        </CardHeader>
       </Card>
 
       {/* Generated Report Dialog Modal */}
