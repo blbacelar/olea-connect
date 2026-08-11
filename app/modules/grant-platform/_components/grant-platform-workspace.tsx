@@ -721,10 +721,29 @@ function VaultPanel({ data }: { data: GrantPlatformWorkspaceData }) {
     <Card className="shadow-soft">
       <CardHeader>
         <div className="flex flex-wrap items-center justify-between gap-4">
-          <CardTitle className="text-lg flex items-center gap-2">
-            <FolderOpen className="size-5 text-olea-green" />
-            Cross-Grant File Vault
-          </CardTitle>
+          <div className="flex items-center gap-2">
+            <CardTitle className="text-lg flex items-center gap-2">
+              <FolderOpen className="size-5 text-olea-green" />
+              Cross-Grant File Vault
+            </CardTitle>
+            <div className="group relative">
+              <button
+                type="button"
+                className="grid size-7 place-items-center rounded-full bg-slate-100 text-slate-600 transition hover:bg-olea-green hover:text-white"
+                aria-label="Vault tips"
+              >
+                <HelpCircle className="size-4" />
+              </button>
+              <div className="pointer-events-none absolute left-0 top-9 z-30 w-80 scale-95 rounded-xl border border-slate-200 bg-white p-4 shadow-xl opacity-0 transition-all duration-150 group-hover:pointer-events-auto group-hover:scale-100 group-hover:opacity-100">
+                <p className="mb-2 font-bold text-slate-900 text-xs">Vault Tips & Guidance</p>
+                <div className="space-y-1.5 text-xs text-slate-600">
+                  <p>• Store templates and reusable documents here.</p>
+                  <p>• Download files when working on a grant opportunity.</p>
+                  <p>• Keep files updated as best practices evolve.</p>
+                </div>
+              </div>
+            </div>
+          </div>
           <Button
             type="button"
             className="gap-2 bg-olea-orange text-white hover:bg-olea-orange/90"
@@ -799,13 +818,6 @@ function VaultPanel({ data }: { data: GrantPlatformWorkspaceData }) {
               )}
             </TableBody>
           </Table>
-        </div>
-
-        <div className="rounded-lg border-l-4 border-olea-green bg-olea-light p-4">
-          <p className="mb-2 font-semibold text-slate-900">Vault Tips:</p>
-          <p className="mb-1 text-sm text-slate-600">• Store templates and reusable documents here</p>
-          <p className="mb-1 text-sm text-slate-600">• Download files when working on a grant</p>
-          <p className="text-sm text-slate-600">• Keep files updated as best practices evolve</p>
         </div>
 
         {/* Upload Modal Dialog */}
