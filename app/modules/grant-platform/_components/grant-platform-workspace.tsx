@@ -734,22 +734,6 @@ export function GrantPlatformWorkspace({
               Prepared for {data.organizationName}
             </p>
           </div>
-          <div className="flex flex-col items-start gap-3 lg:items-end">
-            <div className="flex flex-wrap items-center gap-2">
-              <Badge className="bg-white text-slate-700 shadow-sm">
-                {normalizedRole.replace("_", " ").toUpperCase()}
-              </Badge>
-              {canViewReports || canViewBoard ? (
-                <Button variant="outline" className="w-fit">
-                  Review module
-                  <ArrowRight className="ml-2 size-4" />
-                </Button>
-              ) : null}
-            </div>
-            <p className="text-sm text-slate-500">
-              Built for funder-facing delivery, board reporting, and collaborative execution.
-            </p>
-          </div>
         </div>
       </header>
 
