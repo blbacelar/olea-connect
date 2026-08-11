@@ -19,6 +19,7 @@ import { useState } from "react";
 
 import { AddGrantDialog } from "@/app/modules/grant-platform/_components/add-grant-dialog";
 import { RequestWriterDialog } from "@/app/modules/grant-platform/_components/request-writer-dialog";
+import { ApplicationWorkflowDialog } from "@/app/modules/grant-platform/_components/grant-platform-workspace";
 import { updateGrantPlatformApplicationStatus } from "@/app/modules/grant-platform/actions";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
