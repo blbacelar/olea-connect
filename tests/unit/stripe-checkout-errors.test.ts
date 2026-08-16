@@ -1,7 +1,9 @@
 import { describe, expect, it } from "vitest";
 
 import {
+  CHECKOUT_ACCOUNT_STATE_MESSAGE,
   CHECKOUT_EMAIL_RATE_LIMIT_MESSAGE,
+  CheckoutAccountStateError,
   CheckoutRateLimitError,
   getCheckoutErrorResponse,
 } from "@/lib/stripe/checkout-errors";
@@ -16,6 +18,13 @@ describe("checkout error responses", () => {
     expect(result).toEqual({
       error: CHECKOUT_EMAIL_RATE_LIMIT_MESSAGE,
       status: 429,
+    });
+  });
+
+  it("returns a safe conflict for an existing-account state", () => {
+    expect(getCheckoutErrorResponse(new CheckoutAccountStateError())).toEqual({
+      error: CHECKOUT_ACCOUNT_STATE_MESSAGE,
+      status: 409,
     });
   });
 

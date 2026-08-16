@@ -126,11 +126,20 @@ export async function startStripeCheckout(
   });
   const contentType = response.headers.get("content-type");
   const result = contentType?.includes("application/json")
-    ? ((await response.json()) as { url?: string; error?: string })
+    ? ((await response.json()) as {
+        url?: string;
+        error?: string;
+        correlationId?: string;
+      })
     : {};
 
   if (!response.ok || !result.url) {
-    throw new Error(result.error ?? "Unable to start secure checkout.");
+    const reference = result.correlationId
+      ? ` Reference: ${result.correlationId}`
+      : "";
+    throw new Error(
+      `${result.error ?? "Unable to start secure checkout."}${reference}`,
+    );
   }
 
   return result.url;
