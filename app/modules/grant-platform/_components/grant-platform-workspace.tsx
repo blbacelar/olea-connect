@@ -6,19 +6,25 @@ import {
   CalendarClock,
   CircleCheckBig,
   FileText,
+  FolderOpen,
   LayoutGrid,
   ReceiptText,
   Send,
   Settings2,
   ShieldCheck,
   Sparkles,
+  Trash2,
   Users,
 } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { useMemo, useState } from "react";
+import { useFormState } from "react-dom";
 
 import { AddGrantDialog } from "@/app/modules/grant-platform/_components/add-grant-dialog";
 import {
+  deleteGrantPlatformPartner,
+  saveGrantPlatformOrganizationSettings,
+  saveGrantPlatformPartner,
   saveGrantPlatformApplication,
   updateGrantPlatformApplicationStatus,
   withdrawGrantPlatformApplication,
@@ -26,6 +32,14 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Textarea } from "@/components/ui/textarea";
@@ -34,17 +48,19 @@ import { grantFocusAreaLabels, grantStatusLabels } from "@/lib/grants/domain";
 import { getGrantPlatformUiAccess } from "@/lib/grants/permissions";
 import { getGrantPlatformCollaborationChecklist, getGrantPlatformCollaborationNote, getGrantPlatformPipelineSnapshot } from "@/lib/grants/workflow";
 
-type GrantPlatformTab = "overview" | "pipeline" | "reports" | "settings";
+type GrantPlatformTab = "overview" | "pipeline" | "reports" | "partners" | "settings" | "vault";
 
 const tabOptions = [
   { value: "overview", label: "Overview", icon: LayoutGrid },
   { value: "pipeline", label: "Pipeline", icon: Users },
   { value: "reports", label: "Reports", icon: BarChart3 },
+  { value: "partners", label: "Partners", icon: Users },
   { value: "settings", label: "Settings", icon: Settings2 },
+  { value: "vault", label: "Vault", icon: FolderOpen },
 ] as const;
 
 function resolveTab(value?: string): GrantPlatformTab {
-  return value === "pipeline" || value === "reports" || value === "settings"
+  return value === "pipeline" || value === "reports" || value === "settings" || value === "partners" || value === "vault"
     ? value
     : "overview";
 }
@@ -290,6 +306,404 @@ function ApplicationWorkflowPanel({ data }: { data: GrantPlatformWorkspaceData }
   );
 }
 
+function formatCurrencyDisplay(cents: number | null) {
+  if (cents === null) return "$0";
+
+  return new Intl.NumberFormat("en-CA", {
+    currency: "CAD",
+    maximumFractionDigits: 0,
+    style: "currency",
+  }).format(cents / 100);
+}
+
+function OrganizationSettingsPanel({
+  canEditOrgProfile,
+  canManageTeam,
+  data,
+}: {
+  canEditOrgProfile: boolean;
+  canManageTeam: boolean;
+  data: GrantPlatformWorkspaceData;
+}) {
+  const [settingsState, settingsFormAction] = useFormState(saveGrantPlatformOrganizationSettings, {
+    message: "",
+    success: false,
+  });
+  const disabled = !canEditOrgProfile;
+  const fundingSourceOptions = ["Foundation Grants", "Individual Donors", "Government Funding", "Corporate Sponsorships", "Earned Revenue", "Fundraising Events"];
+
+  return (
+    <div className="grid gap-4 lg:grid-cols-[1.1fr_0.9fr]">
+      <Card className="shadow-soft">
+        <CardHeader>
+          <CardTitle className="text-lg">⚙️ Organization Settings</CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-5">
+          <div id="teamManagementSection" className="space-y-4">
+            <div>
+              <h3 className="text-lg font-semibold text-slate-900">👥 Team Members & Permissions</h3>
+              <p className="mt-2 text-sm text-slate-600">Manage who has access to the platform and what they can do.</p>
+            </div>
+            <div className="overflow-x-auto rounded-lg border border-slate-200">
+              <table className="min-w-full divide-y divide-slate-200 text-sm">
+                <thead className="bg-slate-50 text-left text-xs uppercase tracking-wide text-slate-500">
+                  <tr>
+                    <th className="px-4 py-3">Name</th>
+                    <th className="px-4 py-3">Email</th>
+                    <th className="px-4 py-3">Role</th>
+                    <th className="px-4 py-3">Status</th>
+                    <th className="px-4 py-3">Actions</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-200 bg-white">
+                  {data.teamMembers.map((member) => (
+                    <tr key={member.id}>
+                      <td className="px-4 py-3 font-medium text-slate-900">{member.displayName}</td>
+                      <td className="px-4 py-3 text-slate-600">{member.email}</td>
+                      <td className="px-4 py-3">
+                        <Badge className="bg-orange-500 text-white">{member.role.toUpperCase()}</Badge>
+                      </td>
+                      <td className="px-4 py-3">
+                        <span className="font-semibold text-olea-green">● {member.status}</span>
+                      </td>
+                      <td className="px-4 py-3">
+                        <Button size="sm" variant="outline" disabled={!canManageTeam}>
+                          Edit
+                        </Button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+            <Button disabled={!canManageTeam} className="w-fit">
+              + Invite Team Member
+            </Button>
+            <div className="rounded-lg border border-slate-200 bg-slate-50 p-4">
+              <p className="mb-3 font-semibold text-slate-900">Permission Levels:</p>
+              <div className="space-y-1 text-sm leading-7 text-slate-600">
+                <p><strong>Admin:</strong> Full access - manage everything, team members, settings</p>
+                <p><strong>Grant Manager:</strong> Edit grants, view all, add team notes, no budget edits</p>
+                <p><strong>Finance:</strong> View all grants, edit budgets, review reports, no grant edits</p>
+                <p><strong>Partner:</strong> View/edit only their own grants, add notes</p>
+                <p><strong>Viewer:</strong> Read-only access to reports and pipeline</p>
+              </div>
+            </div>
+          </div>
+
+          <div className="space-y-4 pt-2">
+            <h3 className="text-lg font-semibold text-slate-900">Organization Details</h3>
+            <form action={settingsFormAction} className="space-y-4">
+              <div className="form-group">
+                <label className="block text-sm font-medium text-slate-700">Organization Name</label>
+                <input className="mt-2 w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm disabled:bg-slate-100" defaultValue={data.organizationName} disabled />
+              </div>
+
+              <div className="grid gap-4 md:grid-cols-2">
+                <div className="form-group">
+                  <label className="block text-sm font-medium text-slate-700">Organization Type</label>
+                  <select
+                    className="mt-2 w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm disabled:bg-slate-100"
+                    defaultValue={data.organizationSettings.organizationType}
+                    disabled={disabled}
+                    name="organizationType"
+                  >
+                    <option value="">Choose organization type</option>
+                    <option value="Grassroots (under $250K/yr)">Grassroots (under $250K/yr)</option>
+                    <option value="Growing ($250K-$1M)">Growing ($250K-$1M)</option>
+                    <option value="Established ($1M+)">Established ($1M+)</option>
+                  </select>
+                </div>
+
+                <div className="form-group">
+                  <label className="block text-sm font-medium text-slate-700">Current Annual Revenue</label>
+                  <input
+                    className="mt-2 w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm disabled:bg-slate-100"
+                    defaultValue={data.organizationSettings.currentAnnualRevenueCents ? formatCurrencyDisplay(data.organizationSettings.currentAnnualRevenueCents) : ""}
+                    disabled={disabled}
+                    name="currentAnnualRevenue"
+                    placeholder="$450,000"
+                    type="text"
+                  />
+                </div>
+              </div>
+
+              <div className="form-group space-y-3">
+                <label className="block text-sm font-medium text-slate-700">Funding Sources (Select All That Apply)</label>
+                <div className="grid gap-3 md:grid-cols-2">
+                  {fundingSourceOptions.map((source) => (
+                    <label key={source} className="flex items-center gap-2 text-sm font-normal text-slate-700">
+                      <input defaultChecked={data.organizationSettings.fundingSources.includes(source)} disabled={disabled} name="fundingSources" type="checkbox" value={source} />
+                      {source}
+                    </label>
+                  ))}
+                </div>
+              </div>
+
+              <div className="rounded-lg bg-amber-100 px-4 py-3 text-sm text-amber-900">
+                Only Admins can edit organization settings.
+              </div>
+
+              <div>
+                <Button disabled={disabled} type="submit">
+                  Save organization settings
+                </Button>
+              </div>
+              {settingsState.message ? (
+                <p className={`text-sm ${settingsState.success ? "text-olea-green" : "text-red-600"}`}>{settingsState.message}</p>
+              ) : null}
+            </form>
+          </div>
+        </CardContent>
+      </Card>
+
+      <Card className="shadow-soft">
+        <CardHeader>
+          <CardTitle className="text-lg">Settings summary</CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-3 text-sm text-slate-600">
+          {data.notes.map((note) => (
+            <div key={note.label} className="rounded-lg border border-slate-200 bg-slate-50 p-4">
+              <p className="font-semibold text-slate-900">{note.label}</p>
+              <p className="mt-1">{note.value}</p>
+            </div>
+          ))}
+          <div className="rounded-lg border border-olea-green/20 bg-olea-light/50 p-4">
+            <p className="font-semibold text-slate-900">Platform safeguards</p>
+            <ul className="mt-2 space-y-2">
+              <li>Role-based visibility for sensitive funding work</li>
+              <li>Clear review paths for leadership and program staff</li>
+              <li>Consistent auditability for board-facing reporting</li>
+            </ul>
+          </div>
+        </CardContent>
+      </Card>
+    </div>
+  );
+}
+
+function PartnerDialog({
+  canEditOrgProfile,
+  onOpenChange,
+  open,
+  partner,
+}: {
+  canEditOrgProfile: boolean;
+  onOpenChange: (open: boolean) => void;
+  open: boolean;
+  partner: GrantPlatformWorkspaceData["partners"][number] | null;
+}) {
+  const [partnerState, partnerFormAction] = useFormState(saveGrantPlatformPartner, {
+    message: "",
+    success: false,
+  });
+  const [, deleteFormAction] = useFormState(deleteGrantPlatformPartner, {
+    message: "",
+    success: false,
+  });
+  const title = partner ? "✏️ Edit Partner Details" : "+ Add Partner";
+
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-2xl">
+        <DialogHeader>
+          <DialogTitle>{title}</DialogTitle>
+          <DialogDescription>
+            Track organizations, institutions, and individuals who can collaborate on future grant opportunities.
+          </DialogDescription>
+        </DialogHeader>
+        <form key={partner?.id ?? "new-partner"} id="partner-form" action={partnerFormAction} className="space-y-4">
+          <input name="partnerId" type="hidden" value={partner?.id ?? ""} />
+          <div className="grid gap-4 md:grid-cols-2">
+            <label className="space-y-2 text-sm font-medium text-slate-700">
+              Partner Name
+              <Input disabled={!canEditOrgProfile} name="partnerName" placeholder="Organization or individual name" defaultValue={partner?.name ?? ""} />
+            </label>
+            <label className="space-y-2 text-sm font-medium text-slate-700">
+              Partner Type
+              <select disabled={!canEditOrgProfile} name="partnerType" defaultValue={partner?.partnerType ?? "Community Organization"} className="h-10 rounded-md border border-slate-300 bg-white px-3 text-sm disabled:bg-slate-100">
+                <option>Community Organization</option>
+                <option>Academic Institution</option>
+                <option>Government Agency</option>
+                <option>Individual / Board Advisor</option>
+                <option>For-Profit Partner</option>
+              </select>
+            </label>
+            <label className="space-y-2 text-sm font-medium text-slate-700">
+              Name of primary contact
+              <Input disabled={!canEditOrgProfile} name="partnerContact" placeholder="Name of primary contact" defaultValue={partner?.contactName ?? ""} />
+            </label>
+            <label className="space-y-2 text-sm font-medium text-slate-700">
+              Email
+              <Input disabled={!canEditOrgProfile} name="partnerEmail" placeholder="email@example.com" type="email" defaultValue={partner?.email ?? ""} />
+            </label>
+            <label className="space-y-2 text-sm font-medium text-slate-700">
+              Phone
+              <Input disabled={!canEditOrgProfile} name="partnerPhone" placeholder="(604) 555-0000" type="tel" defaultValue={partner?.phone ?? ""} />
+            </label>
+            <label className="space-y-2 text-sm font-medium text-slate-700 md:col-span-2">
+              Focus Areas
+              <Input disabled={!canEditOrgProfile} name="partnerFocus" placeholder="e.g., Arts, Culture, Youth Programs (comma-separated)" defaultValue={partner?.focusAreas ?? ""} />
+            </label>
+            <label className="space-y-2 text-sm font-medium text-slate-700 md:col-span-2">
+              Status
+              <select disabled={!canEditOrgProfile} name="partnerStatus" defaultValue={partner?.status ?? "Active Collaborator"} className="h-10 rounded-md border border-slate-300 bg-white px-3 text-sm disabled:bg-slate-100">
+                <option>Active Collaborator</option>
+                <option>Good for Evaluation</option>
+                <option>Strategic Partner</option>
+                <option>Potential Collaborator</option>
+              </select>
+            </label>
+            <label className="space-y-2 text-sm font-medium text-slate-700 md:col-span-2">
+              <strong>📝 Partner Notes & History</strong>
+              <Textarea disabled={!canEditOrgProfile} name="partnerNotes" placeholder="Add notes about this partnership: what they're good at, collaboration history, key contacts, follow-up items, etc." defaultValue={partner?.notes ?? ""} className="min-h-[120px]" />
+              <p className="text-xs text-slate-500">Use this space to track partnership history, what works well, challenges, and ideas for future collaboration.</p>
+            </label>
+            <label className="space-y-2 text-sm font-medium text-slate-700 md:col-span-2">
+              Last collaboration
+              <Input disabled={!canEditOrgProfile} name="partnerLastCollaboration" placeholder="Last collaborated: ..." defaultValue={partner?.lastCollaboration ?? ""} />
+            </label>
+          </div>
+          <input name="partnerAddedNote" type="hidden" value={partner?.addedNote ?? ""} />
+          {partnerState.message ? (
+            <p className={`text-sm ${partnerState.success ? "text-olea-green" : "text-red-600"}`}>{partnerState.message}</p>
+          ) : null}
+        </form>
+        <DialogFooter className="flex flex-col gap-2 sm:flex-row">
+          {partner ? (
+            <form action={deleteFormAction}>
+              <input name="partnerId" type="hidden" value={partner.id} />
+              <Button disabled={!canEditOrgProfile} type="submit" variant="destructive">
+                <Trash2 className="mr-2 size-4" />
+                Delete
+              </Button>
+            </form>
+          ) : null}
+          <Button disabled={!canEditOrgProfile} form="partner-form" type="submit">
+            Save changes
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+function PartnersPanel({
+  canEditOrgProfile,
+  data,
+}: {
+  canEditOrgProfile: boolean;
+  data: GrantPlatformWorkspaceData;
+}) {
+  const [dialogOpen, setDialogOpen] = useState(false);
+  const [selectedPartnerId, setSelectedPartnerId] = useState<string | null>(null);
+  const selectedPartner = useMemo(
+    () => data.partners.find((partner) => partner.id === selectedPartnerId) ?? null,
+    [data.partners, selectedPartnerId],
+  );
+
+  return (
+    <div className="space-y-5">
+      <Card className="shadow-soft">
+        <CardHeader>
+          <CardTitle className="text-lg">👥 Partners & Collaborators</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <p className="mb-5 text-sm text-slate-600">Track organizations, institutions, and individuals who can collaborate on future grant opportunities.</p>
+          <Button
+            className="mb-5"
+            disabled={!canEditOrgProfile}
+            onClick={() => {
+              setSelectedPartnerId(null);
+              setDialogOpen(true);
+            }}
+          >
+            + Add Partner
+          </Button>
+
+          <div className="grid gap-4 lg:grid-cols-2">
+            {data.partners.map((partner) => (
+              <div
+                key={partner.id}
+                className="cursor-pointer rounded-lg border border-slate-200 bg-white p-4 shadow-sm transition hover:border-olea-green hover:shadow-md"
+                onClick={() => {
+                  setSelectedPartnerId(partner.id);
+                  setDialogOpen(true);
+                }}
+              >
+                <h4 className="mb-2 text-base font-semibold text-slate-900">👤 {partner.name}</h4>
+                <p className="mb-3 text-xs text-slate-600"><strong>Type:</strong> {partner.partnerType}</p>
+                <p className="mb-3 text-xs text-slate-600"><strong>Contact:</strong> {partner.contactName}</p>
+                <p className="mb-3 text-xs text-slate-600"><strong>Email:</strong> {partner.email}</p>
+                <p className="mb-3 text-xs text-slate-600"><strong>Focus Areas:</strong> {partner.focusAreas}</p>
+                <p className="font-bold text-olea-green">{partner.status}</p>
+                <p className="mt-2 text-[11px] text-slate-500">{partner.lastCollaboration ?? partner.addedNote ?? "Click to edit"}</p>
+                <p className="mt-2 text-[11px] italic text-olea-orange">👆 Click to edit</p>
+              </div>
+            ))}
+          </div>
+
+          <h3 className="mt-8 text-lg font-semibold text-slate-900">How to Use This</h3>
+          <div className="mt-4 rounded-lg border-l-4 border-olea-green bg-olea-light p-4">
+            <p className="mb-2 text-sm text-slate-700"><strong>Track Potential Partners:</strong> Add organizations you want to collaborate with on future grants</p>
+            <p className="mb-2 text-sm text-slate-700"><strong>Note Their Strengths:</strong> Document what they&apos;re good at (evaluation, community reach, research, etc.)</p>
+            <p className="mb-2 text-sm text-slate-700"><strong>Keep Contact Info:</strong> Store emails and contacts in one place</p>
+            <p className="text-sm text-slate-700"><strong>Reference When Planning Grants:</strong> When researching new opportunities, check here to see which partners might be a good fit</p>
+          </div>
+        </CardContent>
+      </Card>
+
+      <PartnerDialog canEditOrgProfile={canEditOrgProfile} onOpenChange={setDialogOpen} open={dialogOpen} partner={selectedPartner} />
+    </div>
+  );
+}
+
+function VaultPanel({ data }: { data: GrantPlatformWorkspaceData }) {
+  return (
+    <Card className="shadow-soft">
+      <CardHeader>
+        <CardTitle className="text-lg">📁 Cross-Grant File Vault</CardTitle>
+      </CardHeader>
+      <CardContent className="space-y-4">
+        <Button className="bg-olea-orange text-white hover:bg-olea-orange/90">
+          📎 Upload to Vault
+        </Button>
+        <p className="text-sm text-slate-600">Store reusable files, templates, and resources that can be used across multiple grants.</p>
+
+        <div className="overflow-hidden rounded-lg border border-slate-200 bg-white shadow-sm">
+          <div className="border-b border-slate-200 bg-slate-100 px-4 py-3 font-semibold text-slate-900">📁 Vault Files</div>
+          <div className="divide-y divide-slate-200">
+            {data.vaultItems.map((item) => (
+              <div key={item.id} className="p-4">
+                <div className="mb-2 flex items-center justify-between gap-4">
+                  <span className="font-bold text-slate-900">📄 {item.fileName}</span>
+                  <span className="text-xs text-slate-500">Uploaded: {new Date(item.createdAt).toLocaleDateString("en-CA", { month: "short", day: "numeric", year: "numeric" })}</span>
+                </div>
+                <p className="mb-3 text-xs text-slate-600">{item.contentType ?? "Reusable file"}</p>
+                <div className="flex gap-2">
+                  <Button className="bg-olea-orange text-white hover:bg-olea-orange/90" size="sm" type="button">
+                    Download
+                  </Button>
+                  <Button size="sm" type="button" variant="outline">
+                    Delete
+                  </Button>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        <div className="rounded-lg border-l-4 border-olea-green bg-olea-light p-4">
+          <p className="mb-2 font-semibold text-slate-900">Vault Tips:</p>
+          <p className="mb-2 text-sm text-slate-600">✓ Store templates and reusable documents here</p>
+          <p className="mb-2 text-sm text-slate-600">✓ Download files when working on a grant</p>
+          <p className="text-sm text-slate-600">✓ Keep files updated as best practices evolve</p>
+        </div>
+      </CardContent>
+    </Card>
+  );
+}
+
 export function GrantPlatformWorkspace({
   activeTab,
   data,
@@ -301,7 +715,7 @@ export function GrantPlatformWorkspace({
 }) {
   const router = useRouter();
   const [tab, setTab] = useState<GrantPlatformTab>(resolveTab(activeTab));
-  const { canEditGrants, canEditTeamNotes, canViewBoard, canViewBudgets, canViewReports, normalizedRole } = getGrantPlatformUiAccess(role);
+  const { canEditGrants, canEditOrgProfile, canManageTeam, canViewBoard, canViewBudgets, canViewReports, normalizedRole } = getGrantPlatformUiAccess(role);
 
   function changeTab(value: string) {
     const nextTab = resolveTab(value);
@@ -375,6 +789,16 @@ export function GrantPlatformWorkspace({
                 </Card>
               );
             })}
+          </div>
+          <div className="grid gap-4 lg:grid-cols-3">
+            {data.notes.map((note) => (
+              <Card key={note.label} className="shadow-soft">
+                <CardContent className="p-4">
+                  <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">{note.label}</p>
+                  <p className="mt-2 text-sm font-medium text-slate-900">{note.value}</p>
+                </CardContent>
+              </Card>
+            ))}
           </div>
 
           <div className="grid gap-4 lg:grid-cols-2">
@@ -558,78 +982,16 @@ export function GrantPlatformWorkspace({
           ) : null}
         </TabsContent>
 
+        <TabsContent value="partners" className="space-y-5">
+          <PartnersPanel canEditOrgProfile={canEditOrgProfile} data={data} />
+        </TabsContent>
+
         <TabsContent value="settings" className="space-y-5">
-          <div className="grid gap-4 lg:grid-cols-[1.1fr_0.9fr]">
-            <Card className="shadow-soft">
-              <CardHeader>
-                <CardTitle className="text-lg">Workspace configuration</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4 text-sm text-slate-600">
-                <p>Use the organization context and current round data as the source of truth for grant operations.</p>
-                <div className="space-y-3">
-                  {[
-                    {
-                      title: "Application workflow",
-                      description: "Choose how new requests move from draft to submission and review.",
-                      details: ["Draft and submit controls", "Round-based review sequencing", "Editable or locked submission states"],
-                    },
-                    {
-                      title: "Reporting cadence",
-                      description: "Define how the team tracks updates, deliverables, and board-facing summaries.",
-                      details: ["Milestone reminders", "Leadership reporting checkpoints", "Export-ready summary bundles"],
-                    },
-                    {
-                      title: "Team access",
-                      description: "Manage who can view, edit, or review active grant work.",
-                      details: ["Role-based visibility", "Staff and reviewer permissions", "Shared collaboration ownership"],
-                    },
-                    {
-                      title: "Collaboration notes",
-                      description: "Keep the latest planning, evidence, and decision notes visible to the grant team.",
-                      details: ["Shared follow-up guidance", "Deadline and review reminders", "Board-facing preparation prompts"],
-                    },
-                  ].map((option) => (
-                    <div key={option.title} className="rounded-lg border bg-slate-50 p-4">
-                      <p className="font-semibold text-slate-900">{option.title}</p>
-                      <p className="mt-1 text-sm text-slate-600">{option.description}</p>
-                      <ul className="mt-3 space-y-2">
-                        {option.details.map((detail) => (
-                          <li key={detail} className="flex items-start gap-2">
-                            <CircleCheckBig className="mt-0.5 size-4 shrink-0 text-olea-green" />
-                            <span>{detail}</span>
-                          </li>
-                        ))}
-                      </ul>
-                    </div>
-                  ))}
-                </div>
-              </CardContent>
-            </Card>
-            <Card className="shadow-soft">
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2 text-lg">
-                  <ShieldCheck className="size-4 text-olea-green" />
-                  Security and access
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-3 text-sm text-slate-600">
-                <p>Access remains controlled and scoped to the same standards used in the rest of the platform.</p>
-                {!canEditTeamNotes ? (
-                  <div className="rounded-lg border border-slate-200 bg-slate-50 p-4 text-sm text-slate-600">
-                    Collaboration notes are view-only for your current role.
-                  </div>
-                ) : null}
-                <div className="rounded-lg border border-olea-green/20 bg-olea-light/50 p-4">
-                  <p className="font-semibold text-slate-900">Platform safeguards</p>
-                  <ul className="mt-2 space-y-2">
-                    <li>Role-based visibility for sensitive funding work</li>
-                    <li>Clear review paths for leadership and program staff</li>
-                    <li>Consistent auditability for board-facing reporting</li>
-                  </ul>
-                </div>
-              </CardContent>
-            </Card>
-          </div>
+          <OrganizationSettingsPanel canEditOrgProfile={canEditOrgProfile} canManageTeam={canManageTeam} data={data} />
+        </TabsContent>
+
+        <TabsContent value="vault" className="space-y-5">
+          <VaultPanel data={data} />
         </TabsContent>
       </Tabs>
     </section>

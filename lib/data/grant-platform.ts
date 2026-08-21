@@ -5,6 +5,11 @@ import { getGrantPlatformUiAccess } from "@/lib/grants/permissions";
 import { getGrantPlatformApplicationActionState } from "@/lib/grants/workflow";
 import { createClient } from "@/utils/supabase/server";
 
+type GrantPlatformStatusNote = {
+  label: string;
+  value: string;
+};
+
 export interface GrantPlatformWorkspaceData {
   organizationName: string;
   summary: string;
@@ -47,82 +52,158 @@ export interface GrantPlatformWorkspaceData {
     description: string;
     highlights: string[];
   }>;
+  organizationSettings: {
+    organizationType: string;
+    currentAnnualRevenueCents: number | null;
+    fundingSources: string[];
+  };
+  teamMembers: Array<{
+    id: string;
+    displayName: string;
+    email: string;
+    role: string;
+    status: string;
+    source: string;
+  }>;
+  partners: Array<{
+    id: string;
+    name: string;
+    partnerType: string;
+    contactName: string;
+    email: string;
+    phone: string;
+    focusAreas: string;
+    status: string;
+    notes: string;
+    lastCollaboration: string | null;
+    addedNote: string | null;
+  }>;
+  vaultItems: Array<{
+    id: string;
+    fileName: string;
+    contentType: string | null;
+    sizeBytes: number | null;
+    createdAt: string;
+  }>;
+  notes: GrantPlatformStatusNote[];
+}
+
+function formatCurrencyValue(cents: number | null) {
+  if (cents === null) return "$0";
+
+  return new Intl.NumberFormat("en-CA", {
+    currency: "CAD",
+    maximumFractionDigits: 0,
+    style: "currency",
+  }).format(cents / 100);
 }
 
 export async function getGrantPlatformData(): Promise<GrantPlatformWorkspaceData> {
   const { member, organization } = await requireMemberContext();
   const supabase = await createClient();
-  const { canViewBudgets, canViewReports } = getGrantPlatformUiAccess(member.role);
+  const { canEditOrgProfile, canViewBudgets, canViewReports } = getGrantPlatformUiAccess(member.role);
 
-  const [{ data: organizationRecord, error: organizationError }, { data: rounds, error: roundsError }, { data: applications, error: applicationsError }] = await Promise.all([
+  const [organizationRecordResult, settingsResult, roundsResult, applicationsResult, partnersResult, membersResult, vaultResult] = await Promise.all([
+    supabase.from("organizations").select("name").eq("id", organization.id).maybeSingle(),
     supabase
-      .from("organizations")
-      .select("name")
-      .eq("id", organization.id)
+      .from("grant_organization_settings")
+      .select("organization_type, current_annual_revenue_cents, funding_sources")
+      .eq("organization_id", organization.id)
       .maybeSingle(),
     supabase
       .from("grant_rounds")
-      .select(
-        "id, name, status, opens_at, closes_at, decision_at, award_amount_cents, available_awards, budget_cents, public_notes, grant_programs(name, type, description)",
-      )
+      .select("id, name, status, opens_at, closes_at, decision_at, award_amount_cents, available_awards, budget_cents, public_notes, grant_programs(name, type, description)")
       .order("opens_at", { ascending: true }),
     supabase
       .from("grant_applications")
-      .select(
-        "id, round_id, status, focus_area, funding_request, requested_amount_cents, submitted_at, collaboration_note, updated_at, grant_rounds(name, closes_at), grant_awards(status)",
-      )
+      .select("id, round_id, status, focus_area, funding_request, requested_amount_cents, submitted_at, collaboration_note, updated_at, grant_rounds(name, closes_at), grant_awards(status)")
       .eq("organization_id", organization.id)
       .order("updated_at", { ascending: false }),
+    supabase
+      .from("grant_partners")
+      .select("id, name, partner_type, contact_name, email, phone, focus_areas, status, notes, last_collaboration, added_note, updated_at")
+      .eq("organization_id", organization.id)
+      .order("updated_at", { ascending: false }),
+    supabase
+      .from("organization_members")
+      .select("user_id, role, status")
+      .eq("organization_id", organization.id)
+      .order("created_at", { ascending: true }),
+    supabase
+      .from("grant_application_attachments")
+      .select("id, file_name, content_type, size_bytes, created_at")
+      .eq("organization_id", organization.id)
+      .order("created_at", { ascending: false }),
   ]);
 
-  if (organizationError) {
-    console.error("grant-platform: failed to load organization record", organizationError);
-  }
-  if (roundsError) {
-    console.error("grant-platform: failed to load grant rounds", roundsError);
-  }
-  if (applicationsError) {
-    console.error("grant-platform: failed to load grant applications", applicationsError);
-  }
+  const { data: organizationRecord, error: organizationError } = organizationRecordResult;
+  const { data: organizationSettings, error: settingsError } = settingsResult;
+  const { data: rounds, error: roundsError } = roundsResult;
+  const { data: applications, error: applicationsError } = applicationsResult;
+  const { data: partners, error: partnersError } = partnersResult;
+  const { data: members, error: membersError } = membersResult;
+  const { data: vaultItems, error: vaultError } = vaultResult;
+
+  if (organizationError) console.error("grant-platform: failed to load organization record", organizationError);
+  if (settingsError) console.error("grant-platform: failed to load organization settings", settingsError);
+  if (roundsError) console.error("grant-platform: failed to load grant rounds", roundsError);
+  if (applicationsError) console.error("grant-platform: failed to load grant applications", applicationsError);
+  if (partnersError) console.error("grant-platform: failed to load grant partners", partnersError);
+  if (membersError) console.error("grant-platform: failed to load organization members", membersError);
+  if (vaultError) console.error("grant-platform: failed to load vault items", vaultError);
 
   const safeRounds = roundsError ? [] : rounds ?? [];
   const safeApplications = applicationsError ? [] : applications ?? [];
+  const safePartners = partnersError ? [] : partners ?? [];
+  const safeMembers = membersError ? [] : members ?? [];
+  const safeVaultItems = vaultError ? [] : vaultItems ?? [];
+
+  const profileIds = safeMembers.map((memberRecord) => memberRecord.user_id);
+  const profileMap = new Map<string, string>();
+
+  if (profileIds.length) {
+    const { data: profiles, error: profilesError } = await supabase
+      .from("profiles")
+      .select("id, full_name")
+      .in("id", profileIds);
+
+    if (profilesError) {
+      console.error("grant-platform: failed to load member profiles", profilesError);
+    } else {
+      for (const profile of profiles ?? []) {
+        profileMap.set(profile.id, profile.full_name?.trim() || profile.id);
+      }
+    }
+  }
 
   const visibleApplications = safeApplications.filter((application) => {
     if (canViewReports || canViewBudgets) return true;
     return application.status !== "approved" && application.status !== "declined";
   });
 
+  const statusSummaryMap: Record<string, string> = {
+    draft: "Draft package in progress",
+    submitted: "Submitted and awaiting review",
+    in_review: "Under review by the team",
+    shortlisted: "Shortlisted for follow-up",
+    approved: "Awarded and ready for delivery",
+    declined: "Declined and needs review",
+    withdrawn: "Withdrawn by the applicant",
+  };
+
+  const nextMilestoneMap: Record<string, string> = {
+    draft: "Gather evidence and finalize the narrative",
+    submitted: "Prepare the review package and follow-up notes",
+    in_review: "Collect stakeholder feedback and decisions",
+    shortlisted: "Confirm the next decision checkpoint",
+    approved: "Kick off reporting and delivery milestones",
+    declined: "Review learning notes and eligibility gaps",
+    withdrawn: "Archive the request and note the decision",
+  };
+
   const normalizedApplications = visibleApplications.map((application) => {
-    const round = Array.isArray(application.grant_rounds)
-      ? application.grant_rounds[0]
-      : application.grant_rounds;
-    const award = Array.isArray(application.grant_awards)
-      ? application.grant_awards[0]
-      : application.grant_awards;
-
-    const statusSummaryMap: Record<string, string> = {
-      draft: "Draft package in progress",
-      submitted: "Submitted and awaiting review",
-      in_review: "Under review by the team",
-      shortlisted: "Shortlisted for follow-up",
-      approved: "Awarded and ready for delivery",
-      declined: "Declined and needs review",
-      withdrawn: "Withdrawn by the applicant",
-    };
-
-    const nextMilestoneMap: Record<string, string> = {
-      draft: "Gather evidence and finalize the narrative",
-      submitted: "Prepare the review package and follow-up notes",
-      in_review: "Collect stakeholder feedback and decisions",
-      shortlisted: "Confirm the next decision checkpoint",
-      approved: "Kick off reporting and delivery milestones",
-      declined: "Review learning notes and eligibility gaps",
-      withdrawn: "Archive the request and note the decision",
-    };
-
-    const statusSummary = statusSummaryMap[application.status] ?? "Activity tracked";
-    const nextMilestone = nextMilestoneMap[application.status] ?? "Track the current milestone";
+    const round = Array.isArray(application.grant_rounds) ? application.grant_rounds[0] : application.grant_rounds;
+    const award = Array.isArray(application.grant_awards) ? application.grant_awards[0] : application.grant_awards;
 
     return {
       id: application.id,
@@ -137,19 +218,15 @@ export async function getGrantPlatformData(): Promise<GrantPlatformWorkspaceData
       collaborationNote: application.collaboration_note ?? null,
       updatedAt: application.updated_at,
       awardStatus: award?.status ?? null,
-      summary: statusSummary,
-      nextMilestone,
+      summary: statusSummaryMap[application.status] ?? "Activity tracked",
+      nextMilestone: nextMilestoneMap[application.status] ?? "Track the current milestone",
     };
   });
 
-  const existingApplicationByRoundId = new Map(
-    normalizedApplications.map((application) => [application.roundId, application.id]),
-  );
+  const existingApplicationByRoundId = new Map(normalizedApplications.map((application) => [application.roundId, application.id]));
 
   const normalizedRounds = safeRounds.map((round) => {
-    const program = Array.isArray(round.grant_programs)
-      ? round.grant_programs[0]
-      : round.grant_programs;
+    const program = Array.isArray(round.grant_programs) ? round.grant_programs[0] : round.grant_programs;
 
     return {
       id: round.id,
@@ -167,6 +244,18 @@ export async function getGrantPlatformData(): Promise<GrantPlatformWorkspaceData
       existingApplicationId: existingApplicationByRoundId.get(round.id) ?? null,
     };
   });
+
+  const settings = organizationSettings
+    ? {
+        organizationType: organizationSettings.organization_type,
+        currentAnnualRevenueCents: organizationSettings.current_annual_revenue_cents ?? null,
+        fundingSources: organizationSettings.funding_sources ?? [],
+      }
+    : {
+        organizationType: "",
+        currentAnnualRevenueCents: null,
+        fundingSources: [],
+      };
 
   const metrics = [
     {
@@ -198,6 +287,35 @@ export async function getGrantPlatformData(): Promise<GrantPlatformWorkspaceData
   const summary = canViewReports
     ? "A grant management workspace that brings your funding pipeline, application history, and reporting readiness together in one module."
     : "A grant management workspace that keeps the current grant pipeline and collaboration work visible for your role.";
+
+  const partnersFromDb = safePartners.map((partner) => ({
+    addedNote: partner.added_note ?? null,
+    contactName: partner.contact_name,
+    email: partner.email,
+    focusAreas: partner.focus_areas,
+    id: partner.id,
+    lastCollaboration: partner.last_collaboration ?? null,
+    name: partner.name,
+    notes: partner.notes,
+    partnerType: partner.partner_type,
+    phone: partner.phone,
+    status: partner.status,
+  }));
+  const vaultFromDb = safeVaultItems.map((item) => ({
+    contentType: item.content_type ?? null,
+    createdAt: item.created_at,
+    fileName: item.file_name,
+    id: item.id,
+    sizeBytes: item.size_bytes ?? null,
+  }));
+  const teamMembers = safeMembers.map((memberRecord) => ({
+    id: memberRecord.user_id,
+    displayName: profileMap.get(memberRecord.user_id) ?? memberRecord.user_id,
+    email: "Email on file",
+    role: memberRecord.role,
+    status: memberRecord.status,
+    source: memberRecord.user_id,
+  }));
 
   return {
     organizationName: organizationRecord?.name ?? organization.name,
@@ -251,6 +369,15 @@ export async function getGrantPlatformData(): Promise<GrantPlatformWorkspaceData
           "A secure foundation for reporting and collaboration",
         ],
       },
+    ],
+    organizationSettings: settings,
+    teamMembers,
+    partners: partnersFromDb,
+    vaultItems: vaultFromDb,
+    notes: [
+      { label: "Settings editing", value: canEditOrgProfile ? "Admins can update org settings" : "Read-only for your role" },
+      { label: "Partner editing", value: canEditOrgProfile ? "Admins can manage partner records" : "View-only for your role" },
+      { label: "Vault access", value: "Cross-grant files shared in one place" },
     ],
   };
 }

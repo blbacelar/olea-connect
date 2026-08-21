@@ -28,6 +28,7 @@ import {
   type RagStatus,
 } from "@/lib/kpi-dashboard/domain";
 import type { BrandProfile } from "@/lib/types";
+import { buildPdfFooter, normalizePdfBrand } from "@/lib/pdf/brand-export";
 import { getEmbeddedLogo } from "@/lib/template-renderer/logo-data";
 
 type PdfStyle = Style;
@@ -310,11 +311,18 @@ const styles = StyleSheet.create({
   footerText: {
     position: "absolute",
     left: 38,
+    right: 132,
+    top: 748,
+    color: "#718096",
+    fontSize: 7,
+  },
+  footerPage: {
+    position: "absolute",
     right: 38,
     top: 748,
     color: "#718096",
     fontSize: 7,
-    textAlign: "center",
+    fontFamily: "Helvetica-Bold",
   },
 });
 
@@ -327,11 +335,11 @@ export async function renderKpiDashboardPdfBuffer(
   data: KpiDashboardData,
   brand: BrandProfile,
 ) {
-  const safeBrand: ReportBrand = {
-    ...brand,
-    primaryColor: safeColor(brand.primaryColor, fallbackPrimaryColor),
-    secondaryColor: safeColor(brand.secondaryColor, fallbackSecondaryColor),
-  };
+  const safeBrand: ReportBrand = normalizePdfBrand(
+    brand,
+    fallbackPrimaryColor,
+    fallbackSecondaryColor,
+  ) as ReportBrand;
   const logo = getEmbeddedLogo(brand.logoUrl);
 
   return renderToBuffer(
@@ -349,7 +357,7 @@ function KpiDashboardDocument({
   logoDataUrl?: string;
 }) {
   const scorecard = getScorecard(data);
-  const footer = buildFooterText(brand);
+  const footer = buildPdfFooter(brand, "Board Reporting Dashboard");
 
   return (
     <Document
@@ -515,13 +523,13 @@ function Footer({ footer }: { footer: string }) {
   return (
     <>
       <View style={styles.footerRule} fixed />
+      <Text style={styles.footerText} fixed wrap={false}>
+        {footer}
+      </Text>
       <Text
-        style={styles.footerText}
+        style={styles.footerPage}
         fixed
-        wrap={false}
-        render={({ pageNumber, totalPages }) =>
-          `${footer}  ·  Page ${pageNumber} of ${totalPages}`
-        }
+        render={({ pageNumber, totalPages }) => `Page ${pageNumber} of ${totalPages}`}
       />
     </>
   );
@@ -872,27 +880,10 @@ function trendLabel(trend: ReturnType<typeof calculateTrend>) {
   }[trend];
 }
 
-function buildFooterText(brand: BrandProfile) {
-  return [
-    brand.organizationName,
-    brand.address ? `Address: ${brand.address}` : null,
-    brand.phone ? `Phone: ${brand.phone}` : null,
-    brand.contactEmail ? `Email: ${brand.contactEmail}` : null,
-    brand.website ? `Web: ${brand.website.replace(/^https?:\/\//i, "")}` : null,
-  ]
-    .filter(Boolean)
-    .map((value) => clean(String(value)))
-    .join("  |  ");
-}
-
 function formatDate(value: Date) {
   return new Intl.DateTimeFormat("en-CA", {
     dateStyle: "long",
   }).format(value);
-}
-
-function safeColor(value: string | undefined, fallback: string) {
-  return /^#[0-9A-Fa-f]{6}$/.test(value ?? "") ? value! : fallback;
 }
 
 function clean(value: string) {
