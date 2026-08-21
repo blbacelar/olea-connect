@@ -1,6 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { z } from "zod";
 
 import {
   saveGrantApplication,
@@ -71,6 +72,21 @@ function getFundingSources(formData: FormData) {
     .map((value) => String(value).trim())
     .filter(Boolean);
 }
+
+const partnerContactSchema = z.object({
+  contactName: z.string().trim().min(1, "Enter a primary contact name.").max(180),
+  email: z.string().trim().email("Enter a valid email address.").max(180),
+  focusAreas: z.string().trim().min(1, "Enter at least one focus area.").max(500),
+  name: z.string().trim().min(1, "Enter a partner name.").max(180),
+  notes: z.string().trim().max(2000),
+  phone: z
+    .string()
+    .trim()
+    .refine((value) => {
+      const digits = value.replace(/\D/g, "");
+      return digits.length >= 10 && digits.length <= 15;
+    }, "Enter a valid phone number."),
+});
 
 export async function saveGrantPlatformApplication(formData: FormData) {
   await saveGrantApplication(formData);
@@ -220,7 +236,7 @@ export async function saveGrantPlatformOrganizationSettings(
   const { member, organization } = await requireMemberContext();
   const { canEditOrgProfile } = getGrantPlatformUiAccess(member.role);
   const formData = firstArg instanceof FormData ? firstArg : secondArg ?? new FormData();
-  const organizationType = getText(formData, "organizationType") || "Growing ($250K-$1M)";
+  const organizationType = getText(formData, "organizationType");
   const revenueText = getText(formData, "currentAnnualRevenue");
   const revenueCents = revenueText ? getCurrencyTextCents(revenueText) : null;
   const fundingSources = getFundingSources(formData);
@@ -229,7 +245,7 @@ export async function saveGrantPlatformOrganizationSettings(
     return { message: "Only admins can edit organization settings.", success: false };
   }
 
-  if (!allowedOrganizationTypes.has(organizationType)) {
+  if (!organizationType || !allowedOrganizationTypes.has(organizationType)) {
     return { message: "Choose a supported organization type.", success: false };
   }
 
@@ -278,8 +294,17 @@ export async function saveGrantPlatformPartner(
     return { message: "Only admins can edit partner records.", success: false };
   }
 
-  if (!name || !partnerType || !contactName || !email || !phone || !focusAreas || !status) {
-    return { message: "Please fill in the required partner fields.", success: false };
+  const parsedPartner = partnerContactSchema.safeParse({
+    contactName,
+    email,
+    focusAreas,
+    name,
+    notes,
+    phone,
+  });
+
+  if (!parsedPartner.success) {
+    return { message: parsedPartner.error.issues[0]?.message ?? "Please check the partner fields.", success: false };
   }
 
   if (!allowedPartnerTypes.has(partnerType)) {
@@ -307,15 +332,15 @@ export async function saveGrantPlatformPartner(
 
   const payload = {
     added_note: addedNote,
-    contact_name: contactName,
-    email,
-    focus_areas: focusAreas,
+    contact_name: parsedPartner.data.contactName,
+    email: parsedPartner.data.email.toLowerCase(),
+    focus_areas: parsedPartner.data.focusAreas,
     last_collaboration: lastCollaboration,
-    name,
-    notes,
+    name: parsedPartner.data.name,
+    notes: parsedPartner.data.notes,
     organization_id: organization.id,
     partner_type: partnerType,
-    phone,
+    phone: parsedPartner.data.phone,
     status,
   };
 

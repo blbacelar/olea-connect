@@ -11,7 +11,7 @@ import React from "react";
 
 import type { BrandProfile } from "@/lib/types";
 import type { AccreditationWorkspaceData } from "@/lib/accreditation/types";
-import { buildPdfFooter, normalizePdfBrand } from "@/lib/pdf/brand-export";
+import { buildPdfFooter, normalizePdfBrand, type PdfBrand } from "@/lib/pdf/brand-export";
 import { getEmbeddedLogo } from "@/lib/template-renderer/logo-data";
 
 const styles = StyleSheet.create({
@@ -249,15 +249,7 @@ function BrandLogo({
 
 export async function renderAccreditationPdfBuffer(
   data: AccreditationWorkspaceData,
-  brand: Pick<
-    BrandProfile,
-    | "organizationName"
-    | "logoInitials"
-    | "logoUrl"
-    | "primaryColor"
-    | "secondaryColor"
-    | "website"
-  >,
+  brand: Partial<PdfBrand>,
 ) {
   const safeBrand = normalizePdfBrand(brand, "#14532d", "#dcfce7");
   const logo = getEmbeddedLogo(brand.logoUrl);
@@ -278,7 +270,7 @@ export async function renderAccreditationPdfBuffer(
       producer="Olea Connects™"
     >
       <Page size="LETTER" style={styles.cover}>
-        <View style={[styles.coverLogo, { backgroundColor: safeBrand.primaryColor }]}> 
+        <View style={[styles.coverLogo, { backgroundColor: safeBrand.primaryColor }]}>
           <BrandLogo brand={safeBrand} logo={logo} variant="cover" />
         </View>
         <View style={styles.coverContent}>
@@ -299,7 +291,7 @@ export async function renderAccreditationPdfBuffer(
       <Page size="LETTER" style={styles.page} wrap>
         <View style={[styles.accent, { backgroundColor: safeBrand.secondaryColor }]} fixed />
         <View style={styles.header} fixed>
-          <View style={[styles.logo, { backgroundColor: safeBrand.primaryColor }]}> 
+          <View style={[styles.logo, { backgroundColor: safeBrand.primaryColor }]}>
             <BrandLogo brand={safeBrand} logo={logo} variant="header" />
           </View>
           <View style={styles.headerText}>

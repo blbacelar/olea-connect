@@ -98,89 +98,6 @@ function formatCurrencyValue(cents: number | null) {
   }).format(cents / 100);
 }
 
-function buildDefaultPartners(organizationName: string) {
-  return [
-    {
-      id: `${organizationName}-partner-1`,
-      name: "Community Arts Centre",
-      partnerType: "Community Organization",
-      contactName: "Sarah Johnson",
-      email: "sarah@artscentre.org",
-      phone: "(604) 555-0123",
-      focusAreas: "Arts, Culture, Youth Programs",
-      status: "Active Collaborator",
-      notes: "Strong community reach. Excellent for youth engagement and cultural programming.",
-      lastCollaboration: "Last collaborated: BC Community Gaming Grant",
-      addedNote: null,
-    },
-    {
-      id: `${organizationName}-partner-2`,
-      name: "University Research Lab",
-      partnerType: "Academic Institution",
-      contactName: "Dr. Michael Chen",
-      email: "m.chen@university.edu",
-      phone: "(604) 555-0124",
-      focusAreas: "Research, Innovation, Data Analysis",
-      status: "Good for Evaluation",
-      notes: "Excellent for program evaluation and research partnerships. Can provide data analysis and impact measurement.",
-      lastCollaboration: "Added: January 2026",
-      addedNote: null,
-    },
-    {
-      id: `${organizationName}-partner-3`,
-      name: "City Health Department",
-      partnerType: "Government Agency",
-      contactName: "Jennifer Lee",
-      email: "j.lee@health.city.gov",
-      phone: "(604) 555-0125",
-      focusAreas: "Public Health, Community Development",
-      status: "Strategic Partner",
-      notes: "Key government connection for health-related grants. Strong credibility in policy environment.",
-      lastCollaboration: "Last collaborated: Health & Wellness Program",
-      addedNote: null,
-    },
-    {
-      id: `${organizationName}-partner-4`,
-      name: "Local Foundation Board Member",
-      partnerType: "Individual / Board Advisor",
-      contactName: "David Martinez",
-      email: "david@localfoundation.org",
-      phone: "(604) 555-0126",
-      focusAreas: "Funding Connections, Mentorship",
-      status: "Potential Collaborator",
-      notes: "Strong board connections. Good for funder introductions and strategic advice.",
-      lastCollaboration: "Added: December 2025",
-      addedNote: null,
-    },
-  ];
-}
-
-function buildDefaultVaultItems() {
-  return [
-    {
-      id: "vault-template-1",
-      fileName: "Board report template.pdf",
-      contentType: "application/pdf",
-      sizeBytes: 1048576,
-      createdAt: new Date("2026-07-18T10:00:00.000Z").toISOString(),
-    },
-    {
-      id: "vault-template-2",
-      fileName: "Funding narrative guide.docx",
-      contentType: "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
-      sizeBytes: 786432,
-      createdAt: new Date("2026-07-18T10:05:00.000Z").toISOString(),
-    },
-    {
-      id: "vault-template-3",
-      fileName: "Evaluation evidence pack.xlsx",
-      contentType: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-      sizeBytes: 524288,
-      createdAt: new Date("2026-07-18T10:10:00.000Z").toISOString(),
-    },
-  ];
-}
-
 export async function getGrantPlatformData(): Promise<GrantPlatformWorkspaceData> {
   const { member, organization } = await requireMemberContext();
   const supabase = await createClient();
@@ -328,19 +245,17 @@ export async function getGrantPlatformData(): Promise<GrantPlatformWorkspaceData
     };
   });
 
-  const fallbackSettings = {
-    organizationType: "Growing ($250K-$1M)",
-    currentAnnualRevenueCents: 45000000,
-    fundingSources: ["Foundation Grants", "Individual Donors", "Earned Revenue"],
-  };
-
   const settings = organizationSettings
     ? {
         organizationType: organizationSettings.organization_type,
         currentAnnualRevenueCents: organizationSettings.current_annual_revenue_cents ?? null,
         fundingSources: organizationSettings.funding_sources ?? [],
       }
-    : fallbackSettings;
+    : {
+        organizationType: "",
+        currentAnnualRevenueCents: null,
+        fundingSources: [],
+      };
 
   const metrics = [
     {
@@ -373,30 +288,26 @@ export async function getGrantPlatformData(): Promise<GrantPlatformWorkspaceData
     ? "A grant management workspace that brings your funding pipeline, application history, and reporting readiness together in one module."
     : "A grant management workspace that keeps the current grant pipeline and collaboration work visible for your role.";
 
-  const partnersFromDb = safePartners.length
-    ? safePartners.map((partner) => ({
-        addedNote: partner.added_note ?? null,
-        contactName: partner.contact_name,
-        email: partner.email,
-        focusAreas: partner.focus_areas,
-        id: partner.id,
-        lastCollaboration: partner.last_collaboration ?? null,
-        name: partner.name,
-        notes: partner.notes,
-        partnerType: partner.partner_type,
-        phone: partner.phone,
-        status: partner.status,
-      }))
-    : buildDefaultPartners(organizationRecord?.name ?? organization.name);
-  const vaultFromDb = safeVaultItems.length
-    ? safeVaultItems.map((item) => ({
-        contentType: item.content_type ?? null,
-        createdAt: item.created_at,
-        fileName: item.file_name,
-        id: item.id,
-        sizeBytes: item.size_bytes ?? null,
-      }))
-    : buildDefaultVaultItems();
+  const partnersFromDb = safePartners.map((partner) => ({
+    addedNote: partner.added_note ?? null,
+    contactName: partner.contact_name,
+    email: partner.email,
+    focusAreas: partner.focus_areas,
+    id: partner.id,
+    lastCollaboration: partner.last_collaboration ?? null,
+    name: partner.name,
+    notes: partner.notes,
+    partnerType: partner.partner_type,
+    phone: partner.phone,
+    status: partner.status,
+  }));
+  const vaultFromDb = safeVaultItems.map((item) => ({
+    contentType: item.content_type ?? null,
+    createdAt: item.created_at,
+    fileName: item.file_name,
+    id: item.id,
+    sizeBytes: item.size_bytes ?? null,
+  }));
   const teamMembers = safeMembers.map((memberRecord) => ({
     id: memberRecord.user_id,
     displayName: profileMap.get(memberRecord.user_id) ?? memberRecord.user_id,
