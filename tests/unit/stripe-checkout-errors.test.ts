@@ -16,6 +16,7 @@ describe("checkout error responses", () => {
     );
 
     expect(result).toEqual({
+      code: "checkout_rate_limited",
       error: CHECKOUT_EMAIL_RATE_LIMIT_MESSAGE,
       status: 429,
     });
@@ -23,6 +24,7 @@ describe("checkout error responses", () => {
 
   it("returns a safe conflict for an existing-account state", () => {
     expect(getCheckoutErrorResponse(new CheckoutAccountStateError())).toEqual({
+      code: "account_state",
       error: CHECKOUT_ACCOUNT_STATE_MESSAGE,
       status: 409,
     });
@@ -31,7 +33,11 @@ describe("checkout error responses", () => {
   it("keeps validation failures as client errors", () => {
     expect(
       getCheckoutErrorResponse(new SignupValidationError("Select a plan.")),
-    ).toEqual({ error: "Select a plan.", status: 400 });
+    ).toEqual({
+      code: "signup_validation",
+      error: "Select a plan.",
+      status: 400,
+    });
   });
 
   it("does not expose unexpected provider errors", () => {

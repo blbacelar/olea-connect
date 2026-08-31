@@ -1,39 +1,21 @@
 import { Accessibility, BadgeCheck, Globe2, HandHeart } from "lucide-react";
 
-const signals = [
-  {
-    icon: BadgeCheck,
-    value: "Every tier",
-    label: "includes the full peer community",
-  },
-  {
-    icon: HandHeart,
-    value: "Portion of funds",
-    label: "of sponsorship fees flow to Olea Gives",
-  },
-  {
-    icon: Globe2,
-    value: "English + French",
-    label: "core governance resources",
-  },
-  {
-    icon: Accessibility,
-    value: "WCAG 2.1 AA",
-    label: "accessibility standard",
-  },
-];
+import type { PublicSiteCopy } from "@/lib/i18n/public-site-copy";
 
-export function LandingTrust() {
+type LandingTrustCopy = PublicSiteCopy["trust"];
+
+const signalIcons = [BadgeCheck, HandHeart, Globe2, Accessibility] as const;
+
+export function LandingTrust({ copy }: { copy: LandingTrustCopy }) {
   return (
     <section className="border-y bg-white px-4 py-16">
       <div className="mx-auto max-w-7xl">
         <p className="text-center text-sm font-semibold text-slate-500">
-          An independent Canadian social enterprise built around nonprofit
-          capacity, inclusion, and belonging.
+          {copy.intro}
         </p>
         <div className="mt-9 grid gap-8 sm:grid-cols-2 lg:grid-cols-4">
-          {signals.map((signal) => {
-            const Icon = signal.icon;
+          {copy.signals.map((signal, index) => {
+            const Icon = signalIcons[index] ?? BadgeCheck;
             return (
               <div key={signal.value} className="text-center">
                 <Icon className="mx-auto size-5 text-olea-green" />

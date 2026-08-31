@@ -5,6 +5,11 @@ import {
   getOrCreateRequestId,
   REQUEST_ID_HEADER,
 } from "@/lib/observability/request-id";
+import {
+  localeCookieName,
+  type Locale,
+  resolveRequestLocale,
+} from "@/lib/i18n/locales";
 
 import {
   applyAuthCookieDuration,
@@ -13,6 +18,7 @@ import {
 
 const publicPagePaths = new Set([
   "/",
+  "/referrals",
   "/sponsorship",
   "/login",
   "/reset-password",
@@ -26,6 +32,7 @@ const publicPagePaths = new Set([
 
 const publicPathPrefixes = [
   "/auth",
+  "/ref",
   "/signup",
   "/api",
   "/legal",
@@ -33,21 +40,56 @@ const publicPathPrefixes = [
   "/team/invitations/accept",
 ];
 
+const localeVaryHeaders = [
+  "Cookie",
+  "Accept-Language",
+  "x-vercel-ip-country",
+  "x-vercel-ip-country-region",
+] as const;
+
 function isPathOrChild(pathname: string, prefix: string) {
   return pathname === prefix || pathname.startsWith(`${prefix}/`);
 }
 
-function isPublicPath(pathname: string) {
+export function isPublicPath(pathname: string) {
   return (
     publicPagePaths.has(pathname) ||
     publicPathPrefixes.some((prefix) => isPathOrChild(pathname, prefix))
   );
 }
 
+export function applyLocaleHeaders(headers: Headers, locale: Locale) {
+  headers.set("Content-Language", locale);
+
+  const varyValues = new Map<string, string>();
+  headers
+    .get("Vary")
+    ?.split(",")
+    .map((value) => value.trim())
+    .filter(Boolean)
+    .forEach((value) => varyValues.set(value.toLowerCase(), value));
+
+  localeVaryHeaders.forEach((value) =>
+    varyValues.set(value.toLowerCase(), value),
+  );
+  headers.set("Vary", Array.from(varyValues.values()).join(", "));
+}
+
 export async function updateSession(request: NextRequest) {
   const requestHeaders = new Headers(request.headers);
   const requestId = getOrCreateRequestId(requestHeaders);
+  const locale = resolveRequestLocale({
+    localeCookie: request.cookies.get(localeCookieName)?.value,
+    country: request.headers.get("x-vercel-ip-country"),
+    region: request.headers.get("x-vercel-ip-country-region"),
+    acceptLanguage: request.headers.get("accept-language"),
+  });
   requestHeaders.set(REQUEST_ID_HEADER, requestId);
+
+  function applyLocale(target: NextResponse) {
+    applyLocaleHeaders(target.headers, locale);
+    return target;
+  }
 
   function createResponse() {
     const nextResponse = NextResponse.next({
@@ -56,7 +98,7 @@ export async function updateSession(request: NextRequest) {
       },
     });
     nextResponse.headers.set(REQUEST_ID_HEADER, requestId);
-    return nextResponse;
+    return applyLocale(nextResponse);
   }
 
   function copySessionCookies(target: NextResponse) {
@@ -64,7 +106,7 @@ export async function updateSession(request: NextRequest) {
       target.cookies.set(cookie);
     });
     target.headers.set(REQUEST_ID_HEADER, requestId);
-    return target;
+    return applyLocale(target);
   }
 
   let response = createResponse();

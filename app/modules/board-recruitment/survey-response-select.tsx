@@ -2,6 +2,7 @@
 
 import * as React from "react";
 
+import { useLocaleContext } from "@/components/i18n/LocaleProvider";
 import {
   Select,
   SelectContent,
@@ -19,7 +20,10 @@ export function SurveyResponseSelect({
   label: string;
   defaultValue: "true" | "false";
 }) {
+  const { locale } = useLocaleContext();
   const [value, setValue] = React.useState(defaultValue);
+  const labels =
+    locale === "fr-CA" ? { yes: "Oui", no: "Non" } : { yes: "Yes", no: "No" };
 
   return (
     <>
@@ -35,8 +39,8 @@ export function SurveyResponseSelect({
           <SelectValue />
         </SelectTrigger>
         <SelectContent>
-          <SelectItem value="true">Yes</SelectItem>
-          <SelectItem value="false">No</SelectItem>
+          <SelectItem value="true">{labels.yes}</SelectItem>
+          <SelectItem value="false">{labels.no}</SelectItem>
         </SelectContent>
       </Select>
       <input type="hidden" name={name} value={value} />

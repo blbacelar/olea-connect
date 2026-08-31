@@ -1,6 +1,9 @@
+export type SponsorshipTierIcon =
+  "builder" | "catalyst" | "legacy" | "roots" | "seedling";
+
 export type SponsorshipTier = {
   name: string;
-  icon: string;
+  icon: SponsorshipTierIcon;
   subtitle: string;
   description: string;
   features: string[];
@@ -11,7 +14,7 @@ export type SponsorshipTier = {
 export const sponsorshipTiers: SponsorshipTier[] = [
   {
     name: "Seed Keeper",
-    icon: "🌱",
+    icon: "seedling",
     subtitle: "Beginning your investment",
     description:
       "You're planting. Testing the soil. Exploring what it means to invest in nonprofit resilience.",
@@ -27,7 +30,7 @@ export const sponsorshipTiers: SponsorshipTier[] = [
   },
   {
     name: "Root Keeper",
-    icon: "🌿",
+    icon: "roots",
     subtitle: "Establishing foundation",
     description:
       "You're deepening your commitment and building relationships within the nonprofit sector.",
@@ -47,7 +50,7 @@ export const sponsorshipTiers: SponsorshipTier[] = [
   },
   {
     name: "Resilience Builder",
-    icon: "🌳",
+    icon: "builder",
     subtitle: "Creating stable systems",
     description:
       "You're leading. Creating stability that becomes foundation for others. Your thought leadership shapes the sector.",
@@ -71,7 +74,7 @@ export const sponsorshipTiers: SponsorshipTier[] = [
   },
   {
     name: "Legacy Guardian",
-    icon: "🌳",
+    icon: "legacy",
     subtitle: "Teaching wisdom",
     description:
       "You're stewarding. The sector trusts your judgment. Your legacy shapes the next generation.",
@@ -98,7 +101,7 @@ export const sponsorshipTiers: SponsorshipTier[] = [
   },
   {
     name: "Catalyst",
-    icon: "⚡",
+    icon: "catalyst",
     subtitle: "Igniting transformation",
     description:
       "You're the rare leader who doesn't just build—you catalyze change that lasts generations.",

@@ -10,7 +10,10 @@ export async function retryMembershipActivation() {
   const response = await fetch(apiRoutes.provisioningRetry, {
     method: "POST",
   });
-  const result = (await response.json()) as ProvisioningRetryResult;
+  const contentType = response.headers.get("content-type");
+  const result = contentType?.includes("application/json")
+    ? ((await response.json()) as ProvisioningRetryResult)
+    : {};
 
   return { response, result };
 }

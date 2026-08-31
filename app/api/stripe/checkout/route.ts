@@ -227,7 +227,7 @@ export async function POST(request: Request) {
     const safeResponse = getCheckoutErrorResponse(error);
     if (safeResponse) {
       return NextResponse.json(
-        { error: safeResponse.error },
+        { code: safeResponse.code, error: safeResponse.error },
         { status: safeResponse.status },
       );
     }
@@ -240,6 +240,7 @@ export async function POST(request: Request) {
     });
     return NextResponse.json(
       {
+        code: "checkout_unavailable",
         error: "Unable to start secure checkout.",
         correlationId,
       },

@@ -3,30 +3,20 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 
-const labels: Record<string, string> = {
-  dashboard: "Dashboard",
-  templates: "Templates",
-  "board-self-evaluation": "Board Self-Evaluation",
-  settings: "Settings",
-  brand: "Brand Profile",
-  community: "Community",
-  grants: "Olea Gives Fund",
-  webinars: "Webinars",
-  team: "Team",
-  subscription: "Subscription",
-  help: "Help",
-  "whats-new": "What's new",
-};
+import { useLocaleContext } from "@/components/i18n/LocaleProvider";
+import { getAppShellCopy } from "@/lib/i18n/app-shell-copy";
 
 export function Breadcrumbs() {
   const pathname = usePathname();
+  const { locale } = useLocaleContext();
+  const { breadcrumbs } = getAppShellCopy(locale);
   const segments = pathname.split("/").filter(Boolean);
   const crumbs =
     segments.length === 0
-      ? [{ label: "Dashboard", href: "/dashboard" }]
+      ? [{ label: breadcrumbs.dashboard, href: "/dashboard" }]
       : segments.map((segment, index) => ({
           label:
-            labels[segment] ??
+            breadcrumbs[segment] ??
             segment
               .split("-")
               .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
@@ -41,9 +31,14 @@ export function Breadcrumbs() {
         return (
           <span key={crumb.href} className="flex items-center">
             {current ? (
-              <span className="font-semibold text-slate-800">{crumb.label}</span>
+              <span className="font-semibold text-slate-800">
+                {crumb.label}
+              </span>
             ) : (
-              <Link href={crumb.href} className="text-slate-500 hover:text-olea-green">
+              <Link
+                href={crumb.href}
+                className="text-slate-500 hover:text-olea-green"
+              >
                 {crumb.label}
               </Link>
             )}

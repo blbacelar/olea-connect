@@ -3,7 +3,6 @@ import type { MembershipTier } from "@/lib/types";
 export interface MembershipPlan {
   id: MembershipTier;
   name: string;
-  icon: string;
   quarterlyPrice: number;
   annualPrice: number;
   foundingQuarterlyPrice: number;
@@ -20,14 +19,14 @@ export const membershipPlans: MembershipPlan[] = [
   {
     id: "seedling",
     name: "Seedling",
-    icon: "🌱",
     quarterlyPrice: 200,
     annualPrice: 800,
     foundingQuarterlyPrice: 170,
     foundingAnnualPrice: 680,
     seats: "5 seats included",
     audience: "Organizations with under $500k annual budget",
-    summary: "Core governance operations, branded resources, and community access.",
+    summary:
+      "Core governance operations, branded resources, and community access.",
     features: [
       "Board calendar, meetings, workflows, and packages",
       "Board HR directory, roles, and term tracking",
@@ -47,14 +46,14 @@ export const membershipPlans: MembershipPlan[] = [
   {
     id: "roots",
     name: "Roots",
-    icon: "🌿",
     quarterlyPrice: 800,
     annualPrice: 3200,
     foundingQuarterlyPrice: 680,
     foundingAnnualPrice: 2720,
     seats: "10 seats included",
     audience: "Organizations with $500k-$2M annual budget",
-    summary: "Deeper governance, recruitment, impact tracking, and learning support.",
+    summary:
+      "Deeper governance, recruitment, impact tracking, and learning support.",
     features: [
       "Everything in Seedling",
       "Board recruitment toolkit and skills matrix",
@@ -72,14 +71,14 @@ export const membershipPlans: MembershipPlan[] = [
   {
     id: "canopy",
     name: "Canopy",
-    icon: "🌳",
     quarterlyPrice: 1500,
     annualPrice: 6000,
     foundingQuarterlyPrice: 1275,
     foundingAnnualPrice: 5100,
     seats: "15 seats included",
     audience: "Organizations with $2M-$5M annual budget",
-    summary: "Complete governance systems, executive review, and strategy tools.",
+    summary:
+      "Complete governance systems, executive review, and strategy tools.",
     features: [
       "Everything in Roots",
       "Board evaluation system",
@@ -95,14 +94,14 @@ export const membershipPlans: MembershipPlan[] = [
   {
     id: "harvest",
     name: "Harvest",
-    icon: "🫒",
     quarterlyPrice: 2400,
     annualPrice: 9600,
     foundingQuarterlyPrice: 2040,
     foundingAnnualPrice: 8160,
     seats: "20 seats included",
     audience: "Organizations with $5M+ annual budget",
-    summary: "Enterprise support, facilitation, thought leadership, and introductions.",
+    summary:
+      "Enterprise support, facilitation, thought leadership, and introductions.",
     features: [
       "Everything in Canopy",
       "Annual onboarding and board training facilitation",

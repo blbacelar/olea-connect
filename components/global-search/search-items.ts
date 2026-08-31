@@ -1,3 +1,6 @@
+import { getAppShellCopy } from "@/lib/i18n/app-shell-copy";
+import { defaultLocale, type Locale } from "@/lib/i18n/locales";
+
 export type CommandItemType =
   | "page"
   | "template"
@@ -18,136 +21,140 @@ export type RankedCommandItem = CommandItem & {
   score: number;
 };
 
-const baseCommandItems: CommandItem[] = [
+function buildBaseCommandItems(locale: Locale): CommandItem[] {
+  const copy = getAppShellCopy(locale).searchItems;
+
+  return [
   {
     id: "dashboard",
-    title: "Dashboard",
-    description: "Open your nonprofit home base.",
+    title: copy.dashboard.title,
+    description: copy.dashboard.description,
     href: "/dashboard",
     type: "page",
-    keywords: ["home", "overview", "nonprofit"],
+    keywords: copy.dashboard.keywords,
   },
   {
     id: "templates",
-    title: "Templates",
-    description: "Find branded governance templates and board-ready resources.",
+    title: copy.templates.title,
+    description: copy.templates.description,
     href: "/templates",
     type: "page",
-    keywords: ["documents", "resources", "library", "pdf"],
+    keywords: copy.templates.keywords,
   },
   {
     id: "board-calendar-module",
-    title: "Board Calendar Module",
-    description: "Plan meetings, workflows, packages, and board operations.",
+    title: copy.boardCalendarModule.title,
+    description: copy.boardCalendarModule.description,
     href: "/modules/board-calendar",
     type: "module",
-    keywords: ["calendar", "workflow", "meetings", "board package"],
+    keywords: copy.boardCalendarModule.keywords,
   },
   {
     id: "ed-review-module",
-    title: "ED/CEO Annual Review",
-    description: "Run anonymous staff and partner surveys with Board Chair reporting.",
+    title: copy.edReviewModule.title,
+    description: copy.edReviewModule.description,
     href: "/modules/ed-review",
     type: "module",
-    keywords: ["ed", "ceo", "survey", "anonymous", "board chair", "feedback"],
+    keywords: copy.edReviewModule.keywords,
   },
   {
     id: "community",
-    title: "Community",
-    description: "Join member discussions and spaces.",
+    title: copy.community.title,
+    description: copy.community.description,
     href: "/community",
     type: "community",
-    keywords: ["posts", "spaces", "discussion", "network"],
+    keywords: copy.community.keywords,
   },
   {
     id: "grants",
-    title: "Grants",
-    description: "Explore Olea Gives opportunities and applications.",
+    title: copy.grants.title,
+    description: copy.grants.description,
     href: "/grants",
     type: "resource",
-    keywords: ["funding", "olea gives", "applications"],
+    keywords: copy.grants.keywords,
   },
   {
     id: "sponsors",
-    title: "Sponsors",
-    description: "Browse approved sponsors and Olea Gives contribution reporting.",
+    title: copy.sponsors.title,
+    description: copy.sponsors.description,
     href: "/sponsors",
     type: "resource",
-    keywords: ["partners", "olea gives", "contributions", "funding"],
+    keywords: copy.sponsors.keywords,
   },
   {
     id: "webinars",
-    title: "Webinars",
-    description: "See upcoming sessions, Zoom links, and recordings.",
+    title: copy.webinars.title,
+    description: copy.webinars.description,
     href: "/webinars",
     type: "resource",
-    keywords: ["events", "recordings", "zoom", "sessions"],
+    keywords: copy.webinars.keywords,
   },
   {
     id: "consulting",
-    title: "Consulting",
-    description: "Submit Harvest requests, track hours, and review support activity.",
+    title: copy.consulting.title,
+    description: copy.consulting.description,
     href: "/consulting",
     type: "page",
-    keywords: ["harvest", "support", "consultant", "hours", "requests"],
+    keywords: copy.consulting.keywords,
   },
   {
     id: "brand-profile",
-    title: "Brand Profile",
-    description: "Manage your logo, colors, and report identity.",
+    title: copy.brandProfile.title,
+    description: copy.brandProfile.description,
     href: "/settings/brand",
     type: "page",
-    keywords: ["settings", "logo", "colors", "reports"],
+    keywords: copy.brandProfile.keywords,
   },
   {
     id: "team",
-    title: "Team",
-    description: "Invite members and manage workspace seats.",
+    title: copy.team.title,
+    description: copy.team.description,
     href: "/team",
     type: "page",
-    keywords: ["members", "seats", "invites", "users"],
+    keywords: copy.team.keywords,
   },
   {
     id: "subscription",
-    title: "Subscription",
-    description: "Manage your plan, seats, and billing access.",
+    title: copy.subscription.title,
+    description: copy.subscription.description,
     href: "/subscription",
     type: "page",
-    keywords: ["plan", "billing", "membership", "upgrade"],
+    keywords: copy.subscription.keywords,
   },
   {
     id: "help",
-    title: "Help",
-    description: "Get guides, answers, and support.",
+    title: copy.help.title,
+    description: copy.help.description,
     href: "/help",
     type: "resource",
-    keywords: ["support", "faq", "contact", "guide"],
+    keywords: copy.help.keywords,
   },
   {
     id: "whats-new",
-    title: "What's new",
-    description: "Review product updates and newly released resources.",
+    title: copy.whatsNew.title,
+    description: copy.whatsNew.description,
     href: "/whats-new",
     type: "resource",
-    keywords: ["updates", "release notes", "new"],
+    keywords: copy.whatsNew.keywords,
   },
   {
     id: "board-self-evaluation",
-    title: "Board Self-Evaluation",
-    description: "Annual survey template for board reflection and governance health.",
+    title: copy.boardSelfEvaluation.title,
+    description: copy.boardSelfEvaluation.description,
     href: "/templates/board-self-evaluation",
     type: "template",
-    keywords: ["survey", "annual", "governance", "evaluation"],
+    keywords: copy.boardSelfEvaluation.keywords,
   },
   {
     id: "board-calendar-operational-workflow",
-    title: "Board Calendar & Operational Workflow",
-    description: "Template workspace for meetings, preparation tasks, and board packages.",
+    title: copy.boardCalendarWorkflow.title,
+    description: copy.boardCalendarWorkflow.description,
     href: "/templates/board-calendar-operational-workflow",
     type: "template",
-    keywords: ["calendar", "workflow", "meetings", "board package", "portal"],
+    keywords: copy.boardCalendarWorkflow.keywords,
   },
-];
+  ];
+}
 
 const commandTypeOrder: Record<CommandItemType, number> = {
   page: 0,
@@ -193,13 +200,13 @@ function scoreCommandItem(item: CommandItem, query: string) {
   return score;
 }
 
-export function getCommandItems() {
-  return [...baseCommandItems];
+export function getCommandItems(locale: Locale = defaultLocale) {
+  return buildBaseCommandItems(locale);
 }
 
 export function filterCommandItems(
   query: string,
-  items: CommandItem[] = baseCommandItems,
+  items: CommandItem[] = buildBaseCommandItems(defaultLocale),
 ): RankedCommandItem[] {
   return items
     .map((item) => ({ ...item, score: scoreCommandItem(item, query) }))

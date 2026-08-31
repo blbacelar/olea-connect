@@ -13,9 +13,7 @@ describe("provisioning client", () => {
       status: 200,
       headers: { "content-type": "application/json" },
     });
-    const fetchMock = vi
-      .spyOn(globalThis, "fetch")
-      .mockResolvedValue(response);
+    const fetchMock = vi.spyOn(globalThis, "fetch").mockResolvedValue(response);
 
     const result = await retryMembershipActivation();
 
@@ -24,5 +22,18 @@ describe("provisioning client", () => {
     });
     expect(result.response.status).toBe(200);
     expect(result.result).toEqual({ status: "completed" });
+  });
+
+  it("does not throw when the retry endpoint returns a non-JSON response", async () => {
+    const response = new Response("Service unavailable", {
+      status: 503,
+      headers: { "content-type": "text/plain" },
+    });
+    vi.spyOn(globalThis, "fetch").mockResolvedValue(response);
+
+    const result = await retryMembershipActivation();
+
+    expect(result.response.status).toBe(503);
+    expect(result.result).toEqual({});
   });
 });

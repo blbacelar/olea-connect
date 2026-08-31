@@ -7,65 +7,80 @@ import { useState } from "react";
 import { SectionIntro } from "@/components/landing/SectionIntro";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
+import type { Locale } from "@/lib/i18n/locales";
+import type { PublicSiteCopy } from "@/lib/i18n/public-site-copy";
 import { membershipPlans } from "@/lib/plans";
 import {
   formatCad,
   pricingAddOns,
-  pricingPolicies,
-  referralRewards,
   retreatFacilitation,
 } from "@/lib/pricing";
 import { cn } from "@/lib/utils";
 
-export function LandingPricing() {
+type LandingPricingCopy = PublicSiteCopy["pricing"];
+
+export function LandingPricing({
+  copy,
+  locale,
+}: {
+  copy: LandingPricingCopy;
+  locale: Locale;
+}) {
   const [annual, setAnnual] = useState(true);
 
   return (
     <section id="plans" className="bg-slate-50 px-4 py-20 md:py-28">
       <div className="mx-auto max-w-7xl">
         <SectionIntro
-          eyebrow="Membership"
-          title="Choose the support that fits today."
-          description={`${pricingPolicies.foundingMember} Annual and quarterly memberships are paid upfront.`}
+          eyebrow={copy.eyebrow}
+          title={copy.title}
+          description={copy.description}
           centered
         />
         <div className="mx-auto mt-6 max-w-3xl rounded-2xl border border-olea-green/20 bg-white p-4 text-center text-sm leading-6 text-slate-600 shadow-sm">
-          <strong className="text-olea-dark">Founding member offer:</strong>{" "}
-          {pricingPolicies.foundingMember} Prices below show regular rates and
-          the potential Year 1 founding rate. Eligibility is confirmed before
-          payment.
+          <strong className="text-olea-dark">{copy.foundingLabel}</strong>{" "}
+          {copy.foundingNotice}
         </div>
         <div className="mt-8 flex justify-center">
           <div className="inline-flex rounded-lg border bg-white p-1 shadow-sm">
-            <button
+            <Button
               type="button"
               aria-pressed={!annual}
               onClick={() => setAnnual(false)}
+              variant="ghost"
+              size="sm"
               className={cn(
                 "rounded-md px-4 py-2 text-sm font-semibold transition",
-                !annual ? "bg-olea-green text-white" : "text-slate-500",
+                !annual
+                  ? "bg-olea-green text-white hover:bg-olea-green hover:text-white"
+                  : "text-slate-500",
               )}
             >
-              Quarterly
-            </button>
-            <button
+              {copy.quarterly}
+            </Button>
+            <Button
               type="button"
               aria-pressed={annual}
               onClick={() => setAnnual(true)}
+              variant="ghost"
+              size="sm"
               className={cn(
                 "rounded-md px-4 py-2 text-sm font-semibold transition",
-                annual ? "bg-olea-green text-white" : "text-slate-500",
+                annual
+                  ? "bg-olea-green text-white hover:bg-olea-green hover:text-white"
+                  : "text-slate-500",
               )}
             >
-              Annual
+              {copy.annual}
               <span className="ml-2 rounded-full bg-[#B54708] px-2 py-0.5 text-[10px] text-white">
-                Best for renewal planning
+                {copy.annualBadge}
               </span>
-            </button>
+            </Button>
           </div>
         </div>
         <div className="mt-10 grid gap-5 md:grid-cols-2 xl:grid-cols-4">
           {membershipPlans.map((plan) => {
+            const planCopy = copy.plans[plan.id];
             const price = annual ? plan.annualPrice : plan.quarterlyPrice;
             const foundingPrice = annual
               ? plan.foundingAnnualPrice
@@ -81,36 +96,36 @@ export function LandingPricing() {
               >
                 {plan.popular ? (
                   <span className="absolute -top-3 left-1/2 -translate-x-1/2 whitespace-nowrap rounded-full bg-[#B54708] px-3 py-1 text-[10px] font-bold uppercase tracking-wider text-white">
-                    Most popular
+                    {copy.mostPopular}
                   </span>
                 ) : null}
                 <p className="text-sm font-semibold text-slate-500">
-                  {plan.audience}
+                  {planCopy.audience}
                 </p>
                 <h3 className="mt-3 text-2xl font-extrabold">
-                  {plan.icon} {plan.name}
+                  {planCopy.name}
                 </h3>
                 <div className="mt-5 flex items-end gap-1">
                   <span className="text-4xl font-extrabold tracking-tight">
-                    {formatCad(price)}
+                    {formatCad(price, locale)}
                   </span>
                   <span className="pb-1 text-sm text-slate-600">
-                    /{annual ? "year" : "quarter"}
+                    /{annual ? copy.perYear : copy.perQuarter}
                   </span>
                 </div>
                 <p className="mt-2 text-xs font-semibold text-olea-green">
-                  Founding Year 1: {formatCad(foundingPrice)}/
-                  {annual ? "year" : "quarter"} · eligibility confirmed before
-                  payment
+                  {copy.foundingYearPrefix} {formatCad(foundingPrice, locale)}/
+                  {annual ? copy.perYear : copy.perQuarter} ·{" "}
+                  {copy.eligibility}
                 </p>
                 <p className="mt-5 min-h-12 text-sm leading-6 text-slate-500">
-                  {plan.summary}
+                  {planCopy.summary}
                 </p>
                 <p className="mt-4 border-y py-3 text-sm font-bold">
-                  {plan.seats}
+                  {planCopy.seats}
                 </p>
                 <ul className="mt-5 flex-1 space-y-3">
-                  {plan.features.map((feature) => (
+                  {planCopy.features.map((feature) => (
                     <li
                       key={feature}
                       className="flex gap-2.5 text-sm leading-5 text-slate-600"
@@ -130,7 +145,7 @@ export function LandingPricing() {
                       annual ? "annual" : "quarterly"
                     }`}
                   >
-                    Choose {plan.name}
+                    {copy.choosePlan} {planCopy.name}
                   </Link>
                 </Button>
               </Card>
@@ -138,90 +153,103 @@ export function LandingPricing() {
           })}
         </div>
         <div className="mt-7 grid gap-4 text-sm text-slate-600 md:grid-cols-2 xl:grid-cols-4">
-          <p className="rounded-xl border bg-white p-4 text-center">
-            {pricingPolicies.extraSeat}
-          </p>
-          <p className="rounded-xl border bg-white p-4 text-center">
-            {pricingPolicies.taxes}
-          </p>
-          <p className="rounded-xl border bg-white p-4 text-center">
-            {pricingPolicies.trial}
-          </p>
-          <p className="rounded-xl border bg-white p-4 text-center">
-            {pricingPolicies.cancellation}
-          </p>
+          {copy.policies.map((policy) => (
+            <p
+              key={policy}
+              className="rounded-xl border bg-white p-4 text-center"
+            >
+              {policy}
+            </p>
+          ))}
         </div>
       </div>
 
       <div className="mx-auto mt-16 max-w-7xl">
         <SectionIntro
-          eyebrow="Optional support"
-          title="Add capacity when your team needs it."
-          description="Add-ons are available to every tier. Canopy and Harvest members receive 10% off coaching and admin packages."
+          eyebrow={copy.optionalSupportEyebrow}
+          title={copy.optionalSupportTitle}
+          description={copy.optionalSupportDescription}
           centered
         />
         <div className="mt-10 grid gap-5 lg:grid-cols-3">
-          {pricingAddOns.map((addOn) => (
-            <Card key={addOn.name} className="p-6 shadow-none">
-              <h3 className="text-xl font-bold">{addOn.name}</h3>
-              <p className="mt-2 text-sm leading-6 text-slate-500">
-                {addOn.description}
-              </p>
-              <p className="mt-4 text-sm font-semibold text-olea-green">
-                {addOn.rateLabel}
-              </p>
-              <div className="mt-5 overflow-hidden rounded-lg border">
-                {addOn.packages.map((pack) => (
-                  <div
-                    key={pack.name}
-                    className="flex flex-col gap-2 border-b px-4 py-3 text-sm last:border-b-0 sm:flex-row sm:items-center sm:justify-between"
-                  >
-                    <span>
-                      <span className="font-semibold">{pack.name}</span>
-                      <span className="ml-2 text-slate-500">{pack.hours}</span>
-                    </span>
-                    <span className="font-semibold text-slate-700 sm:text-right">
-                      <span className="block whitespace-nowrap">
-                        {formatCad(pack.quarterlyPrice)}/quarter
-                      </span>
-                      <span className="block whitespace-nowrap text-xs font-normal text-slate-500">
-                        {formatCad(pack.annualPrice)}/year
-                      </span>
-                    </span>
-                  </div>
-                ))}
-              </div>
-              <p className="mt-4 text-xs text-slate-500">
-                Annual prices are shown for planning. Contact us for hourly or
-                package support.
-              </p>
-            </Card>
-          ))}
+          {pricingAddOns.map((addOn, addOnIndex) => {
+            const addOnCopy = copy.addOns[addOnIndex] ?? addOn;
+
+            return (
+              <Card key={addOn.name} className="p-6 shadow-none">
+                <h3 className="text-xl font-bold">{addOnCopy.name}</h3>
+                <p className="mt-2 text-sm leading-6 text-slate-500">
+                  {addOnCopy.description}
+                </p>
+                <p className="mt-4 text-sm font-semibold text-olea-green">
+                  {addOnCopy.rateLabel}
+                </p>
+                <div className="mt-5 overflow-hidden rounded-lg border">
+                  {addOn.packages.map((pack, packageIndex) => {
+                    const packageCopy =
+                      addOnCopy.packages[packageIndex] ?? pack;
+
+                    return (
+                      <div
+                        key={pack.name}
+                        className="flex flex-col gap-2 border-b px-4 py-3 text-sm last:border-b-0 sm:flex-row sm:items-center sm:justify-between"
+                      >
+                        <span>
+                          <span className="font-semibold">
+                            {packageCopy.name}
+                          </span>
+                          <span className="ml-2 text-slate-500">
+                            {packageCopy.hours}
+                          </span>
+                        </span>
+                        <span className="font-semibold text-slate-700 sm:text-right">
+                          <span className="block whitespace-nowrap">
+                            {formatCad(pack.quarterlyPrice, locale)}/
+                            {copy.perQuarter}
+                          </span>
+                          <span className="block whitespace-nowrap text-xs font-normal text-slate-500">
+                            {formatCad(pack.annualPrice, locale)}/
+                            {copy.perYear}
+                          </span>
+                        </span>
+                      </div>
+                    );
+                  })}
+                </div>
+                <p className="mt-4 text-xs text-slate-500">
+                  {copy.annualPlanningNote}
+                </p>
+              </Card>
+            );
+          })}
           <Card className="p-6 shadow-none">
-            <h3 className="text-xl font-bold">Board Retreat Facilitation</h3>
+            <h3 className="text-xl font-bold">{copy.retreatTitle}</h3>
             <p className="mt-2 text-sm leading-6 text-slate-500">
-              Professional facilitation for annual board retreats and strategic
-              planning sessions.
+              {copy.retreatDescription}
             </p>
             <div className="mt-5 overflow-hidden rounded-lg border">
-              {retreatFacilitation.map((option) => (
-                <div
-                  key={option.name}
-                  className="flex items-center justify-between border-b px-4 py-3 text-sm last:border-b-0"
-                >
-                  <span>
-                    <span className="font-semibold">{option.name}</span>
-                    <span className="ml-2 text-slate-500">{option.detail}</span>
-                  </span>
-                  <span className="font-semibold text-slate-700">
-                    {formatCad(option.price)}
-                  </span>
-                </div>
-              ))}
+              {retreatFacilitation.map((option, index) => {
+                const optionCopy = copy.retreat[index] ?? option;
+
+                return (
+                  <div
+                    key={option.name}
+                    className="flex items-center justify-between border-b px-4 py-3 text-sm last:border-b-0"
+                  >
+                    <span>
+                      <span className="font-semibold">{optionCopy.name}</span>
+                      <span className="ml-2 text-slate-500">
+                        {optionCopy.detail}
+                      </span>
+                    </span>
+                    <span className="font-semibold text-slate-700">
+                      {formatCad(option.price, locale)}
+                    </span>
+                  </div>
+                );
+              })}
             </div>
-            <p className="mt-4 text-xs text-slate-500">
-              Available on an ad-hoc basis.
-            </p>
+            <p className="mt-4 text-xs text-slate-500">{copy.retreatNote}</p>
           </Card>
         </div>
       </div>
@@ -229,16 +257,16 @@ export function LandingPricing() {
       <div className="mx-auto mt-16 max-w-5xl">
         <Card className="border-olea-dark bg-olea-dark p-8 text-white shadow-none md:p-10">
           <SectionIntro
-            eyebrow="Circle of generosity"
-            title="Your referrals help another nonprofit access support."
-            description="Referral credit is earned after a referred organization completes its first successful payment. Self-referrals are not eligible."
+            eyebrow={copy.referralsEyebrow}
+            title={copy.referralsTitle}
+            description={copy.referralsDescription}
             centered
             inverse
           />
           <div className="mt-8 grid gap-4 md:grid-cols-3">
-            {referralRewards.map((reward) => (
+            {copy.referralRewards.map((reward) => (
               <div key={reward.referrals} className="rounded-xl bg-white/10 p-5">
-                <p className="font-bold text-olea-gold">{reward.referrals}</p>
+                <p className="font-bold text-amber-100">{reward.referrals}</p>
                 <p className="mt-3 text-sm text-white">{reward.grant}</p>
                 <p className="mt-2 text-sm text-white/70">{reward.coaching}</p>
               </div>

@@ -4,6 +4,7 @@ import type Stripe from "stripe";
 import type { SupabaseClient } from "@supabase/supabase-js";
 
 import { LEGAL_DOCUMENTS } from "@/lib/legal-documents";
+import { normalizeReferralCode } from "@/lib/referral-capture";
 import { SignupValidationError } from "@/lib/signup-flow";
 import {
   mapSubscriptionStatus,
@@ -57,6 +58,54 @@ export interface ProvisioningReconciliationSummary {
   }>;
 }
 
+async function validateCheckoutReferralCode(
+  supabase: SupabaseClient,
+  registration: CheckoutRegistration,
+  referralCode: string,
+) {
+  const { data: organizationReferral, error: organizationReferralError } =
+    await supabase
+      .from("referral_codes")
+      .select("organization_id")
+      .eq("code", referralCode)
+      .eq("active", true)
+      .maybeSingle();
+  if (organizationReferralError) throw organizationReferralError;
+
+  if (organizationReferral) {
+    const { data: currentMembership, error: membershipError } = await supabase
+      .from("organization_members")
+      .select("organization_id")
+      .eq("user_id", registration.userId)
+      .eq("status", "active")
+      .maybeSingle();
+    if (membershipError) throw membershipError;
+    if (currentMembership?.organization_id === organizationReferral.organization_id) {
+      throw new SignupValidationError("You cannot use your own organization referral code.");
+    }
+    return;
+  }
+
+  const { data: partnerReferral, error: partnerReferralError } = await supabase
+    .from("referral_links")
+    .select("id, referrers(email, status)")
+    .eq("code", referralCode)
+    .eq("active", true)
+    .maybeSingle();
+  if (partnerReferralError) throw partnerReferralError;
+
+  const referrer = Array.isArray(partnerReferral?.referrers)
+    ? partnerReferral?.referrers[0]
+    : partnerReferral?.referrers;
+  if (!partnerReferral || referrer?.status !== "approved") {
+    throw new SignupValidationError("That referral code is invalid or expired.");
+  }
+
+  if (referrer.email?.toLowerCase() === registration.email.toLowerCase()) {
+    throw new SignupValidationError("You cannot use your own referral link.");
+  }
+}
+
 export async function prepareCheckoutRegistration(
   supabase: SupabaseClient,
   registration: CheckoutRegistration,
@@ -87,29 +136,10 @@ export async function prepareCheckoutRegistration(
     throw new SignupValidationError("This account already has an active workspace.");
   }
 
-  const referralCode = (existing?.referral_code ?? registration.referralCode)
-    .trim()
-    .toUpperCase();
+  const referralCode =
+    normalizeReferralCode(existing?.referral_code ?? registration.referralCode) ?? "";
   if (referralCode) {
-    const { data: referral, error: referralError } = await supabase
-      .from("referral_codes")
-      .select("organization_id")
-      .eq("code", referralCode)
-      .eq("active", true)
-      .maybeSingle();
-    if (referralError) throw referralError;
-    if (!referral) throw new SignupValidationError("That referral code is invalid or expired.");
-
-    const { data: currentMembership, error: membershipError } = await supabase
-      .from("organization_members")
-      .select("organization_id")
-      .eq("user_id", registration.userId)
-      .eq("status", "active")
-      .maybeSingle();
-    if (membershipError) throw membershipError;
-    if (currentMembership?.organization_id === referral.organization_id) {
-      throw new SignupValidationError("You cannot use your own organization referral code.");
-    }
+    await validateCheckoutReferralCode(supabase, registration, referralCode);
   }
 
   const foundingCouponId = process.env.STRIPE_FOUNDING_COUPON_ID ?? "";
@@ -397,14 +427,27 @@ export async function attemptWorkspaceProvisioning(
   const result = data as ProvisioningResult;
 
   if (result.status === "completed" && result.organization_id) {
-    const { error: referralError } = await supabase.rpc(
-      "finalize_signup_referral",
-      {
+    const { data: partnerReferral, error: partnerReferralError } =
+      await supabase.rpc("record_partner_signup_referral", {
         target_request_id: requestId,
         target_organization_id: result.organization_id,
-      },
-    );
-    if (referralError) throw referralError;
+      });
+    if (partnerReferralError) throw partnerReferralError;
+
+    const partnerReferralResult = partnerReferral as { status?: string } | null;
+    if (
+      !partnerReferralResult?.status ||
+      partnerReferralResult.status === "none"
+    ) {
+      const { error: referralError } = await supabase.rpc(
+        "finalize_signup_referral",
+        {
+          target_request_id: requestId,
+          target_organization_id: result.organization_id,
+        },
+      );
+      if (referralError) throw referralError;
+    }
 
     const { error: foundingMemberError } = await supabase.rpc(
       "mark_founding_member_paid",

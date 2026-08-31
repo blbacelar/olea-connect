@@ -1,10 +1,36 @@
-import { Check } from "lucide-react";
+import {
+  Check,
+  FlameKindling,
+  Gem,
+  Leaf,
+  ShieldCheck,
+  Sprout,
+} from "lucide-react";
 
 import { SponsorshipCta } from "@/components/sponsorship/SponsorshipCta";
+import type {
+  LocalizedSponsorshipTier,
+  SponsorshipPageCopy,
+} from "@/lib/i18n/sponsorship-page-copy";
 import { cn } from "@/lib/utils";
-import type { SponsorshipTier } from "@/lib/sponsorship-content";
 
-export function SponsorshipTierCard({ tier }: { tier: SponsorshipTier }) {
+const tierIcons = {
+  builder: ShieldCheck,
+  catalyst: FlameKindling,
+  legacy: Gem,
+  roots: Leaf,
+  seedling: Sprout,
+};
+
+export function SponsorshipTierCard({
+  copy,
+  tier,
+}: {
+  copy: SponsorshipPageCopy;
+  tier: LocalizedSponsorshipTier;
+}) {
+  const Icon = tierIcons[tier.icon];
+
   return (
     <article
       className={cn(
@@ -16,18 +42,18 @@ export function SponsorshipTierCard({ tier }: { tier: SponsorshipTier }) {
     >
       {tier.featured ? (
         <span className="absolute right-4 top-4 rounded-full bg-[#8a6500] px-3 py-1 text-[0.68rem] font-bold uppercase tracking-wider text-white">
-          Premium Tier
+          {copy.premiumTier}
         </span>
       ) : null}
       <div
-        className="mb-4 flex size-12 items-center justify-center rounded-full bg-[#f5f3ee] text-2xl"
+        className="mb-4 flex size-12 items-center justify-center rounded-full bg-[#f5f3ee] text-[#3d4920]"
         aria-hidden="true"
       >
-        {tier.icon}
+        <Icon className="size-6" />
       </div>
       <h3 className="text-2xl font-semibold text-[#3d4920]">{tier.name}</h3>
       <p className="mt-1 text-base font-semibold text-[#8a6500]">
-        Contact us for pricing
+        {copy.contactForPricing}
       </p>
       <p className="mt-1 text-sm italic text-[#666]">{tier.subtitle}</p>
       <p className="mt-3 text-[0.95rem] leading-7 text-[#666]">
@@ -51,9 +77,9 @@ export function SponsorshipTierCard({ tier }: { tier: SponsorshipTier }) {
       </ul>
       <SponsorshipCta
         className="mt-6 w-full bg-[#3d4920] text-white hover:bg-[#556b2f]"
-        label={`Learn more about the ${tier.name} sponsorship tier`}
+        label={copy.tierAria(tier.name)}
       >
-        {tier.featured ? "Become a Catalyst" : "Learn More"}
+        {tier.featured ? copy.featuredCta : copy.defaultCta}
       </SponsorshipCta>
     </article>
   );

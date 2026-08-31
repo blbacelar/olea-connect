@@ -1,3 +1,5 @@
+import type { Locale } from "@/lib/i18n/locales";
+
 export type AddOnPackage = {
   name: string;
   hours: string;
@@ -98,6 +100,19 @@ export const pricingPolicies = {
   cancellation: "30 days' notice before renewal; membership fees are non-refundable.",
 } as const;
 
-export function formatCad(value: number) {
-  return `$${value.toLocaleString("en-CA")} CAD`;
+export function formatCad(value: number, locale: Locale = "en-CA") {
+  const fractionDigits = Number.isInteger(value) ? 0 : 2;
+  const formatted = new Intl.NumberFormat(locale, {
+    currency: "CAD",
+    currencyDisplay: "symbol",
+    maximumFractionDigits: fractionDigits,
+    minimumFractionDigits: fractionDigits,
+    style: "currency",
+  }).format(value);
+
+  if (locale === "fr-CA") {
+    return `${formatted} CA`;
+  }
+
+  return `${formatted} CAD`;
 }

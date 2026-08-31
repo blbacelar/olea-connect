@@ -101,7 +101,7 @@ export class SignupPage {
   }
 
   async goBackToPlans() {
-    await this.page.getByRole("button", { name: "← Back to plan" }).click();
+    await this.page.getByRole("button", { name: "Back to plan" }).click();
   }
 
   async expectLandingPlansVisible() {
@@ -114,6 +114,6 @@ export class SignupPage {
   }
 
   get continueToPayment() {
-    return this.page.getByRole("button", { name: "Continue to payment →" });
+    return this.page.getByRole("button", { name: "Continue to payment" });
   }
 }

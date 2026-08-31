@@ -1,15 +1,18 @@
 "use client";
 
-import { Check } from "lucide-react";
+import { ArrowRight, Check, CheckCircle2 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useEffect } from "react";
 
+import { useLocaleContext } from "@/components/i18n/LocaleProvider";
 import { PublicHeader } from "@/components/auth/PublicHeader";
 import { StepIndicator } from "@/components/auth/StepIndicator";
 import { Button } from "@/components/ui/button";
 import { useRegistration } from "@/hooks/use-registration";
+import { getAuthFlowCopy } from "@/lib/i18n/auth-flow-copy";
+import { getPublicSiteCopy } from "@/lib/i18n/public-site-copy";
 import { membershipPlans } from "@/lib/plans";
-import { formatCad, pricingPolicies } from "@/lib/pricing";
+import { formatCad } from "@/lib/pricing";
 import type { MembershipTier } from "@/lib/types";
 import { cn } from "@/lib/utils";
 import { captureReferralCodeFromUrl } from "@/lib/referral-capture";
@@ -17,6 +20,10 @@ import { captureReferralCodeFromUrl } from "@/lib/referral-capture";
 export default function SignupPlanPage() {
   const router = useRouter();
   const { hydrated, registration, updateRegistration } = useRegistration();
+  const { locale } = useLocaleContext();
+  const authCopy = getAuthFlowCopy(locale);
+  const publicCopy = getPublicSiteCopy(locale);
+  const signupCopy = authCopy.signup.plan;
 
   useEffect(() => {
     if (!hydrated) return;
@@ -55,33 +62,36 @@ export default function SignupPlanPage() {
       <main className="mx-auto max-w-6xl px-4 py-12">
         <StepIndicator current={1} />
         <h1 className="mt-5 text-center text-3xl font-bold">
-          Choose your plan
+          {signupCopy.title}
         </h1>
         <p className="mt-2 text-center text-slate-500">
-          Step 1 of 3 · Choose the support that fits your organization.
+          {authCopy.signup.step(1, 3)} · {signupCopy.description}
         </p>
 
         <div className="mx-auto mt-7 flex w-fit rounded-lg border bg-white p-1">
           {(["quarterly", "annual"] as const).map((cycle) => (
-            <button
+            <Button
+              type="button"
+              variant="ghost"
               key={cycle}
               onClick={() => updateRegistration({ billingCycle: cycle })}
               className={cn(
-                "rounded-md px-4 py-2 text-sm font-semibold capitalize",
+                "h-10 rounded-md px-4 text-sm font-semibold",
                 registration.billingCycle === cycle
                   ? "bg-olea-green text-white"
                   : "text-slate-500",
               )}
             >
-              {cycle}
-              {cycle === "annual" ? " · best value" : ""}
-            </button>
+              {cycle === "annual" ? signupCopy.annual : signupCopy.quarterly}
+              {cycle === "annual" ? ` · ${signupCopy.bestValue}` : ""}
+            </Button>
           ))}
         </div>
 
         <div className="mt-8 grid gap-4 md:grid-cols-2 xl:grid-cols-4">
           {membershipPlans.map((plan) => {
             const selected = registration.tier === plan.id;
+            const localizedPlan = publicCopy.pricing.plans[plan.id];
             const price =
               registration.billingCycle === "annual"
                 ? plan.annualPrice
@@ -100,40 +110,46 @@ export default function SignupPlanPage() {
                     <Check className="size-4" />
                   </span>
                 ) : null}
-                <p className="text-lg font-bold">
-                  {plan.icon} {plan.name}
-                </p>
+                <p className="text-lg font-bold">{localizedPlan.name}</p>
                 <p className="mt-4 text-3xl font-bold">
-                  {formatCad(price)}
+                  {formatCad(price, locale)}
                   <span className="text-sm font-normal text-slate-400">
-                    /{registration.billingCycle === "annual" ? "year" : "quarter"}
+                    /
+                    {registration.billingCycle === "annual"
+                      ? publicCopy.pricing.perYear
+                      : publicCopy.pricing.perQuarter}
                   </span>
                 </p>
                 <p className="mt-1 text-xs font-semibold text-olea-green">
-                  Founding-member eligibility is confirmed securely before payment.
+                  {signupCopy.foundingEligibility}
                 </p>
-                <p className="mt-1 text-sm text-slate-500">{plan.seats}</p>
+                <p className="mt-1 text-sm text-slate-500">
+                  {localizedPlan.seats}
+                </p>
                 <ul className="mt-5 space-y-2 text-sm text-slate-600">
-                  {plan.features.map((feature) => (
-                    <li key={feature}>✓ {feature}</li>
+                  {localizedPlan.features.map((feature) => (
+                    <li key={feature} className="flex gap-2">
+                      <CheckCircle2 className="mt-0.5 size-4 shrink-0 text-olea-green" />
+                      <span>{feature}</span>
+                    </li>
                   ))}
                 </ul>
                 <span className="mt-auto pt-6 text-sm font-semibold text-olea-green">
-                  {selected ? "Selected ✓" : "Select plan"}
+                  {selected ? signupCopy.selected : signupCopy.selectPlan}
                 </span>
               </button>
             );
           })}
         </div>
         <p className="mx-auto mt-5 max-w-2xl text-center text-xs leading-5 text-slate-500">
-          {pricingPolicies.foundingMember} Prices are shown before tax; GST/PST
-          is calculated at secure checkout.
+          {publicCopy.pricing.foundingNotice} {signupCopy.policyNote}
         </p>
         <div className="mt-8 text-center">
           <Button size="lg" onClick={() => router.push("/signup/account")}>
-            Continue with{" "}
-            {membershipPlans.find((plan) => plan.id === registration.tier)?.name}
-            {" "}→
+            {signupCopy.continueWith(
+              publicCopy.pricing.plans[registration.tier].name,
+            )}
+            <ArrowRight className="size-4" />
           </Button>
         </div>
       </main>

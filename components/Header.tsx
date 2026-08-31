@@ -14,6 +14,7 @@ import Link from "next/link";
 import { useEffect, useMemo, useRef, useState } from "react";
 
 import { GlobalCommandPalette } from "@/components/global-search/GlobalCommandPalette";
+import { LocaleSelector } from "@/components/i18n/LocaleSelector";
 import { Logo } from "@/components/Logo";
 import { getNavigationGroups } from "@/components/navigation";
 import { Button } from "@/components/ui/button";
@@ -24,6 +25,10 @@ import {
 import { useSession } from "@/hooks/use-session";
 import { useRegistration } from "@/hooks/use-registration";
 import { signOut } from "@/lib/auth";
+import { getAppShellCopy } from "@/lib/i18n/app-shell-copy";
+import { getPublicSiteCopy } from "@/lib/i18n/public-site-copy";
+import { useLocaleContext } from "@/components/i18n/LocaleProvider";
+import type { Locale } from "@/lib/i18n/locales";
 import type { MemberNotification, NotificationSeverity } from "@/lib/types";
 import { createClient } from "@/utils/supabase/client";
 import { useRouter } from "next/navigation";
@@ -41,12 +46,16 @@ function getNotificationIcon(severity: NotificationSeverity) {
   return Info;
 }
 
-function formatNotificationTime(value: string) {
+function formatNotificationTime(
+  value: string,
+  locale: Locale,
+  justNow: string,
+) {
   const timestamp = new Date(value).getTime();
   if (Number.isNaN(timestamp)) return "";
 
   const diffSeconds = Math.round((timestamp - Date.now()) / 1000);
-  const formatter = new Intl.RelativeTimeFormat("en", { numeric: "auto" });
+  const formatter = new Intl.RelativeTimeFormat(locale, { numeric: "auto" });
   const ranges = [
     ["year", 60 * 60 * 24 * 365],
     ["month", 60 * 60 * 24 * 30],
@@ -61,7 +70,7 @@ function formatNotificationTime(value: string) {
     }
   }
 
-  return "Just now";
+  return justNow;
 }
 
 function getUnreadLabel(count: number) {
@@ -135,10 +144,14 @@ function sortNotifications(items: MemberNotification[]) {
 export function Header() {
   const router = useRouter();
   const session = useSession();
+  const { locale } = useLocaleContext();
+  const copy = getAppShellCopy(locale);
+  const publicCopy = getPublicSiteCopy(locale);
   const member = session?.member;
   const navigationGroups = getNavigationGroups(
     session?.platformRoles,
     session?.member.membershipRole,
+    locale,
   );
   const { resetRegistration } = useRegistration();
   const [notificationsOpen, setNotificationsOpen] = useState(false);
@@ -262,9 +275,7 @@ export function Header() {
     void markNotificationRead(notification.id).catch(() => {
       setNotificationItems((items) => [notification, ...items]);
       setUnreadCount((count) => count + 1);
-      setNotificationError(
-        "We could not mark this notification as read. Please try again.",
-      );
+      setNotificationError(copy.header.notificationError);
     });
 
     router.push(destination);
@@ -286,16 +297,14 @@ export function Header() {
       .catch(() => {
         setNotificationItems(unreadItems);
         setUnreadCount(previousUnreadCount);
-        setNotificationError(
-          "We could not mark notifications as read. Please refresh and try again.",
-        );
+        setNotificationError(copy.header.markAllNotificationError);
       })
       .finally(() => {
         setIsNotificationPending(false);
       });
   }
 
-  const initials = (member?.name ?? "Member")
+  const initials = (member?.name ?? copy.header.member)
     .split(/\s+/)
     .map((part) => part[0])
     .join("")
@@ -305,11 +314,19 @@ export function Header() {
   return (
     <header className="relative z-30 flex h-16 shrink-0 items-center gap-3 border-b bg-white px-4 md:gap-4 md:px-6">
       <div className="lg:hidden">
-        <Logo compact />
+        <Logo
+          compact
+          ariaLabel={publicCopy.logo.ariaLabel}
+          tagline={publicCopy.logo.tagline}
+        />
       </div>
 
       <GlobalCommandPalette />
       <div className="flex-1" />
+
+      <div className="hidden sm:block">
+        <LocaleSelector />
+      </div>
 
       <div className="relative">
         <Button
@@ -318,8 +335,8 @@ export function Header() {
           className="relative rounded-lg"
           aria-label={
             hasUnreadNotifications
-              ? `Notifications (${unreadCount} unread)`
-              : "Notifications"
+              ? copy.header.notificationsWithCount(unreadCount)
+              : copy.header.notifications
           }
           onClick={() => {
             setNotificationsOpen((open) => !open);
@@ -336,13 +353,15 @@ export function Header() {
         {notificationsOpen ? (
           <div className="absolute right-0 top-12 w-[calc(100vw-2rem)] max-w-[340px] overflow-hidden rounded-xl border bg-white shadow-elevated">
             <div className="flex items-center justify-between border-b px-4 py-3.5">
-              <span className="font-semibold">Notifications</span>
+              <span className="font-semibold">{copy.header.notifications}</span>
               <button
                 className="text-xs font-semibold text-olea-green disabled:cursor-not-allowed disabled:text-slate-300"
                 disabled={!hasUnreadNotifications || isNotificationPending}
                 onClick={handleMarkAllRead}
               >
-                {isNotificationPending ? "Marking..." : "Mark all read"}
+                {isNotificationPending
+                  ? copy.header.marking
+                  : copy.header.markAllRead}
               </button>
             </div>
             {notificationError ? (
@@ -376,7 +395,11 @@ export function Header() {
                         {notification.body}
                       </p>
                       <p className="mt-1 text-[11px] text-slate-400">
-                        {formatNotificationTime(notification.createdAt)}
+                        {formatNotificationTime(
+                          notification.createdAt,
+                          locale,
+                          copy.header.justNow,
+                        )}
                       </p>
                     </div>
                   </button>
@@ -385,10 +408,10 @@ export function Header() {
             ) : (
               <div className="px-4 py-8 text-center">
                 <p className="text-sm font-semibold text-slate-700">
-                  No unread notifications
+                  {copy.header.noUnreadNotifications}
                 </p>
                 <p className="mt-1 text-xs leading-5 text-slate-500">
-                  You are all caught up.
+                  {copy.header.allCaughtUp}
                 </p>
               </div>
             )}
@@ -408,20 +431,22 @@ export function Header() {
             {initials}
           </span>
           <span className="hidden text-[13.5px] font-semibold text-slate-800 sm:inline">
-            {member?.firstName ?? "Member"}
+            {member?.firstName ?? copy.header.member}
           </span>
           <ChevronDown className="size-4 text-slate-400" />
         </button>
         {userOpen ? (
           <div className="absolute right-0 top-12 w-[230px] rounded-xl border bg-white p-1.5 shadow-elevated">
             <div className="mb-1.5 border-b px-3 py-2">
-              <p className="font-semibold">{member?.name ?? "Member"}</p>
+              <p className="font-semibold">
+                {member?.name ?? copy.header.member}
+              </p>
               <p className="text-xs text-slate-500">{member?.email ?? ""}</p>
             </div>
             {[
-              ["Brand settings", "/settings/brand"],
-              ["Team", "/team"],
-              ["Help", "/help"],
+              [copy.header.brandSettings, "/settings/brand"],
+              [copy.header.team, "/team"],
+              [copy.header.help, "/help"],
             ].map(([label, href]) => (
               <Link
                 key={href}
@@ -443,7 +468,7 @@ export function Header() {
                 className="flex w-full items-center gap-2.5 rounded-lg px-3 py-2 text-left text-[13.5px] font-medium text-red-600 hover:bg-red-50"
               >
                 <LogOut className="size-4" />
-                Sign out
+                {copy.header.signOut}
               </button>
             </div>
           </div>
@@ -454,7 +479,7 @@ export function Header() {
         variant="ghost"
         size="icon"
         className="lg:hidden"
-        aria-label="Open navigation"
+        aria-label={copy.header.openNavigation}
         onClick={() => setMobileOpen(true)}
       >
         <Menu className="size-5" />
@@ -463,21 +488,27 @@ export function Header() {
       {mobileOpen ? (
         <div className="fixed inset-0 z-50 lg:hidden">
           <button
-            aria-label="Close navigation"
+            aria-label={copy.header.closeNavigation}
             className="absolute inset-0 bg-slate-900/30"
             onClick={() => setMobileOpen(false)}
           />
           <div className="relative h-full w-[280px] bg-white p-4 shadow-elevated">
             <div className="flex items-center justify-between border-b pb-4">
-              <Logo />
+              <Logo
+                ariaLabel={publicCopy.logo.ariaLabel}
+                tagline={publicCopy.logo.tagline}
+              />
               <Button
                 variant="ghost"
                 size="icon"
                 onClick={() => setMobileOpen(false)}
-                aria-label="Close navigation"
+                aria-label={copy.header.closeNavigation}
               >
                 <X className="size-5" />
               </Button>
+            </div>
+            <div className="mt-4">
+              <LocaleSelector />
             </div>
             <nav className="mt-3">
               {navigationGroups.map((group, groupIndex) => (

@@ -96,6 +96,9 @@ single long form. Its tabs support:
   auditable time tracking.
 - Public sponsorship page with five sponsor tiers, benefits, Catalyst Impact
   Circle content, responsive layout, and Calendly calls to action.
+- Public referral program with partner applications, approved referral links,
+  signup attribution, milestone tracking, manual payout review, and CSV export
+  for finance operations.
 - Grants, notifications, global search/command palette, brand settings, team
   management, and subscription management are available from the member app
   shell.
@@ -123,6 +126,8 @@ For a developer handoff, read these in order:
    and known Supabase Auth rate-limit constraints.
 5. [Harvest Consulting](./docs/CONSULTING.md) - consulting requests, staff
    triage, time tracking, entitlements, and database test coverage.
+6. [Referral Program](./docs/REFERRAL_PROGRAM.md) - referrer applications,
+   approved links, attribution, payout operations, and release verification.
 
 ## Requirements
 

@@ -6,14 +6,18 @@ import { brandName } from "@/lib/brand";
 export function Logo({
   compact = false,
   href = "/dashboard",
+  ariaLabel = "Olea Connects governance platform",
+  tagline = "Governance, branded.",
 }: {
   compact?: boolean;
   href?: string;
+  ariaLabel?: string;
+  tagline?: string;
 }) {
   return (
     <Link
       href={href}
-      aria-label="Olea Connects™ Governance branded dashboard"
+      aria-label={ariaLabel}
       className="inline-flex shrink-0 items-center gap-3"
     >
       <Image
@@ -29,7 +33,7 @@ export function Logo({
           {brandName}
         </span>
         <span className="block text-[11px] font-medium text-slate-600">
-          Governance, branded.
+          {tagline}
         </span>
       </span>
     </Link>

@@ -164,6 +164,7 @@ describe("Stripe signup checkout route", () => {
 
     expect(response.status).toBe(409);
     expect(body).toEqual({
+      code: "account_state",
       error:
         "Unable to continue with these account details. Sign in or reset your password, then try again.",
     });
@@ -194,6 +195,7 @@ describe("Stripe signup checkout route", () => {
 
     expect(response.status).toBe(500);
     expect(body).toEqual({
+      code: "checkout_unavailable",
       error: "Unable to start secure checkout.",
       correlationId: expect.any(String),
     });
@@ -225,6 +227,7 @@ describe("Stripe signup checkout route", () => {
 
     expect(response.status).toBe(409);
     await expect(response.json()).resolves.toEqual({
+      code: "account_state",
       error:
         "Unable to continue with these account details. Sign in or reset your password, then try again.",
     });
@@ -239,7 +242,9 @@ describe("Stripe signup checkout route", () => {
     });
     const { SignupValidationError } = await import("@/lib/signup-flow");
     routeMocks.prepareCheckoutRegistration.mockRejectedValue(
-      new SignupValidationError("This account already has an active workspace."),
+      new SignupValidationError(
+        "This account already has an active workspace.",
+      ),
     );
     const { POST } = await import("@/app/api/stripe/checkout/route");
 
@@ -247,6 +252,7 @@ describe("Stripe signup checkout route", () => {
 
     expect(response.status).toBe(400);
     await expect(response.json()).resolves.toEqual({
+      code: "signup_validation",
       error: "This account already has an active workspace.",
     });
     expect(routeMocks.createCheckoutSession).not.toHaveBeenCalled();
@@ -332,48 +338,51 @@ describe("Stripe signup checkout route", () => {
           new Error("Session attachment provider internals"),
         ),
     },
-  ])("logs a sanitized $stage failure and masks it from the client", async ({
-    stage,
-    fail,
-  }) => {
-    noExistingUser();
-    routeMocks.signUp.mockResolvedValue({
-      data: { user: { id: "user_new", identities: [{ id: "identity_123" }] } },
-      error: null,
-    });
-    fail();
-    const consoleError = vi
-      .spyOn(console, "error")
-      .mockImplementation(() => undefined);
-    const { POST } = await import("@/app/api/stripe/checkout/route");
+  ])(
+    "logs a sanitized $stage failure and masks it from the client",
+    async ({ stage, fail }) => {
+      noExistingUser();
+      routeMocks.signUp.mockResolvedValue({
+        data: {
+          user: { id: "user_new", identities: [{ id: "identity_123" }] },
+        },
+        error: null,
+      });
+      fail();
+      const consoleError = vi
+        .spyOn(console, "error")
+        .mockImplementation(() => undefined);
+      const { POST } = await import("@/app/api/stripe/checkout/route");
 
-    const response = await POST(makeRequest());
-    const body = (await response.json()) as {
-      correlationId: string;
-      error: string;
-    };
+      const response = await POST(makeRequest());
+      const body = (await response.json()) as {
+        correlationId: string;
+        error: string;
+      };
 
-    expect(response.status).toBe(500);
-    expect(body).toEqual({
-      error: "Unable to start secure checkout.",
-      correlationId: expect.any(String),
-    });
-    expect(consoleError).toHaveBeenCalledWith(
-      "Unable to create Stripe Checkout session",
-      expect.objectContaining({
-        correlationId: body.correlationId,
-        stage,
-        tier: "roots",
-        billingCycle: "annual",
-        errorName: "Error",
-      }),
-    );
+      expect(response.status).toBe(500);
+      expect(body).toEqual({
+        code: "checkout_unavailable",
+        error: "Unable to start secure checkout.",
+        correlationId: expect.any(String),
+      });
+      expect(consoleError).toHaveBeenCalledWith(
+        "Unable to create Stripe Checkout session",
+        expect.objectContaining({
+          correlationId: body.correlationId,
+          stage,
+          tier: "roots",
+          billingCycle: "annual",
+          errorName: "Error",
+        }),
+      );
 
-    const serializedLog = JSON.stringify(consoleError.mock.calls);
-    expect(serializedLog).not.toContain(checkoutPayload.email);
-    expect(serializedLog).not.toContain(checkoutPayload.password);
-    expect(serializedLog).not.toContain("provider internals");
-    expect(serializedLog).not.toContain("price_roots_annual");
-    consoleError.mockRestore();
-  });
+      const serializedLog = JSON.stringify(consoleError.mock.calls);
+      expect(serializedLog).not.toContain(checkoutPayload.email);
+      expect(serializedLog).not.toContain(checkoutPayload.password);
+      expect(serializedLog).not.toContain("provider internals");
+      expect(serializedLog).not.toContain("price_roots_annual");
+      consoleError.mockRestore();
+    },
+  );
 });
