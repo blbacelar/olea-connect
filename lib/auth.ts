@@ -16,9 +16,7 @@ export async function signUpWithEmail(registration: RegistrationState) {
     email: registration.email.trim().toLowerCase(),
     password: registration.password,
     options: {
-      emailRedirectTo: getRedirectUrl(
-        "/auth/callback",
-      ),
+      emailRedirectTo: getRedirectUrl("/auth/callback"),
       data: {
         full_name: registration.fullName.trim(),
         organization_name: registration.organizationName.trim(),
@@ -84,9 +82,7 @@ export async function resendVerificationEmail(email: string) {
     type: "signup",
     email: email.trim().toLowerCase(),
     options: {
-      emailRedirectTo: getRedirectUrl(
-        "/auth/callback",
-      ),
+      emailRedirectTo: getRedirectUrl("/auth/callback"),
     },
   });
 
@@ -101,9 +97,7 @@ export async function updatePassword(password: string) {
   return data;
 }
 
-export async function startStripeCheckout(
-  registration: RegistrationState,
-) {
+export async function startStripeCheckout(registration: RegistrationState) {
   const response = await fetch(apiRoutes.stripeCheckout, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
@@ -127,9 +121,10 @@ export async function startStripeCheckout(
   const contentType = response.headers.get("content-type");
   const result = contentType?.includes("application/json")
     ? ((await response.json()) as {
-        url?: string;
-        error?: string;
+        code?: string;
         correlationId?: string;
+        error?: string;
+        url?: string;
       })
     : {};
 
@@ -137,9 +132,13 @@ export async function startStripeCheckout(
     const reference = result.correlationId
       ? ` Reference: ${result.correlationId}`
       : "";
-    throw new Error(
+    const checkoutError = new Error(
       `${result.error ?? "Unable to start secure checkout."}${reference}`,
     );
+    if (result.code) {
+      Object.assign(checkoutError, { code: result.code });
+    }
+    throw checkoutError;
   }
 
   return result.url;

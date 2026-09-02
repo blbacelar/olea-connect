@@ -15,7 +15,7 @@ export class AppShellPage {
     const compactLogo = this.page
       .locator("header")
       .getByRole("link", {
-        name: "Olea Connects™ Governance branded dashboard",
+        name: "Olea Connects governance platform",
       });
 
     await expect(compactLogo).toBeVisible();

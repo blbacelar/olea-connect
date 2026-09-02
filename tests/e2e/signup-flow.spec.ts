@@ -24,7 +24,9 @@ test.describe("@signup @critical approved signup flow", () => {
     await signup.acceptAllLegalDocuments();
     await expect(signup.secureCheckoutButton).toBeEnabled();
     await expect(page.getByText("QA Signup Organization", { exact: true })).toBeVisible();
-    await expect(page.getByText("Roots", { exact: true })).toBeVisible();
+    await expect(
+      page.getByRole("heading", { name: "Roots", exact: true }),
+    ).toBeVisible();
   });
 
   test("does not enable account progression when required organization fields are missing", async ({

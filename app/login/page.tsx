@@ -6,11 +6,15 @@ import { useEffect, useState, useTransition } from "react";
 
 import { AuthCard } from "@/components/auth/AuthCard";
 import { PasswordInput } from "@/components/auth/PasswordInput";
+import { useLocaleContext } from "@/components/i18n/LocaleProvider";
 import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useRegistration } from "@/hooks/use-registration";
 import { signIn } from "@/lib/auth";
+import { getAuthFlowCopy } from "@/lib/i18n/auth-flow-copy";
+import { getPublicSiteCopy } from "@/lib/i18n/public-site-copy";
 import { retryMembershipActivation } from "@/lib/provisioning/client";
 
 const DASHBOARD_PATH = "/dashboard";
@@ -22,6 +26,10 @@ function getSafePath(value: string | undefined, fallback = DASHBOARD_PATH) {
 export default function LoginPage() {
   const router = useRouter();
   const { registration } = useRegistration();
+  const { locale } = useLocaleContext();
+  const authCopy = getAuthFlowCopy(locale);
+  const publicCopy = getPublicSiteCopy(locale);
+  const loginCopy = authCopy.login;
   const [email, setEmail] = useState(registration.email);
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
@@ -32,47 +40,51 @@ export default function LoginPage() {
 
   useEffect(() => {
     const searchParams = new URLSearchParams(window.location.search);
-    setError(searchParams.get("error") || "");
+    setError(searchParams.get("error") ? loginCopy.fallbackError : "");
     const paymentSucceeded = searchParams.get("payment") === "success";
     const needsEmailVerification = searchParams.get("verify") === "email";
     setMessage(
       needsEmailVerification
-        ? "Payment received. Check your inbox for a confirmation email from Olea Connects™, confirm your address, then sign in."
+        ? loginCopy.paymentVerifyMessage
         : paymentSucceeded
-          ? "Payment received. Sign in to finish setting up your membership."
+          ? loginCopy.paymentSuccessMessage
           : "",
     );
     setNextPath(searchParams.get("next") || "");
-  }, []);
+  }, [
+    loginCopy.fallbackError,
+    loginCopy.paymentSuccessMessage,
+    loginCopy.paymentVerifyMessage,
+  ]);
 
   const handleLogin = () => {
     startTransition(async () => {
       try {
         setError("");
         await signIn(email, password, { rememberFor30Days });
-        const { result } = await retryMembershipActivation();
-        if (result.status === "completed") {
-          router.push(getSafePath(result.nextPath));
-          router.refresh();
-          return;
+        try {
+          const { response, result } = await retryMembershipActivation();
+          if (response.ok && result.status === "completed") {
+            router.push(getSafePath(result.nextPath));
+            router.refresh();
+            return;
+          }
+        } catch {
+          // A recovery check should never block a successful sign-in.
         }
         router.push(getSafePath(nextPath));
         router.refresh();
-      } catch (loginError) {
-        setError(
-          loginError instanceof Error
-            ? loginError.message
-            : "Unable to sign in.",
-        );
+      } catch {
+        setError(loginCopy.fallbackError);
       }
     });
   };
 
   return (
-    <AuthCard title="Welcome back">
+    <AuthCard title={loginCopy.title} logo={publicCopy.logo}>
       <div className="space-y-5">
         <div className="space-y-2">
-          <Label htmlFor="loginEmail">Email address</Label>
+          <Label htmlFor="loginEmail">{authCopy.shared.emailAddress}</Label>
           <Input
             id="loginEmail"
             type="email"
@@ -82,21 +94,23 @@ export default function LoginPage() {
         </div>
         <div className="space-y-2">
           <div className="flex items-center justify-between">
-            <Label htmlFor="loginPassword">Password</Label>
+            <Label htmlFor="loginPassword">{loginCopy.password}</Label>
             <Link
               href="/reset-password"
               className="text-xs font-semibold text-olea-green"
             >
-              Forgot password?
+              {loginCopy.forgotPassword}
             </Link>
           </div>
           <PasswordInput
             id="loginPassword"
             value={password}
+            hideLabel={authCopy.shared.hidePassword}
             onChange={(event) => setPassword(event.target.value)}
             onKeyDown={(event) => {
               if (event.key === "Enter") handleLogin();
             }}
+            showLabel={authCopy.shared.showPassword}
           />
         </div>
         {error ? (
@@ -110,26 +124,20 @@ export default function LoginPage() {
           </p>
         ) : null}
         <label className="flex items-center gap-2 text-sm text-slate-500">
-          <input
+          <Checkbox
             id="rememberFor30Days"
-            type="checkbox"
-            className="size-4 accent-olea-green"
             checked={rememberFor30Days}
             onChange={(event) => setRememberFor30Days(event.target.checked)}
           />
-          <span>Remember me for 30 days</span>
+          <span>{loginCopy.remember}</span>
         </label>
-        <Button
-          className="w-full"
-          disabled={isPending}
-          onClick={handleLogin}
-        >
-          {isPending ? "Signing in..." : "Sign in →"}
+        <Button className="w-full" disabled={isPending} onClick={handleLogin}>
+          {isPending ? loginCopy.pending : loginCopy.submit}
         </Button>
         <p className="text-center text-sm text-slate-500">
-          Don&apos;t have an account?{" "}
+          {loginCopy.noAccount}{" "}
           <Link href="/signup" className="font-semibold text-olea-green">
-            Sign up →
+            {loginCopy.signUp}
           </Link>
         </p>
       </div>

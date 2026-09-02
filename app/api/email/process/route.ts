@@ -11,6 +11,10 @@ import { hasClaimedEmailEvent } from "@/lib/email/config";
 import {
   eventScheduleChangeEmail,
   boardRecruitmentSurveyInvitationEmail,
+  referralApplicationApprovedEmail,
+  referralApplicationReceivedEmail,
+  referralApplicationRejectedEmail,
+  referralApplicationSubmittedEmail,
   teamInvitationEmail,
   type TransactionalEmail,
 } from "@/lib/email/templates";
@@ -106,6 +110,74 @@ async function buildEmail(
         surveyYear: payload.survey_year,
         surveyUrl: new URL(payload.invitation_path, getAppUrl()).toString(),
         expiresAt: payload.expires_at,
+      }),
+    };
+  }
+
+  if (event.event_type === "referral.application.submitted") {
+    const payload = event.payload as {
+      recipient_email: string;
+      full_name: string;
+    };
+
+    return {
+      recipientEmail: payload.recipient_email,
+      email: referralApplicationSubmittedEmail({
+        fullName: payload.full_name,
+        dashboardUrl: new URL("/referrals/dashboard", getAppUrl()).toString(),
+      }),
+    };
+  }
+
+  if (event.event_type === "referral.application.received") {
+    const payload = event.payload as {
+      recipient_email: string;
+      full_name: string;
+      email: string;
+      organization_name?: string | null;
+    };
+
+    return {
+      recipientEmail: payload.recipient_email,
+      email: referralApplicationReceivedEmail({
+        fullName: payload.full_name,
+        email: payload.email,
+        organizationName: payload.organization_name ?? null,
+        adminUrl: new URL("/settings/referrals", getAppUrl()).toString(),
+      }),
+    };
+  }
+
+  if (event.event_type === "referral.application.approved") {
+    const payload = event.payload as {
+      recipient_email: string;
+      full_name: string;
+      referral_path: string;
+    };
+
+    return {
+      recipientEmail: payload.recipient_email,
+      email: referralApplicationApprovedEmail({
+        fullName: payload.full_name,
+        referralUrl: new URL(payload.referral_path, getAppUrl()).toString(),
+        dashboardUrl: new URL("/referrals/dashboard", getAppUrl()).toString(),
+      }),
+    };
+  }
+
+  if (event.event_type === "referral.application.rejected") {
+    const payload = event.payload as {
+      recipient_email: string;
+      full_name: string;
+      reason?: string | null;
+    };
+
+    return {
+      recipientEmail: payload.recipient_email,
+      email: referralApplicationRejectedEmail({
+        fullName: payload.full_name,
+        reason: payload.reason ?? null,
+        contactEmail: process.env.EMAIL_REPLY_TO ?? "hello@olivesocialimpact.com",
       }),
     };
   }

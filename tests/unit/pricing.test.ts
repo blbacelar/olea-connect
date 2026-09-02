@@ -33,5 +33,6 @@ describe("pricing package", () => {
 
   it("formats Canadian dollar display values consistently", () => {
     expect(formatCad(1944)).toBe("$1,944 CAD");
+    expect(formatCad(1944, "fr-CA")).toBe("1\u00A0944\u00A0$ CA");
   });
 });

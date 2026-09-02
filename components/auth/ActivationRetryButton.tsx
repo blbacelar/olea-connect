@@ -4,7 +4,9 @@ import { LoaderCircle } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useState, useTransition } from "react";
 
+import { useLocaleContext } from "@/components/i18n/LocaleProvider";
 import { Button } from "@/components/ui/button";
+import { getAuthFlowCopy } from "@/lib/i18n/auth-flow-copy";
 import { retryMembershipActivation } from "@/lib/provisioning/client";
 
 function getSafePath(value: string | undefined) {
@@ -15,6 +17,8 @@ function getSafePath(value: string | undefined) {
 
 export function ActivationRetryButton() {
   const router = useRouter();
+  const { locale } = useLocaleContext();
+  const copy = getAuthFlowCopy(locale).activationRetry;
   const [error, setError] = useState("");
   const [isPending, startTransition] = useTransition();
 
@@ -38,13 +42,13 @@ export function ActivationRetryButton() {
         setError(
           result.error ??
             (result.status === "pending_verification"
-              ? "Confirm your email address, then retry activation."
+              ? copy.confirmEmail
               : result.status === "pending_payment"
-                ? "Payment is not confirmed for this account yet. If you already paid, sign out and use the email address from checkout, or contact support."
-                : "Payment confirmation is still processing. Try again shortly."),
+                ? copy.pendingPayment
+                : copy.processing),
         );
       } catch {
-        setError("Activation could not be checked. Please try again shortly.");
+        setError(copy.fallbackError);
       }
     });
   };
@@ -53,7 +57,7 @@ export function ActivationRetryButton() {
     <div className="mt-6">
       <Button className="w-full" disabled={isPending} onClick={retry}>
         {isPending ? <LoaderCircle className="size-4 animate-spin" /> : null}
-        {isPending ? "Checking activation..." : "Retry activation"}
+        {isPending ? copy.pending : copy.submit}
       </Button>
       {error ? (
         <p className="mt-3 rounded-lg bg-red-50 p-3 text-sm text-red-700">

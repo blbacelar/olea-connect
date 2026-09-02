@@ -2,12 +2,15 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { PanelLeftClose, PanelLeftOpen } from "lucide-react";
+import { Leaf, PanelLeftClose, PanelLeftOpen } from "lucide-react";
 
+import { useLocaleContext } from "@/components/i18n/LocaleProvider";
 import { Logo } from "@/components/Logo";
 import { getNavigationGroups } from "@/components/navigation";
 import { Button } from "@/components/ui/button";
 import { useSession } from "@/hooks/use-session";
+import { getAppShellCopy } from "@/lib/i18n/app-shell-copy";
+import { getPublicSiteCopy } from "@/lib/i18n/public-site-copy";
 import { cn } from "@/lib/utils";
 
 type SidebarProps = {
@@ -22,12 +25,17 @@ function getSidebarTooltipTestId(label: string) {
 export function Sidebar({ collapsed, onCollapsedChange }: SidebarProps) {
   const pathname = usePathname();
   const session = useSession();
+  const { locale } = useLocaleContext();
+  const copy = getAppShellCopy(locale);
+  const publicCopy = getPublicSiteCopy(locale);
   const organization = session?.organization;
   const navigationGroups = getNavigationGroups(
     session?.platformRoles,
     session?.member.membershipRole,
+    locale,
   );
   const ToggleIcon = collapsed ? PanelLeftOpen : PanelLeftClose;
+  const tier = organization?.tier ?? copy.header.member.toLowerCase();
 
   function isActiveRoute(href: string) {
     if (href === "/dashboard") return pathname === href;
@@ -36,7 +44,7 @@ export function Sidebar({ collapsed, onCollapsedChange }: SidebarProps) {
 
   return (
     <aside
-      aria-label="App sidebar"
+      aria-label={copy.sidebar.ariaLabel}
       data-state={collapsed ? "collapsed" : "expanded"}
       data-testid="app-sidebar"
       className={cn(
@@ -52,7 +60,11 @@ export function Sidebar({ collapsed, onCollapsedChange }: SidebarProps) {
             : "h-[68px] justify-between",
         )}
       >
-        <Logo compact={collapsed} />
+        <Logo
+          compact={collapsed}
+          ariaLabel={publicCopy.logo.ariaLabel}
+          tagline={publicCopy.logo.tagline}
+        />
         <Button
           type="button"
           variant="ghost"
@@ -61,7 +73,7 @@ export function Sidebar({ collapsed, onCollapsedChange }: SidebarProps) {
             "size-9 shrink-0 text-slate-500 hover:bg-olea-light hover:text-olea-dark",
             collapsed && "bg-white/90 shadow-sm",
           )}
-          aria-label={collapsed ? "Expand sidebar" : "Collapse sidebar"}
+          aria-label={collapsed ? copy.sidebar.expand : copy.sidebar.collapse}
           aria-controls="app-sidebar-navigation"
           aria-expanded={!collapsed}
           onClick={() => onCollapsedChange(!collapsed)}
@@ -74,12 +86,10 @@ export function Sidebar({ collapsed, onCollapsedChange }: SidebarProps) {
         <div className="px-2 pb-2 pt-4">
           <span
             className="mx-auto flex size-10 items-center justify-center rounded-full bg-green-100 text-lg"
-            aria-label={`${organization?.tier ?? "Member"} workspace`}
-            title={`${organization?.name ?? "Olea Connects™"} · ${
-              organization?.tier ?? "member"
-            }`}
+            aria-label={copy.sidebar.workspaceLabel(tier)}
+            title={`${organization?.name ?? "Olea Connects™"} · ${tier}`}
           >
-            <span aria-hidden="true">🌿</span>
+            <Leaf className="size-5 text-green-700" aria-hidden="true" />
           </span>
         </div>
       ) : (
@@ -91,14 +101,14 @@ export function Sidebar({ collapsed, onCollapsedChange }: SidebarProps) {
             {organization?.name ?? "Olea Connects™"}
           </p>
           <span className="mt-1.5 inline-flex items-center gap-1 rounded-full bg-green-100 px-2.5 py-1 text-xs font-semibold capitalize text-green-800">
-            <span aria-hidden="true">🌿</span> {organization?.tier ?? "member"}
+            <Leaf className="size-3.5" aria-hidden="true" /> {tier}
           </span>
         </div>
       )}
 
       <nav
         id="app-sidebar-navigation"
-        aria-label="Primary navigation"
+        aria-label={copy.sidebar.primaryNavigation}
         className={cn(
           "flex-1 overflow-y-auto pb-3 pt-1",
           collapsed ? "px-2" : "px-3",

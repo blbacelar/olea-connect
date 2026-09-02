@@ -5,6 +5,18 @@ export const CHECKOUT_EMAIL_RATE_LIMIT_MESSAGE =
 export const CHECKOUT_ACCOUNT_STATE_MESSAGE =
   "Unable to continue with these account details. Sign in or reset your password, then try again.";
 
+export type CheckoutErrorCode =
+  | "account_state"
+  | "checkout_rate_limited"
+  | "checkout_unavailable"
+  | "signup_validation";
+
+type CheckoutErrorResponse = {
+  code: CheckoutErrorCode;
+  error: string;
+  status: number;
+};
+
 export class CheckoutAccountStateError extends Error {
   constructor(message = CHECKOUT_ACCOUNT_STATE_MESSAGE) {
     super(message);
@@ -19,17 +31,19 @@ export class CheckoutRateLimitError extends Error {
   }
 }
 
-export function getCheckoutErrorResponse(error: unknown) {
+export function getCheckoutErrorResponse(
+  error: unknown,
+): CheckoutErrorResponse | null {
   if (error instanceof SignupValidationError) {
-    return { error: error.message, status: 400 };
+    return { code: "signup_validation", error: error.message, status: 400 };
   }
 
   if (error instanceof CheckoutAccountStateError) {
-    return { error: error.message, status: 409 };
+    return { code: "account_state", error: error.message, status: 409 };
   }
 
   if (error instanceof CheckoutRateLimitError) {
-    return { error: error.message, status: 429 };
+    return { code: "checkout_rate_limited", error: error.message, status: 429 };
   }
 
   return null;

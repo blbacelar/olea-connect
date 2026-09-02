@@ -15,10 +15,10 @@ export function captureReferralCodeFromUrl() {
   const query = normalizeReferralCode(
     new URLSearchParams(window.location.search).get("ref"),
   );
-  const captured = existing || query;
+  const captured = query || existing;
   if (!captured) return "";
 
-  if (!existing) {
+  if (query || !existing) {
     window.localStorage.setItem(REFERRAL_STORAGE_KEY, captured);
     document.cookie = `${REFERRAL_COOKIE}=${encodeURIComponent(captured)}; Max-Age=2592000; Path=/; SameSite=Lax`;
   }

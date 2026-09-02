@@ -4,6 +4,9 @@ import { CheckCircle2 } from "lucide-react";
 import { ActivationRetryButton } from "@/components/auth/ActivationRetryButton";
 import { AuthCard } from "@/components/auth/AuthCard";
 import { Button } from "@/components/ui/button";
+import { getAuthFlowCopy } from "@/lib/i18n/auth-flow-copy";
+import { getPublicSiteCopy } from "@/lib/i18n/public-site-copy";
+import { getRequestLocale } from "@/lib/i18n/server";
 import { recoverCheckoutSessionProvisioning } from "@/lib/stripe/registration";
 import type { ProvisioningResult } from "@/lib/stripe/registration";
 import { createAdminClient } from "@/utils/supabase/admin";
@@ -21,6 +24,7 @@ function firstParam(value: string | string[] | undefined) {
 
 async function finalizeCheckoutSession(
   sessionId: string | undefined,
+  fallbackError: string,
 ): Promise<ProvisioningResult | null> {
   if (!sessionId) return null;
 
@@ -34,7 +38,7 @@ async function finalizeCheckoutSession(
     return {
       status: "failed",
       request_id: "",
-      error: "Workspace activation could not be finalized automatically.",
+      error: fallbackError,
     };
   }
 }
@@ -42,8 +46,13 @@ async function finalizeCheckoutSession(
 export default async function SignupSuccessPage({
   searchParams,
 }: SignupSuccessPageProps) {
+  const locale = getRequestLocale();
+  const authCopy = getAuthFlowCopy(locale);
+  const publicCopy = getPublicSiteCopy(locale);
+  const successCopy = authCopy.signup.success;
   const finalizedActivation = await finalizeCheckoutSession(
     firstParam(searchParams?.session_id),
+    successCopy.finalizeError,
   );
   const activationStatus =
     finalizedActivation?.status ??
@@ -55,19 +64,20 @@ export default async function SignupSuccessPage({
 
   return (
     <AuthCard
+      logo={publicCopy.logo}
       title={
         activationFailed
-          ? "Activation needs attention"
+          ? successCopy.titles.failed
           : activationCompleted
-            ? "Your membership is ready"
-            : "Payment received"
+            ? successCopy.titles.completed
+            : successCopy.titles.received
       }
       description={
         activationFailed
-          ? "Your payment is safe, but workspace setup needs to be retried."
+          ? successCopy.descriptions.failed
           : activationCompleted
-            ? "Your Olea Connects™ workspace is active."
-          : "Your Olea Connects™ membership is being activated."
+            ? successCopy.descriptions.completed
+            : successCopy.descriptions.received
       }
     >
       <div className="text-center">
@@ -76,12 +86,12 @@ export default async function SignupSuccessPage({
         </span>
         <p className="mt-5 text-sm leading-6 text-slate-500">
           {activationFailed
-            ? "Sign in if prompted, then retry. The activation record is preserved so no organization or subscription will be duplicated."
+            ? successCopy.messages.failed
             : activationCompleted
-              ? "Continue to your dashboard. If you are asked to sign in, use the same email address you used during checkout."
+              ? successCopy.messages.completed
               : activationPendingVerification
-                ? "We sent a confirmation email from Olea Connects™. Open that email and confirm your address before signing in."
-                : "We are finalizing your activation. If your dashboard is not ready yet, sign in and retry activation once."}
+                ? successCopy.messages.pendingVerification
+                : successCopy.messages.pending}
         </p>
         {activationFailed ? (
           <ActivationRetryButton />
@@ -94,7 +104,9 @@ export default async function SignupSuccessPage({
                   : "/login?payment=success&verify=email"
               }
             >
-              {activationCompleted ? "Go to dashboard" : "Continue to sign in"}
+              {activationCompleted
+                ? successCopy.goToDashboard
+                : successCopy.continueToSignIn}
             </Link>
           </Button>
         )}

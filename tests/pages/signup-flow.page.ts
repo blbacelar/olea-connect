@@ -29,12 +29,16 @@ export class SignupFlowPage {
   }
 
   async fillRequiredAccountDetails() {
-    await this.page.getByLabel("Organization name *").fill("QA Signup Organization");
+    await this.page
+      .getByLabel("Organization name *")
+      .fill("QA Signup Organization");
     await this.page.getByLabel("Your name *").fill("QA Signup Owner");
     await this.select("Organization type *", "Nonprofit");
     await this.select("Approximate board size *", "6-10 members");
     await this.select("Annual organizational budget *", "Under $250,000");
-    await this.page.getByLabel("Email address *").fill("qa-signup@oleaconnects.test");
+    await this.page
+      .getByLabel("Email address *")
+      .fill("qa-signup@oleaconnects.test");
     await this.page.getByLabel("Password *").fill("StrongPass123!");
   }
 
@@ -44,7 +48,7 @@ export class SignupFlowPage {
   }
 
   get continueToPayment() {
-    return this.page.getByRole("button", { name: "Continue to payment →" });
+    return this.page.getByRole("button", { name: "Continue to payment" });
   }
 
   async openPayment() {
@@ -57,7 +61,7 @@ export class SignupFlowPage {
 
   get secureCheckoutButton() {
     return this.page.getByRole("button", {
-      name: "Continue to secure checkout ->",
+      name: "Continue to secure checkout",
     });
   }
 

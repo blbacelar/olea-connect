@@ -16,6 +16,8 @@ import {
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 
+import { getAppShellCopy } from "@/lib/i18n/app-shell-copy";
+import type { Locale } from "@/lib/i18n/locales";
 import type { OrganizationRole, PlatformRole } from "@/lib/types";
 
 export type NavigationItem = {
@@ -75,6 +77,12 @@ export const navigationGroups: NavigationItem[][] = [
       icon: ShieldCheck,
       requiredPlatformRole: "super_admin",
     },
+    {
+      label: "Referrals",
+      href: "/settings/referrals",
+      icon: Handshake,
+      requiredPlatformRole: "super_admin",
+    },
   ],
   [
     { label: "Help", href: "/help", icon: CircleHelp },
@@ -85,19 +93,26 @@ export const navigationGroups: NavigationItem[][] = [
 export function getNavigationGroups(
   platformRoles: readonly PlatformRole[] = [],
   organizationRole?: OrganizationRole,
+  locale: Locale = "en-CA",
 ) {
+  const copy = getAppShellCopy(locale);
   const roleSet = new Set(platformRoles);
 
   return navigationGroups
     .map((group) =>
-      group.filter(
-        (item) =>
-          (!item.requiredPlatformRole ||
-            roleSet.has(item.requiredPlatformRole)) &&
-          (!item.requiredOrganizationRoles ||
-            (organizationRole !== undefined &&
-              item.requiredOrganizationRoles.includes(organizationRole))),
-      ),
+      group
+        .filter(
+          (item) =>
+            (!item.requiredPlatformRole ||
+              roleSet.has(item.requiredPlatformRole)) &&
+            (!item.requiredOrganizationRoles ||
+              (organizationRole !== undefined &&
+                item.requiredOrganizationRoles.includes(organizationRole))),
+        )
+        .map((item) => ({
+          ...item,
+          label: copy.navigation[item.href] ?? item.label,
+        })),
     )
     .filter((group) => group.length > 0);
 }

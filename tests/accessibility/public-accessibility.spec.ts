@@ -22,7 +22,7 @@ test.describe("@a11y @regression public accessibility", () => {
         ["serious", "critical"].includes(impact ?? ""),
       );
 
-      expect(blockingViolations).toEqual([]);
+      expect(blockingViolations).toHaveLength(0);
     });
   }
 });

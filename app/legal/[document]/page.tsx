@@ -2,7 +2,12 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 
-import { LEGAL_DOCUMENTS } from "@/lib/legal-documents";
+import {
+  getLegalDocumentCopy,
+  getLegalPageCopy,
+} from "@/lib/i18n/legal-documents-copy";
+import { getRequestLocale } from "@/lib/i18n/server";
+import { LEGAL_DOCUMENTS, type LegalDocumentKey } from "@/lib/legal-documents";
 
 export function generateStaticParams() {
   return Object.values(LEGAL_DOCUMENTS).map(({ href }) => ({
@@ -15,7 +20,8 @@ export function generateMetadata({
 }: {
   params: { document: string };
 }): Metadata {
-  const document = getDocument(params.document);
+  const locale = getRequestLocale();
+  const document = getDocument(params.document, locale);
   return document
     ? {
         title: document.title,
@@ -30,7 +36,9 @@ export default function LegalDocumentPage({
 }: {
   params: { document: string };
 }) {
-  const document = getDocument(params.document);
+  const locale = getRequestLocale();
+  const copy = getLegalPageCopy(locale);
+  const document = getDocument(params.document, locale);
   if (!document) notFound();
 
   return (
@@ -47,14 +55,14 @@ export default function LegalDocumentPage({
             className="text-sm font-semibold text-olea-green underline-offset-4 hover:underline"
             href="/signup"
           >
-            Return to signup
+            {copy.returnToSignup}
           </Link>
         </header>
 
         <article className="overflow-hidden rounded-[14px] border bg-white shadow-soft">
           <div className="border-b bg-gradient-to-br from-white to-olea-light/60 px-6 py-8 md:px-12 md:py-12">
             <p className="text-xs font-bold uppercase tracking-[0.16em] text-olea-green">
-              Olea Connects™ legal document
+              {copy.eyebrow}
             </p>
             <h1 className="mt-3 max-w-3xl text-3xl font-bold tracking-tight text-olea-dark md:text-5xl">
               {document.title}
@@ -63,7 +71,8 @@ export default function LegalDocumentPage({
               {document.summary}
             </p>
             <p className="mt-6 text-sm font-semibold text-slate-500">
-              Version {document.version} | Effective {document.version}
+              {copy.versionLabel} {document.version} | {copy.effectiveLabel}{" "}
+              {document.version}
             </p>
           </div>
 
@@ -83,7 +92,7 @@ export default function LegalDocumentPage({
           </div>
 
           <footer className="border-t bg-slate-50 px-6 py-5 text-sm text-slate-600 md:px-12">
-            Questions about this document? Email{" "}
+            {copy.questionsPrefix}{" "}
             <a
               className="font-semibold text-olea-green underline-offset-4 hover:underline"
               href="mailto:hello@olivesocialimpact.com"
@@ -98,10 +107,13 @@ export default function LegalDocumentPage({
   );
 }
 
-function getDocument(documentKey: string) {
+function getDocument(documentKey: string, locale = getRequestLocale()) {
   const href = `/legal/${documentKey}`;
-  return (
-    Object.values(LEGAL_DOCUMENTS).find((document) => document.href === href) ??
-    null
+  const entry = Object.entries(LEGAL_DOCUMENTS).find(
+    ([, document]) => document.href === href,
   );
+
+  return entry
+    ? getLegalDocumentCopy(entry[0] as LegalDocumentKey, locale)
+    : null;
 }

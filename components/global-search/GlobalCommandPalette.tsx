@@ -5,20 +5,14 @@ import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useMemo, useRef, useState } from "react";
 
 import {
+  type CommandItem,
   filterCommandItems,
   getCommandItems,
-  type RankedCommandItem,
 } from "@/components/global-search/search-items";
+import { useLocaleContext } from "@/components/i18n/LocaleProvider";
 import { Button } from "@/components/ui/button";
+import { getAppShellCopy } from "@/lib/i18n/app-shell-copy";
 import { cn } from "@/lib/utils";
-
-const typeLabel: Record<RankedCommandItem["type"], string> = {
-  page: "Page",
-  module: "Module",
-  template: "Template",
-  community: "Community",
-  resource: "Resource",
-};
 
 function isSearchShortcut(event: KeyboardEvent) {
   return (event.metaKey || event.ctrlKey) && event.key.toLowerCase() === "k";
@@ -27,11 +21,13 @@ function isSearchShortcut(event: KeyboardEvent) {
 export function GlobalCommandPalette() {
   const router = useRouter();
   const pathname = usePathname();
+  const { locale } = useLocaleContext();
+  const copy = getAppShellCopy(locale).globalSearch;
   const inputRef = useRef<HTMLInputElement>(null);
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState("");
   const [activeIndex, setActiveIndex] = useState(0);
-  const items = useMemo(() => getCommandItems(), []);
+  const items = useMemo(() => getCommandItems(locale), [locale]);
   const results = useMemo(() => filterCommandItems(query, items), [items, query]);
   const activeItem = results[activeIndex];
 
@@ -77,7 +73,7 @@ export function GlobalCommandPalette() {
     setOpen(true);
   }
 
-  function selectItem(item: RankedCommandItem | undefined) {
+  function selectItem(item: CommandItem | undefined) {
     if (!item) return;
 
     closePalette();
@@ -119,12 +115,12 @@ export function GlobalCommandPalette() {
     <>
       <button
         type="button"
-        aria-label="Open global search"
+        aria-label={copy.triggerLabel}
         onClick={openPalette}
         className="relative hidden h-10 w-full max-w-[360px] items-center rounded-lg border bg-slate-50 pl-9 pr-16 text-left text-sm text-slate-600 outline-none transition hover:border-olea-green/60 hover:bg-white focus:border-olea-green focus:ring-2 focus:ring-olea-green/20 md:flex xl:max-w-[420px]"
       >
         <Search className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-slate-400" />
-        <span>Search templates, posts, resources</span>
+        <span>{copy.triggerText}</span>
         <kbd className="absolute right-2.5 top-1/2 -translate-y-1/2 rounded border bg-white px-1.5 py-0.5 font-mono text-[11px] text-slate-600">
           ⌘K
         </kbd>
@@ -134,7 +130,7 @@ export function GlobalCommandPalette() {
         type="button"
         variant="outline"
         size="icon"
-        aria-label="Open global search"
+        aria-label={copy.triggerLabel}
         onClick={openPalette}
         className="rounded-lg md:hidden"
       >
@@ -146,12 +142,12 @@ export function GlobalCommandPalette() {
           className="fixed inset-0 z-[80] bg-slate-950/45 px-3 py-4 backdrop-blur-sm sm:py-[12vh]"
           role="dialog"
           aria-modal="true"
-          aria-label="Global search"
+          aria-label={copy.dialogLabel}
           onKeyDown={onPaletteKeyDown}
         >
           <button
             type="button"
-            aria-label="Close global search"
+            aria-label={copy.closeLabel}
             className="absolute inset-0 cursor-default"
             onClick={closePalette}
           />
@@ -162,13 +158,13 @@ export function GlobalCommandPalette() {
                 ref={inputRef}
                 value={query}
                 onChange={(event) => setQuery(event.target.value)}
-                aria-label="Search command palette"
+                aria-label={copy.inputLabel}
                 aria-controls="global-command-palette-results"
                 aria-activedescendant={activeItem ? `command-${activeItem.id}` : undefined}
                 role="combobox"
                 aria-expanded="true"
                 aria-autocomplete="list"
-                placeholder="Jump to a page, template, or resource..."
+                placeholder={copy.inputPlaceholder}
                 className="h-11 flex-1 bg-transparent text-[16px] text-slate-900 outline-none placeholder:text-slate-400"
               />
               <kbd className="hidden rounded border bg-slate-50 px-2 py-1 text-xs font-semibold text-slate-500 sm:inline">
@@ -179,7 +175,7 @@ export function GlobalCommandPalette() {
             <div
               id="global-command-palette-results"
               role="listbox"
-              aria-label="Global search results"
+              aria-label={copy.resultsLabel}
               className="max-h-[60vh] overflow-y-auto p-2"
             >
               {results.length > 0 ? (
@@ -208,7 +204,7 @@ export function GlobalCommandPalette() {
                           {item.title}
                         </span>
                         <span className="rounded-full border bg-white px-2 py-0.5 text-[11px] font-bold uppercase tracking-[0.14em] text-slate-500">
-                          {typeLabel[item.type]}
+                          {copy.typeLabels[item.type]}
                         </span>
                       </span>
                       <span className="mt-1 block truncate text-sm text-slate-500">
@@ -221,20 +217,19 @@ export function GlobalCommandPalette() {
               ) : (
                 <div className="px-5 py-12 text-center">
                   <p className="font-semibold text-slate-800">
-                    No matching results
+                    {copy.noResultsTitle}
                   </p>
                   <p className="mt-1 text-sm text-slate-500">
-                    Try searching for “templates”, “webinars”, “team”, or a board
-                    resource.
+                    {copy.noResultsBody}
                   </p>
                 </div>
               )}
             </div>
 
             <div className="flex flex-wrap items-center gap-3 border-t bg-slate-50 px-4 py-2.5 text-xs text-slate-500">
-              <span>↑↓ move</span>
-              <span>Enter open</span>
-              <span>Esc close</span>
+              <span>{copy.moveHint}</span>
+              <span>{copy.openHint}</span>
+              <span>{copy.closeHint}</span>
             </div>
           </div>
         </div>

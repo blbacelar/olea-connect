@@ -4,6 +4,17 @@ import { createTestIdentity } from "../factories/identity";
 import { SignupPage } from "../pages/signup.page";
 
 test.describe("@smoke @critical membership signup", () => {
+  test("redirects direct payment access back to account details", async ({
+    page,
+  }) => {
+    await page.goto("/signup/payment");
+
+    await expect(page).toHaveURL(/\/signup\/account/);
+    await expect(
+      page.getByRole("heading", { name: "Create your account" }),
+    ).toBeVisible();
+  });
+
   test("keeps payment disabled until valid account details are complete", async ({
     page,
   }, testInfo) => {
@@ -24,7 +35,7 @@ test.describe("@smoke @critical membership signup", () => {
     await signup.continueToPaymentStep();
     await signup.expectPaymentStep({
       billingPeriod: "/year",
-      planHeading: "🌱 Seedling",
+      planHeading: "Seedling",
       price: "$800",
     });
   });

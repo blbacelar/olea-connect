@@ -8,15 +8,19 @@ import {
   Users,
 } from "lucide-react";
 
-const navItems = [
-  { icon: LayoutDashboard, label: "Dashboard", active: true },
-  { icon: FileText, label: "Templates" },
-  { icon: CalendarDays, label: "Webinars" },
-  { icon: Gift, label: "Olea Gives" },
-  { icon: Users, label: "Community" },
-];
+import type { PublicSiteCopy } from "@/lib/i18n/public-site-copy";
 
-export function ProductPreview() {
+type ProductPreviewCopy = PublicSiteCopy["hero"]["preview"];
+
+const navIcons = [
+  LayoutDashboard,
+  FileText,
+  CalendarDays,
+  Gift,
+  Users,
+] as const;
+
+export function ProductPreview({ copy }: { copy: ProductPreviewCopy }) {
   return (
     <div className="relative mx-auto w-full max-w-[620px]">
       <div className="absolute -inset-6 -z-10 rounded-full bg-olea-light/80 blur-3xl" />
@@ -33,22 +37,23 @@ export function ProductPreview() {
               <span className="grid size-7 place-items-center rounded-lg bg-white/15 text-xs font-bold">
                 O
               </span>
-              <span className="text-xs font-bold sm:text-sm">Olea Connects™</span>
+              <span className="text-xs font-bold sm:text-sm">
+                Olea Connects™
+              </span>
             </div>
             <nav className="mt-4 space-y-1">
-              {navItems.map((item) => {
-                const Icon = item.icon;
+              {copy.nav.map((label, index) => {
+                const Icon = navIcons[index] ?? LayoutDashboard;
+                const active = index === 0;
                 return (
                   <div
-                    key={item.label}
+                    key={label}
                     className={`flex items-center gap-2 rounded-md px-2 py-2 text-[10px] sm:text-xs ${
-                      item.active
-                        ? "bg-white text-olea-dark"
-                        : "text-white/70"
+                      active ? "bg-white text-olea-dark" : "text-white/70"
                     }`}
                   >
                     <Icon className="size-3.5" />
-                    {item.label}
+                    {label}
                   </div>
                 );
               })}
@@ -57,7 +62,7 @@ export function ProductPreview() {
           <div className="min-w-0 bg-slate-50">
             <div className="flex h-12 items-center justify-between border-b bg-white px-4">
               <p className="text-xs font-semibold text-slate-600">
-                JP Centre for Youth
+                {copy.organization}
               </p>
               <div className="flex items-center gap-2">
                 <Bell className="size-3.5 text-slate-400" />
@@ -68,24 +73,24 @@ export function ProductPreview() {
             </div>
             <div className="p-4 sm:p-5">
               <p className="text-[10px] font-bold uppercase tracking-wider text-olea-green">
-                Good morning, Sarah
+                {copy.greeting}
               </p>
               <h2 className="mt-1 text-lg font-bold sm:text-xl">
-                Your nonprofit home base
+                {copy.title}
               </h2>
               <div className="mt-4 grid grid-cols-2 gap-2.5">
                 <div className="rounded-lg border bg-white p-3">
                   <FileText className="size-4 text-olea-green" />
                   <p className="mt-3 text-xl font-bold">8</p>
                   <p className="text-[10px] text-slate-600">
-                    Governance templates
+                    {copy.governanceTemplates}
                   </p>
                 </div>
                 <div className="rounded-lg border bg-white p-3">
                   <BookOpen className="size-4 text-olea-orange" />
                   <p className="mt-3 text-xl font-bold">4</p>
                   <p className="text-[10px] text-slate-600">
-                    Learning resources
+                    {copy.learningResources}
                   </p>
                 </div>
               </div>
@@ -93,13 +98,13 @@ export function ProductPreview() {
                 <div className="flex items-start justify-between gap-3">
                   <div>
                     <p className="text-[9px] font-bold uppercase tracking-widest text-emerald-200">
-                      Olea Gives Fund
+                      {copy.fundTitle}
                     </p>
                     <p className="mt-1 text-sm font-bold">
-                      Quarterly grant applications
+                      {copy.fundSubtitle}
                     </p>
                     <p className="mt-1 text-[10px] leading-4 text-white/90">
-                      Simple, one-page applications for $500 capacity grants.
+                      {copy.fundDescription}
                     </p>
                   </div>
                   <Gift className="size-7 text-emerald-200" />
@@ -107,9 +112,11 @@ export function ProductPreview() {
               </div>
               <div className="mt-3 flex items-center justify-between rounded-lg border bg-white p-3">
                 <div>
-                  <p className="text-[10px] font-semibold">Brand profile</p>
+                  <p className="text-[10px] font-semibold">
+                    {copy.brandProfile}
+                  </p>
                   <p className="text-[9px] text-slate-600">
-                    Applied to every download
+                    {copy.appliedToDownloads}
                   </p>
                 </div>
                 <div className="flex gap-1.5">
@@ -127,8 +134,8 @@ export function ProductPreview() {
             JP
           </span>
           <div>
-            <p className="text-xs font-bold">Board Self-Evaluation</p>
-            <p className="text-[10px] text-slate-600">Branded and ready</p>
+            <p className="text-xs font-bold">{copy.templateTitle}</p>
+            <p className="text-[10px] text-slate-600">{copy.templateStatus}</p>
           </div>
         </div>
       </div>
