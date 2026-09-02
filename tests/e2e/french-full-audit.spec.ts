@@ -70,15 +70,16 @@ const routesToAudit = [
 const auditedEnglishPatterns = [
   ["primary navigation", /\b(Dashboard|Templates|Board Calendar|Community|Grants|Sponsors|Consulting|Brand Profile|Team|Subscription|Help|What's new|Workspace settings)\b/g],
   ["module tabs", /\b(Board Dashboard|Board Packages|Directory|Audit Log|Settings|Milestones & Risks|Annual Summary|Overview|Campaigns|Access & audit|Q[1-4] Tracker)\b/g],
-  ["common actions", /\b(Browse templates|Open module|Open template|Set up now|Manage seats|Manage subscription|Send reset link|Create your account|Continue to payment|Submit|Save|Cancel|Archive|Edit|Delete|Close)\b/g],
+  ["common actions", /\b(Browse templates|Open module|Open template|Set up now|Manage seats|Manage subscription|Send reset link|Create your account|Continue to payment|Submit|Save|Cancel|Archive|Edit|Delete|Close|View all)\b/g],
   ["dashboard copy", /\b(Good morning|Good afternoon|Good evening|Your templates|available to you|new mentions|Recent in community|Here's what's happening|Applications upcoming|Review the current round)\b/g],
   ["subscription copy", /\b(Current Plan|Next billing date|Payment Method|Manage your membership and billing|Cancel membership|Update payment method)\b/g],
   ["form/help copy", /\b(Choose a workspace member|Required|Optional|No file chosen|Choose File|Search templates|Search posts|Search resources|No results found)\b/g],
   ["onboarding copy", /\b(Templates are coming soon|Ready to confirm|Choose more|No templates are available for selection yet|Your selections are locked|Want all templates)\b/g],
   ["webinar copy", /\b(Manage webinars|Create webinar|Back to webinars|Past recordings available to your tier|Upgrade required|No recordings available)\b/g],
-  ["template editor copy", /\b(Save now|Save this template before generating document exports|Board Calendar Operational Workflow)\b/g],
+  ["template editor copy", /\b(Save now|Save this template before generating document exports|Board Calendar Operational Workflow|Last updated)\b/g],
   ["board calendar actions", /\b(Edit entry|Delete entry|Add Entry|Choose track|Choose category|Choose status|Choose confirmation|Cancel edit|Delete this calendar entry)\b/g],
   ["grant and sponsor actions", /\b(Submit application|Payment status|Payment reference|Create award|No grant round is available|Applications open quarterly|Create new sponsor|Choose sponsor|Choose package|Choose sponsorship)\b/g],
+  ["live notification copy", /\b(Membership renewal coming up|AGM milestone coming up|YOUR TEMPLATES|NEW)\b/g],
 ] as const;
 
 function getMatchingSnippets(value: string, pattern: RegExp) {
