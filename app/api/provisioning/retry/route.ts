@@ -28,10 +28,10 @@ export async function POST() {
     );
 
     if (!result) {
-      return NextResponse.json(
-        { error: "No membership activation was found for this account." },
-        { status: 404 },
-      );
+      return NextResponse.json({
+        status: "not_found",
+        error: "No membership activation was found for this account.",
+      });
     }
 
     const nextPath =
