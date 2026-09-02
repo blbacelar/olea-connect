@@ -72,13 +72,14 @@ function makeSupabaseMock(
       filters.push(args);
       return builder;
     }),
+    in: vi.fn((...args: [string, ...unknown[]]) => {
+      filters.push(args);
+      return builder;
+    }),
     not: vi.fn(() => builder),
     lte: vi.fn(() => builder),
     order: vi.fn(() => builder),
-    limit: vi.fn(async () => ({
-      data: [{ id: "req_123", checkout_session_id: checkoutSessionId }],
-      error: null,
-    })),
+    limit: vi.fn(() => builder),
     update: vi.fn((values: Record<string, unknown>) => {
       updateCalls.push(values);
       return builder;
@@ -107,6 +108,12 @@ function makeSupabaseMock(
 
       return { data: { id: "req_123" }, error: null };
     }),
+    then: vi.fn((resolve, reject) =>
+      Promise.resolve({
+        data: [{ id: "req_123", checkout_session_id: checkoutSessionId }],
+        error: null,
+      }).then(resolve, reject),
+    ),
   };
 
   return {
@@ -178,7 +185,7 @@ describe("Stripe registration recovery", () => {
     const { attemptUserWorkspaceProvisioning } = await import(
       "@/lib/stripe/registration"
     );
-    const { client } = makeSupabaseMock([
+    const { builder, client } = makeSupabaseMock([
       { status: "pending_payment", request_id: "req_123" },
       {
         status: "completed",
@@ -194,6 +201,16 @@ describe("Stripe registration recovery", () => {
     );
 
     expect(result?.status).toBe("completed");
+    expect(client.from).toHaveBeenCalledWith("workspace_provisioning_requests");
+    expect(builder.in).toHaveBeenCalledWith("status", [
+      "pending_verification",
+      "pending_payment",
+      "failed",
+    ]);
+    expect(builder.order).toHaveBeenCalledWith("updated_at", {
+      ascending: false,
+    });
+    expect(builder.limit).toHaveBeenCalledWith(1);
     expect(stripeMocks.retrieveCheckoutSession).toHaveBeenCalledWith("cs_123", {
       expand: ["subscription"],
     });

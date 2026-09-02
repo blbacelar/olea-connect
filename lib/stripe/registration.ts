@@ -507,6 +507,9 @@ export async function attemptUserWorkspaceProvisioning(
     .from("workspace_provisioning_requests")
     .select("id, checkout_session_id")
     .eq("user_id", userId)
+    .in("status", ["pending_verification", "pending_payment", "failed"])
+    .order("updated_at", { ascending: false })
+    .limit(1)
     .maybeSingle();
 
   if (error) throw error;
