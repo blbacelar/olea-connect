@@ -74,7 +74,8 @@ export function TemplateCard({
         {locked ? (
           <>
             <span className="inline-flex items-center gap-1 rounded-full bg-slate-200/70 px-2.5 py-1 text-xs font-semibold capitalize text-slate-500">
-              🔒 {template.requiredTier} & above
+              <LockKeyhole className="size-3.5" aria-hidden="true" />
+              {template.requiredTier} & above
             </span>
             <Button
               asChild

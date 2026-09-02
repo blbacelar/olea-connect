@@ -28,7 +28,10 @@ const routesToAudit = [
   "/reset-password",
   "/verify-email",
   "/update-password",
+  "/signup/payment",
+  "/signup/success",
   "/referrals",
+  "/referrals/dashboard",
   "/sponsorship",
   "/legal/terms",
   "/legal/privacy",
@@ -43,14 +46,25 @@ const routesToAudit = [
   "/settings/referrals",
   "/community",
   "/grants",
+  "/help",
   "/sponsors",
   "/consulting",
   "/modules/board-calendar",
   "/modules/kpi-dashboard",
   "/modules/board-recruitment",
+  "/modules/ed-review/survey/unavailable",
   "/modules/ed-review",
   "/modules/grant-platform",
   "/modules/accreditation",
+  "/onboarding/brand-setup",
+  "/onboarding/template-selection",
+  "/templates/board-self-evaluation",
+  "/templates/grant-platform",
+  "/templates/board-calendar-operational-workflow",
+  "/webinars",
+  "/webinars/manage",
+  "/webinars/new",
+  "/whats-new",
 ] as const;
 
 const auditedEnglishPatterns = [
@@ -60,6 +74,11 @@ const auditedEnglishPatterns = [
   ["dashboard copy", /\b(Good morning|Good afternoon|Good evening|Your templates|available to you|new mentions|Recent in community|Here's what's happening|Applications upcoming|Review the current round)\b/g],
   ["subscription copy", /\b(Current Plan|Next billing date|Payment Method|Manage your membership and billing|Cancel membership|Update payment method)\b/g],
   ["form/help copy", /\b(Choose a workspace member|Required|Optional|No file chosen|Choose File|Search templates|Search posts|Search resources|No results found)\b/g],
+  ["onboarding copy", /\b(Templates are coming soon|Ready to confirm|Choose more|No templates are available for selection yet|Your selections are locked|Want all templates)\b/g],
+  ["webinar copy", /\b(Manage webinars|Create webinar|Back to webinars|Past recordings available to your tier|Upgrade required|No recordings available)\b/g],
+  ["template editor copy", /\b(Save now|Save this template before generating document exports|Board Calendar Operational Workflow)\b/g],
+  ["board calendar actions", /\b(Edit entry|Delete entry|Add Entry|Choose track|Choose category|Choose status|Choose confirmation|Cancel edit|Delete this calendar entry)\b/g],
+  ["grant and sponsor actions", /\b(Submit application|Payment status|Payment reference|Create award|No grant round is available|Applications open quarterly|Create new sponsor|Choose sponsor|Choose package|Choose sponsorship)\b/g],
 ] as const;
 
 function getMatchingSnippets(value: string, pattern: RegExp) {
@@ -182,6 +201,11 @@ test.describe("French Canadian full localization audit", () => {
       JSON.stringify(results, null, 2),
     );
 
+    const routesWithFindings = results.filter((result) => result.findings.length > 0);
+    expect(
+      routesWithFindings,
+      `Untranslated French UI audit findings:\n${JSON.stringify(routesWithFindings, null, 2)}`,
+    ).toHaveLength(0);
     await expect(page.locator("html")).toHaveAttribute("lang", "fr-CA");
   });
 });

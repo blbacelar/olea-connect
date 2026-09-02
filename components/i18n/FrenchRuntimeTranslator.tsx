@@ -17,6 +17,14 @@ const skippedElementSelector = [
   "[contenteditable='true']",
   "[data-no-translate]",
 ].join(",");
+const skippedAttributeElementSelector = [
+  "script",
+  "style",
+  "code",
+  "pre",
+  "kbd",
+  "[data-no-translate]",
+].join(",");
 
 function shouldSkipNode(node: Node) {
   const parent = node.parentElement;
@@ -32,7 +40,7 @@ function translateTextNode(node: Text) {
 }
 
 function translateElementAttributes(element: Element) {
-  if (element.closest(skippedElementSelector)) return;
+  if (element.closest(skippedAttributeElementSelector)) return;
 
   for (const attribute of translatableAttributes) {
     const value = element.getAttribute(attribute);
