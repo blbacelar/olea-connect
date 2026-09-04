@@ -552,7 +552,6 @@ function BrandMark({
     <View style={[cover ? styles.coverLogo : styles.headerLogo, { backgroundColor }]}>
       {logoDataUrl ? (
         // react-pdf's Image does not expose the web-only alt prop.
-        // eslint-disable-next-line jsx-a11y/alt-text
         <Image
           src={logoDataUrl}
           style={cover ? styles.coverLogoImage : styles.headerLogoImage}

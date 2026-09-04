@@ -1,6 +1,6 @@
 "use client";
 
-import { FileText, FolderOpen, Paperclip } from "lucide-react";
+import { FileText, FolderOpen, HelpCircle, Paperclip } from "lucide-react";
 import { useState } from "react";
 
 import { Badge } from "@/components/ui/badge";
@@ -14,7 +14,6 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { HelpCircle } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import {
   Select,

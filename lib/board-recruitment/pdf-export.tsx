@@ -492,7 +492,6 @@ function BrandMark({
       ]}
     >
       {logoDataUrl ? (
-        // eslint-disable-next-line jsx-a11y/alt-text
         <Image
           src={logoDataUrl}
           style={

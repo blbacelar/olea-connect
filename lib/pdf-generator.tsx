@@ -405,7 +405,6 @@ function BrandLogo({
       ]}
     >
       {logo ? (
-        // eslint-disable-next-line jsx-a11y/alt-text -- React-PDF Image has no alt prop.
         <Image src={logo.dataUrl} style={styles.logoImage} />
       ) : (
         <Text>{organization.brand.logoInitials}</Text>

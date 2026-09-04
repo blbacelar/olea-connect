@@ -20,7 +20,6 @@ export function BrandMark({
       style={{ backgroundColor: color }}
     >
       {logoUrl ? (
-        // eslint-disable-next-line @next/next/no-img-element
         <img
           src={logoUrl}
           alt=""
