@@ -1,15 +1,10 @@
 import { NextResponse } from "next/server";
-import type Stripe from "stripe";
 
 import { getBillingSummary } from "@/lib/billing/server";
 import {
-  PAID_SEAT_QUANTITY_MAX,
-  PAID_SEAT_QUANTITY_MIN,
-} from "@/lib/billing/seat-pricing";
-import {
   getBillingPortalConfigurationId,
-  getStripePriceId,
   getStripe,
+  getStripePriceId,
   getStripeSeatPriceId,
 } from "@/lib/stripe/server";
 import { logError } from "@/lib/observability/logger";
@@ -17,224 +12,212 @@ import { syncStripeSubscription } from "@/lib/stripe/subscriptions";
 import type { MembershipTier } from "@/lib/types";
 import { createAdminClient } from "@/utils/supabase/admin";
 
+import {
+  BillingActionError,
+  assertPauseTransition,
+  assertPlanUpgradeAllowed,
+  assertSameOrigin,
+  assertSeatAdjustmentAllowed,
+  assertSupportedPortalAction,
+  getBillingActionErrorResponse,
+  getBillingCycle,
+  getIdempotencyKey,
+  getPauseResumeTimestamp,
+  getPendingPlanSyncResponse,
+  getPortalFlowData,
+  getSeatCheckoutMetadata,
+  getSeatCheckoutUrls,
+  getSeatQuantity,
+  getTargetPlanId,
+  isMembershipItem,
+  isSubscriptionMutation,
+  parseActionBody,
+  type BillingAction,
+  type BillingActionBody,
+  type ManageableBillingFields,
+} from "./portal-route-support";
+
 export const runtime = "nodejs";
 
-type BillingAction =
-  | "manage"
-  | "payment_method"
-  | "subscription_update"
-  | "cancel"
-  | "pause"
-  | "resume"
-  | "add_seat"
-  | "change_plan";
+type BillingSummary = NonNullable<Awaited<ReturnType<typeof getBillingSummary>>>;
+type ManageableBilling = BillingSummary & ManageableBillingFields;
 
-type BillingActionBody = {
-  action?: BillingAction;
-  idempotencyKey?: string;
-  pauseDays?: number;
-  seatQuantity?: number;
-  targetPlanId?: MembershipTier;
-};
+export async function POST(request: Request) {
+  try {
+    assertSameOrigin(request);
+    const body = parseActionBody(await request.json().catch(() => ({})));
+    const action = body.action ?? "manage";
+    const billing = await getManageableBilling();
+    const returnUrl = `${new URL(request.url).origin}/subscription`;
 
-class BillingActionError extends Error {
-  constructor(
-    message: string,
-    readonly status: number,
-  ) {
-    super(message);
+    return await handleBillingAction({ action, billing, body, returnUrl });
+  } catch (error) {
+    return getBillingActionErrorResponse(error);
   }
 }
 
-const pauseableStatuses = new Set(["active", "trialing"]);
-const resumableStatuses = new Set(["paused"]);
-const seatAdjustableStatuses = new Set(["active", "trialing"]);
-const planOrder: Record<MembershipTier, number> = {
-  seedling: 0,
-  roots: 1,
-  canopy: 2,
-  harvest: 3,
-};
-const planIds = new Set<MembershipTier>([
-  "seedling",
-  "roots",
-  "canopy",
-  "harvest",
-]);
+async function getManageableBilling(): Promise<ManageableBilling> {
+  const billing = await getBillingSummary();
 
-function parseActionBody(value: unknown): BillingActionBody {
-  if (!value || typeof value !== "object") return {};
-  const body = value as BillingActionBody;
-  return {
-    action: body.action,
-    idempotencyKey: body.idempotencyKey,
-    pauseDays: body.pauseDays,
-    seatQuantity: body.seatQuantity,
-    targetPlanId: body.targetPlanId,
-  };
-}
-
-function getSeatQuantity(value: number | undefined) {
-  const quantity = value ?? 1;
-  if (
-    !Number.isInteger(quantity) ||
-    quantity < PAID_SEAT_QUANTITY_MIN ||
-    quantity > PAID_SEAT_QUANTITY_MAX
-  ) {
+  if (!billing) {
+    throw new BillingActionError("No organization subscription was found.", 404);
+  }
+  if (billing.role !== "owner" && billing.role !== "admin") {
     throw new BillingActionError(
-      `Paid seat quantity must be between ${PAID_SEAT_QUANTITY_MIN} and ${PAID_SEAT_QUANTITY_MAX}.`,
-      400,
+      "Only organization administrators can manage billing.",
+      403,
     );
   }
-
-  return quantity;
-}
-
-function getIdempotencyKey(value: string | undefined) {
-  const normalized = value?.trim();
-  if (!normalized) {
-    throw new BillingActionError("Billing update idempotency key is required.", 400);
-  }
-
-  if (!/^[A-Za-z0-9_-]{16,128}$/.test(normalized)) {
-    throw new BillingActionError("Billing update idempotency key is invalid.", 400);
-  }
-
-  return normalized;
-}
-
-function getTargetPlanId(value: MembershipTier | undefined) {
-  if (!value || !planIds.has(value)) {
-    throw new BillingActionError("Choose a valid membership plan.", 400);
-  }
-
-  return value;
-}
-
-function assertPlanUpgradeAllowed(
-  currentPlanId: string,
-  targetPlanId: MembershipTier,
-  cancelAtPeriodEnd: boolean,
-) {
-  if (cancelAtPeriodEnd) {
+  if (!billing.customerId) {
     throw new BillingActionError(
-      "Cancel the scheduled cancellation before upgrading your plan.",
+      "Billing is not ready for this membership yet.",
+      409,
+    );
+  }
+  if (!billing.subscriptionId) {
+    throw new BillingActionError(
+      "Subscription billing is not ready for this membership yet.",
       409,
     );
   }
 
-  if (!planIds.has(currentPlanId as MembershipTier)) {
-    throw new BillingActionError(
-      "Current membership plan cannot be upgraded automatically.",
-      409,
-    );
-  }
-
-  const currentPlan = currentPlanId as MembershipTier;
-  if (planOrder[targetPlanId] <= planOrder[currentPlan]) {
-    throw new BillingActionError(
-      "Plan changes here only support upgrades. Contact support for downgrades.",
-      409,
-    );
-  }
+  return billing as ManageableBilling;
 }
 
-function getBillingCycle(interval: "month" | "year"): "quarterly" | "annual" {
-  return interval === "year" ? "annual" : "quarterly";
+async function handleBillingAction({
+  action,
+  billing,
+  body,
+  returnUrl,
+}: {
+  action: BillingAction;
+  billing: ManageableBilling;
+  body: BillingActionBody;
+  returnUrl: string;
+}) {
+  if (action === "add_seat") {
+    return handleAddSeatAction({ billing, body, returnUrl });
+  }
+  if (isSubscriptionMutation(action)) {
+    return handleSubscriptionMutation({ action, billing, body });
+  }
+
+  assertSupportedPortalAction(action);
+  return createPortalSessionResponse({ action, billing, returnUrl });
 }
 
-function isMembershipItem(item: Stripe.SubscriptionItem) {
-  const metadata = item.price.metadata ?? {};
+async function handleAddSeatAction({
+  billing,
+  body,
+  returnUrl,
+}: {
+  billing: ManageableBilling;
+  body: BillingActionBody;
+  returnUrl: string;
+}) {
+  assertSeatAdjustmentAllowed(billing.status);
+  const session = await createPaidSeatCheckout({
+    customerId: billing.customerId,
+    idempotencyKey: getIdempotencyKey(body.idempotencyKey),
+    localSubscriptionId: billing.localSubscriptionId,
+    organizationId: billing.organizationId,
+    quantity: getSeatQuantity(body.seatQuantity),
+    returnUrl,
+  });
+
+  if (!session.url) {
+    throw new Error("Seat payment did not return a checkout URL.");
+  }
+
+  return NextResponse.json({ ok: true, url: session.url });
+}
+
+async function handleSubscriptionMutation({
+  action,
+  billing,
+  body,
+}: {
+  action: "pause" | "resume" | "change_plan";
+  billing: ManageableBilling;
+  body: BillingActionBody;
+}) {
+  validateSubscriptionMutation({ action, billing, body });
+  const subscription = await runSubscriptionMutation({ action, billing, body });
+  const syncResponse = await syncBillingMutation({ action, subscription });
 
   return (
-    metadata.item_type === "membership" ||
-    Boolean(metadata.plan_id || metadata.olea_plan || metadata.tier)
+    syncResponse ??
+    NextResponse.json({
+      ok: true,
+      ...(action === "change_plan" ? { planId: body.targetPlanId } : {}),
+    })
   );
 }
 
-function getPortalFlowData(
-  action: BillingAction,
-  subscriptionId: string,
-  returnUrl: string,
-): Stripe.BillingPortal.SessionCreateParams.FlowData | undefined {
-  const after_completion = {
-    type: "redirect" as const,
-    redirect: { return_url: returnUrl },
-  };
-
-  if (action === "payment_method") {
-    return {
-      after_completion,
-      type: "payment_method_update",
-    };
+function validateSubscriptionMutation({
+  action,
+  billing,
+  body,
+}: {
+  action: "pause" | "resume" | "change_plan";
+  billing: ManageableBilling;
+  body: BillingActionBody;
+}) {
+  if (action !== "change_plan") {
+    assertPauseTransition(action, billing.status);
+    return;
   }
 
-  if (action === "cancel") {
-    return {
-      after_completion,
-      subscription_cancel: { subscription: subscriptionId },
-      type: "subscription_cancel",
-    };
-  }
-
-  return undefined;
+  assertSeatAdjustmentAllowed(billing.status);
+  const targetPlanId = getTargetPlanId(body.targetPlanId);
+  assertPlanUpgradeAllowed(
+    billing.planId,
+    targetPlanId,
+    billing.cancelAtPeriodEnd,
+  );
 }
 
-function getPauseResumeTimestamp(days: number) {
-  if (!Number.isInteger(days) || days < 1 || days > 60) {
-    throw new BillingActionError(
-      "Membership pauses must be between 1 and 60 days.",
-      400,
+async function runSubscriptionMutation({
+  action,
+  billing,
+  body,
+}: {
+  action: "pause" | "resume" | "change_plan";
+  billing: ManageableBilling;
+  body: BillingActionBody;
+}) {
+  if (action === "pause") return pauseSubscription(billing.subscriptionId, body);
+  if (action === "resume") return resumeSubscription(billing.subscriptionId);
+
+  return changePlanSubscription({
+    billingInterval: billing.billingInterval,
+    idempotencyKey: getIdempotencyKey(body.idempotencyKey),
+    subscriptionId: billing.subscriptionId,
+    targetPlanId: getTargetPlanId(body.targetPlanId),
+  });
+}
+
+async function syncBillingMutation({
+  action,
+  subscription,
+}: {
+  action: BillingAction;
+  subscription: { id: string };
+}) {
+  try {
+    await syncStripeSubscription(
+      createAdminClient(),
+      await retrieveSubscriptionForSync(subscription.id),
     );
+  } catch (syncError) {
+    logError("Stripe billing action succeeded but local sync failed", syncError, {
+      action,
+      subscriptionId: subscription.id,
+    });
+    if (action === "change_plan") return getPendingPlanSyncResponse();
   }
 
-  return Math.floor((Date.now() + days * 24 * 60 * 60 * 1000) / 1000);
-}
-
-function assertSameOrigin(request: Request) {
-  const expectedOrigin = new URL(request.url).origin;
-  const origin = request.headers.get("origin");
-  const referer = request.headers.get("referer");
-
-  if (!origin && !referer) {
-    throw new BillingActionError("Billing requests must come from this app.", 403);
-  }
-
-  if (origin && origin !== expectedOrigin) {
-    throw new BillingActionError("Billing requests must come from this app.", 403);
-  }
-
-  if (!origin && referer) {
-    try {
-      if (new URL(referer).origin !== expectedOrigin) {
-        throw new BillingActionError("Billing requests must come from this app.", 403);
-      }
-    } catch {
-      throw new BillingActionError("Billing requests must come from this app.", 403);
-    }
-  }
-}
-
-function assertPauseTransition(action: "pause" | "resume", status: string) {
-  if (action === "pause" && !pauseableStatuses.has(status)) {
-    throw new BillingActionError(
-      "Only active or trialing memberships can be paused.",
-      409,
-    );
-  }
-
-  if (action === "resume" && !resumableStatuses.has(status)) {
-    throw new BillingActionError("Only paused memberships can be resumed.", 409);
-  }
-}
-
-function assertSeatAdjustmentAllowed(status: string) {
-  if (!seatAdjustableStatuses.has(status)) {
-    throw new BillingActionError(
-      "Only active or trialing memberships can add seats.",
-      409,
-    );
-  }
+  return null;
 }
 
 async function createPaidSeatCheckout({
@@ -253,12 +236,12 @@ async function createPaidSeatCheckout({
   customerId: string;
 }) {
   const stripe = getStripe();
-  const metadata = {
-    item_type: "seat_purchase",
-    local_subscription_id: localSubscriptionId,
-    organization_id: organizationId,
-    seat_quantity: String(quantity),
-  };
+  const metadata = getSeatCheckoutMetadata({
+    localSubscriptionId,
+    organizationId,
+    quantity,
+  });
+  const urls = getSeatCheckoutUrls({ quantity, returnUrl });
 
   return stripe.checkout.sessions.create(
     {
@@ -269,8 +252,7 @@ async function createPaidSeatCheckout({
       billing_address_collection: "required",
       metadata,
       payment_intent_data: { metadata },
-      success_url: `${returnUrl}?seat=payment_submitted&quantity=${quantity}&session_id={CHECKOUT_SESSION_ID}`,
-      cancel_url: `${returnUrl}?seat=payment_canceled`,
+      ...urls,
     },
     { idempotencyKey },
   );
@@ -321,154 +303,42 @@ async function changePlanSubscription({
   );
 }
 
+function pauseSubscription(subscriptionId: string, body: BillingActionBody) {
+  return getStripe().subscriptions.update(subscriptionId, {
+    pause_collection: {
+      behavior: "void",
+      resumes_at: getPauseResumeTimestamp(body.pauseDays ?? 30),
+    },
+  });
+}
+
+function resumeSubscription(subscriptionId: string) {
+  return getStripe().subscriptions.update(subscriptionId, {
+    pause_collection: "",
+  });
+}
+
 function retrieveSubscriptionForSync(subscriptionId: string) {
   return getStripe().subscriptions.retrieve(subscriptionId, {
     expand: ["items.data.price"],
   });
 }
 
-export async function POST(request: Request) {
-  try {
-    assertSameOrigin(request);
-    const body = parseActionBody(await request.json().catch(() => ({})));
-    const action = body.action ?? "manage";
-    const billing = await getBillingSummary();
+async function createPortalSessionResponse({
+  action,
+  billing,
+  returnUrl,
+}: {
+  action: BillingAction;
+  billing: ManageableBilling;
+  returnUrl: string;
+}) {
+  const session = await getStripe().billingPortal.sessions.create({
+    configuration: await getBillingPortalConfigurationId(),
+    customer: billing.customerId,
+    flow_data: getPortalFlowData(action, billing.subscriptionId, returnUrl),
+    return_url: returnUrl,
+  });
 
-    if (!billing) {
-      return NextResponse.json(
-        { error: "No organization subscription was found." },
-        { status: 404 },
-      );
-    }
-    if (billing.role !== "owner" && billing.role !== "admin") {
-      return NextResponse.json(
-        { error: "Only organization administrators can manage billing." },
-        { status: 403 },
-      );
-    }
-    if (!billing.customerId) {
-      return NextResponse.json(
-        { error: "Billing is not ready for this membership yet." },
-        { status: 409 },
-      );
-    }
-    if (!billing.subscriptionId) {
-      return NextResponse.json(
-        { error: "Subscription billing is not ready for this membership yet." },
-        { status: 409 },
-      );
-    }
-
-    const origin = new URL(request.url).origin;
-    const returnUrl = `${origin}/subscription`;
-
-    if (action === "add_seat") {
-      assertSeatAdjustmentAllowed(billing.status);
-      const session = await createPaidSeatCheckout({
-        customerId: billing.customerId,
-        idempotencyKey: getIdempotencyKey(body.idempotencyKey),
-        localSubscriptionId: billing.localSubscriptionId,
-        organizationId: billing.organizationId,
-        quantity: getSeatQuantity(body.seatQuantity),
-        returnUrl,
-      });
-
-      if (!session.url) {
-        throw new Error("Seat payment did not return a checkout URL.");
-      }
-
-      return NextResponse.json({ ok: true, url: session.url });
-    }
-
-    if (action === "pause" || action === "resume" || action === "change_plan") {
-      if (action === "change_plan") {
-        assertSeatAdjustmentAllowed(billing.status);
-        const targetPlanId = getTargetPlanId(body.targetPlanId);
-        assertPlanUpgradeAllowed(
-          billing.planId,
-          targetPlanId,
-          billing.cancelAtPeriodEnd,
-        );
-      } else {
-        assertPauseTransition(action, billing.status);
-      }
-      const subscription =
-        action === "pause"
-          ? await getStripe().subscriptions.update(billing.subscriptionId, {
-              pause_collection: {
-                behavior: "void",
-                resumes_at: getPauseResumeTimestamp(body.pauseDays ?? 30),
-              },
-            })
-          : action === "resume"
-            ? await getStripe().subscriptions.update(billing.subscriptionId, {
-                pause_collection: "",
-              })
-            : await changePlanSubscription({
-                billingInterval: billing.billingInterval,
-                idempotencyKey: getIdempotencyKey(body.idempotencyKey),
-                subscriptionId: billing.subscriptionId,
-                targetPlanId: getTargetPlanId(body.targetPlanId),
-              });
-
-      try {
-        await syncStripeSubscription(
-          createAdminClient(),
-          await retrieveSubscriptionForSync(subscription.id),
-        );
-      } catch (syncError) {
-        logError("Stripe billing action succeeded but local sync failed", syncError, {
-          action,
-          subscriptionId: subscription.id,
-        });
-        if (action === "change_plan") {
-          return NextResponse.json(
-            {
-              ok: false,
-              pendingSync: true,
-              message: "The plan upgrade was confirmed, but local access is still syncing.",
-            },
-            { status: 202 },
-          );
-        }
-      }
-      return NextResponse.json({
-        ok: true,
-        ...(action === "change_plan" ? { planId: body.targetPlanId } : {}),
-      });
-    }
-
-    if (
-      action !== "manage" &&
-      action !== "payment_method" &&
-      action !== "subscription_update" &&
-      action !== "cancel"
-    ) {
-      return NextResponse.json(
-        { error: "Unsupported billing action." },
-        { status: 400 },
-      );
-    }
-
-    const session = await getStripe().billingPortal.sessions.create({
-      configuration: await getBillingPortalConfigurationId(),
-      customer: billing.customerId,
-      flow_data: getPortalFlowData(action, billing.subscriptionId, returnUrl),
-      return_url: returnUrl,
-    });
-
-    return NextResponse.json({ url: session.url });
-  } catch (error) {
-    logError("Unable to create Stripe billing portal session", error);
-    const status = error instanceof BillingActionError ? error.status : 500;
-    return NextResponse.json(
-      {
-        error:
-          error instanceof BillingActionError
-            ? error.message
-            : "Unable to open billing management.",
-      },
-      { status },
-    );
-  }
+  return NextResponse.json({ url: session.url });
 }
