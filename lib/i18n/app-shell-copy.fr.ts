@@ -1,0 +1,190 @@
+import type { AppShellCopy } from "./app-shell-copy";
+
+export const appShellCopyFr: AppShellCopy = {
+  breadcrumbs: {
+    dashboard: "Tableau de bord",
+    templates: "Modèles",
+    "board-self-evaluation": "Autoévaluation du conseil",
+    settings: "Paramètres",
+    brand: "Profil de marque",
+    community: "Communauté",
+    grants: "Fonds Olea Gives",
+    webinars: "Webinaires",
+    team: "Équipe",
+    subscription: "Abonnement",
+    help: "Aide",
+    "whats-new": "Nouveautés",
+    modules: "Modules",
+    "board-calendar": "Calendrier du conseil",
+    "kpi-dashboard": "Tableau de bord KPI",
+    "board-recruitment": "Recrutement du conseil",
+    accreditation: "Agrément",
+    "grant-platform": "Plateforme de subventions",
+    "ed-review": "Évaluation DG/PDG",
+    sponsors: "Commanditaires",
+    consulting: "Consultation",
+    integrations: "Opérations",
+    referrals: "Références",
+  },
+  navigation: {
+    "/dashboard": "Tableau de bord",
+    "/templates": "Modèles",
+    "/modules/board-calendar": "Calendrier du conseil",
+    "/modules/kpi-dashboard": "Tableau de bord KPI",
+    "/modules/board-recruitment": "Recrutement du conseil",
+    "/modules/accreditation": "Agrément",
+    "/modules/grant-platform": "Plateforme de subventions",
+    "/modules/ed-review": "Évaluation DG/PDG",
+    "/community": "Communauté",
+    "/grants": "Subventions",
+    "/sponsors": "Commanditaires",
+    "/webinars": "Webinaires",
+    "/consulting": "Consultation",
+    "/settings/brand": "Profil de marque",
+    "/team": "Équipe",
+    "/subscription": "Abonnement",
+    "/settings/integrations": "Opérations",
+    "/settings/referrals": "Références",
+    "/help": "Aide",
+    "/whats-new": "Nouveautés",
+  },
+  header: {
+    closeNavigation: "Fermer la navigation",
+    help: "Aide",
+    markAllRead: "Tout marquer comme lu",
+    markAllNotificationError:
+      "Impossible de marquer les notifications comme lues. Veuillez actualiser la page et réessayer.",
+    marking: "Marquage...",
+    member: "Membre",
+    navigation: "Navigation",
+    noUnreadNotifications: "Aucune notification non lue",
+    notificationError:
+      "Impossible de marquer cette notification comme lue. Veuillez réessayer.",
+    notifications: "Notifications",
+    notificationsWithCount: (count) => `Notifications (${count} non lues)`,
+    openNavigation: "Ouvrir la navigation",
+    signOut: "Se déconnecter",
+    brandSettings: "Paramètres de marque",
+    team: "Équipe",
+    allCaughtUp: "Vous êtes à jour.",
+    justNow: "À l'instant",
+  },
+  globalSearch: {
+    triggerLabel: "Ouvrir la recherche globale",
+    triggerText: "Rechercher modèles, publications, ressources",
+    dialogLabel: "Recherche globale",
+    closeLabel: "Fermer la recherche globale",
+    inputLabel: "Rechercher dans la palette de commandes",
+    inputPlaceholder: "Aller à une page, un modèle ou une ressource...",
+    resultsLabel: "Résultats de recherche globale",
+    noResultsTitle: "Aucun résultat correspondant",
+    noResultsBody:
+      'Essayez "modèles", "webinaires", "équipe" ou une ressource du conseil.',
+    moveHint: "↑↓ déplacer",
+    openHint: "Entrée ouvrir",
+    closeHint: "Échap fermer",
+    typeLabels: {
+      page: "Page",
+      module: "Module",
+      template: "Modèle",
+      community: "Communauté",
+      resource: "Ressource",
+    },
+  },
+  searchItems: {
+    dashboard: {
+      title: "Tableau de bord",
+      description: "Ouvrir le point central de votre organisme.",
+      keywords: ["accueil", "aperçu", "organisme"],
+    },
+    templates: {
+      title: "Modèles",
+      description:
+        "Trouver des modèles de gouvernance aux couleurs de votre marque et des ressources prêtes pour le conseil.",
+      keywords: ["documents", "ressources", "bibliothèque", "pdf"],
+    },
+    boardCalendarModule: {
+      title: "Module Calendrier du conseil",
+      description:
+        "Planifier réunions, flux de travail, dossiers et opérations du conseil.",
+      keywords: ["calendrier", "flux de travail", "réunions", "dossier du conseil"],
+    },
+    edReviewModule: {
+      title: "Évaluation annuelle DG/PDG",
+      description:
+        "Lancer des sondages anonymes auprès du personnel et des partenaires avec rapports pour la présidence du conseil.",
+      keywords: ["dg", "pdg", "sondage", "anonyme", "présidence", "commentaires"],
+    },
+    community: {
+      title: "Communauté",
+      description: "Participer aux discussions et espaces des membres.",
+      keywords: ["publications", "espaces", "discussion", "réseau"],
+    },
+    grants: {
+      title: "Subventions",
+      description: "Explorer les occasions et demandes du fonds Olea Gives.",
+      keywords: ["financement", "olea gives", "demandes"],
+    },
+    sponsors: {
+      title: "Commanditaires",
+      description:
+        "Consulter les commanditaires approuvés et les rapports de contribution Olea Gives.",
+      keywords: ["partenaires", "olea gives", "contributions", "financement"],
+    },
+    webinars: {
+      title: "Webinaires",
+      description: "Voir les séances à venir, les liens Zoom et les enregistrements.",
+      keywords: ["événements", "enregistrements", "zoom", "séances"],
+    },
+    consulting: {
+      title: "Consultation",
+      description:
+        "Soumettre des demandes Harvest, suivre les heures et consulter l'activité de soutien.",
+      keywords: ["harvest", "soutien", "consultant", "heures", "demandes"],
+    },
+    brandProfile: {
+      title: "Profil de marque",
+      description: "Gérer votre logo, vos couleurs et l'identité des rapports.",
+      keywords: ["paramètres", "logo", "couleurs", "rapports"],
+    },
+    team: {
+      title: "Équipe",
+      description: "Inviter des membres et gérer les sièges de l'espace de travail.",
+      keywords: ["membres", "sièges", "invitations", "utilisateurs"],
+    },
+    subscription: {
+      title: "Abonnement",
+      description: "Gérer votre forfait, vos sièges et l'accès à la facturation.",
+      keywords: ["forfait", "facturation", "adhésion", "mise à niveau"],
+    },
+    help: {
+      title: "Aide",
+      description: "Obtenir des guides, des réponses et du soutien.",
+      keywords: ["soutien", "faq", "contact", "guide"],
+    },
+    whatsNew: {
+      title: "Nouveautés",
+      description: "Consulter les mises à jour produit et les nouvelles ressources.",
+      keywords: ["mises à jour", "notes de version", "nouveau"],
+    },
+    boardSelfEvaluation: {
+      title: "Autoévaluation du conseil",
+      description:
+        "Modèle de sondage annuel pour la réflexion du conseil et la santé de la gouvernance.",
+      keywords: ["sondage", "annuel", "gouvernance", "évaluation"],
+    },
+    boardCalendarWorkflow: {
+      title: "Calendrier du conseil et flux opérationnel",
+      description:
+        "Espace modèle pour les réunions, les tâches de préparation et les dossiers du conseil.",
+      keywords: ["calendrier", "flux de travail", "réunions", "dossier du conseil", "portail"],
+    },
+  },
+  sidebar: {
+    ariaLabel: "Barre latérale de l'application",
+    collapse: "Réduire la barre latérale",
+    expand: "Développer la barre latérale",
+    primaryNavigation: "Navigation principale",
+    workspaceLabel: (tier) => `Espace ${tier}`,
+  },
+};
