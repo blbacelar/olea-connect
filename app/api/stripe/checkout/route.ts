@@ -23,6 +23,7 @@ import {
   createAdminClient,
   createPublicServerClient,
 } from "@/utils/supabase/admin";
+import { buildCheckoutMetadata } from "./checkout-route-metadata";
 
 export const runtime = "nodejs";
 
@@ -97,23 +98,58 @@ async function resolveSignupUser(
   const existingUserId = await findUserIdByEmail(email, setStage);
 
   if (existingUserId) {
-    setStage("sign_in_signup_user");
-    const { data: signIn, error: signInError } =
-      await signupClient.auth.signInWithPassword({
-        email,
-        password: body.password,
-      });
-
-    if (signIn.user || signInError?.code === "email_not_confirmed") {
-      return existingUserId;
-    }
-    if (signInError?.code === "invalid_credentials" || !signInError) {
-      throw new CheckoutAccountStateError();
-    }
-
-    throw signInError;
+    return signInExistingSignupUser({
+      email,
+      existingUserId,
+      password: body.password,
+      setStage,
+      signupClient,
+    });
   }
 
+  return createSignupUser({ body, email, origin, setStage, signupClient });
+}
+
+async function signInExistingSignupUser({
+  email,
+  existingUserId,
+  password,
+  setStage,
+  signupClient,
+}: {
+  email: string;
+  existingUserId: string;
+  password: string;
+  setStage: (stage: CheckoutStage) => void;
+  signupClient: ReturnType<typeof createPublicServerClient>;
+}) {
+  setStage("sign_in_signup_user");
+  const { data: signIn, error: signInError } =
+    await signupClient.auth.signInWithPassword({ email, password });
+
+  if (signIn.user || signInError?.code === "email_not_confirmed") {
+    return existingUserId;
+  }
+  if (signInError?.code === "invalid_credentials" || !signInError) {
+    throw new CheckoutAccountStateError();
+  }
+
+  throw signInError;
+}
+
+async function createSignupUser({
+  body,
+  email,
+  origin,
+  setStage,
+  signupClient,
+}: {
+  body: SignupCheckoutInput;
+  email: string;
+  origin: string;
+  setStage: (stage: CheckoutStage) => void;
+  signupClient: ReturnType<typeof createPublicServerClient>;
+}) {
   setStage("create_signup_user");
   const { data: signup, error: signupError } = await signupClient.auth.signUp({
     email,
@@ -161,69 +197,15 @@ export async function POST(request: Request) {
       billingCycle: body.billingCycle,
     };
 
-    const origin = new URL(request.url).origin;
-    const userId = await resolveSignupUser(body, origin, (nextStage) => {
-      stage = nextStage;
+    const sessionUrl = await createSignupCheckoutSession({
+      body,
+      request,
+      setStage: (nextStage) => {
+        stage = nextStage;
+      },
     });
 
-    stage = "initialize_registration_admin";
-    const supabase = createAdminClient();
-    stage = "prepare_registration";
-    const prepared = await prepareCheckoutRegistration(supabase, {
-      ...body,
-      userId,
-    });
-    stage = "store_consents";
-    await storeSignupConsents(
-      supabase,
-      { ...body, userId, referralCode: prepared.referralCode ?? "" },
-      prepared.requestId,
-    );
-    stage = "initialize_stripe";
-    const stripe = getStripe();
-    stage = "resolve_price";
-    const priceId = getStripePriceId(body.tier, body.billingCycle);
-    const metadata = {
-      provisioning_request_id: prepared.requestId,
-      user_id: userId,
-      plan_id: body.tier,
-      billing_cycle: body.billingCycle,
-      organization_kind: body.organizationKind,
-      annual_budget_range: body.annualBudgetRange,
-      board_size_range: body.boardSizeRange,
-      province: body.province,
-      referral_code: prepared.referralCode,
-      founding_member_eligible: String(prepared.foundingMemberEligible),
-      founding_member_year: prepared.foundingMemberEligible ? "1" : "",
-      consent_version: "2026-07-24",
-    };
-
-    stage = "create_checkout_session";
-    const session = await stripe.checkout.sessions.create({
-      mode: "subscription",
-      customer_email: body.email.trim().toLowerCase(),
-      client_reference_id: userId,
-      line_items: [{ price: priceId, quantity: 1 }],
-      billing_address_collection: "required",
-      allow_promotion_codes: !prepared.foundingDiscountIdentifier,
-      ...(prepared.foundingDiscountIdentifier
-        ? { discounts: [{ coupon: prepared.foundingDiscountIdentifier }] }
-        : {}),
-      metadata,
-      subscription_data: { metadata },
-      success_url: `${origin}/signup/success?session_id={CHECKOUT_SESSION_ID}`,
-      cancel_url: `${origin}/signup/payment?payment=canceled`,
-    });
-
-    stage = "validate_checkout_session";
-    if (!session.url) {
-      throw new Error("Secure checkout did not return a checkout URL.");
-    }
-
-    stage = "attach_checkout_session";
-    await attachCheckoutSession(supabase, prepared.requestId, session.id);
-
-    return NextResponse.json({ url: session.url });
+    return NextResponse.json({ url: sessionUrl });
   } catch (error) {
     const safeResponse = getCheckoutErrorResponse(error);
     if (safeResponse) {
@@ -249,4 +231,103 @@ export async function POST(request: Request) {
       { status: 500 },
     );
   }
+}
+
+async function createSignupCheckoutSession({
+  body,
+  request,
+  setStage,
+}: {
+  body: SignupCheckoutInput;
+  request: Request;
+  setStage: (stage: CheckoutStage) => void;
+}) {
+  const origin = new URL(request.url).origin;
+  const userId = await resolveSignupUser(body, origin, setStage);
+  const { prepared, supabase } = await prepareSignupRegistration({
+    body,
+    setStage,
+    userId,
+  });
+  const session = await createStripeCheckoutSession({
+    body,
+    origin,
+    prepared,
+    setStage,
+    userId,
+  });
+
+  setStage("validate_checkout_session");
+  if (!session.url) {
+    throw new Error("Secure checkout did not return a checkout URL.");
+  }
+
+  setStage("attach_checkout_session");
+  await attachCheckoutSession(supabase, prepared.requestId, session.id);
+
+  return session.url;
+}
+
+async function prepareSignupRegistration({
+  body,
+  setStage,
+  userId,
+}: {
+  body: SignupCheckoutInput;
+  setStage: (stage: CheckoutStage) => void;
+  userId: string;
+}) {
+  setStage("initialize_registration_admin");
+  const supabase = createAdminClient();
+  setStage("prepare_registration");
+  const prepared = await prepareCheckoutRegistration(supabase, {
+    ...body,
+    userId,
+  });
+
+  setStage("store_consents");
+  await storeSignupConsents(
+    supabase,
+    { ...body, userId, referralCode: prepared.referralCode ?? "" },
+    prepared.requestId,
+  );
+
+  return { prepared, supabase };
+}
+
+async function createStripeCheckoutSession({
+  body,
+  origin,
+  prepared,
+  setStage,
+  userId,
+}: {
+  body: SignupCheckoutInput;
+  origin: string;
+  prepared: Awaited<ReturnType<typeof prepareCheckoutRegistration>>;
+  setStage: (stage: CheckoutStage) => void;
+  userId: string;
+}) {
+  setStage("initialize_stripe");
+  const stripe = getStripe();
+  setStage("resolve_price");
+  const priceId = getStripePriceId(body.tier, body.billingCycle);
+  const metadata = buildCheckoutMetadata({ body, prepared, userId });
+
+  setStage("create_checkout_session");
+  return stripe.checkout.sessions.create({
+    mode: "subscription",
+    customer_email: body.email.trim().toLowerCase(),
+    client_reference_id: userId,
+    line_items: [{ price: priceId, quantity: 1 }],
+    billing_address_collection: "required",
+    allow_promotion_codes: !prepared.foundingDiscountIdentifier,
+    ...(prepared.foundingDiscountIdentifier
+      ? { discounts: [{ coupon: prepared.foundingDiscountIdentifier }] }
+      : {}),
+    metadata,
+    subscription_data: { metadata },
+    success_url: `${origin}/signup/success?session_id={CHECKOUT_SESSION_ID}`,
+    cancel_url: `${origin}/signup/payment?payment=canceled`,
+  });
 }
