@@ -73,142 +73,260 @@ export function TemplateSelection({ templates }: { templates: Template[] }) {
       <main className="mx-auto max-w-6xl px-4 py-10">
         <p className="text-sm font-semibold text-olea-green">Step 2 of 2</p>
         <h1 className="mt-1 text-3xl font-bold">
-          {hasSelectableTemplates
-            ? `Choose your ${selectionLimit} templates`
-            : "Templates are coming soon"}
+          <SelectionTitle
+            hasSelectableTemplates={hasSelectableTemplates}
+            selectionLimit={selectionLimit}
+          />
         </h1>
         <p className="mt-2 max-w-3xl leading-6 text-slate-500">
-          {hasSelectableTemplates
-            ? "Your Seedling plan includes up to 3 templates. These become your permanent set and can be changed once per year."
-            : "We will let you know as soon as Seedling templates are available."}
+          <SelectionDescription hasSelectableTemplates={hasSelectableTemplates} />
         </p>
 
-        {hasSelectableTemplates ? (
-          <div className="mt-6 max-w-md">
-            <div className="flex justify-between text-sm">
-              <span className="font-semibold">
-                Selected: {selected.length} of {selectionLimit}
-              </span>
-              <span className="text-slate-400">
-                {selected.length === selectionLimit ? "Ready to confirm" : "Choose more"}
-              </span>
-            </div>
-            <div className="mt-2 h-2 overflow-hidden rounded-full bg-slate-200">
-              <div
-                className="h-full rounded-full bg-olea-green transition-all"
-                style={{
-                  width: `${(selected.length / selectionLimit) * 100}%`,
-                }}
-              />
-            </div>
-          </div>
-        ) : null}
+        <SelectionProgress
+          hasSelectableTemplates={hasSelectableTemplates}
+          selectedCount={selected.length}
+          selectionLimit={selectionLimit}
+        />
 
-        {templates.length ? (
-          <div className="mt-8 grid gap-4 md:grid-cols-2 xl:grid-cols-3">
-            {templates.map((template) => {
-              const isSelected = selected.includes(template.id);
-              const limitReached = selected.length === selectionLimit && !isSelected;
-              const availableAt = formatTemplateDate(template.availableAt);
-              const selectedAt = formatTemplateDate(template.selectedAt);
-              const lockedUntil = formatTemplateDate(template.lockedUntil);
-              const isLocked = isTemplateLocked(template.lockedUntil);
-              return (
-                <button
-                  key={template.id}
-                  disabled={isLocked || limitReached || isPending}
-                  onClick={() => toggle(template.id)}
-                  className={cn(
-                    "relative min-h-[190px] rounded-xl border bg-white p-5 text-left shadow-soft transition",
-                    isSelected && "border-[3px] border-olea-green bg-olea-light",
-                    isLocked && "cursor-not-allowed",
-                    limitReached && "cursor-not-allowed opacity-50",
-                  )}
-                >
-                  {isSelected ? (
-                    <span className="absolute right-4 top-4 grid size-6 place-items-center rounded-full bg-olea-green text-white">
-                      <Check className="size-4" />
-                    </span>
-                  ) : null}
-                  <span className="grid size-11 place-items-center rounded-xl bg-olea-light text-olea-green">
-                    <FileText className="size-5" />
-                  </span>
-                  <h2 className="mt-4 text-lg font-semibold">{template.name}</h2>
-                  <p className="mt-1 text-sm text-slate-400">
-                    {template.category}
-                  </p>
-                  <dl className="mt-4 space-y-1 text-xs text-slate-500">
-                    {availableAt ? (
-                      <div className="flex justify-between gap-3">
-                        <dt>Available</dt>
-                        <dd className="font-medium text-slate-600">
-                          {availableAt}
-                        </dd>
-                      </div>
-                    ) : null}
-                    {selectedAt ? (
-                      <div className="flex justify-between gap-3">
-                        <dt>Selected</dt>
-                        <dd className="font-medium text-slate-600">
-                          {selectedAt}
-                        </dd>
-                      </div>
-                    ) : null}
-                    {lockedUntil ? (
-                      <div className="flex justify-between gap-3">
-                        <dt>Locked until</dt>
-                        <dd className="font-medium text-slate-600">
-                          {lockedUntil}
-                        </dd>
-                      </div>
-                    ) : null}
-                  </dl>
-                  <p className="mt-5 text-sm font-semibold text-olea-green">
-                    {isLocked
-                      ? "Locked"
-                      : isSelected
-                      ? "Selected"
-                      : limitReached
-                        ? "Limit reached"
-                        : "Select"}
-                  </p>
-                </button>
-              );
-            })}
-          </div>
-        ) : (
-          <p className="mt-8 rounded-xl border bg-white p-8 text-center text-slate-500">
-            No templates are available for selection yet.
-          </p>
-        )}
+        <TemplateSelectionGrid
+          isPending={isPending}
+          onToggle={toggle}
+          selected={selected}
+          selectionLimit={selectionLimit}
+          templates={templates}
+        />
 
         <div className="mt-8 rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-800">
           Your selections are locked for 12 months. Choose carefully, or
           upgrade to Roots for the full template library.
         </div>
-        {error ? (
-          <p role="alert" className="mt-4 text-sm font-medium text-red-600">
-            {error}
-          </p>
-        ) : null}
-        <div className="mt-6 flex flex-wrap items-center gap-4">
-          {hasSelectableTemplates ? (
-            <Button
-              size="lg"
-              disabled={selected.length !== selectionLimit || isPending}
-              onClick={confirm}
-            >
-              {isPending ? "Saving..." : `Confirm my ${selectionLimit} templates →`}
-            </Button>
-          ) : null}
-          <button
-            onClick={() => router.push("/subscription")}
-            className="text-sm font-semibold text-olea-green"
-          >
-            Want all templates? Upgrade to Roots →
-          </button>
-        </div>
+        <SelectionActions
+          error={error}
+          hasSelectableTemplates={hasSelectableTemplates}
+          isPending={isPending}
+          onConfirm={confirm}
+          onUpgrade={() => router.push("/subscription")}
+          selectedCount={selected.length}
+          selectionLimit={selectionLimit}
+        />
       </main>
     </div>
+  );
+}
+
+function SelectionTitle({
+  hasSelectableTemplates,
+  selectionLimit,
+}: {
+  hasSelectableTemplates: boolean;
+  selectionLimit: number;
+}) {
+  return hasSelectableTemplates
+    ? `Choose your ${selectionLimit} templates`
+    : "Templates are coming soon";
+}
+
+function SelectionDescription({
+  hasSelectableTemplates,
+}: {
+  hasSelectableTemplates: boolean;
+}) {
+  return hasSelectableTemplates
+    ? "Your Seedling plan includes up to 3 templates. These become your permanent set and can be changed once per year."
+    : "We will let you know as soon as Seedling templates are available.";
+}
+
+function SelectionProgress({
+  hasSelectableTemplates,
+  selectedCount,
+  selectionLimit,
+}: {
+  hasSelectableTemplates: boolean;
+  selectedCount: number;
+  selectionLimit: number;
+}) {
+  if (!hasSelectableTemplates) return null;
+
+  return (
+    <div className="mt-6 max-w-md">
+      <div className="flex justify-between text-sm">
+        <span className="font-semibold">
+          Selected: {selectedCount} of {selectionLimit}
+        </span>
+        <span className="text-slate-400">
+          {selectedCount === selectionLimit ? "Ready to confirm" : "Choose more"}
+        </span>
+      </div>
+      <div className="mt-2 h-2 overflow-hidden rounded-full bg-slate-200">
+        <div
+          className="h-full rounded-full bg-olea-green transition-all"
+          style={{
+            width: `${(selectedCount / selectionLimit) * 100}%`,
+          }}
+        />
+      </div>
+    </div>
+  );
+}
+
+function TemplateSelectionGrid({
+  isPending,
+  onToggle,
+  selected,
+  selectionLimit,
+  templates,
+}: {
+  isPending: boolean;
+  onToggle: (id: string) => void;
+  selected: string[];
+  selectionLimit: number;
+  templates: Template[];
+}) {
+  if (!templates.length) {
+    return (
+      <p className="mt-8 rounded-xl border bg-white p-8 text-center text-slate-500">
+        No templates are available for selection yet.
+      </p>
+    );
+  }
+
+  return (
+    <div className="mt-8 grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+      {templates.map((template) => (
+        <TemplateSelectionCard
+          key={template.id}
+          isPending={isPending}
+          isSelected={selected.includes(template.id)}
+          limitReached={
+            selected.length === selectionLimit && !selected.includes(template.id)
+          }
+          onToggle={onToggle}
+          template={template}
+        />
+      ))}
+    </div>
+  );
+}
+
+function TemplateSelectionCard({
+  isPending,
+  isSelected,
+  limitReached,
+  onToggle,
+  template,
+}: {
+  isPending: boolean;
+  isSelected: boolean;
+  limitReached: boolean;
+  onToggle: (id: string) => void;
+  template: Template;
+}) {
+  const isLocked = isTemplateLocked(template.lockedUntil);
+
+  return (
+    <button
+      disabled={isLocked || limitReached || isPending}
+      onClick={() => onToggle(template.id)}
+      className={cn(
+        "relative min-h-[190px] rounded-xl border bg-white p-5 text-left shadow-soft transition",
+        isSelected && "border-[3px] border-olea-green bg-olea-light",
+        isLocked && "cursor-not-allowed",
+        limitReached && "cursor-not-allowed opacity-50",
+      )}
+    >
+      {isSelected ? (
+        <span className="absolute right-4 top-4 grid size-6 place-items-center rounded-full bg-olea-green text-white">
+          <Check className="size-4" />
+        </span>
+      ) : null}
+      <span className="grid size-11 place-items-center rounded-xl bg-olea-light text-olea-green">
+        <FileText className="size-5" />
+      </span>
+      <h2 className="mt-4 text-lg font-semibold">{template.name}</h2>
+      <p className="mt-1 text-sm text-slate-400">{template.category}</p>
+      <TemplateAvailabilityList template={template} />
+      <p className="mt-5 text-sm font-semibold text-olea-green">
+        <TemplateSelectionStatus
+          isLocked={isLocked}
+          isSelected={isSelected}
+          limitReached={limitReached}
+        />
+      </p>
+    </button>
+  );
+}
+
+function TemplateAvailabilityList({ template }: { template: Template }) {
+  const dates = [
+    ["Available", formatTemplateDate(template.availableAt)],
+    ["Selected", formatTemplateDate(template.selectedAt)],
+    ["Locked until", formatTemplateDate(template.lockedUntil)],
+  ].filter((entry): entry is [string, string] => Boolean(entry[1]));
+
+  return (
+    <dl className="mt-4 space-y-1 text-xs text-slate-500">
+      {dates.map(([label, value]) => (
+        <div key={label} className="flex justify-between gap-3">
+          <dt>{label}</dt>
+          <dd className="font-medium text-slate-600">{value}</dd>
+        </div>
+      ))}
+    </dl>
+  );
+}
+
+function TemplateSelectionStatus({
+  isLocked,
+  isSelected,
+  limitReached,
+}: {
+  isLocked: boolean;
+  isSelected: boolean;
+  limitReached: boolean;
+}) {
+  if (isLocked) return "Locked";
+  if (isSelected) return "Selected";
+  return limitReached ? "Limit reached" : "Select";
+}
+
+function SelectionActions({
+  error,
+  hasSelectableTemplates,
+  isPending,
+  onConfirm,
+  onUpgrade,
+  selectedCount,
+  selectionLimit,
+}: {
+  error: string;
+  hasSelectableTemplates: boolean;
+  isPending: boolean;
+  onConfirm: () => void;
+  onUpgrade: () => void;
+  selectedCount: number;
+  selectionLimit: number;
+}) {
+  return (
+    <>
+      {error ? (
+        <p role="alert" className="mt-4 text-sm font-medium text-red-600">
+          {error}
+        </p>
+      ) : null}
+      <div className="mt-6 flex flex-wrap items-center gap-4">
+        {hasSelectableTemplates ? (
+          <Button
+            size="lg"
+            disabled={selectedCount !== selectionLimit || isPending}
+            onClick={onConfirm}
+          >
+            {isPending ? "Saving..." : `Confirm my ${selectionLimit} templates →`}
+          </Button>
+        ) : null}
+        <Button variant="link" className="px-0" onClick={onUpgrade}>
+          Want all templates? Upgrade to Roots →
+        </Button>
+      </div>
+    </>
   );
 }
