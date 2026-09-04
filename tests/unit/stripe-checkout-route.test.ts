@@ -62,6 +62,12 @@ function makeRequest(overrides: Record<string, unknown> = {}) {
   });
 }
 
+function getLastErrorLog(consoleError: ReturnType<typeof vi.spyOn>) {
+  const [serializedLog] = consoleError.mock.calls.at(-1) ?? [];
+  expect(typeof serializedLog).toBe("string");
+  return JSON.parse(String(serializedLog)) as Record<string, unknown>;
+}
+
 function existingUser(id = "user_existing") {
   routeMocks.listUsers.mockResolvedValue({
     data: { users: [{ id, email: checkoutPayload.email }] },
@@ -199,9 +205,9 @@ describe("Stripe signup checkout route", () => {
       error: "Unable to start secure checkout.",
       correlationId: expect.any(String),
     });
-    expect(consoleError).toHaveBeenCalledWith(
-      "Unable to create Stripe Checkout session",
+    expect(getLastErrorLog(consoleError)).toEqual(
       expect.objectContaining({
+        message: "Unable to create Stripe Checkout session",
         correlationId: body.correlationId,
         stage: "sign_in_signup_user",
         errorCode: "unexpected_failure",
@@ -366,9 +372,9 @@ describe("Stripe signup checkout route", () => {
         error: "Unable to start secure checkout.",
         correlationId: expect.any(String),
       });
-      expect(consoleError).toHaveBeenCalledWith(
-        "Unable to create Stripe Checkout session",
+      expect(getLastErrorLog(consoleError)).toEqual(
         expect.objectContaining({
+          message: "Unable to create Stripe Checkout session",
           correlationId: body.correlationId,
           stage,
           tier: "roots",

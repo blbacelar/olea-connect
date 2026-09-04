@@ -8,6 +8,7 @@ import {
 } from "@/lib/data/referrals";
 import { getReferralPageCopy } from "@/lib/i18n/referral-page-copy";
 import { defaultLocale, normalizeLocale } from "@/lib/i18n/locales";
+import { logError } from "@/lib/observability/logger";
 import { referralApplicationSchema } from "@/lib/referrals/domain";
 import { createAdminClient } from "@/utils/supabase/admin";
 
@@ -178,7 +179,7 @@ export async function applyToReferralProgram(
       message: "Referral application submitted.",
     });
   if (auditError) {
-    console.error("Unable to record referral application audit event", {
+    logError("Unable to record referral application audit event", auditError, {
       referrerId: data.id,
     });
   }

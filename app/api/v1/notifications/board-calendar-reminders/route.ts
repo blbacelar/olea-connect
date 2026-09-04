@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 
+import { logError } from "@/lib/observability/logger";
 import { processBoardCalendarReminders } from "@/lib/notifications/board-calendar-reminders";
 
 export const runtime = "nodejs";
@@ -34,7 +35,7 @@ export async function GET(request: Request) {
 
     return NextResponse.json(summary, { headers: noStoreHeaders });
   } catch (error) {
-    console.error("Unable to process board calendar reminders", error);
+    logError("Unable to process board calendar reminders", error);
     return NextResponse.json(
       { error: "Board calendar reminders could not be processed." },
       { headers: noStoreHeaders, status: 500 },

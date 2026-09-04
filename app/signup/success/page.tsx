@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { getAuthFlowCopy } from "@/lib/i18n/auth-flow-copy";
 import { getPublicSiteCopy } from "@/lib/i18n/public-site-copy";
 import { getRequestLocale } from "@/lib/i18n/server";
+import { logError } from "@/lib/observability/logger";
 import { recoverCheckoutSessionProvisioning } from "@/lib/stripe/registration";
 import type { ProvisioningResult } from "@/lib/stripe/registration";
 import { createAdminClient } from "@/utils/supabase/admin";
@@ -34,7 +35,7 @@ async function finalizeCheckoutSession(
       sessionId,
     );
   } catch (error) {
-    console.error("Unable to finalize checkout activation", error);
+    logError("Unable to finalize checkout activation", error);
     return {
       status: "failed",
       request_id: "",

@@ -3,6 +3,7 @@ import "server-only";
 import { requireMemberContext } from "@/lib/data/member-context";
 import { getGrantPlatformUiAccess } from "@/lib/grants/permissions";
 import { getGrantPlatformApplicationActionState } from "@/lib/grants/workflow";
+import { logError } from "@/lib/observability/logger";
 import { createClient } from "@/utils/supabase/server";
 
 type GrantPlatformStatusNote = {
@@ -134,13 +135,13 @@ export async function getGrantPlatformData(): Promise<GrantPlatformWorkspaceData
   const { data: members, error: membersError } = membersResult;
   const { data: vaultItems, error: vaultError } = vaultResult;
 
-  if (organizationError) console.error("grant-platform: failed to load organization record", organizationError);
-  if (settingsError) console.error("grant-platform: failed to load organization settings", settingsError);
-  if (roundsError) console.error("grant-platform: failed to load grant rounds", roundsError);
-  if (applicationsError) console.error("grant-platform: failed to load grant applications", applicationsError);
-  if (partnersError) console.error("grant-platform: failed to load grant partners", partnersError);
-  if (membersError) console.error("grant-platform: failed to load organization members", membersError);
-  if (vaultError) console.error("grant-platform: failed to load vault items", vaultError);
+  if (organizationError) logError("grant-platform: failed to load organization record", organizationError);
+  if (settingsError) logError("grant-platform: failed to load organization settings", settingsError);
+  if (roundsError) logError("grant-platform: failed to load grant rounds", roundsError);
+  if (applicationsError) logError("grant-platform: failed to load grant applications", applicationsError);
+  if (partnersError) logError("grant-platform: failed to load grant partners", partnersError);
+  if (membersError) logError("grant-platform: failed to load organization members", membersError);
+  if (vaultError) logError("grant-platform: failed to load vault items", vaultError);
 
   const safeRounds = roundsError ? [] : rounds ?? [];
   const safeApplications = applicationsError ? [] : applications ?? [];
@@ -158,7 +159,7 @@ export async function getGrantPlatformData(): Promise<GrantPlatformWorkspaceData
       .in("id", profileIds);
 
     if (profilesError) {
-      console.error("grant-platform: failed to load member profiles", profilesError);
+      logError("grant-platform: failed to load member profiles", profilesError);
     } else {
       for (const profile of profiles ?? []) {
         profileMap.set(profile.id, profile.full_name?.trim() || profile.id);

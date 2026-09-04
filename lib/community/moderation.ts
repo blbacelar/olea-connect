@@ -1,5 +1,7 @@
 import "server-only";
 
+import { logError } from "@/lib/observability/logger";
+
 export type ModerationResult = {
   approved: boolean;
   reason?: string;
@@ -179,7 +181,7 @@ export async function moderateCommunityPost(input: {
   });
 
   if (!response.ok) {
-    console.error("OpenRouter moderation request failed", {
+    logError("OpenRouter moderation request failed", response.statusText, {
       status: response.status,
     });
     return {

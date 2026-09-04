@@ -4,6 +4,7 @@ import { redirect } from "next/navigation";
 
 import { AuthCard } from "@/components/auth/AuthCard";
 import { Button } from "@/components/ui/button";
+import { logError } from "@/lib/observability/logger";
 import { getPostActivationPath } from "@/lib/onboarding/post-activation";
 import { attemptUserWorkspaceProvisioning } from "@/lib/stripe/registration";
 import { createAdminClient } from "@/utils/supabase/admin";
@@ -83,7 +84,7 @@ async function confirmEmail(formData: FormData) {
           activationRedirect = `/signup/success?activation=${result.status}`;
         }
       } catch (provisioningError) {
-        console.error(
+        logError(
           "Unable to complete workspace provisioning after email confirmation",
           provisioningError,
         );

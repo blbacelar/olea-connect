@@ -27,6 +27,7 @@ import {
   buildDeterministicReviewMetrics,
   compileEdReviewWithAi,
 } from "@/lib/ed-review/compilation";
+import { logError } from "@/lib/observability/logger";
 
 const reviewPath = "/modules/ed-review";
 const newCampaignLinkCookie = "ed_review_new_campaign_link";
@@ -333,7 +334,7 @@ export async function compileEdReviewAction(formData: FormData) {
   try {
     generatedSummary = await compileEdReviewWithAi(metrics);
   } catch (error) {
-    console.error("ED review summary compilation failed.", error);
+    logError("ED review summary compilation failed.", error);
     redirect(`${reviewPath}?tab=summary&compile=failed`);
   }
   const { session, supabase } = boardChair;

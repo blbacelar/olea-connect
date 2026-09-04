@@ -5,6 +5,7 @@ import { redirect } from "next/navigation";
 
 import { requireKpiDashboardForOrganization } from "@/lib/data/kpi-dashboard";
 import { parseStrictInteger } from "@/lib/input-validation";
+import { logError } from "@/lib/observability/logger";
 import {
   defaultQuarterAssignments,
   monthOptions,
@@ -322,7 +323,7 @@ export async function createKpiTrackerEntryDialog(
     const quarter = await saveKpiTrackerEntry(formData);
     return dialogSuccess(`KPI added to Q${quarter}.`);
   } catch (error) {
-    console.error("[kpi-dashboard] create tracker entry failed", error);
+    logError("[kpi-dashboard] create tracker entry failed", error);
     return { message: toDialogError(error), status: "error" as const };
   }
 }

@@ -10,6 +10,7 @@ import type {
 import { createAdminClient } from "@/utils/supabase/admin";
 import { createClient } from "@/utils/supabase/server";
 import { parseFormBoolean, parseStrictInteger } from "@/lib/input-validation";
+import { logError } from "@/lib/observability/logger";
 
 import { requireMemberContext } from "@/lib/data/member-context";
 
@@ -222,7 +223,7 @@ export async function createConsultingRequest(
     try {
       await uploadRequestAttachments(attachments, requestId);
     } catch (attachmentError) {
-      console.error("Consulting request attachment upload failed", attachmentError);
+      logError("Consulting request attachment upload failed", attachmentError);
       revalidatePath("/consulting");
       return {
         message:

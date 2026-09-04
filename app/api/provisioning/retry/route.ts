@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 
+import { logError } from "@/lib/observability/logger";
 import { getPostActivationPath } from "@/lib/onboarding/post-activation";
 import { attemptUserWorkspaceProvisioning } from "@/lib/stripe/registration";
 import { createAdminClient } from "@/utils/supabase/admin";
@@ -43,7 +44,7 @@ export async function POST() {
       status: result.status === "failed" ? 409 : 200,
     });
   } catch (error) {
-    console.error("Unable to retry workspace provisioning", error);
+    logError("Unable to retry workspace provisioning", error);
     return NextResponse.json(
       { error: "Activation could not be retried. Please try again shortly." },
       { status: 500 },

@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 
 import { cleanupGeneratedDocuments } from "@/lib/generated-documents/cleanup";
+import { logError } from "@/lib/observability/logger";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -25,7 +26,7 @@ export async function GET(request: Request) {
 
     return NextResponse.json(summary);
   } catch (error) {
-    console.error("Unable to clean generated documents", error);
+    logError("Unable to clean generated documents", error);
     return NextResponse.json(
       { error: "Generated document cleanup failed." },
       { status: 500 },

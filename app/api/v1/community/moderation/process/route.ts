@@ -5,6 +5,7 @@ import {
   failIntegrationEvent,
   isCronAuthorized,
 } from "@/lib/integrations/outbox";
+import { logError } from "@/lib/observability/logger";
 import { createAdminClient } from "@/utils/supabase/admin";
 
 export const runtime = "nodejs";
@@ -88,10 +89,9 @@ export async function GET(request: Request) {
       processedEventIds.push(event.id);
     } catch (processError) {
       await failIntegrationEvent(supabase, event, processError);
-      console.error(
-        `Unable to process community moderation event ${event.id}`,
-        processError,
-      );
+      logError("Unable to process community moderation event", processError, {
+        eventId: event.id,
+      });
       return NextResponse.json(
         {
           error: "Community moderation failed.",

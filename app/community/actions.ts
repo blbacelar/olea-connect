@@ -1,6 +1,7 @@
 "use server";
 
 import { requireMemberContext } from "@/lib/data/member-context";
+import { logError } from "@/lib/observability/logger";
 import type { CommunityPost } from "@/lib/types";
 import { createAdminClient } from "@/utils/supabase/admin";
 import { createClient } from "@/utils/supabase/server";
@@ -102,13 +103,13 @@ async function queueCommunityModeration(
     });
 
     if (error) {
-      console.error("Unable to queue community moderation", error);
+      logError("Unable to queue community moderation", error);
       return;
     }
 
     triggerCommunityModerationWorker();
   } catch (error) {
-    console.error("Unable to queue community moderation", error);
+    logError("Unable to queue community moderation", error);
   }
 }
 
@@ -132,10 +133,10 @@ function triggerCommunityModerationWorker() {
       },
       method: "GET",
     }).catch((error) => {
-      console.error("Unable to trigger community moderation worker", error);
+      logError("Unable to trigger community moderation worker", error);
     });
   } catch (error) {
-    console.error("Unable to trigger community moderation worker", error);
+    logError("Unable to trigger community moderation worker", error);
   }
 }
 

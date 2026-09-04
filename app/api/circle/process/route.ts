@@ -4,6 +4,7 @@ import {
   failCircleIntegrationEvent,
   processCircleIntegrationEvent,
 } from "@/lib/circle/provisioning";
+import { logError } from "@/lib/observability/logger";
 import { createAdminClient } from "@/utils/supabase/admin";
 
 export const runtime = "nodejs";
@@ -34,7 +35,9 @@ export async function GET(request: Request) {
     return NextResponse.json({ processed: true, eventId: event.id });
   } catch (processError) {
     await failCircleIntegrationEvent(supabase, event, processError);
-    console.error(`Unable to process Circle event ${event.id}`, processError);
+    logError("Unable to process Circle event", processError, {
+      eventId: event.id,
+    });
     return NextResponse.json(
       { error: "Circle provisioning failed." },
       { status: 500 },

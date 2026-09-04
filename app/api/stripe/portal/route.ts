@@ -12,6 +12,7 @@ import {
   getStripe,
   getStripeSeatPriceId,
 } from "@/lib/stripe/server";
+import { logError } from "@/lib/observability/logger";
 import { syncStripeSubscription } from "@/lib/stripe/subscriptions";
 import type { MembershipTier } from "@/lib/types";
 import { createAdminClient } from "@/utils/supabase/admin";
@@ -416,10 +417,9 @@ export async function POST(request: Request) {
           await retrieveSubscriptionForSync(subscription.id),
         );
       } catch (syncError) {
-        console.error("Stripe billing action succeeded but local sync failed", {
+        logError("Stripe billing action succeeded but local sync failed", syncError, {
           action,
           subscriptionId: subscription.id,
-          syncError,
         });
         if (action === "change_plan") {
           return NextResponse.json(
@@ -459,7 +459,7 @@ export async function POST(request: Request) {
 
     return NextResponse.json({ url: session.url });
   } catch (error) {
-    console.error("Unable to create Stripe billing portal session", error);
+    logError("Unable to create Stripe billing portal session", error);
     const status = error instanceof BillingActionError ? error.status : 500;
     return NextResponse.json(
       {

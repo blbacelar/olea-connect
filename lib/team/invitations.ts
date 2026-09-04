@@ -4,6 +4,7 @@ import { createHash } from "node:crypto";
 
 import * as z from "zod";
 
+import { logError } from "@/lib/observability/logger";
 import { createAdminClient } from "@/utils/supabase/admin";
 
 const invitationTokenSchema = z.string().trim().min(32).max(512);
@@ -34,9 +35,8 @@ export async function getPendingTeamInvitation(
     .maybeSingle();
 
   if (error) {
-    console.error("Unable to look up team invitation", {
+    logError("Unable to look up team invitation", error, {
       code: error.code,
-      message: error.message,
     });
     return null;
   }

@@ -7,6 +7,7 @@ import {
   isBoardPackageStoragePathForSession,
 } from "@/lib/template-renderer/board-calendar-storage";
 import { requireMemberContext } from "@/lib/data/member-context";
+import { logError } from "@/lib/observability/logger";
 import { createAdminClient } from "@/utils/supabase/admin";
 import { createClient } from "@/utils/supabase/server";
 
@@ -344,7 +345,7 @@ async function writeBoardPackageAuditLog({
 function getBoardPackageActionError(error: unknown) {
   const message = error instanceof Error ? error.message : String(error);
 
-  console.error("Board package action failed", error);
+  logError("Board package action failed", error);
 
   if (/bucket|storage/i.test(message)) {
     return "Board package storage is not ready yet. Please ask an administrator to apply the latest database migration and try again.";

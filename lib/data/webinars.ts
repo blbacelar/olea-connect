@@ -2,6 +2,7 @@ import "server-only";
 
 import type { SupabaseClient } from "@supabase/supabase-js";
 
+import { logWarn } from "@/lib/observability/logger";
 import type { MembershipTier, Webinar } from "@/lib/types";
 import { createClient } from "@/utils/supabase/server";
 
@@ -46,7 +47,7 @@ const eventTypes = [
 const platformEventRoles = ["super_admin", "community_admin"] as const;
 
 function logWebinarDataError(label: string, error: unknown) {
-  console.warn(`Unable to load webinar ${label}; showing safe empty state.`, {
+  logWarn(`Unable to load webinar ${label}; showing safe empty state.`, {
     error,
   });
 }

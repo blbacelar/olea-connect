@@ -4,6 +4,7 @@ import { getKpiDashboardData } from "@/lib/data/kpi-dashboard";
 import { getOptionalMemberContext } from "@/lib/data/member-context";
 import { createBrandingSnapshot } from "@/lib/data/brand-assets";
 import { renderKpiDashboardPdfBuffer } from "@/lib/kpi-dashboard/pdf-export";
+import { logError } from "@/lib/observability/logger";
 import { buildExportFileName } from "@/lib/template-renderer/export-files";
 import { createAdminClient } from "@/utils/supabase/admin";
 
@@ -36,7 +37,7 @@ export async function GET() {
       },
     });
   } catch (error) {
-    console.error("[kpi-dashboard] PDF export failed", error);
+    logError("[kpi-dashboard] PDF export failed", error);
     return NextResponse.json(
       { error: "Unable to generate the KPI report right now. Please try again." },
       { status: 500 },

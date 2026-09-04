@@ -2,6 +2,7 @@ import { createServerClient } from "@supabase/ssr";
 import { parse } from "cookie";
 import { NextResponse } from "next/server";
 
+import { logError } from "@/lib/observability/logger";
 import { getPostActivationPath } from "@/lib/onboarding/post-activation";
 import { attemptUserWorkspaceProvisioning } from "@/lib/stripe/registration";
 import { createAdminClient } from "@/utils/supabase/admin";
@@ -154,7 +155,7 @@ export async function GET(request: Request) {
             );
           }
         } catch (provisioningError) {
-          console.error(
+          logError(
             "Unable to complete workspace provisioning after verification",
             provisioningError,
           );

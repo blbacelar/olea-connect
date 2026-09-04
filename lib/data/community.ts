@@ -2,6 +2,7 @@ import "server-only";
 
 import { redirect } from "next/navigation";
 
+import { logWarn } from "@/lib/observability/logger";
 import type {
   CommunityEvent,
   CommunityHome,
@@ -308,7 +309,7 @@ export async function getCommunityHome(): Promise<CommunityHome | null> {
     .maybeSingle();
 
   if (isMissingCommunitySchema(communityError)) {
-    console.warn(
+    logWarn(
       "Native community schema is not available; showing community placeholder.",
     );
     return null;
@@ -360,7 +361,7 @@ export async function getCommunityHome(): Promise<CommunityHome | null> {
     isMissingCommunitySchema(eventsError) ||
     isMissingCommunitySchema(managerError)
   ) {
-    console.warn(
+    logWarn(
       "Native community schema is incomplete; showing community placeholder.",
     );
     return null;

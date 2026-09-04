@@ -3,6 +3,7 @@ import { NextResponse } from "next/server";
 import { getAccreditationWorkspaceData } from "@/lib/data/accreditation";
 import { createBrandingSnapshot } from "@/lib/data/brand-assets";
 import { getOptionalMemberContext } from "@/lib/data/member-context";
+import { logError } from "@/lib/observability/logger";
 import { renderAccreditationPdfBuffer } from "@/lib/accreditation/pdf-export";
 import { buildExportFileName } from "@/lib/template-renderer/export-files";
 import { createAdminClient } from "@/utils/supabase/admin";
@@ -37,7 +38,7 @@ export async function GET() {
       },
     });
   } catch (error) {
-    console.error("[accreditation] PDF export failed", error);
+    logError("[accreditation] PDF export failed", error);
     return NextResponse.json(
       { error: "Unable to generate the accreditation report right now. Please try again." },
       { status: 500 },

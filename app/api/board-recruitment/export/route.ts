@@ -4,6 +4,7 @@ import { renderBoardRecruitmentPdfBuffer } from "@/lib/board-recruitment/pdf-exp
 import { getBoardRecruitmentData } from "@/lib/data/board-recruitment";
 import { createBrandingSnapshot } from "@/lib/data/brand-assets";
 import { getOptionalMemberContext } from "@/lib/data/member-context";
+import { logError } from "@/lib/observability/logger";
 import { createAdminClient } from "@/utils/supabase/admin";
 
 export const dynamic = "force-dynamic";
@@ -39,7 +40,7 @@ export async function GET(request: Request) {
       },
     });
   } catch (error) {
-    console.error("[board-recruitment] PDF export failed", error);
+    logError("[board-recruitment] PDF export failed", error);
     return NextResponse.json(
       {
         error:

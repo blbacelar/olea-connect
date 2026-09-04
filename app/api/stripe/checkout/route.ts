@@ -17,6 +17,7 @@ import {
   CheckoutRateLimitError,
   getCheckoutErrorResponse,
 } from "@/lib/stripe/checkout-errors";
+import { logError } from "@/lib/observability/logger";
 import { getStripe, getStripePriceId } from "@/lib/stripe/server";
 import {
   createAdminClient,
@@ -232,11 +233,12 @@ export async function POST(request: Request) {
       );
     }
 
-    console.error("Unable to create Stripe Checkout session", {
+    const safeErrorDetails = getSafeErrorDetails(error);
+    logError("Unable to create Stripe Checkout session", safeErrorDetails, {
       correlationId,
       stage,
       ...checkoutContext,
-      ...getSafeErrorDetails(error),
+      ...safeErrorDetails,
     });
     return NextResponse.json(
       {
