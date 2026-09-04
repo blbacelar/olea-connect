@@ -1,20 +1,10 @@
 "use client";
 
 import {
-  Award,
   BarChart3,
-  CheckCircle2,
-  Clock,
-  DollarSign,
-  FileCheck,
-  FileText,
-  PieChart,
-  Target,
-  TrendingUp,
-  XCircle,
 } from "lucide-react";
 
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent,} from "@/components/ui/card";
 
 export function GrantDashboardPanel() {
   const pipelineStats = [

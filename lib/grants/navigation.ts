@@ -1,5 +1,3 @@
-import { Gift, LayoutGrid, MessageSquareMore, ReceiptText, Settings2, Sparkles, Users } from "lucide-react";
-
 export type GrantPlatformNavItem = {
   id: string;
   label: string;

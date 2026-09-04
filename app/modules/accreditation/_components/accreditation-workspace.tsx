@@ -456,7 +456,6 @@ function EditorTab({
   template: AccreditationTemplateDefinition;
   templates: AccreditationTemplateDefinition[];
 }) {
-  const router = useRouter();
   const [draft, setDraft] = useState(response);
   const draftRef = useRef(response);
   const [state, setState] = useState<AccreditationActionResult>({ ok: true });

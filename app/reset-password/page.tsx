@@ -28,7 +28,7 @@ export default function ResetPasswordPage() {
         setError("");
         await requestPasswordReset(email);
         setSent(true);
-      } catch (resetError) {
+      } catch {
         setError(resetCopy.fallbackError);
       }
     });

@@ -1,6 +1,6 @@
 "use client";
 
-import { Edit3, Handshake, HelpCircle, Plus, Search, ShieldCheck } from "lucide-react";
+import { Edit3, Handshake, HelpCircle, Plus, Search } from "lucide-react";
 import { useMemo, useState } from "react";
 
 import { Badge } from "@/components/ui/badge";

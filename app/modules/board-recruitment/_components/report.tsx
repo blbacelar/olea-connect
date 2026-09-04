@@ -1,39 +1,8 @@
 "use client";
 
+import { Printer } from "lucide-react";
 import * as React from "react";
-import Link from "next/link";
-import {
-  Archive,
-  ArrowLeft,
-  BarChart3,
-  Check,
-  ChevronRight,
-  ClipboardList,
-  Mail,
-  Pencil,
-  Plus,
-  Printer,
-  ShieldCheck,
-  Trash2,
-  Users,
-} from "lucide-react";
-import {
-  addRecruitmentSkill,
-  createRecruitmentCommittee,
-  createRecruitmentMember,
-  deleteRecruitmentCommittee,
-  deleteRecruitmentMember,
-  deleteRecruitmentSkill,
-  saveRecruitmentResponse,
-  saveRecruitmentSettings,
-  sendRecruitmentInvitation,
-  sendRecruitmentInvitations,
-  setCommitteeChair,
-  toggleCommitteeMember,
-  toggleRecruitmentMember,
-  updateRecruitmentCommittee,
-  updateRecruitmentMember,
-} from "@/app/modules/board-recruitment/actions";
+
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -44,23 +13,6 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from "@/components/ui/dialog";
-import { Input } from "@/components/ui/input";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import { SubmitButton } from "@/components/ui/submit-button";
-import {
   Table,
   TableBody,
   TableCell,
@@ -68,32 +20,18 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Textarea } from "@/components/ui/textarea";
 import {
   calculateTerm,
   coverageLevel,
-  officerLabels,
 } from "@/lib/board-recruitment/domain";
-import type {
-  RecruitmentData,
-  RecruitmentMember,
-  RecruitmentTab,
-} from "@/lib/board-recruitment/types";
 import {
   activeDirectorHasSkill,
   responseFor,
 } from "@/lib/board-recruitment/metrics";
+import type { RecruitmentData } from "@/lib/board-recruitment/types";
 import { cn } from "@/lib/utils";
-import {
-  ConfirmAction,
-  EmptyState,
-  Field,
-  HiddenWorkspace,
-  ModalForm,
-  SectionHeader,
-  StatCard,
-} from "./shared";
+
+import { StatCard } from "./shared";
 
 export function Report({ data }: { data: RecruitmentData }) {
   const [identified, setIdentified] = React.useState(true);

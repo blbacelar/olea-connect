@@ -33,7 +33,7 @@ export default function UpdatePasswordPage() {
         await updatePassword(password);
         router.replace("/dashboard");
         router.refresh();
-      } catch (updateError) {
+      } catch {
         setError(updateCopy.fallbackError);
       }
     });

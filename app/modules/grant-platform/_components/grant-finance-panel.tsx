@@ -12,10 +12,7 @@ import {
   ReceiptText,
   ShieldCheck,
   TrendingUp,
-} from "lucide-react";
-
-import { Badge } from "@/components/ui/badge";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+} from "lucide-react";import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
 export function GrantFinancePanel() {
   const statCards = [

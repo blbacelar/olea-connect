@@ -88,16 +88,6 @@ export interface GrantPlatformWorkspaceData {
   notes: GrantPlatformStatusNote[];
 }
 
-function formatCurrencyValue(cents: number | null) {
-  if (cents === null) return "$0";
-
-  return new Intl.NumberFormat("en-CA", {
-    currency: "CAD",
-    maximumFractionDigits: 0,
-    style: "currency",
-  }).format(cents / 100);
-}
-
 export async function getGrantPlatformData(): Promise<GrantPlatformWorkspaceData> {
   const { member, organization } = await requireMemberContext();
   const supabase = await createClient();

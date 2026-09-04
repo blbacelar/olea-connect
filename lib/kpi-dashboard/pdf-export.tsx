@@ -13,7 +13,6 @@ import React from "react";
 import type {
   KpiDashboardData,
   KpiDefinition,
-  KpiQuarterResult,
 } from "@/lib/data/kpi-dashboard";
 import {
   calculatePercentToTarget,
@@ -25,7 +24,6 @@ import {
   monthOptions,
   ragLabels,
   type QuarterNumber,
-  type RagStatus,
 } from "@/lib/kpi-dashboard/domain";
 import type { BrandProfile } from "@/lib/types";
 import { buildPdfFooter, normalizePdfBrand } from "@/lib/pdf/brand-export";

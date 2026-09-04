@@ -1,6 +1,6 @@
 "use client";
 
-import { CalendarClock, CalendarDays, CheckCircle2, Clock } from "lucide-react";
+import { CalendarClock, CalendarDays,} from "lucide-react";
 
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";

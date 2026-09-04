@@ -1,8 +1,8 @@
 "use client";
 
-import * as React from "react";
-import Link from "next/link";
 import { Archive, Check, Minus, Pencil, Plus, Trash2 } from "lucide-react";
+import * as React from "react";
+
 import {
   deleteRecruitmentMember,
   saveRecruitmentTermRules,

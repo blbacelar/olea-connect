@@ -21,7 +21,6 @@ import {
 import {
   getRequestContext,
   logCritical,
-  logError,
   logInfo,
   logWarn,
 } from "@/lib/observability/logger";

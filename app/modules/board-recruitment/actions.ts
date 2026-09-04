@@ -710,7 +710,7 @@ export async function deleteRecruitmentCommittee(formData: FormData) {
 }
 
 export async function toggleCommitteeMember(formData: FormData) {
-  const { workspace, supabase } = await workspaceFrom(formData);
+  const { supabase } = await workspaceFrom(formData);
   const committeeId = idSchema.parse(value(formData, "committeeId"));
   const memberId = idSchema.parse(value(formData, "memberId"));
   const { data: existing, error: readError } = await supabase
@@ -734,7 +734,7 @@ export async function toggleCommitteeMember(formData: FormData) {
 }
 
 export async function setCommitteeChair(formData: FormData) {
-  const { workspace, supabase } = await workspaceFrom(formData);
+  const { supabase } = await workspaceFrom(formData);
   const committeeId = idSchema.parse(value(formData, "committeeId"));
   const memberId = idSchema.parse(value(formData, "memberId"));
   const { data: committee, error: committeeError } = await supabase

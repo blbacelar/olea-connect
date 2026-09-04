@@ -5,11 +5,10 @@ import { useEffect, useState, useTransition } from "react";
 
 import { AuthCard } from "@/components/auth/AuthCard";
 import { useLocaleContext } from "@/components/i18n/LocaleProvider";
-import { Button } from "@/components/ui/button";
 import { useRegistration } from "@/hooks/use-registration";
+import { resendVerificationEmail } from "@/lib/auth";
 import { getAuthFlowCopy } from "@/lib/i18n/auth-flow-copy";
 import { getPublicSiteCopy } from "@/lib/i18n/public-site-copy";
-import { resendVerificationEmail } from "@/lib/auth";
 
 export default function VerifyEmailPage() {
   const { registration } = useRegistration();
@@ -44,7 +43,7 @@ export default function VerifyEmailPage() {
         await resendVerificationEmail(registration.email);
         setCooldown(60);
         setMessage(verifyCopy.sentMessage);
-      } catch (resendError) {
+      } catch {
         setMessage(verifyCopy.fallbackError);
       }
     });

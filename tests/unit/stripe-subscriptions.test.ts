@@ -160,12 +160,8 @@ function makePaidSeatSupabaseMock(existingItem = false) {
   const inserts: Array<Record<string, unknown>> = [];
 
   function builder(table: string) {
-    let providerItemId = "";
     const query = {
-      eq: (column: string, value: unknown) => {
-        if (column === "provider_item_id" && typeof value === "string") {
-          providerItemId = value;
-        }
+      eq: () => {
         return query;
       },
       insert: (values: Record<string, unknown>) => {

@@ -81,7 +81,7 @@ export async function getGrantsData(): Promise<{
   const admin = createAdminClient();
   const [
     { data: organizationRecord, error: organizationError },
-    { data: subscription, error: subscriptionError },
+    { error: subscriptionError },
     { data: roles, error: rolesError },
     { data: rounds, error: roundsError },
     { data: applications, error: applicationsError },
