@@ -73,6 +73,10 @@ export type GrantEligibilityContext = {
 };
 
 const activeSubscriptionStatuses = new Set(["active", "trialing"]);
+type GrantValidationRule = {
+  isInvalid: () => boolean;
+  message: string;
+};
 
 export function countWords(value: string) {
   return value.trim().split(/\s+/).filter(Boolean).length;
@@ -92,58 +96,145 @@ export function validateGrantApplication(
   const opensAt = new Date(context.applicationOpensAt).getTime();
   const closesAt = new Date(context.applicationClosesAt).getTime();
 
-  if (!activeSubscriptionStatuses.has(context.subscriptionStatus ?? "")) {
-    errors.push("An active Olea membership is required to apply.");
-  }
-
-  if (context.roundStatus !== "open" || now < opensAt || now > closesAt) {
-    errors.push("This grant round is not accepting applications.");
-  }
-
-  if (
-    context.organizationCountryCode !== "CA" ||
-    !input.registeredInCanada ||
-    !context.organizationRegistrationNumber
-  ) {
-    errors.push("Applicants must be registered Canadian organizations.");
-  }
-
-  if (!input.craGoodStanding || context.organizationCraGoodStanding === false) {
-    errors.push("CRA good standing must be confirmed before submission.");
-  }
-
-  if (!isGrantFocusArea(input.focusArea)) {
-    errors.push("Choose a supported focus area.");
-  }
-
-  if (
-    !Number.isInteger(input.requestedAmountCents) ||
-    input.requestedAmountCents <= 0 ||
-    input.requestedAmountCents > context.roundAwardAmountCents
-  ) {
-    errors.push("Requested amount must be within the round award amount.");
-  }
-
-  if (
-    input.annualRevenueCents !== null &&
-    (!Number.isInteger(input.annualRevenueCents) ||
-      input.annualRevenueCents < 0)
-  ) {
-    errors.push("Annual revenue must be zero or greater.");
-  }
-
-  if (mode === "submit") {
-    const fundingWordCount = countWords(input.fundingRequest);
-    if (fundingWordCount < 150 || fundingWordCount > 250) {
-      errors.push("Narrative must be between 150 and 250 words.");
-    }
-
-    if (input.expectedOutcome.trim().length < 20) {
-      errors.push("Expected outcome must be at least 20 characters.");
-    }
+  for (const rule of getGrantValidationRules({
+    closesAt,
+    context,
+    input,
+    mode,
+    now,
+    opensAt,
+  })) {
+    if (rule.isInvalid()) errors.push(rule.message);
   }
 
   return errors;
+}
+
+function getGrantValidationRules({
+  closesAt,
+  context,
+  input,
+  mode,
+  now,
+  opensAt,
+}: {
+  closesAt: number;
+  context: GrantEligibilityContext;
+  input: GrantApplicationInput;
+  mode: "draft" | "submit";
+  now: number;
+  opensAt: number;
+}): GrantValidationRule[] {
+  return [
+    ...getBaseGrantValidationRules({ closesAt, context, input, now, opensAt }),
+    ...getSubmissionGrantValidationRules(input, mode),
+  ];
+}
+
+function getBaseGrantValidationRules({
+  closesAt,
+  context,
+  input,
+  now,
+  opensAt,
+}: {
+  closesAt: number;
+  context: GrantEligibilityContext;
+  input: GrantApplicationInput;
+  now: number;
+  opensAt: number;
+}): GrantValidationRule[] {
+  return [
+    {
+      isInvalid: () =>
+        !activeSubscriptionStatuses.has(context.subscriptionStatus ?? ""),
+      message: "An active Olea membership is required to apply.",
+    },
+    {
+      isInvalid: () =>
+        context.roundStatus !== "open" || now < opensAt || now > closesAt,
+      message: "This grant round is not accepting applications.",
+    },
+    {
+      isInvalid: () => !isRegisteredCanadianApplicant(input, context),
+      message: "Applicants must be registered Canadian organizations.",
+    },
+    {
+      isInvalid: () => !hasCraGoodStanding(input, context),
+      message: "CRA good standing must be confirmed before submission.",
+    },
+    {
+      isInvalid: () => !isGrantFocusArea(input.focusArea),
+      message: "Choose a supported focus area.",
+    },
+    {
+      isInvalid: () => !isRequestedAmountWithinRound(input, context),
+      message: "Requested amount must be within the round award amount.",
+    },
+    {
+      isInvalid: () => !isValidAnnualRevenue(input.annualRevenueCents),
+      message: "Annual revenue must be zero or greater.",
+    },
+  ];
+}
+
+function getSubmissionGrantValidationRules(
+  input: GrantApplicationInput,
+  mode: "draft" | "submit",
+): GrantValidationRule[] {
+  if (mode !== "submit") return [];
+
+  return [
+    {
+      isInvalid: () => !isFundingNarrativeWordCountValid(input.fundingRequest),
+      message: "Narrative must be between 150 and 250 words.",
+    },
+    {
+      isInvalid: () => input.expectedOutcome.trim().length < 20,
+      message: "Expected outcome must be at least 20 characters.",
+    },
+  ];
+}
+
+function isRegisteredCanadianApplicant(
+  input: GrantApplicationInput,
+  context: GrantEligibilityContext,
+) {
+  return (
+    context.organizationCountryCode === "CA" &&
+    input.registeredInCanada &&
+    Boolean(context.organizationRegistrationNumber)
+  );
+}
+
+function hasCraGoodStanding(
+  input: GrantApplicationInput,
+  context: GrantEligibilityContext,
+) {
+  return input.craGoodStanding && context.organizationCraGoodStanding !== false;
+}
+
+function isRequestedAmountWithinRound(
+  input: GrantApplicationInput,
+  context: GrantEligibilityContext,
+) {
+  return (
+    Number.isInteger(input.requestedAmountCents) &&
+    input.requestedAmountCents > 0 &&
+    input.requestedAmountCents <= context.roundAwardAmountCents
+  );
+}
+
+function isValidAnnualRevenue(annualRevenueCents: number | null) {
+  return (
+    annualRevenueCents === null ||
+    (Number.isInteger(annualRevenueCents) && annualRevenueCents >= 0)
+  );
+}
+
+function isFundingNarrativeWordCountValid(fundingRequest: string) {
+  const fundingWordCount = countWords(fundingRequest);
+  return fundingWordCount >= 150 && fundingWordCount <= 250;
 }
 
 export function assertAwardWithinBudget({
