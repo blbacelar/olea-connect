@@ -131,15 +131,22 @@ function parseRequiredTargetNumber(formData: FormData) {
 
 function parseKpiDefinitionFields(formData: FormData) {
   return {
-    domain: parseRequiredText(formData, "domain", "Domain", 80),
-    name: parseRequiredText(formData, "name", "KPI name", 140),
+    domain: parseRequiredText(formData, {
+      key: "domain",
+      label: "Domain",
+      maxLength: 80,
+    }),
+    name: parseRequiredText(formData, {
+      key: "name",
+      label: "KPI name",
+      maxLength: 140,
+    }),
     owner: parseOptionalText(formData, "owner", "Owner", 100),
-    targetDisplay: parseRequiredText(
-      formData,
-      "targetDisplay",
-      "Target display",
-      60,
-    ),
+    targetDisplay: parseRequiredText(formData, {
+      key: "targetDisplay",
+      label: "Target display",
+      maxLength: 60,
+    }),
     targetNumber: parseRequiredTargetNumber(formData),
     baselineNumber: parseOptionalNumber(
       formData,
@@ -174,7 +181,11 @@ async function getNextSortOrder(
 
 export async function updateKpiDashboardSettings(formData: FormData) {
   const dashboard = await requireDashboardFromForm(formData);
-  const title = parseRequiredText(formData, "title", "Dashboard title", 140);
+  const title = parseRequiredText(formData, {
+    key: "title",
+    label: "Dashboard title",
+    maxLength: 140,
+  });
   const reportingYear = parseYear(formData);
   const financialYearEnd = parseRequiredDate(
     formData,
@@ -450,7 +461,12 @@ export async function saveKpiBoardAssessment(formData: FormData) {
 
 async function insertKpiMilestone(formData: FormData) {
   const dashboard = await requireDashboardFromForm(formData);
-  const title = parseRequiredText(formData, "title", "Milestone title", 160, 3);
+  const title = parseRequiredText(formData, {
+    key: "title",
+    label: "Milestone title",
+    maxLength: 160,
+    minLength: 3,
+  });
   const owner = parseOptionalText(formData, "owner", "Owner", 100);
   const dueDate = parseOptionalDate(formData, "dueDate", "Due date");
   const status = parseMilestoneStatus(formData.get("status"));
@@ -482,7 +498,12 @@ async function changeKpiMilestone(formData: FormData) {
     getFormString(formData, "milestoneId"),
     "Milestone",
   );
-  const title = parseRequiredText(formData, "title", "Milestone title", 160, 3);
+  const title = parseRequiredText(formData, {
+    key: "title",
+    label: "Milestone title",
+    maxLength: 160,
+    minLength: 3,
+  });
   const owner = parseOptionalText(formData, "owner", "Owner", 100);
   const dueDate = parseOptionalDate(formData, "dueDate", "Due date");
   const status = parseMilestoneStatus(formData.get("status"));
@@ -541,8 +562,18 @@ export async function deleteKpiMilestone(formData: FormData) {
 
 async function insertKpiRisk(formData: FormData) {
   const dashboard = await requireDashboardFromForm(formData);
-  const area = parseRequiredText(formData, "area", "Risk area", 100, 2);
-  const description = parseRequiredText(formData, "description", "Risk", 600, 3);
+  const area = parseRequiredText(formData, {
+    key: "area",
+    label: "Risk area",
+    maxLength: 100,
+    minLength: 2,
+  });
+  const description = parseRequiredText(formData, {
+    key: "description",
+    label: "Risk",
+    maxLength: 600,
+    minLength: 3,
+  });
   const mitigation = parseOptionalText(formData, "mitigation", "Mitigation", 1200);
   const owner = parseOptionalText(formData, "owner", "Owner", 100);
   const ragStatus = parseRagStatus(formData.get("ragStatus"));
@@ -566,8 +597,18 @@ async function insertKpiRisk(formData: FormData) {
 async function changeKpiRisk(formData: FormData) {
   const dashboard = await requireDashboardFromForm(formData);
   const riskId = assertUuid(getFormString(formData, "riskId"), "Risk");
-  const area = parseRequiredText(formData, "area", "Risk area", 100, 2);
-  const description = parseRequiredText(formData, "description", "Risk", 600, 3);
+  const area = parseRequiredText(formData, {
+    key: "area",
+    label: "Risk area",
+    maxLength: 100,
+    minLength: 2,
+  });
+  const description = parseRequiredText(formData, {
+    key: "description",
+    label: "Risk",
+    maxLength: 600,
+    minLength: 3,
+  });
   const mitigation = parseOptionalText(
     formData,
     "mitigation",

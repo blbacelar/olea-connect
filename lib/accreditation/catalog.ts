@@ -108,7 +108,7 @@ function defaultDraft(title: string, kind: AccreditationTemplateDefinition["kind
   return `${title}\n\nPurpose:\n\nScope:\n\nResponsible owner:\n\nKey content:\n\nReview cadence:`;
 }
 
-function template(
+type TemplateArgs = [
   code: string,
   title: string,
   sectionId: AccreditationTemplateDefinition["sectionId"],
@@ -116,6 +116,18 @@ function template(
   boardApprovalRequired: boolean,
   whoCompletes: string,
   requirement: string,
+];
+
+function template(
+  ...[
+    code,
+    title,
+    sectionId,
+    kind,
+    boardApprovalRequired,
+    whoCompletes,
+    requirement,
+  ]: TemplateArgs
 ): AccreditationTemplateDefinition {
   const mistakes =
     kind === "policy"

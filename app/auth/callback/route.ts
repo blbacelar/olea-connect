@@ -98,6 +98,41 @@ function createCallbackClient(request: Request) {
   return { supabase, withSessionCookies };
 }
 
+async function getProvisioningRedirect(
+  userId: string,
+  next: string,
+  requestOrigin: string,
+) {
+  const admin = createAdminClient();
+  const result = await attemptUserWorkspaceProvisioning(admin, userId);
+
+  if (result?.status === "completed") {
+    return NextResponse.redirect(
+      new URL(
+        await getPostActivationPath(admin, result.organization_id),
+        requestOrigin,
+      ),
+    );
+  }
+
+  if (
+    result?.status === "pending_payment" ||
+    result?.status === "pending_verification"
+  ) {
+    return NextResponse.redirect(
+      new URL("/signup/success?activation=pending", requestOrigin),
+    );
+  }
+
+  if (result?.status !== "failed") {
+    return NextResponse.redirect(new URL(next, requestOrigin));
+  }
+
+  const activationUrl = new URL("/signup/success", requestOrigin);
+  activationUrl.searchParams.set("activation", "failed");
+  return NextResponse.redirect(activationUrl);
+}
+
 export async function GET(request: Request) {
   const url = new URL(request.url);
   const requestOrigin = getRequestOrigin(request, url);
@@ -121,39 +156,9 @@ export async function GET(request: Request) {
         }
 
         try {
-          const admin = createAdminClient();
-          const result = await attemptUserWorkspaceProvisioning(
-            admin,
-            user.id,
+          return withSessionCookies(
+            await getProvisioningRedirect(user.id, next, requestOrigin),
           );
-
-          if (result?.status === "completed") {
-            return withSessionCookies(
-              NextResponse.redirect(
-                new URL(
-                  await getPostActivationPath(admin, result.organization_id),
-                  requestOrigin,
-                ),
-              ),
-            );
-          }
-
-          if (
-            result?.status === "pending_payment" ||
-            result?.status === "pending_verification"
-          ) {
-            return withSessionCookies(
-              NextResponse.redirect(
-                new URL("/signup/success?activation=pending", requestOrigin),
-              ),
-            );
-          }
-
-          if (result?.status !== "failed") {
-            return withSessionCookies(
-              NextResponse.redirect(new URL(next, requestOrigin)),
-            );
-          }
         } catch (provisioningError) {
           logError(
             "Unable to complete workspace provisioning after verification",

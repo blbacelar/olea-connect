@@ -153,10 +153,17 @@ export function formatPercent(value: number | null | undefined) {
 
 export function parseRequiredText(
   formData: FormData,
-  key: string,
-  label: string,
-  maxLength: number,
-  minLength = 1,
+  {
+    key,
+    label,
+    maxLength,
+    minLength = 1,
+  }: {
+    key: string;
+    label: string;
+    maxLength: number;
+    minLength?: number;
+  },
 ) {
   const value = String(formData.get(key) ?? "").trim();
   const result = nonEmptyTextSchema(maxLength, minLength).safeParse(value);

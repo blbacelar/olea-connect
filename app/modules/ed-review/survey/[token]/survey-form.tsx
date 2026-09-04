@@ -455,6 +455,11 @@ export function AnonymousSurveyForm({
     formRef.current?.requestSubmit();
   };
 
+  const markQuestionAnswered = (questionId: string) => {
+    setFormError("");
+    setAnsweredQuestionIds((previous) => new Set(previous).add(questionId));
+  };
+
   if (submitted) {
     return (
       <main className="min-h-screen bg-slate-50 p-4 md:p-8">
@@ -568,12 +573,7 @@ export function AnonymousSurveyForm({
                           type="radio"
                           name={`rating_${question.id}`}
                           value={rating}
-                          onChange={() => {
-                            setFormError("");
-                            setAnsweredQuestionIds((previous) =>
-                              new Set(previous).add(question.id),
-                            );
-                          }}
+                          onChange={() => markQuestionAnswered(question.id)}
                         />
                         <span className="inline-flex size-10 items-center justify-center rounded-full border bg-white font-semibold text-slate-700 transition peer-checked:border-olea-green peer-checked:bg-olea-green peer-checked:text-white peer-focus-visible:ring-2 peer-focus-visible:ring-olea-green">
                           {rating}

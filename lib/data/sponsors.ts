@@ -163,6 +163,43 @@ function mapPackage(row: SponsorshipPackageRow): SponsorshipPackageSummary {
   };
 }
 
+function mapContributionAllocation(allocation: GrantProgramContributionRow) {
+  const program = singleRelation(allocation.grant_programs);
+  const round = singleRelation(allocation.grant_rounds);
+
+  return {
+    amountCents: allocation.amount_cents,
+    grantProgramName: program?.name ?? "Grant program",
+    grantProgramSlug: program?.slug ?? "grant-program",
+    grantRoundName: round?.name ?? null,
+  };
+}
+
+function mapSponsorContribution(
+  contribution: SponsorContributionRow,
+  allocationsByContribution: Map<string, GrantProgramContributionRow[]>,
+) {
+  const contributionAllocations =
+    allocationsByContribution.get(contribution.id) ?? [];
+
+  return {
+    id: contribution.id,
+    status: contribution.status,
+    amountCents: contribution.amount_cents,
+    currency: contribution.currency,
+    pledgedOn: contribution.pledged_on,
+    receivedOn: contribution.received_on,
+    allocatedOn: contribution.allocated_on,
+    quickbooksTransactionId: contribution.quickbooks_transaction_id,
+    notes: contribution.notes,
+    allocations: contributionAllocations.map(mapContributionAllocation),
+    allocatedAmountCents: contributionAllocations.reduce(
+      (total, allocation) => total + allocation.amount_cents,
+      0,
+    ),
+  };
+}
+
 function mapSponsorReports({
   allocations,
   canViewPrivateFinancials,
@@ -218,36 +255,8 @@ function mapSponsorReports({
         const sponsorshipContributions =
           contributionsBySponsorship.get(sponsorship.id) ?? [];
         const mappedContributions = sponsorshipContributions.map(
-          (contribution) => {
-            const contributionAllocations =
-              allocationsByContribution.get(contribution.id) ?? [];
-
-            return {
-              id: contribution.id,
-              status: contribution.status,
-              amountCents: contribution.amount_cents,
-              currency: contribution.currency,
-              pledgedOn: contribution.pledged_on,
-              receivedOn: contribution.received_on,
-              allocatedOn: contribution.allocated_on,
-              quickbooksTransactionId: contribution.quickbooks_transaction_id,
-              notes: contribution.notes,
-              allocations: contributionAllocations.map((allocation) => {
-                const program = singleRelation(allocation.grant_programs);
-                const round = singleRelation(allocation.grant_rounds);
-                return {
-                  amountCents: allocation.amount_cents,
-                  grantProgramName: program?.name ?? "Grant program",
-                  grantProgramSlug: program?.slug ?? "grant-program",
-                  grantRoundName: round?.name ?? null,
-                };
-              }),
-              allocatedAmountCents: contributionAllocations.reduce(
-                (total, allocation) => total + allocation.amount_cents,
-                0,
-              ),
-            };
-          },
+          (contribution) =>
+            mapSponsorContribution(contribution, allocationsByContribution),
         );
         const reconciliation = summarizeContributionReconciliation(
           mappedContributions.map((contribution) => ({

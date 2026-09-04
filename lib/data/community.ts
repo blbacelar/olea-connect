@@ -83,7 +83,12 @@ function mapSpace(row: CommunitySpaceRow): CommunitySpace {
   };
 }
 
-function mapPost(
+type MapPostInput = {
+  authorsByUserId: Map<string, AuthorAttribution>;
+  comments: CommunityPostComment[];
+  currentUserId: string;
+  mentionedUserIds: string[];
+  reactions: Array<{ kind: string; user_id: string }>;
   row: {
     id: string;
     space_id: string;
@@ -95,13 +100,17 @@ function mapPost(
     pinned_at: string | null;
     created_at: string;
     updated_at: string;
-  },
-  comments: CommunityPostComment[],
-  mentionedUserIds: string[],
-  reactions: Array<{ kind: string; user_id: string }>,
-  currentUserId: string,
-  authorsByUserId: Map<string, AuthorAttribution>,
-): CommunityPost {
+  };
+};
+
+function mapPost({
+  authorsByUserId,
+  comments,
+  currentUserId,
+  mentionedUserIds,
+  reactions,
+  row,
+}: MapPostInput): CommunityPost {
   const author = authorsByUserId.get(row.author_user_id);
 
   return {
@@ -127,19 +136,27 @@ function mapPost(
   };
 }
 
-function mapComment(
+type MapCommentInput = {
+  authorsByUserId: Map<string, AuthorAttribution>;
+  currentUserId: string;
+  mentionedUserIds: string[];
+  reactions: Array<{ kind: string; user_id: string }>;
   row: {
     id: string;
     author_user_id: string;
     body: string;
     created_at: string;
     updated_at: string;
-  },
-  mentionedUserIds: string[],
-  reactions: Array<{ kind: string; user_id: string }>,
-  currentUserId: string,
-  authorsByUserId: Map<string, AuthorAttribution>,
-): CommunityPostComment {
+  };
+};
+
+function mapComment({
+  authorsByUserId,
+  currentUserId,
+  mentionedUserIds,
+  reactions,
+  row,
+}: MapCommentInput): CommunityPostComment {
   const author = authorsByUserId.get(row.author_user_id);
 
   return {
@@ -528,13 +545,13 @@ export async function getCommunityHome(): Promise<CommunityHome | null> {
   for (const comment of commentRows) {
     const postComments = commentsByPostId.get(comment.post_id) ?? [];
     postComments.push(
-      mapComment(
-        comment,
-        mentionedUserIdsByCommentId.get(comment.id) ?? [],
-        reactionsByCommentId.get(comment.id) ?? [],
-        member.id,
+      mapComment({
         authorsByUserId,
-      ),
+        currentUserId: member.id,
+        mentionedUserIds: mentionedUserIdsByCommentId.get(comment.id) ?? [],
+        reactions: reactionsByCommentId.get(comment.id) ?? [],
+        row: comment,
+      }),
     );
     commentsByPostId.set(comment.post_id, postComments);
   }
@@ -546,14 +563,14 @@ export async function getCommunityHome(): Promise<CommunityHome | null> {
     description: community.description,
     spaces: ((spaces ?? []) as CommunitySpaceRow[]).map(mapSpace),
     posts: postRows.map((post) =>
-      mapPost(
-        post,
-        commentsByPostId.get(post.id) ?? [],
-        mentionedUserIdsByPostId.get(post.id) ?? [],
-        reactionsByPostId.get(post.id) ?? [],
-        member.id,
+      mapPost({
         authorsByUserId,
-      ),
+        comments: commentsByPostId.get(post.id) ?? [],
+        currentUserId: member.id,
+        mentionedUserIds: mentionedUserIdsByPostId.get(post.id) ?? [],
+        reactions: reactionsByPostId.get(post.id) ?? [],
+        row: post,
+      }),
     ),
     events: (events ?? []).map(mapEvent),
     mentionCandidates,
