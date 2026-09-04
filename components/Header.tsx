@@ -28,9 +28,9 @@ import { signOut } from "@/lib/auth";
 import { getAppShellCopy } from "@/lib/i18n/app-shell-copy";
 import { getPublicSiteCopy } from "@/lib/i18n/public-site-copy";
 import { useLocaleContext } from "@/components/i18n/LocaleProvider";
+import { subscribeToMemberNotifications } from "@/lib/notifications/realtime-client";
 import type { Locale } from "@/lib/i18n/locales";
 import type { MemberNotification, NotificationSeverity } from "@/lib/types";
-import { createClient } from "@/utils/supabase/client";
 import { useRouter } from "next/navigation";
 
 const notificationTone: Record<NotificationSeverity, string> = {
@@ -193,18 +193,7 @@ export function Header() {
   useEffect(() => {
     if (!member?.id) return;
 
-    const supabase = createClient();
-    const channel = supabase
-      .channel(`member-notifications:${member.id}`)
-      .on(
-        "postgres_changes",
-        {
-          event: "*",
-          schema: "public",
-          table: "notifications",
-          filter: `user_id=eq.${member.id}`,
-        },
-        (payload) => {
+    return subscribeToMemberNotifications(member.id, (payload) => {
           const currentItems = notificationItemsRef.current;
           const currentUnreadCount = unreadCountRef.current;
 
@@ -253,13 +242,7 @@ export function Header() {
           syncNotificationState(nextItems, nextCount);
           setNotificationError("");
           router.refresh();
-        },
-      )
-      .subscribe();
-
-    return () => {
-      void supabase.removeChannel(channel);
-    };
+    });
   }, [member?.id, router]);
 
   function handleNotificationOpen(notification: MemberNotification) {

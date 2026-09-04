@@ -883,9 +883,14 @@ function formatDate(value: Date) {
   }).format(value);
 }
 
+const PDF_TEXT_CONTROL_CHARACTERS = new RegExp(
+  String.raw`[\u0000-\u0008\u000B\u000C\u000E-\u001F\u007F]`,
+  "g",
+);
+
 function clean(value: string) {
   return value
-    .replace(/[\u0000-\u0008\u000B\u000C\u000E-\u001F\u007F]/g, "")
+    .replace(PDF_TEXT_CONTROL_CHARACTERS, "")
     .replace(/\r\n?/g, "\n")
     .trim();
 }

@@ -204,8 +204,10 @@ const styles = StyleSheet.create({
   },
 });
 
+const ASCII_CONTROL_CHARACTERS = new RegExp(String.raw`[\u0000-\u001F]`, "g");
+
 function sanitizer(value: string | undefined | null) {
-  return (value ?? "").replace(/[\u0000-\u001F]/g, "").trim();
+  return (value ?? "").replace(ASCII_CONTROL_CHARACTERS, "").trim();
 }
 
 function formatWebsite(value: string) {

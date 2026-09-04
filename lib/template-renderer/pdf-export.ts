@@ -475,11 +475,16 @@ export function buildFooterText(
 }
 
 export function sanitizePdfText(value: string) {
+  const controlCharacters = new RegExp(
+    String.raw`[\u0000-\u0008\u000B\u000C\u000E-\u001F\u007F]`,
+    "g",
+  );
+
   return value
     .replace(/[\u00B2\u00B3\u00B9\u2070\u2074-\u207E\u2080-\u208E]/g, (match) => {
       return pdfTextReplacements[match] ?? "";
     })
-    .replace(/[\u0000-\u0008\u000B\u000C\u000E-\u001F\u007F]/g, "")
+    .replace(controlCharacters, "")
     .replace(/\r\n?/g, "\n");
 }
 

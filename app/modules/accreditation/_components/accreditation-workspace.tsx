@@ -471,7 +471,7 @@ function EditorTab({
     draftRef.current = response;
     setDraft(response);
     setState({ ok: true });
-  }, [response.templateId]);
+  }, [response]);
 
   function submit(formData: FormData) {
     const currentDraft = draftRef.current;
