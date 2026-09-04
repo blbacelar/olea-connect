@@ -3,22 +3,12 @@
 import { ArrowDown, ArrowUp, Plus, Trash2 } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import { Textarea } from "@/components/ui/textarea";
 import {
   defaultValueForField,
   fieldLabel,
   getValue,
   isVisible,
-  normalizeOptions,
 } from "@/lib/template-renderer/schema";
 import type {
   FieldPath,
@@ -26,7 +16,8 @@ import type {
   TemplateFormData,
   TemplateValue,
 } from "@/lib/template-renderer/types";
-import { cn } from "@/lib/utils";
+
+import { FieldInput } from "./TemplateFieldInput";
 
 export function TemplateFields({
   fields,
@@ -127,183 +118,6 @@ function TemplateFieldControl({
         </p>
       ) : null}
     </div>
-  );
-}
-
-function FieldInput({
-  id,
-  field,
-  value,
-  describedBy,
-  hasError,
-  onChange,
-}: {
-  id: string;
-  field: TemplateField;
-  value: TemplateValue;
-  describedBy?: string;
-  hasError: boolean;
-  onChange: (value: TemplateValue) => void;
-}) {
-  const inputClassName = cn(hasError && "border-red-300 focus-visible:ring-red-300");
-
-  if (field.type === "color") {
-    const colorValue =
-      typeof value === "string" && /^#[0-9A-Fa-f]{6}$/.test(value)
-        ? value
-        : "#000000";
-
-    return (
-      <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
-        <Input
-          id={id}
-          type="color"
-          aria-describedby={describedBy}
-          aria-invalid={hasError}
-          className={cn("h-11 w-full p-1 sm:w-16", inputClassName)}
-          value={colorValue}
-          onChange={(event) => onChange(event.target.value.toUpperCase())}
-        />
-        <Input
-          aria-label={`${fieldLabel(field)} hex value`}
-          aria-describedby={describedBy}
-          aria-invalid={hasError}
-          className={cn("font-mono uppercase", inputClassName)}
-          placeholder={field.placeholder ?? "#1A6B6B"}
-          value={value === undefined || value === null ? "" : String(value)}
-          onChange={(event) => onChange(event.target.value.toUpperCase())}
-        />
-      </div>
-    );
-  }
-
-  if (field.type === "textarea" || field.type === "rich_text") {
-    return (
-      <Textarea
-        id={id}
-        aria-describedby={describedBy}
-        aria-invalid={hasError}
-        className={inputClassName}
-        placeholder={field.placeholder}
-        value={typeof value === "string" ? value : ""}
-        onChange={(event) => onChange(event.target.value)}
-      />
-    );
-  }
-
-  if (field.type === "select" || field.type === "rating") {
-    return (
-      <Select
-        value={value === undefined || value === null ? "" : String(value)}
-        onValueChange={(nextValue) =>
-          onChange(field.type === "rating" ? Number(nextValue) : nextValue)
-        }
-      >
-        <SelectTrigger
-          id={id}
-          aria-describedby={describedBy}
-          aria-invalid={hasError}
-          className={inputClassName}
-        >
-          <SelectValue placeholder={field.placeholder ?? "Choose one"} />
-        </SelectTrigger>
-        <SelectContent>
-          {normalizeOptions(field.options).map((option) => (
-            <SelectItem key={option.value} value={option.value}>
-              {option.label}
-            </SelectItem>
-          ))}
-        </SelectContent>
-      </Select>
-    );
-  }
-
-  if (field.type === "multiselect") {
-    const selected = Array.isArray(value) ? value.map(String) : [];
-    return (
-      <div
-        aria-describedby={describedBy}
-        aria-invalid={hasError}
-        className={cn(
-          "grid gap-2 rounded-md border border-slate-200 p-3",
-          hasError && "border-red-300",
-        )}
-      >
-        {normalizeOptions(field.options).map((option) => (
-          <label
-            key={option.value}
-            className="flex items-center gap-2 text-sm text-slate-700"
-          >
-            <input
-              type="checkbox"
-              checked={selected.includes(option.value)}
-              onChange={(event) => {
-                const next = event.target.checked
-                  ? [...selected, option.value]
-                  : selected.filter((item) => item !== option.value);
-                onChange(next);
-              }}
-            />
-            {option.label}
-          </label>
-        ))}
-      </div>
-    );
-  }
-
-  if (field.type === "checkbox") {
-    return (
-      <label className="flex items-center gap-2 text-sm text-slate-700">
-        <input
-          id={id}
-          type="checkbox"
-          aria-describedby={describedBy}
-          aria-invalid={hasError}
-          checked={Boolean(value)}
-          onChange={(event) => onChange(event.target.checked)}
-        />
-        Yes
-      </label>
-    );
-  }
-
-  if (field.type === "file") {
-    return (
-      <Input
-        id={id}
-        type="file"
-        aria-describedby={describedBy}
-        aria-invalid={hasError}
-        className={inputClassName}
-        onChange={(event) => {
-          const file = event.target.files?.[0];
-          onChange(file ? { name: file.name, size: file.size } : null);
-        }}
-      />
-    );
-  }
-
-  return (
-    <Input
-      id={id}
-      type={inputTypeFor(field.type)}
-      aria-describedby={describedBy}
-      aria-invalid={hasError}
-      className={inputClassName}
-      placeholder={field.placeholder}
-      value={value === undefined || value === null ? "" : String(value)}
-      min={field.validation?.min}
-      max={field.validation?.max}
-      onChange={(event) =>
-        onChange(
-          field.type === "number" || field.type === "currency"
-            ? event.target.value === ""
-              ? undefined
-              : Number(event.target.value)
-            : event.target.value,
-        )
-      }
-    />
   );
 }
 
@@ -421,26 +235,6 @@ function RepeatableField({
       )}
     </div>
   );
-}
-
-function inputTypeFor(type: TemplateField["type"]) {
-  switch (type) {
-    case "email":
-      return "email";
-    case "url":
-      return "url";
-    case "date":
-      return "date";
-    case "time":
-      return "time";
-    case "datetime":
-      return "datetime-local";
-    case "number":
-    case "currency":
-      return "number";
-    default:
-      return "text";
-  }
 }
 
 function createBlankRow(field: TemplateField): Record<string, unknown> {
