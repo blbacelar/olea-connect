@@ -1,19 +1,12 @@
 import "server-only";
 
-import { normalizeTemplateSchema } from "@/lib/template-renderer/schema";
 import { buildGrantPlatformTemplate } from "@/lib/templates/grant-platform";
-import type {
-  DynamicTemplateEditorData,
-  DynamicTemplateSession,
-  TemplateExportRecord,
-  TemplateFieldSchema,
-  TemplateFormData,
-  WorkspaceMemberOption,
-} from "@/lib/template-renderer/types";
 import type { MembershipTier, Template, TemplateSession } from "@/lib/types";
 import { createClient } from "@/utils/supabase/server";
 
 import { requireMemberContext } from "./member-context";
+
+export { getDynamicTemplateEditorData } from "./dynamic-template-editor";
 
 const planRank: Record<MembershipTier, number> = {
   seedling: 0,
@@ -21,6 +14,179 @@ const planRank: Record<MembershipTier, number> = {
   canopy: 2,
   harvest: 3,
 };
+
+type TemplateResourceRow = {
+  id: string;
+  slug: string;
+  title: string;
+  summary: string;
+  estimated_minutes: number | null;
+  published_at: string | null;
+  resource_categories: { name: string } | Array<{ name: string }> | null;
+};
+
+type TemplateInstanceRow = {
+  resource_id: string;
+  status: string;
+  updated_at: string;
+};
+
+type TemplateAccessRow = {
+  resource_id: string;
+  plan_id: MembershipTier;
+};
+
+function fallbackValue<T>(value: T | null | undefined, fallback: T) {
+  return value ?? fallback;
+}
+
+function firstCategory(
+  categories: TemplateResourceRow["resource_categories"],
+) {
+  return Array.isArray(categories) ? categories[0] : categories;
+}
+
+function estimatedTemplateTime(minutes: number | null) {
+  return minutes ? `~${minutes} min` : "Self-paced";
+}
+
+function buildAccessByResource(planAccess: TemplateAccessRow[] | null) {
+  const accessByResource = new Map<string, MembershipTier[]>();
+
+  for (const row of planAccess ?? []) {
+    const plans = accessByResource.get(row.resource_id) ?? [];
+    plans.push(row.plan_id);
+    accessByResource.set(row.resource_id, plans);
+  }
+
+  return accessByResource;
+}
+
+function buildLatestInstances(instances: TemplateInstanceRow[] | null) {
+  const latestInstance = new Map<string, Omit<TemplateInstanceRow, "resource_id">>();
+
+  for (const instance of instances ?? []) {
+    if (!latestInstance.has(instance.resource_id)) {
+      latestInstance.set(instance.resource_id, instance);
+    }
+  }
+
+  return latestInstance;
+}
+
+function formatTemplateStatus(instance?: Omit<TemplateInstanceRow, "resource_id">) {
+  if (!instance) {
+    return "Not started yet";
+  }
+
+  const statusLabel = instance.status === "completed" ? "Completed" : "Last updated";
+  const updatedAt = new Intl.DateTimeFormat("en-CA", {
+    month: "short",
+    year: "numeric",
+  }).format(new Date(instance.updated_at));
+
+  return `${statusLabel} ${updatedAt}`;
+}
+
+function mapTemplateResource({
+  resource,
+  accessByResource,
+  directIds,
+  organizationTier,
+  latestInstance,
+}: {
+  resource: TemplateResourceRow;
+  accessByResource: Map<string, MembershipTier[]>;
+  directIds: Set<string>;
+  organizationTier: MembershipTier;
+  latestInstance: Map<string, Omit<TemplateInstanceRow, "resource_id">>;
+}): Template {
+  const allowedPlans = accessByResource.get(resource.id) ?? [];
+  const requiredTier =
+    allowedPlans.toSorted((left, right) => planRank[left] - planRank[right])[0] ??
+    "harvest";
+  const instance = latestInstance.get(resource.id);
+  const category = firstCategory(resource.resource_categories);
+
+  return {
+    id: resource.id,
+    slug: resource.slug,
+    name: resource.title,
+    description: resource.summary,
+    category: category?.name ?? "General",
+    requiredTier,
+    available: directIds.has(resource.id) || allowedPlans.includes(organizationTier),
+    estimatedTime: estimatedTemplateTime(resource.estimated_minutes),
+    status: formatTemplateStatus(instance),
+    isNew:
+      Boolean(resource.published_at) &&
+      Date.now() - new Date(resource.published_at!).getTime() <
+        45 * 24 * 60 * 60 * 1000,
+  };
+}
+
+function appendGrantPlatformTemplate(templates: Template[]) {
+  const grantPlatformTemplate = buildGrantPlatformTemplate();
+  const hasGrantPlatformTemplate = templates.some(
+    (template) => template.slug === grantPlatformTemplate.slug,
+  );
+
+  if (hasGrantPlatformTemplate) {
+    return templates;
+  }
+
+  return [
+    ...templates,
+    {
+      id: grantPlatformTemplate.slug,
+      slug: grantPlatformTemplate.slug,
+      name: grantPlatformTemplate.name,
+      description: grantPlatformTemplate.summary,
+      category: grantPlatformTemplate.category,
+      requiredTier: "seedling" as MembershipTier,
+      available: true,
+      estimatedTime: "~20 min",
+      status: "Ready to review",
+      isNew: true,
+    },
+  ];
+}
+
+function buildTemplateSession({
+  resourceId,
+  organizationId,
+  memberName,
+  memberEmail,
+  existing,
+}: {
+  resourceId: string;
+  organizationId: string;
+  memberName: string;
+  memberEmail: string;
+  existing: { id: string; form_data: unknown; updated_at: string } | null;
+}): TemplateSession {
+  const currentYear = new Date().getFullYear().toString();
+  const existingInstance = fallbackValue(existing, {
+    id: "",
+    form_data: {},
+    updated_at: new Date().toISOString(),
+  });
+  const formData = existingInstance.form_data as Partial<TemplateSession>;
+
+  return {
+    id: existingInstance.id,
+    templateId: resourceId,
+    organizationId,
+    boardYear: fallbackValue(formData.boardYear, currentYear),
+    surveyPeriod: fallbackValue(formData.surveyPeriod, ""),
+    answers: fallbackValue(formData.answers, {}),
+    openEndedAnswers: fallbackValue(formData.openEndedAnswers, {}),
+    administrator: fallbackValue(formData.administrator, memberName),
+    contact: fallbackValue(formData.contact, memberEmail),
+    deadline: fallbackValue(formData.deadline, ""),
+    updatedAt: existingInstance.updated_at,
+  };
+}
 
 export async function getTemplates(): Promise<Template[]> {
   const { organization } = await requireMemberContext();
@@ -58,79 +224,23 @@ export async function getTemplates(): Promise<Template[]> {
   if (instancesError) throw instancesError;
 
   const directIds = new Set((directAccess ?? []).map((row) => row.resource_id));
-  const accessByResource = new Map<string, MembershipTier[]>();
-  for (const row of planAccess ?? []) {
-    const plans = accessByResource.get(row.resource_id) ?? [];
-    plans.push(row.plan_id as MembershipTier);
-    accessByResource.set(row.resource_id, plans);
-  }
-  const latestInstance = new Map<
-    string,
-    { status: string; updated_at: string }
-  >();
-  for (const instance of instances ?? []) {
-    if (!latestInstance.has(instance.resource_id)) {
-      latestInstance.set(instance.resource_id, instance);
-    }
-  }
-
-  const mappedTemplates = (resources ?? []).map((resource) => {
-    const allowedPlans = accessByResource.get(resource.id) ?? [];
-    const requiredTier =
-      allowedPlans.toSorted((left, right) => planRank[left] - planRank[right])[0] ??
-      "harvest";
-    const available =
-      directIds.has(resource.id) || allowedPlans.includes(organization.tier);
-    const instance = latestInstance.get(resource.id);
-    const category = Array.isArray(resource.resource_categories)
-      ? resource.resource_categories[0]
-      : resource.resource_categories;
-
-    return {
-      id: resource.id,
-      slug: resource.slug,
-      name: resource.title,
-      description: resource.summary,
-      category: category?.name ?? "General",
-      requiredTier,
-      available,
-      estimatedTime: resource.estimated_minutes
-        ? `~${resource.estimated_minutes} min`
-        : "Self-paced",
-      status: instance
-        ? `${instance.status === "completed" ? "Completed" : "Last updated"} ${new Intl.DateTimeFormat("en-CA", { month: "short", year: "numeric" }).format(new Date(instance.updated_at))}`
-        : "Not started yet",
-      isNew:
-        Boolean(resource.published_at) &&
-        Date.now() - new Date(resource.published_at!).getTime() <
-          45 * 24 * 60 * 60 * 1000,
-    };
-  });
-
-  const grantPlatformTemplate = buildGrantPlatformTemplate();
-  const hasGrantPlatformTemplate = mappedTemplates.some(
-    (template) => template.slug === grantPlatformTemplate.slug,
+  const accessByResource = buildAccessByResource(
+    planAccess as TemplateAccessRow[] | null,
+  );
+  const latestInstance = buildLatestInstances(
+    instances as TemplateInstanceRow[] | null,
+  );
+  const mappedTemplates = ((resources ?? []) as TemplateResourceRow[]).map((resource) =>
+    mapTemplateResource({
+      resource,
+      accessByResource,
+      directIds,
+      organizationTier: organization.tier,
+      latestInstance,
+    }),
   );
 
-  if (hasGrantPlatformTemplate) {
-    return mappedTemplates;
-  }
-
-  return [
-    ...mappedTemplates,
-    {
-      id: grantPlatformTemplate.slug,
-      slug: grantPlatformTemplate.slug,
-      name: grantPlatformTemplate.name,
-      description: grantPlatformTemplate.summary,
-      category: grantPlatformTemplate.category,
-      requiredTier: "seedling" as MembershipTier,
-      available: true,
-      estimatedTime: "~20 min",
-      status: "Ready to review",
-      isNew: true,
-    },
-  ];
+  return appendGrantPlatformTemplate(mappedTemplates);
 }
 
 export async function getTemplateBySlug(slug: string) {
@@ -220,201 +330,11 @@ export async function getTemplateSession(): Promise<TemplateSession> {
     .maybeSingle();
 
   if (existingError) throw existingError;
-  const formData = (existing?.form_data ?? {}) as Partial<TemplateSession>;
-  return {
-    id: existing?.id ?? "",
-    templateId: resource.id,
-    organizationId: organization.id,
-    boardYear: formData.boardYear ?? new Date().getFullYear().toString(),
-    surveyPeriod: formData.surveyPeriod ?? "",
-    answers: formData.answers ?? {},
-    openEndedAnswers: formData.openEndedAnswers ?? {},
-    administrator: formData.administrator ?? member.name,
-    contact: formData.contact ?? member.email,
-    deadline: formData.deadline ?? "",
-    updatedAt: existing?.updated_at ?? new Date().toISOString(),
-  };
-}
-
-export async function getDynamicTemplateEditorData(
-  slug: string,
-  sessionId?: string,
-): Promise<DynamicTemplateEditorData | null> {
-  const { member, organization } = await requireMemberContext();
-  const supabase = await createClient();
-  const { data: resource, error: resourceError } = await supabase
-    .from("resources")
-    .select(
-      "id, slug, title, summary, description, estimated_minutes, template_definitions(renderer_key, schema_version, field_schema, default_values, supports_pdf, supports_docx)",
-    )
-    .eq("slug", slug)
-    .eq("type", "template")
-    .eq("status", "published")
-    .maybeSingle();
-
-  if (resourceError) throw resourceError;
-  if (!resource) return null;
-
-  const [
-    { data: planAccess, error: planAccessError },
-    { data: directAccess, error: directAccessError },
-  ] = await Promise.all([
-    supabase
-      .from("resource_plan_access")
-      .select("plan_id")
-      .eq("resource_id", resource.id),
-    supabase
-      .from("organization_resource_access")
-      .select("resource_id")
-      .eq("organization_id", organization.id)
-      .eq("resource_id", resource.id)
-      .lte("starts_at", new Date().toISOString())
-      .maybeSingle(),
-  ]);
-
-  if (planAccessError) throw planAccessError;
-  if (directAccessError) throw directAccessError;
-
-  const hasPlanAccess = (planAccess ?? []).some(
-    (access) => access.plan_id === organization.tier,
-  );
-  if (!directAccess && !hasPlanAccess) return null;
-
-  const definition = Array.isArray(resource.template_definitions)
-    ? resource.template_definitions[0]
-    : resource.template_definitions;
-  const schema = normalizeTemplateSchema(definition?.field_schema);
-
-  if (!definition || !schema) return null;
-
-  const { data: instances, error: instancesError } = await supabase
-    .from("template_instances")
-    .select(
-      "id, title, status, completion_percent, last_saved_at, updated_at",
-    )
-    .eq("organization_id", organization.id)
-    .eq("resource_id", resource.id)
-    .order("updated_at", { ascending: false })
-    .limit(25);
-
-  if (instancesError) throw instancesError;
-
-  const selectedSessionId =
-    sessionId === "new"
-      ? null
-      : sessionId
-        ? sessionId
-        : (instances ?? [])[0]?.id ?? null;
-
-  const { data: existing, error: existingError } = selectedSessionId
-    ? await supabase
-        .from("template_instances")
-        .select(
-          "id, title, status, form_data, branding_snapshot, definition_version, schema_snapshot, completion_percent, last_saved_at, updated_at",
-        )
-        .eq("id", selectedSessionId)
-        .eq("organization_id", organization.id)
-        .eq("resource_id", resource.id)
-        .maybeSingle()
-    : { data: null, error: null };
-
-  if (existingError) throw existingError;
-
-  const defaultValues = (definition.default_values ?? {}) as TemplateFormData;
-  const formData = {
-    ...defaultValues,
-    administrator: defaultValues.administrator || member.name,
-    contact_email: defaultValues.contact_email || member.email,
-    ...((existing?.form_data ?? {}) as TemplateFormData),
-  };
-  const schemaSnapshot =
-    normalizeTemplateSchema(existing?.schema_snapshot) ?? schema;
-  const { data: directory, error: directoryError } = schemaSnapshot.presentation?.calendar
-    ?.enabled
-    ? await supabase.rpc("get_team_directory", {
-        target_organization_id: organization.id,
-      })
-    : { data: [], error: null };
-
-  if (directoryError) throw directoryError;
-
-  const workspaceMembers: WorkspaceMemberOption[] = (
-    (directory ?? []) as Array<{
-      user_id: string;
-      email: string;
-      full_name: string;
-      status: "invited" | "active" | "suspended";
-    }>
-  )
-    .filter((directoryMember) => directoryMember.status === "active")
-    .map((directoryMember) => ({
-      id: directoryMember.user_id,
-      email: directoryMember.email,
-      name: directoryMember.full_name,
-    }));
-  const session: DynamicTemplateSession = {
-    id: existing?.id ?? "",
+  return buildTemplateSession({
     resourceId: resource.id,
     organizationId: organization.id,
-    title: existing?.title ?? `${resource.title} ${new Date().getFullYear()}`,
-    slug: resource.slug,
-    schemaVersion:
-      existing?.definition_version ?? definition.schema_version ?? schema.version,
-    schemaSnapshot: schemaSnapshot as TemplateFieldSchema,
-    brandingSnapshot:
-      (existing?.branding_snapshot as DynamicTemplateSession["brandingSnapshot"]) ??
-      organization.brand,
-    formData,
-    completionPercent: existing?.completion_percent ?? 0,
-    status: (existing?.status as DynamicTemplateSession["status"]) ?? "draft",
-    lastSavedAt:
-      existing?.last_saved_at ?? existing?.updated_at ?? new Date().toISOString(),
-  };
-  const { data: exports, error: exportsError } = session.id
-    ? await supabase
-        .from("template_exports")
-        .select("id, format, file_name, generated_at, created_by")
-        .eq("template_instance_id", session.id)
-        .eq("organization_id", organization.id)
-        .order("generated_at", { ascending: false })
-        .limit(10)
-    : { data: [], error: null };
-
-  if (exportsError) throw exportsError;
-
-  return {
-    organization,
-    template: {
-      id: resource.id,
-      slug: resource.slug,
-      title: resource.title,
-      summary: resource.summary,
-      description: resource.description,
-      estimatedMinutes: resource.estimated_minutes,
-      rendererKey: definition.renderer_key,
-      supportsPdf: definition.supports_pdf,
-      supportsDocx: definition.supports_docx,
-    },
-    session,
-    exports: ((exports ?? []) as Array<{
-      id: string;
-      format: TemplateExportRecord["format"];
-      file_name: string;
-      generated_at: string;
-      created_by: string | null;
-    }>).map((item) => ({
-      id: item.id,
-      format: item.format,
-      fileName: item.file_name,
-      generatedAt: item.generated_at,
-      generatedBy: item.created_by,
-    })),
-    sessions: (instances ?? []).map((instance) => ({
-      id: instance.id,
-      title: instance.title,
-      status: instance.status as DynamicTemplateSession["status"],
-      updatedAt: instance.updated_at,
-    })),
-    workspaceMembers,
-  };
+    memberName: member.name,
+    memberEmail: member.email,
+    existing,
+  });
 }
