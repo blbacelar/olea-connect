@@ -1,87 +1,33 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useMemo } from "react";
 
-import {
-  AlertTriangle,
-  Download,
-  FileText,
-  FolderArchive,
-  LinkIcon,
-  LoaderCircle,
-  PackageOpen,
-  Plus,
-  Trash2,
-} from "lucide-react";
+import { AlertTriangle, PackageOpen, Plus } from "lucide-react";
 
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { downloadBoardPackageZip } from "@/components/templates/board-package-download";
 import {
-  Dialog,
-  DialogClose,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
+  BoardPackageUploadDialog,
+  ConfidentialDownloadDialog,
+  DeleteBoardPackageDocumentDialog,
+  PackageDownloadDialog,
+  PackageMessageDialog,
+} from "@/components/templates/board-package-dialogs";
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+  BoardPackageMeetingCard,
+  DocumentList,
+  EmptyPackageState,
+} from "@/components/templates/board-package-lists";
+import { useBoardPackageDocumentActions } from "@/components/templates/use-board-package-document-actions";
+import { useBoardPackageDownloadController } from "@/components/templates/use-board-package-download-controller";
+import { useBoardPackageUploadController } from "@/components/templates/use-board-package-upload-controller";
 import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
-import {
-  createBoardPackageDocumentDownloadUrl,
-  deleteBoardPackageDocumentFile,
-  recordBoardPackageAuditEvent,
-  uploadBoardPackageDocument,
-} from "@/app/modules/board-calendar/actions";
-import {
-  appendBoardPackageAccessLog,
-  appendBoardPackageDocument,
   buildBoardPackageMeetings,
-  deleteBoardPackageDocument,
-  getBoardPackageAccessLogs,
   getGeneralBoardPackageDocuments,
-  type BoardPackageDocument,
-  type BoardPackageMeeting,
 } from "@/lib/template-renderer/board-calendar-packages";
 import type { TemplateFormData } from "@/lib/template-renderer/types";
 import type { BrandProfile } from "@/lib/types";
-import { cn } from "@/lib/utils";
 
-const documentCategories = [
-  "Agenda",
-  "Minutes",
-  "Financial report",
-  "Board report",
-  "Policy",
-  "Supporting document",
-  "Other",
-];
-
-const emptyUploadForm = {
-  category: "Agenda",
-  confidential: true,
-  name: "",
-  sizeLabel: "",
-  url: "",
-};
-
-type UploadFormState = typeof emptyUploadForm;
+export { BoardPackageAuditLogPanel } from "@/components/templates/board-package-lists";
 
 export function BoardPackagesPanel({
   brand,
@@ -101,301 +47,21 @@ export function BoardPackagesPanel({
     () => getGeneralBoardPackageDocuments(data),
     [data],
   );
-  const [uploadMeeting, setUploadMeeting] =
-    useState<BoardPackageMeeting | null>(null);
-  const [isGeneralUploadOpen, setIsGeneralUploadOpen] = useState(false);
-  const [downloadTarget, setDownloadTarget] =
-    useState<BoardPackageDocument | null>(null);
-  const [deleteTarget, setDeleteTarget] =
-    useState<BoardPackageDocument | null>(null);
-  const [packageTarget, setPackageTarget] =
-    useState<BoardPackageMeeting | null>(null);
-  const [form, setForm] = useState<UploadFormState>(emptyUploadForm);
-  const [formError, setFormError] = useState("");
-  const [selectedFile, setSelectedFile] = useState<File | null>(null);
-  const [isUploading, setIsUploading] = useState(false);
-  const [isPackaging, setIsPackaging] = useState(false);
-  const [packageAcknowledged, setPackageAcknowledged] = useState(false);
-  const [downloadError, setDownloadError] = useState("");
-  const [operationError, setOperationError] = useState("");
-
-  const packageIncludesConfidentialDocuments = Boolean(
-    packageTarget?.documents.some((document) => document.confidential),
-  );
-
-  const isUploadOpen = Boolean(uploadMeeting) || isGeneralUploadOpen;
-  const uploadTitle = uploadMeeting
-    ? `Add file to ${uploadMeeting.title}`
-    : "Add general board document";
-
-  function openMeetingUpload(meeting: BoardPackageMeeting) {
-    setUploadMeeting(meeting);
-    setIsGeneralUploadOpen(false);
-    setForm(emptyUploadForm);
-    setFormError("");
-    setSelectedFile(null);
-  }
-
-  function openGeneralUpload() {
-    setUploadMeeting(null);
-    setIsGeneralUploadOpen(true);
-    setForm(emptyUploadForm);
-    setFormError("");
-    setSelectedFile(null);
-  }
-
-  function closeUpload() {
-    setUploadMeeting(null);
-    setIsGeneralUploadOpen(false);
-    setForm(emptyUploadForm);
-    setFormError("");
-    setSelectedFile(null);
-    setIsUploading(false);
-  }
-
-  function updateForm<Key extends keyof UploadFormState>(
-    key: Key,
-    value: UploadFormState[Key],
-  ) {
-    setForm((currentForm) => ({ ...currentForm, [key]: value }));
-  }
-
-  async function submitUpload() {
-    const trimmedName = form.name.trim();
-    const trimmedUrl = form.url.trim();
-    const validationError = validateDocumentForm({
-      file: selectedFile,
-      name: trimmedName,
-      templateInstanceId,
-      url: trimmedUrl,
-    });
-
-    if (validationError) {
-      setFormError(validationError);
-      return;
-    }
-
-    setIsUploading(true);
-    setFormError("");
-
-    try {
-      const uploadedDocumentResult = selectedFile
-        ? await uploadSelectedFile({
-            file: selectedFile,
-            meetingId: uploadMeeting?.id,
-            templateInstanceId,
-          })
-        : null;
-
-      if (uploadedDocumentResult && !uploadedDocumentResult.ok) {
-        throw new Error(uploadedDocumentResult.error);
-      }
-
-      const uploadedDocument = uploadedDocumentResult?.data ?? null;
-
-      onDataChange((currentData) =>
-        appendBoardPackageDocument(currentData, {
-          ...form,
-          contentType: uploadedDocument?.contentType,
-          fileName: uploadedDocument?.fileName,
-          meetingId: uploadMeeting?.id,
-          name: trimmedName,
-          size: uploadedDocument?.size,
-          sizeLabel: uploadedDocument?.sizeLabel ?? form.sizeLabel,
-          storagePath: uploadedDocument?.storagePath,
-          url: trimmedUrl,
-        }),
-      );
-      closeUpload();
-    } catch (error) {
-      setFormError(
-        error instanceof Error
-          ? error.message
-          : "Unable to upload this board package document.",
-      );
-      setIsUploading(false);
-    }
-  }
-
-  function logDownload(
-    document: BoardPackageDocument,
-    meeting?: BoardPackageMeeting,
-  ) {
-    onDataChange((currentData) =>
-      appendBoardPackageAccessLog(currentData, {
-        action: "document_downloaded",
-        documentId: document.id,
-        documentName: document.name,
-        meetingId: meeting?.id ?? document.meetingId,
-        meetingTitle: meeting?.title ?? "",
-      }),
-    );
-  }
-
-  async function openDocument(
-    document: BoardPackageDocument,
-    meeting?: BoardPackageMeeting,
-  ) {
-    setDownloadError("");
-
-    try {
-      let documentUrl = document.url;
-
-      if (document.storagePath) {
-        const documentUrlResult = await createBoardPackageDocumentDownloadUrl({
-          documentId: document.id,
-          documentName: document.name,
-          fileName: document.fileName || document.name,
-          meetingId: meeting?.id ?? document.meetingId,
-          meetingTitle: meeting?.title ?? "",
-          storagePath: document.storagePath,
-          templateInstanceId,
-        });
-
-        if (!documentUrlResult.ok) {
-          throw new Error(documentUrlResult.error);
-        }
-
-        documentUrl = documentUrlResult.data.signedUrl;
-      }
-
-      if (!documentUrl) {
-        throw new Error("This document does not have a downloadable file.");
-      }
-
-      if (!document.storagePath && templateInstanceId) {
-        const auditResult = await recordBoardPackageAuditEvent({
-          action: "document_downloaded",
-          documentId: document.id,
-          documentName: document.name,
-          meetingId: meeting?.id ?? document.meetingId,
-          meetingTitle: meeting?.title ?? "",
-          templateInstanceId,
-        });
-        if (!auditResult.ok) throw new Error(auditResult.error);
-      }
-
-      logDownload(document, meeting);
-      window.open(documentUrl, "_blank", "noopener,noreferrer");
-    } catch (error) {
-      setDownloadError(
-        error instanceof Error
-          ? error.message
-          : "Unable to open this board package document.",
-      );
-    }
-  }
-
-  function requestDocumentDownload(
-    document: BoardPackageDocument,
-    meeting?: BoardPackageMeeting,
-  ) {
-    if (document.confidential) {
-      setDownloadTarget(document);
-      return;
-    }
-
-    void openDocument(document, meeting);
-  }
-
-  function confirmConfidentialDownload() {
-    if (!downloadTarget) return;
-    const meeting = meetings.find((item) => item.id === downloadTarget.meetingId);
-    void openDocument(downloadTarget, meeting);
-    setDownloadTarget(null);
-  }
-
-  async function confirmPackageDownload() {
-    if (!packageTarget) return;
-    if (packageIncludesConfidentialDocuments && !packageAcknowledged) return;
-
-    setIsPackaging(true);
-    try {
-      if (templateInstanceId) {
-        const auditResult = await recordBoardPackageAuditEvent({
-          action: "package_downloaded",
-          meetingId: packageTarget.id,
-          meetingTitle: packageTarget.title,
-          templateInstanceId,
-        });
-        if (!auditResult.ok) throw new Error(auditResult.error);
-      }
-
-      await downloadBoardPackageZip({
-        brand,
-        meeting: packageTarget,
-        templateInstanceId,
-      });
-
-      onDataChange((currentData) =>
-        appendBoardPackageAccessLog(currentData, {
-          action: "package_downloaded",
-          meetingId: packageTarget.id,
-          meetingTitle: packageTarget.title,
-        }),
-      );
-      setPackageTarget(null);
-      setPackageAcknowledged(false);
-    } catch (error) {
-      setOperationError(
-        error instanceof Error
-          ? error.message
-          : "Unable to prepare this board package download.",
-      );
-    } finally {
-      setIsPackaging(false);
-    }
-  }
-
-  async function confirmDelete() {
-    if (!deleteTarget) return;
-    const meeting = meetings.find((item) => item.id === deleteTarget.meetingId);
-
-    try {
-      if (deleteTarget.storagePath) {
-        const deleteResult = await deleteBoardPackageDocumentFile({
-          documentId: deleteTarget.id,
-          documentName: deleteTarget.name,
-          meetingId: meeting?.id ?? deleteTarget.meetingId,
-          meetingTitle: meeting?.title ?? "",
-          storagePath: deleteTarget.storagePath,
-          templateInstanceId,
-        });
-        if (!deleteResult.ok) throw new Error(deleteResult.error);
-      } else if (templateInstanceId) {
-        const auditResult = await recordBoardPackageAuditEvent({
-          action: "document_deleted",
-          documentId: deleteTarget.id,
-          documentName: deleteTarget.name,
-          meetingId: meeting?.id ?? deleteTarget.meetingId,
-          meetingTitle: meeting?.title ?? "",
-          templateInstanceId,
-        });
-        if (!auditResult.ok) throw new Error(auditResult.error);
-      }
-
-      onDataChange((currentData) =>
-        appendBoardPackageAccessLog(
-          deleteBoardPackageDocument(currentData, deleteTarget.id),
-          {
-            action: "document_deleted",
-            documentId: deleteTarget.id,
-            documentName: deleteTarget.name,
-            meetingId: meeting?.id ?? deleteTarget.meetingId,
-            meetingTitle: meeting?.title ?? "",
-          },
-        ),
-      );
-      setDeleteTarget(null);
-    } catch (error) {
-      setDeleteTarget(null);
-      setOperationError(
-        error instanceof Error
-          ? error.message
-          : "Unable to delete this board package document.",
-      );
-    }
-  }
+  const upload = useBoardPackageUploadController({
+    onDataChange,
+    templateInstanceId,
+  });
+  const documents = useBoardPackageDocumentActions({
+    meetings,
+    onDataChange,
+    templateInstanceId,
+  });
+  const packages = useBoardPackageDownloadController({
+    brand,
+    onDataChange,
+    setOperationError: documents.setOperationError,
+    templateInstanceId,
+  });
 
   return (
     <section
@@ -419,12 +85,12 @@ export function BoardPackagesPanel({
             <BoardPackageMeetingCard
               key={meeting.id}
               meeting={meeting}
-              onAddFile={() => openMeetingUpload(meeting)}
-              onDeleteDocument={setDeleteTarget}
+              onAddFile={() => upload.openMeetingUpload(meeting)}
+              onDeleteDocument={documents.setDeleteTarget}
               onDownloadDocument={(document) =>
-                requestDocumentDownload(document, meeting)
+                documents.requestDocumentDownload(document, meeting)
               }
-              onDownloadPackage={() => setPackageTarget(meeting)}
+              onDownloadPackage={() => packages.setPackageTarget(meeting)}
             />
           ))
         ) : (
@@ -447,7 +113,7 @@ export function BoardPackagesPanel({
               not tied to one meeting.
             </p>
           </div>
-          <Button type="button" variant="outline" onClick={openGeneralUpload}>
+          <Button type="button" variant="outline" onClick={upload.openGeneralUpload}>
             <Plus className="mr-2 size-4" />
             Add file
           </Button>
@@ -456,606 +122,49 @@ export function BoardPackagesPanel({
         <DocumentList
           documents={generalDocuments}
           emptyLabel="No general documents yet."
-          onDeleteDocument={setDeleteTarget}
-          onDownloadDocument={requestDocumentDownload}
+          onDeleteDocument={documents.setDeleteTarget}
+          onDownloadDocument={documents.requestDocumentDownload}
         />
       </section>
 
-      <Dialog open={isUploadOpen} onOpenChange={(open) => !open && closeUpload()}>
-        <DialogContent className="max-w-3xl">
-          <DialogHeader>
-            <DialogTitle>{uploadTitle}</DialogTitle>
-            <DialogDescription>
-              Upload a private board document or attach a secure external
-              reference link. Private files are opened through short-lived
-              signed download links.
-            </DialogDescription>
-          </DialogHeader>
-
-          <div className="grid gap-4 sm:grid-cols-2">
-            <div className="space-y-2 sm:col-span-2">
-              <Label htmlFor="board-package-document-name">Document name</Label>
-              <Input
-                id="board-package-document-name"
-                value={form.name}
-                onChange={(event) => updateForm("name", event.target.value)}
-                placeholder="Board agenda, finance report, approved minutes..."
-              />
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="board-package-document-category">
-                Document category
-              </Label>
-              <Select
-                value={form.category}
-                onValueChange={(value) => updateForm("category", value)}
-              >
-                <SelectTrigger
-                  id="board-package-document-category"
-                  aria-label="Document category"
-                >
-                  <SelectValue placeholder="Choose category" />
-                </SelectTrigger>
-                <SelectContent>
-                  {documentCategories.map((category) => (
-                    <SelectItem key={category} value={category}>
-                      {category}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="board-package-document-size">
-                Size or version label
-              </Label>
-              <Input
-                id="board-package-document-size"
-                value={form.sizeLabel}
-                onChange={(event) => updateForm("sizeLabel", event.target.value)}
-                placeholder="2.4 MB, v1, approved"
-              />
-            </div>
-
-            <div className="space-y-2 sm:col-span-2">
-              <Label htmlFor="board-package-document-file">
-                Private file upload
-              </Label>
-              <Input
-                id="board-package-document-file"
-                type="file"
-                accept=".pdf,.doc,.docx,.xls,.xlsx,.txt,image/png,image/jpeg,image/webp"
-                onChange={(event) =>
-                  setSelectedFile(event.target.files?.[0] ?? null)
-                }
-              />
-              <p className="text-xs leading-5 text-slate-500">
-                PDF, Word, Excel, text, PNG, JPG, or WebP up to 25 MB.
-              </p>
-            </div>
-
-            <div className="space-y-2 sm:col-span-2">
-              <Label htmlFor="board-package-document-url">
-                External document link
-                <span className="ml-1 text-slate-400">(optional)</span>
-              </Label>
-              <Input
-                id="board-package-document-url"
-                type="url"
-                value={form.url}
-                onChange={(event) => updateForm("url", event.target.value)}
-                placeholder="https://... only when the file is stored outside Olea Connects™"
-              />
-            </div>
-
-            <label className="flex items-center gap-3 rounded-lg border bg-slate-50 px-3 py-3 text-sm font-medium text-slate-700 sm:col-span-2">
-              <input
-                type="checkbox"
-                checked={form.confidential}
-                onChange={(event) =>
-                  updateForm("confidential", event.target.checked)
-                }
-                className="size-4 rounded border-slate-300"
-              />
-              Require confidentiality acknowledgement before opening
-            </label>
-          </div>
-
-          {formError ? (
-            <p className="rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700">
-              {formError}
-            </p>
-          ) : null}
-
-          <DialogFooter>
-            <DialogClose asChild>
-              <Button type="button" variant="outline">
-                Cancel
-              </Button>
-            </DialogClose>
-            <Button type="button" disabled={isUploading} onClick={submitUpload}>
-              {isUploading ? "Adding file..." : "Add file"}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-
-      <Dialog
-        open={Boolean(downloadTarget)}
-        onOpenChange={(open) => {
-          if (!open) {
-            setDownloadTarget(null);
-            setDownloadError("");
-          }
-        }}
-      >
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Open confidential document?</DialogTitle>
-            <DialogDescription>
-              “{downloadTarget?.name}” may contain private board information.
-              Only open it in a secure environment and do not share it outside
-              approved board package access.
-            </DialogDescription>
-          </DialogHeader>
-          <DialogFooter>
-            <DialogClose asChild>
-              <Button type="button" variant="outline">
-                Cancel
-              </Button>
-            </DialogClose>
-            <Button type="button" onClick={confirmConfidentialDownload}>
-              I understand, open document
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-
-      <Dialog
-        open={Boolean(downloadError)}
-        onOpenChange={(open) => !open && setDownloadError("")}
-      >
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Document unavailable</DialogTitle>
-            <DialogDescription>{downloadError}</DialogDescription>
-          </DialogHeader>
-          <DialogFooter>
-            <DialogClose asChild>
-              <Button type="button">Close</Button>
-            </DialogClose>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-
-      <Dialog
-        open={Boolean(operationError)}
-        onOpenChange={(open) => !open && setOperationError("")}
-      >
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Package action failed</DialogTitle>
-            <DialogDescription>{operationError}</DialogDescription>
-          </DialogHeader>
-          <DialogFooter>
-            <DialogClose asChild>
-              <Button type="button">Close</Button>
-            </DialogClose>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-
-      <Dialog
-        open={Boolean(packageTarget)}
-        onOpenChange={(open) => {
-          if (!open && !isPackaging) {
-            setPackageTarget(null);
-            setPackageAcknowledged(false);
-          }
-        }}
-      >
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Download board package?</DialogTitle>
-            <DialogDescription>
-              “{packageTarget?.title}” includes {packageTarget?.documentCount ?? 0}
-              {" "}document(s). This will download a zip package with uploaded
-              files and a package index. Access is recorded in the audit log.
-            </DialogDescription>
-          </DialogHeader>
-          {packageIncludesConfidentialDocuments ? (
-            <label className="flex gap-3 rounded-lg border border-amber-200 bg-amber-50 p-4 text-sm leading-6 text-amber-950">
-              <input
-                type="checkbox"
-                className="mt-1 size-4 shrink-0 accent-olea-green"
-                checked={packageAcknowledged}
-                disabled={isPackaging}
-                onChange={(event) =>
-                  setPackageAcknowledged(event.target.checked)
-                }
-              />
-              <span>
-                <strong className="block font-semibold">
-                  Confidentiality acknowledgement required
-                </strong>
-                I acknowledge this board package includes confidential materials
-                and will only share them with authorized board package
-                recipients.
-              </span>
-            </label>
-          ) : null}
-          <DialogFooter>
-            <DialogClose asChild>
-              <Button type="button" variant="outline" disabled={isPackaging}>
-                Cancel
-              </Button>
-            </DialogClose>
-            <Button
-              type="button"
-              disabled={
-                isPackaging ||
-                (packageIncludesConfidentialDocuments && !packageAcknowledged)
-              }
-              onClick={() => void confirmPackageDownload()}
-            >
-              {isPackaging ? (
-                <>
-                  <LoaderCircle className="mr-2 size-4 animate-spin" />
-                  Preparing package
-                </>
-              ) : (
-                "Download package"
-              )}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-
-      <Dialog
-        open={Boolean(deleteTarget)}
-        onOpenChange={(open) => !open && setDeleteTarget(null)}
-      >
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Delete this board document?</DialogTitle>
-            <DialogDescription>
-              “{deleteTarget?.name}” will be removed from this package. This
-              action is recorded in the audit log.
-            </DialogDescription>
-          </DialogHeader>
-          <DialogFooter>
-            <DialogClose asChild>
-              <Button type="button" variant="outline">
-                Cancel
-              </Button>
-            </DialogClose>
-            <Button
-              type="button"
-              variant="destructive"
-              onClick={() => void confirmDelete()}
-            >
-              Delete document
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-    </section>
-  );
-}
-
-export function BoardPackageAuditLogPanel({
-  data,
-}: {
-  data: TemplateFormData;
-}) {
-  const logs = useMemo(() => getBoardPackageAccessLogs(data), [data]);
-
-  return (
-    <section
-      className="rounded-xl border bg-white p-5 shadow-sm"
-      data-testid="board-calendar-audit-log-panel"
-    >
-      <div>
-        <h3 className="text-xl font-semibold text-slate-950">Audit log</h3>
-        <p className="mt-1 text-sm leading-6 text-slate-500">
-          Tracks board package downloads and document changes for governance
-          review.
-        </p>
-      </div>
-
-      {logs.length ? (
-        <div className="mt-5 overflow-hidden rounded-xl border">
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Action</TableHead>
-                <TableHead>Document</TableHead>
-                <TableHead>Meeting</TableHead>
-                <TableHead>Timestamp</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {logs.map((log) => (
-                <TableRow key={log.id}>
-                  <TableCell className="font-semibold text-slate-900">
-                    {formatAction(log.action)}
-                  </TableCell>
-                  <TableCell>{log.documentName || "—"}</TableCell>
-                  <TableCell>{log.meetingTitle || "General documents"}</TableCell>
-                  <TableCell>{formatDateTime(log.createdAt)}</TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-        </div>
-      ) : (
-        <EmptyPackageState
-          className="mt-5"
-          icon={FolderArchive}
-          title="No package activity yet"
-          description="Downloads and document removals will appear here once members use board packages."
-        />
-      )}
-    </section>
-  );
-}
-
-function BoardPackageMeetingCard({
-  meeting,
-  onAddFile,
-  onDeleteDocument,
-  onDownloadDocument,
-  onDownloadPackage,
-}: {
-  meeting: BoardPackageMeeting;
-  onAddFile: () => void;
-  onDeleteDocument: (document: BoardPackageDocument) => void;
-  onDownloadDocument: (document: BoardPackageDocument) => void;
-  onDownloadPackage: () => void;
-}) {
-  return (
-    <section className="rounded-xl border bg-white p-5 shadow-sm">
-      <div className="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
-        <div>
-          <div className="flex flex-wrap items-center gap-2">
-            <h3 className="text-lg font-semibold text-slate-950">
-              {meeting.title}
-            </h3>
-            <Badge variant="outline">{meeting.type || "Meeting"}</Badge>
-          </div>
-          <p className="mt-1 text-sm text-slate-500">
-            {[meeting.date, meeting.time].filter(Boolean).join(" at ") ||
-              "Date not set"}{" "}
-            · {meeting.documentCount} document
-            {meeting.documentCount === 1 ? "" : "s"}
-          </p>
-        </div>
-        <div className="flex flex-wrap gap-2">
-          <Button type="button" variant="outline" onClick={onAddFile}>
-            <Plus className="mr-2 size-4" />
-            Add file
-          </Button>
-          <Button
-            type="button"
-            onClick={onDownloadPackage}
-            disabled={!meeting.documents.length}
-          >
-            <Download className="mr-2 size-4" />
-            Download package
-          </Button>
-        </div>
-      </div>
-
-      <DocumentList
-        documents={meeting.documents}
-        emptyLabel="No files attached to this package yet."
-        meeting={meeting}
-        onDeleteDocument={onDeleteDocument}
-        onDownloadDocument={onDownloadDocument}
+      <BoardPackageUploadDialog
+        form={upload.form}
+        formError={upload.formError}
+        isOpen={upload.isUploadOpen}
+        isUploading={upload.isUploading}
+        onClose={upload.closeUpload}
+        onFileChange={upload.setSelectedFile}
+        onSubmit={upload.submitUpload}
+        onUpdateForm={upload.updateForm}
+        title={upload.uploadTitle}
+      />
+      <ConfidentialDownloadDialog
+        downloadError={documents.downloadError}
+        downloadTarget={documents.downloadTarget}
+        onConfirm={documents.confirmConfidentialDownload}
+        onDownloadErrorChange={documents.setDownloadError}
+        onDownloadTargetChange={documents.setDownloadTarget}
+      />
+      <PackageMessageDialog
+        description={documents.operationError}
+        onOpenChange={(open) => !open && documents.setOperationError("")}
+        open={Boolean(documents.operationError)}
+        title="Package action failed"
+      />
+      <PackageDownloadDialog
+        acknowledged={packages.packageAcknowledged}
+        includesConfidentialDocuments={packages.packageIncludesConfidentialDocuments}
+        isPackaging={packages.isPackaging}
+        onAcknowledgedChange={packages.setPackageAcknowledged}
+        onConfirm={() => void packages.confirmPackageDownload()}
+        onOpenChange={packages.closePackageDialog}
+        packageTarget={packages.packageTarget}
+      />
+      <DeleteBoardPackageDocumentDialog
+        deleteTarget={documents.deleteTarget}
+        onConfirm={() => void documents.confirmDelete()}
+        onOpenChange={(open) => !open && documents.setDeleteTarget(null)}
       />
     </section>
   );
-}
-
-function DocumentList({
-  documents,
-  emptyLabel,
-  meeting,
-  onDeleteDocument,
-  onDownloadDocument,
-}: {
-  documents: BoardPackageDocument[];
-  emptyLabel: string;
-  meeting?: BoardPackageMeeting;
-  onDeleteDocument: (document: BoardPackageDocument) => void;
-  onDownloadDocument: (document: BoardPackageDocument) => void;
-}) {
-  if (!documents.length) {
-    return (
-      <p className="mt-4 rounded-lg bg-slate-50 px-4 py-3 text-sm text-slate-500">
-        {emptyLabel}
-      </p>
-    );
-  }
-
-  return (
-    <div className="mt-4 overflow-hidden rounded-xl border">
-      <Table>
-        <TableHeader>
-          <TableRow>
-            <TableHead>Document</TableHead>
-            <TableHead>Category</TableHead>
-            <TableHead>Access</TableHead>
-            <TableHead className="text-right">Actions</TableHead>
-          </TableRow>
-        </TableHeader>
-        <TableBody>
-          {documents.map((document) => (
-            <TableRow key={document.id}>
-              <TableCell>
-                <div className="flex items-start gap-3">
-                  <span className="rounded-lg bg-olea-soft p-2 text-olea-green">
-                    <FileText className="size-4" />
-                  </span>
-                  <div>
-                    <p className="font-semibold text-slate-950">
-                      {document.name}
-                    </p>
-                    <p className="text-xs text-slate-500">
-                      {[
-                        formatDateTime(document.uploadedAt),
-                        document.sizeLabel,
-                        document.storagePath ? "Private file" : "External link",
-                      ]
-                        .filter(Boolean)
-                        .join(" · ")}
-                    </p>
-                  </div>
-                </div>
-              </TableCell>
-              <TableCell>{document.category}</TableCell>
-              <TableCell>
-                <Badge
-                  variant="outline"
-                  className={cn(
-                    document.confidential
-                      ? "border-amber-200 bg-amber-50 text-amber-800"
-                      : "border-emerald-200 bg-emerald-50 text-emerald-800",
-                  )}
-                >
-                  {document.confidential ? "Confidential" : "Standard"}
-                </Badge>
-              </TableCell>
-              <TableCell>
-                <div className="flex justify-end gap-2">
-                  <Button
-                    type="button"
-                    variant="outline"
-                    size="icon"
-                    aria-label={`Open ${document.name}`}
-                    onClick={() => onDownloadDocument(document)}
-                  >
-                    {document.storagePath ? (
-                      <Download className="size-4" />
-                    ) : (
-                      <LinkIcon className="size-4" />
-                    )}
-                  </Button>
-                  <Button
-                    type="button"
-                    variant="outline"
-                    size="icon"
-                    aria-label={`Delete ${document.name}`}
-                    onClick={() => onDeleteDocument(document)}
-                  >
-                    <Trash2 className="size-4" />
-                  </Button>
-                </div>
-              </TableCell>
-            </TableRow>
-          ))}
-        </TableBody>
-      </Table>
-      {meeting ? (
-        <span className="sr-only">Documents for {meeting.title}</span>
-      ) : null}
-    </div>
-  );
-}
-
-function EmptyPackageState({
-  className,
-  description,
-  icon: Icon,
-  title,
-}: {
-  className?: string;
-  description: string;
-  icon: typeof PackageOpen;
-  title: string;
-}) {
-  return (
-    <div
-      className={cn(
-        "flex flex-col items-center justify-center rounded-xl border bg-white px-6 py-12 text-center shadow-sm",
-        className,
-      )}
-    >
-      <span className="rounded-2xl bg-olea-soft p-4 text-olea-green">
-        <Icon className="size-6" />
-      </span>
-      <h3 className="mt-4 text-lg font-semibold text-slate-950">{title}</h3>
-      <p className="mt-2 max-w-xl text-sm leading-6 text-slate-500">
-        {description}
-      </p>
-    </div>
-  );
-}
-
-async function uploadSelectedFile({
-  file,
-  meetingId,
-  templateInstanceId,
-}: {
-  file: File;
-  meetingId?: string;
-  templateInstanceId: string;
-}) {
-  const formData = new FormData();
-  formData.set("templateInstanceId", templateInstanceId);
-  if (meetingId) formData.set("meetingId", meetingId);
-  formData.set("file", file);
-
-  return uploadBoardPackageDocument(formData);
-}
-
-function validateDocumentForm({
-  file,
-  name,
-  templateInstanceId,
-  url,
-}: {
-  file: File | null;
-  name: string;
-  templateInstanceId: string;
-  url: string;
-}) {
-  if (!name) return "Document name is required.";
-  if (!file && !url) return "Upload a private file or add an external document link.";
-  if (file && !templateInstanceId) {
-    return "Save this board calendar before uploading private files.";
-  }
-
-  if (!url) return "";
-
-  try {
-    const parsedUrl = new URL(url);
-    if (!["http:", "https:"].includes(parsedUrl.protocol)) {
-      return "Use an http or https document link.";
-    }
-  } catch {
-    return "Enter a valid document URL.";
-  }
-
-  return "";
-}
-
-function formatAction(action: string) {
-  return action
-    .split("_")
-    .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
-    .join(" ");
-}
-
-function formatDateTime(value: string) {
-  if (!value) return "";
-  const date = new Date(value);
-  if (Number.isNaN(date.getTime())) return value;
-
-  return new Intl.DateTimeFormat("en-US", {
-    dateStyle: "medium",
-    timeStyle: "short",
-  }).format(date);
 }
