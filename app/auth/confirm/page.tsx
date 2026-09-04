@@ -10,6 +10,8 @@ import { attemptUserWorkspaceProvisioning } from "@/lib/stripe/registration";
 import { createAdminClient } from "@/utils/supabase/admin";
 import { createClient } from "@/utils/supabase/server";
 
+type SupabaseServerClient = Awaited<ReturnType<typeof createClient>>;
+
 const allowedTypes = new Set<EmailOtpType>([
   "email",
   "magiclink",
@@ -57,46 +59,56 @@ async function confirmEmail(formData: FormData) {
     redirect("/login?error=This authentication link is invalid or has expired.");
   }
 
-  if (!shouldSkipProvisioning(next)) {
-    const {
-      data: { user },
-    } = await supabase.auth.getUser();
-
-    if (user) {
-      let activationRedirect: string | null = null;
-
-      try {
-        const admin = createAdminClient();
-        const result = await attemptUserWorkspaceProvisioning(
-          admin,
-          user.id,
-        );
-
-        if (result?.status === "completed") {
-          activationRedirect = await getPostActivationPath(
-            admin,
-            result.organization_id,
-          );
-        } else if (
-          result?.status === "pending_payment" ||
-          result?.status === "pending_verification"
-        ) {
-          activationRedirect = `/signup/success?activation=${result.status}`;
-        }
-      } catch (provisioningError) {
-        logError(
-          "Unable to complete workspace provisioning after email confirmation",
-          provisioningError,
-        );
-      }
-
-      if (activationRedirect) {
-        redirect(activationRedirect);
-      }
-    }
+  const activationRedirect = await getActivationRedirectAfterConfirmation({
+    next,
+    supabase,
+  });
+  if (activationRedirect) {
+    redirect(activationRedirect);
   }
 
   redirect(next);
+}
+
+async function getActivationRedirectAfterConfirmation({
+  next,
+  supabase,
+}: {
+  next: string;
+  supabase: SupabaseServerClient;
+}) {
+  if (shouldSkipProvisioning(next)) return null;
+
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  return user ? getProvisioningRedirect(user.id) : null;
+}
+
+async function getProvisioningRedirect(userId: string) {
+  try {
+    const admin = createAdminClient();
+    const result = await attemptUserWorkspaceProvisioning(admin, userId);
+
+    if (result?.status === "completed") {
+      return getPostActivationPath(admin, result.organization_id);
+    }
+    if (isPendingActivationStatus(result?.status)) {
+      return `/signup/success?activation=${result.status}`;
+    }
+  } catch (provisioningError) {
+    logError(
+      "Unable to complete workspace provisioning after email confirmation",
+      provisioningError,
+    );
+  }
+
+  return null;
+}
+
+function isPendingActivationStatus(status: string | undefined) {
+  return status === "pending_payment" || status === "pending_verification";
 }
 
 export default function AuthConfirmPage({

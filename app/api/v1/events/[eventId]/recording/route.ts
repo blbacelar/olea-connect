@@ -5,6 +5,8 @@ import { createClient } from "@/utils/supabase/server";
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
+type SupabaseServerClient = Awaited<ReturnType<typeof createClient>>;
+
 type RouteContext = {
   params: {
     eventId: string;
@@ -19,6 +21,37 @@ function jsonError(message: string, status: number) {
 
 export async function GET(_request: Request, { params }: RouteContext) {
   const supabase = await createClient();
+  const userId = await getAuthenticatedUserId(supabase);
+  if (!userId) return jsonError("Sign in to watch this recording.", 401);
+
+  const membership = await getActiveMembership(supabase, userId);
+  if (!membership) return jsonError("Membership is required.", 403);
+
+  const subscription = await getActiveSubscription(
+    supabase,
+    membership.organization_id,
+  );
+  if (!subscription) return jsonError("An active membership is required.", 403);
+
+  const accessData = await getRecordingAccessData({
+    eventId: params.eventId,
+    planId: subscription.plan_id,
+    supabase,
+  });
+  if (!accessData.event) {
+    return jsonError("This recording is not available.", 404);
+  }
+
+  const accessError = getRecordingAccessError({
+    access: accessData.access,
+    eventStatus: accessData.event.status,
+  });
+  if (accessError) return accessError;
+
+  return getRecordingRedirectResponse(supabase, accessData.event);
+}
+
+async function getAuthenticatedUserId(supabase: SupabaseServerClient) {
   const { data: userData, error: userError } = await supabase.auth
     .getUser()
     .catch((error: unknown) => ({
@@ -26,55 +59,95 @@ export async function GET(_request: Request, { params }: RouteContext) {
       error,
     }));
 
-  if (userError || !userData.user) {
-    return jsonError("Sign in to watch this recording.", 401);
-  }
+  return userError ? null : userData.user?.id;
+}
 
-  const { data: membership, error: membershipError } = await supabase
+async function getActiveMembership(
+  supabase: SupabaseServerClient,
+  userId: string,
+) {
+  const { data, error } = await supabase
     .from("organization_members")
     .select("organization_id")
-    .eq("user_id", userData.user.id)
+    .eq("user_id", userId)
     .eq("status", "active")
     .limit(1)
     .maybeSingle();
-  if (membershipError) throw membershipError;
-  if (!membership) return jsonError("Membership is required.", 403);
 
-  const { data: subscription, error: subscriptionError } = await supabase
+  if (error) throw error;
+
+  return data;
+}
+
+async function getActiveSubscription(
+  supabase: SupabaseServerClient,
+  organizationId: string,
+) {
+  const { data, error } = await supabase
     .from("subscriptions")
     .select("status, plan_id")
-    .eq("organization_id", membership.organization_id)
+    .eq("organization_id", organizationId)
     .order("created_at", { ascending: false })
     .limit(1)
     .maybeSingle();
-  if (subscriptionError) throw subscriptionError;
-  if (!activeSubscriptionStatuses.has(subscription?.status ?? "")) {
-    return jsonError("An active membership is required.", 403);
-  }
 
+  if (error) throw error;
+  if (!activeSubscriptionStatuses.has(data?.status ?? "")) return null;
+
+  return data;
+}
+
+async function getRecordingAccessData({
+  eventId,
+  planId,
+  supabase,
+}: {
+  eventId: string;
+  planId: string | null;
+  supabase: SupabaseServerClient;
+}) {
   const [{ data: event, error: eventError }, { data: access, error: accessError }] =
     await Promise.all([
       supabase
         .from("events")
         .select("id, status, recording_storage_path, recording_url")
-        .eq("id", params.eventId)
+        .eq("id", eventId)
         .maybeSingle(),
       supabase
         .from("event_plan_access")
         .select("event_id")
-        .eq("event_id", params.eventId)
-        .eq("plan_id", subscription?.plan_id)
+        .eq("event_id", eventId)
+        .eq("plan_id", planId)
         .maybeSingle(),
     ]);
 
   if (eventError) throw eventError;
   if (accessError) throw accessError;
-  if (!event) return jsonError("This recording is not available.", 404);
-  if (!access) return jsonError("This recording is not included with your plan.", 403);
-  if (event.status !== "completed") {
+
+  return { access, event };
+}
+
+function getRecordingAccessError({
+  access,
+  eventStatus,
+}: {
+  access: Awaited<ReturnType<typeof getRecordingAccessData>>["access"];
+  eventStatus: string;
+}) {
+  if (!access) {
+    return jsonError("This recording is not included with your plan.", 403);
+  }
+  if (eventStatus !== "completed") {
     return jsonError("This recording is not available yet.", 404);
   }
 
+  return null;
+}
+
+async function getRecordingRedirectResponse(
+  supabase: SupabaseServerClient,
+  event: NonNullable<Awaited<ReturnType<typeof getRecordingAccessData>>["event"]>,
+) {
   if (event.recording_storage_path) {
     const { data, error } = await supabase.storage
       .from("event-recordings")
