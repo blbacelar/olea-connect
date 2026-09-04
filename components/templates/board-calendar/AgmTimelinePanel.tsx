@@ -19,14 +19,12 @@ import type {
 import { AgmMilestoneDialog } from "./AgmMilestoneDialog";
 import { AgmMilestoneFilters } from "./AgmMilestoneFilters";
 import { AgmMilestoneTable } from "./AgmMilestoneTable";
+import { useAgmMilestoneFilters } from "./use-agm-milestone-filters";
 import {
   Field,
   getNumber,
   getRows,
-  getString,
   getTopLevelString,
-  includesFilterValue,
-  matchesNoteFilter,
   removeRow,
   type TemplateRecord,
 } from "./workflow-utils";
@@ -48,14 +46,7 @@ export function AgmTimelinePanel({
     null,
   );
   const [showFilters, setShowFilters] = useState(false);
-  const [taskFilter, setTaskFilter] = useState("");
-  const [targetFromFilter, setTargetFromFilter] = useState("");
-  const [targetToFilter, setTargetToFilter] = useState("");
-  const [trackFilter, setTrackFilter] = useState("all");
-  const [responsibleFilter, setResponsibleFilter] = useState("all");
-  const [statusFilter, setStatusFilter] = useState("all");
-  const [notesFilter, setNotesFilter] = useState("all");
-  const [doneFilter, setDoneFilter] = useState("all");
+  const milestoneFilters = useAgmMilestoneFilters(milestones);
   const editingMilestone =
     editingMilestoneIndex === null || editingMilestoneIndex === "new"
       ? null
@@ -64,37 +55,6 @@ export function AgmTimelinePanel({
     editingMilestoneIndex === "new"
       ? milestones.length + 1
       : (editingMilestoneIndex ?? 0) + 1;
-  const responsibleOptions = Array.from(
-    new Set(
-      milestones
-        .map((milestone) => getString(milestone, "responsible"))
-        .filter(Boolean),
-    ),
-  );
-  const filteredMilestones = milestones
-    .map((milestone, index) => ({ milestone, index }))
-    .filter(({ milestone }) =>
-      matchesMilestoneFilters(milestone, {
-        doneFilter,
-        notesFilter,
-        responsibleFilter,
-        statusFilter,
-        targetFromFilter,
-        targetToFilter,
-        taskFilter,
-        trackFilter,
-      }),
-    );
-  const hasActiveFilters = Boolean(
-    taskFilter ||
-      targetFromFilter ||
-      targetToFilter ||
-      trackFilter !== "all" ||
-      responsibleFilter !== "all" ||
-      statusFilter !== "all" ||
-      notesFilter !== "all" ||
-      doneFilter !== "all",
-  );
 
   useEffect(() => {
     if (editingMilestoneIndex === null || editingMilestoneIndex === "new") return;
@@ -178,53 +138,17 @@ export function AgmTimelinePanel({
     closeMilestoneEditor();
   }
 
-  function clearFilters() {
-    setTaskFilter("");
-    setTargetFromFilter("");
-    setTargetToFilter("");
-    setTrackFilter("all");
-    setResponsibleFilter("all");
-    setStatusFilter("all");
-    setNotesFilter("all");
-    setDoneFilter("all");
-  }
-
   return (
     <section
       className="space-y-4 rounded-xl border bg-white p-5 shadow-sm"
       data-testid="board-calendar-agm-timeline-panel"
     >
-      <div className="flex flex-wrap items-start justify-between gap-3">
-        <div>
-          <h3 className="text-xl font-semibold text-slate-950">
-            AGM planning timeline
-          </h3>
-          <p className="mt-1 text-sm leading-6 text-slate-500">
-            Add milestones one at a time. Target dates are calculated from the
-            confirmed AGM date and days before AGM.
-          </p>
-        </div>
-        <div className="flex flex-wrap gap-2">
-          <Button
-            type="button"
-            variant="outline"
-            size="sm"
-            aria-expanded={showFilters}
-            aria-controls="board-calendar-agm-filters"
-            onClick={() => setShowFilters((current) => !current)}
-          >
-            <Filter className="size-4" />
-            Filters
-            {hasActiveFilters ? (
-              <Badge className="ml-1 bg-olea-green text-white">On</Badge>
-            ) : null}
-          </Button>
-          <Button type="button" variant="outline" size="sm" onClick={addMilestone}>
-            <Plus className="size-4" />
-            Add milestone
-          </Button>
-        </div>
-      </div>
+      <AgmTimelineHeader
+        hasActiveFilters={milestoneFilters.hasActiveFilters}
+        showFilters={showFilters}
+        onAddMilestone={addMilestone}
+        onToggleFilters={() => setShowFilters((current) => !current)}
+      />
       <Field label="Confirmed AGM date">
         <Input
           aria-label="Confirmed AGM date"
@@ -233,50 +157,18 @@ export function AgmTimelinePanel({
           onChange={(event) => updateAgmDate(event.target.value)}
         />
       </Field>
-      {showFilters ? (
-        <AgmMilestoneFilters
-          doneFilter={doneFilter}
-          hasActiveFilters={hasActiveFilters}
-          notesFilter={notesFilter}
-          responsibleFilter={responsibleFilter}
-          responsibleOptions={responsibleOptions}
-          statusFilter={statusFilter}
-          targetFromFilter={targetFromFilter}
-          targetToFilter={targetToFilter}
-          taskFilter={taskFilter}
-          trackFilter={trackFilter}
-          onClearFilters={clearFilters}
-          onDoneFilterChange={setDoneFilter}
-          onNotesFilterChange={setNotesFilter}
-          onResponsibleFilterChange={setResponsibleFilter}
-          onStatusFilterChange={setStatusFilter}
-          onTargetFromFilterChange={setTargetFromFilter}
-          onTargetToFilterChange={setTargetToFilter}
-          onTaskFilterChange={setTaskFilter}
-          onTrackFilterChange={setTrackFilter}
-        />
-      ) : null}
-      {milestones.length ? (
-        <>
-          <AgmMilestoneTable
-            milestones={filteredMilestones}
-            onEditMilestone={openMilestoneEditor}
-            onRemoveMilestone={(index) =>
-              onChange(["agm_milestones"], removeRow(milestones, index))
-            }
-          />
-          {!filteredMilestones.length ? (
-            <p className="rounded-lg border border-dashed p-4 text-sm text-slate-500">
-              No AGM milestones match the current filters.
-            </p>
-          ) : null}
-        </>
-      ) : (
-        <p className="rounded-lg border border-dashed p-4 text-sm text-slate-500">
-          Add the confirmed AGM date, then add the first milestone for this
-          planning timeline.
-        </p>
-      )}
+      <AgmTimelineFilters
+        milestoneFilters={milestoneFilters}
+        showFilters={showFilters}
+      />
+      <AgmMilestoneList
+        filteredMilestones={milestoneFilters.filteredMilestones}
+        hasMilestones={Boolean(milestones.length)}
+        onEditMilestone={openMilestoneEditor}
+        onRemoveMilestone={(index) =>
+          onChange(["agm_milestones"], removeRow(milestones, index))
+        }
+      />
       <AgmMilestoneDialog
         activeMilestoneNumber={activeMilestoneNumber}
         editingMilestone={editingMilestone}
@@ -291,34 +183,120 @@ export function AgmTimelinePanel({
   );
 }
 
-function matchesMilestoneFilters(
-  milestone: TemplateRecord,
-  filters: {
-    doneFilter: string;
-    notesFilter: string;
-    responsibleFilter: string;
-    statusFilter: string;
-    targetFromFilter: string;
-    targetToFilter: string;
-    taskFilter: string;
-    trackFilter: string;
-  },
-) {
-  const targetDate = getString(milestone, "calculated_date");
-  const done = Boolean(milestone.done);
+type AgmMilestoneFiltersController = ReturnType<typeof useAgmMilestoneFilters>;
+
+function AgmTimelineHeader({
+  hasActiveFilters,
+  showFilters,
+  onAddMilestone,
+  onToggleFilters,
+}: {
+  hasActiveFilters: boolean;
+  showFilters: boolean;
+  onAddMilestone: () => void;
+  onToggleFilters: () => void;
+}) {
   return (
-    includesFilterValue(getString(milestone, "task"), filters.taskFilter) &&
-    (!filters.targetFromFilter || targetDate >= filters.targetFromFilter) &&
-    (!filters.targetToFilter || targetDate <= filters.targetToFilter) &&
-    (filters.trackFilter === "all" ||
-      (getString(milestone, "track") || "Governance") === filters.trackFilter) &&
-    (filters.responsibleFilter === "all" ||
-      getString(milestone, "responsible") === filters.responsibleFilter) &&
-    (filters.statusFilter === "all" ||
-      (getString(milestone, "status") || "Not Started") ===
-        filters.statusFilter) &&
-    (filters.doneFilter === "all" ||
-      (filters.doneFilter === "done" ? done : !done)) &&
-    matchesNoteFilter(getString(milestone, "notes"), filters.notesFilter)
+    <div className="flex flex-wrap items-start justify-between gap-3">
+      <div>
+        <h3 className="text-xl font-semibold text-slate-950">
+          AGM planning timeline
+        </h3>
+        <p className="mt-1 text-sm leading-6 text-slate-500">
+          Add milestones one at a time. Target dates are calculated from the
+          confirmed AGM date and days before AGM.
+        </p>
+      </div>
+      <div className="flex flex-wrap gap-2">
+        <Button
+          type="button"
+          variant="outline"
+          size="sm"
+          aria-expanded={showFilters}
+          aria-controls="board-calendar-agm-filters"
+          onClick={onToggleFilters}
+        >
+          <Filter className="size-4" />
+          Filters
+          {hasActiveFilters ? (
+            <Badge className="ml-1 bg-olea-green text-white">On</Badge>
+          ) : null}
+        </Button>
+        <Button type="button" variant="outline" size="sm" onClick={onAddMilestone}>
+          <Plus className="size-4" />
+          Add milestone
+        </Button>
+      </div>
+    </div>
+  );
+}
+
+function AgmTimelineFilters({
+  milestoneFilters,
+  showFilters,
+}: {
+  milestoneFilters: AgmMilestoneFiltersController;
+  showFilters: boolean;
+}) {
+  if (!showFilters) return null;
+
+  return (
+    <AgmMilestoneFilters
+      doneFilter={milestoneFilters.filters.doneFilter}
+      hasActiveFilters={milestoneFilters.hasActiveFilters}
+      notesFilter={milestoneFilters.filters.notesFilter}
+      responsibleFilter={milestoneFilters.filters.responsibleFilter}
+      responsibleOptions={milestoneFilters.responsibleOptions}
+      statusFilter={milestoneFilters.filters.statusFilter}
+      targetFromFilter={milestoneFilters.filters.targetFromFilter}
+      targetToFilter={milestoneFilters.filters.targetToFilter}
+      taskFilter={milestoneFilters.filters.taskFilter}
+      trackFilter={milestoneFilters.filters.trackFilter}
+      onClearFilters={milestoneFilters.clearFilters}
+      onDoneFilterChange={milestoneFilters.setDoneFilter}
+      onNotesFilterChange={milestoneFilters.setNotesFilter}
+      onResponsibleFilterChange={milestoneFilters.setResponsibleFilter}
+      onStatusFilterChange={milestoneFilters.setStatusFilter}
+      onTargetFromFilterChange={milestoneFilters.setTargetFromFilter}
+      onTargetToFilterChange={milestoneFilters.setTargetToFilter}
+      onTaskFilterChange={milestoneFilters.setTaskFilter}
+      onTrackFilterChange={milestoneFilters.setTrackFilter}
+    />
+  );
+}
+
+function AgmMilestoneList({
+  filteredMilestones,
+  hasMilestones,
+  onEditMilestone,
+  onRemoveMilestone,
+}: {
+  filteredMilestones: AgmMilestoneFiltersController["filteredMilestones"];
+  hasMilestones: boolean;
+  onEditMilestone: (index: number) => void;
+  onRemoveMilestone: (index: number) => void;
+}) {
+  if (!hasMilestones) {
+    return (
+      <p className="rounded-lg border border-dashed p-4 text-sm text-slate-500">
+        Add the confirmed AGM date, then add the first milestone for this
+        planning timeline.
+      </p>
+    );
+  }
+
+  return (
+    <>
+      <AgmMilestoneTable
+        milestones={filteredMilestones}
+        onEditMilestone={onEditMilestone}
+        onRemoveMilestone={onRemoveMilestone}
+      />
+      {!filteredMilestones.length ? (
+        <p className="rounded-lg border border-dashed p-4 text-sm text-slate-500">
+          No AGM milestones match the current filters.
+        </p>
+      ) : null}
+    </>
   );
 }
