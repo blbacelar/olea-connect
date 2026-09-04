@@ -2,31 +2,20 @@
 
 import {
   BOARD_PACKAGE_DOCUMENTS_BUCKET,
-  BOARD_PACKAGE_MAX_FILE_SIZE,
   buildBoardPackageStoragePath,
   isBoardPackageStoragePathForSession,
 } from "@/lib/template-renderer/board-calendar-storage";
 import { requireMemberContext } from "@/lib/data/member-context";
-import { logError } from "@/lib/observability/logger";
 import { createAdminClient } from "@/utils/supabase/admin";
 import { createClient } from "@/utils/supabase/server";
-
-const allowedContentTypes = new Set([
-  "application/pdf",
-  "application/msword",
-  "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
-  "application/vnd.ms-excel",
-  "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-  "image/jpeg",
-  "image/png",
-  "image/webp",
-  "text/plain",
-]);
-const allowedAuditActions = new Set<BoardPackageAuditAction>([
-  "document_deleted",
-  "document_downloaded",
-  "package_downloaded",
-]);
+import {
+  assertBoardPackageAuditAction,
+  formatFileSize,
+  getBoardPackageActionError,
+  getOptionalFormValue,
+  getRequiredFormValue,
+  getValidatedBoardPackageUpload,
+} from "./board-package-action-utils";
 
 export interface BoardPackageUploadedDocument {
   contentType: string;
@@ -63,35 +52,18 @@ export async function uploadBoardPackageDocument(
       formData,
       "templateInstanceId",
     );
-    const fileValue = formData.get("file");
-
-    if (!(fileValue instanceof File)) {
-      throw new Error("Choose a board package file to upload.");
-    }
-
-    if (!fileValue.size) {
-      throw new Error("The selected file is empty.");
-    }
-
-    if (fileValue.size > BOARD_PACKAGE_MAX_FILE_SIZE) {
-      throw new Error("Board package documents must be 25 MB or smaller.");
-    }
-
-    const contentType = fileValue.type || "application/octet-stream";
-    if (!allowedContentTypes.has(contentType)) {
-      throw new Error("Upload a PDF, Word, Excel, text, or image file.");
-    }
+    const { contentType, file } = getValidatedBoardPackageUpload(formData);
 
     await assertTemplateInstanceAccess(templateInstanceId, organization.id);
 
     const meetingId = getOptionalFormValue(formData, "meetingId");
     const storagePath = buildBoardPackageStoragePath({
-      fileName: fileValue.name,
+      fileName: file.name,
       meetingId,
       organizationId: organization.id,
       templateInstanceId,
     });
-    const buffer = Buffer.from(await fileValue.arrayBuffer());
+    const buffer = Buffer.from(await file.arrayBuffer());
     const admin = createAdminClient();
     const { error } = await admin.storage
       .from(BOARD_PACKAGE_DOCUMENTS_BUCKET)
@@ -105,9 +77,9 @@ export async function uploadBoardPackageDocument(
     return {
       data: {
         contentType,
-        fileName: fileValue.name,
-        size: fileValue.size,
-        sizeLabel: formatFileSize(fileValue.size),
+        fileName: file.name,
+        size: file.size,
+        sizeLabel: formatFileSize(file.size),
         storagePath,
       },
       ok: true,
@@ -279,32 +251,6 @@ async function assertTemplateInstanceAccess(
   }
 }
 
-function getRequiredFormValue(formData: FormData, key: string) {
-  const value = getOptionalFormValue(formData, key);
-  if (!value) throw new Error(`${key} is required.`);
-  return value;
-}
-
-function getOptionalFormValue(formData: FormData, key: string) {
-  const value = formData.get(key);
-  return typeof value === "string" ? value.trim() : "";
-}
-
-function assertBoardPackageAuditAction(
-  action: string,
-): asserts action is BoardPackageAuditAction {
-  if (!allowedAuditActions.has(action as BoardPackageAuditAction)) {
-    throw new Error("Unsupported board package audit action.");
-  }
-}
-
-function formatFileSize(bytes: number) {
-  if (bytes < 1024) return `${bytes} B`;
-  const kilobytes = bytes / 1024;
-  if (kilobytes < 1024) return `${kilobytes.toFixed(1)} KB`;
-  return `${(kilobytes / 1024).toFixed(1)} MB`;
-}
-
 async function writeBoardPackageAuditLog({
   action,
   documentId,
@@ -340,28 +286,4 @@ async function writeBoardPackageAuditLog({
   });
 
   if (error) throw error;
-}
-
-function getBoardPackageActionError(error: unknown) {
-  const message = error instanceof Error ? error.message : String(error);
-
-  logError("Board package action failed", error);
-
-  if (/bucket|storage/i.test(message)) {
-    return "Board package storage is not ready yet. Please ask an administrator to apply the latest database migration and try again.";
-  }
-
-  if (/credentials|service role|configured/i.test(message)) {
-    return "Board package storage is not configured for this environment yet.";
-  }
-
-  if (/not available|does not belong|another organization|access/i.test(message)) {
-    return message;
-  }
-
-  if (/choose|empty|25 MB|PDF|Word|Excel|image|file/i.test(message)) {
-    return message;
-  }
-
-  return "We could not complete this board package action. Please try again.";
 }
