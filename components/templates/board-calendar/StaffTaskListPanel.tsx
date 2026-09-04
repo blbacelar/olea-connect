@@ -26,13 +26,12 @@ import type {
 import {
   getRows,
   getString,
-  includesFilterValue,
-  matchesNoteFilter,
   StatusBadge,
   type TemplateRecord,
 } from "./workflow-utils";
 import { StaffTaskEditorDialog } from "./StaffTaskEditorDialog";
 import { StaffTaskFilters } from "./StaffTaskFilters";
+import { useStaffTaskFilters } from "./use-staff-task-filters";
 
 export function StaffTaskListPanel({
   data,
@@ -46,47 +45,9 @@ export function StaffTaskListPanel({
   const [editingTaskIndex, setEditingTaskIndex] = useState<number | null>(null);
   const [taskDraft, setTaskDraft] = useState<TemplateRecord | null>(null);
   const [showFilters, setShowFilters] = useState(false);
-  const [taskFilter, setTaskFilter] = useState("");
-  const [dueFromFilter, setDueFromFilter] = useState("");
-  const [dueToFilter, setDueToFilter] = useState("");
-  const [relatedMeetingFilter, setRelatedMeetingFilter] = useState("");
-  const [responsibleFilter, setResponsibleFilter] = useState("all");
-  const [statusFilter, setStatusFilter] = useState("all");
-  const [notesFilter, setNotesFilter] = useState("all");
+  const taskFilters = useStaffTaskFilters(tasks);
   const editingTask =
     editingTaskIndex === null ? null : tasks[editingTaskIndex] ?? null;
-  const responsibleOptions = Array.from(
-    new Set(tasks.map((task) => getString(task, "responsible")).filter(Boolean)),
-  );
-  const filteredTasks = tasks
-    .map((task, index) => ({ index, task }))
-    .filter(({ task }) => {
-      const dueDate = getString(task, "due_date");
-      const notes = getString(task, "notes");
-      return (
-        includesFilterValue(getString(task, "task"), taskFilter) &&
-        includesFilterValue(
-          getString(task, "related_meeting"),
-          relatedMeetingFilter,
-        ) &&
-        (!dueFromFilter || dueDate >= dueFromFilter) &&
-        (!dueToFilter || dueDate <= dueToFilter) &&
-        (responsibleFilter === "all" ||
-          getString(task, "responsible") === responsibleFilter) &&
-        (statusFilter === "all" ||
-          (getString(task, "status") || "Not Started") === statusFilter) &&
-        matchesNoteFilter(notes, notesFilter)
-      );
-    });
-  const hasActiveFilters = Boolean(
-    taskFilter ||
-      dueFromFilter ||
-      dueToFilter ||
-      relatedMeetingFilter ||
-      responsibleFilter !== "all" ||
-      statusFilter !== "all" ||
-      notesFilter !== "all",
-  );
 
   useEffect(() => {
     if (editingTaskIndex === null) return;
@@ -121,16 +82,6 @@ export function StaffTaskListPanel({
     closeTaskEditor();
   }
 
-  function clearFilters() {
-    setTaskFilter("");
-    setDueFromFilter("");
-    setDueToFilter("");
-    setRelatedMeetingFilter("");
-    setResponsibleFilter("all");
-    setStatusFilter("all");
-    setNotesFilter("all");
-  }
-
   return (
     <section
       className="space-y-4 rounded-xl border bg-white p-5 shadow-sm"
@@ -156,36 +107,39 @@ export function StaffTaskListPanel({
         >
           <Filter className="size-4" />
           Filters
-          {hasActiveFilters ? (
+          {taskFilters.hasActiveFilters ? (
             <Badge className="ml-1 bg-olea-green text-white">On</Badge>
           ) : null}
         </Button>
       </div>
       {showFilters ? (
         <StaffTaskFilters
-          dueFromFilter={dueFromFilter}
-          dueToFilter={dueToFilter}
-          hasActiveFilters={hasActiveFilters}
-          notesFilter={notesFilter}
-          relatedMeetingFilter={relatedMeetingFilter}
-          responsibleFilter={responsibleFilter}
-          responsibleOptions={responsibleOptions}
-          statusFilter={statusFilter}
-          taskFilter={taskFilter}
-          onClearFilters={clearFilters}
-          onDueFromFilterChange={setDueFromFilter}
-          onDueToFilterChange={setDueToFilter}
-          onNotesFilterChange={setNotesFilter}
-          onRelatedMeetingFilterChange={setRelatedMeetingFilter}
-          onResponsibleFilterChange={setResponsibleFilter}
-          onStatusFilterChange={setStatusFilter}
-          onTaskFilterChange={setTaskFilter}
+          dueFromFilter={taskFilters.filters.dueFromFilter}
+          dueToFilter={taskFilters.filters.dueToFilter}
+          hasActiveFilters={taskFilters.hasActiveFilters}
+          notesFilter={taskFilters.filters.notesFilter}
+          relatedMeetingFilter={taskFilters.filters.relatedMeetingFilter}
+          responsibleFilter={taskFilters.filters.responsibleFilter}
+          responsibleOptions={taskFilters.responsibleOptions}
+          statusFilter={taskFilters.filters.statusFilter}
+          taskFilter={taskFilters.filters.taskFilter}
+          onClearFilters={taskFilters.clearFilters}
+          onDueFromFilterChange={taskFilters.setDueFromFilter}
+          onDueToFilterChange={taskFilters.setDueToFilter}
+          onNotesFilterChange={taskFilters.setNotesFilter}
+          onRelatedMeetingFilterChange={taskFilters.setRelatedMeetingFilter}
+          onResponsibleFilterChange={taskFilters.setResponsibleFilter}
+          onStatusFilterChange={taskFilters.setStatusFilter}
+          onTaskFilterChange={taskFilters.setTaskFilter}
         />
       ) : null}
       {tasks.length ? (
         <>
-          <StaffTaskTable tasks={filteredTasks} onEditTask={openTaskEditor} />
-          {!filteredTasks.length ? (
+          <StaffTaskTable
+            tasks={taskFilters.filteredTasks}
+            onEditTask={openTaskEditor}
+          />
+          {!taskFilters.filteredTasks.length ? (
             <p className="rounded-lg border border-dashed p-4 text-sm text-slate-500">
               No workflow tasks match the current filters.
             </p>
