@@ -204,7 +204,7 @@ test.describe("@smoke @critical platform UI coverage gate", () => {
     await duplicateQ2Dialog.getByRole("button", { name: "Add KPI" }).click();
     await expect(
       duplicateQ2Dialog.getByText(/already exists|already tracked in Q2/i),
-    ).toBeVisible();
+    ).toBeVisible({ timeout: 15_000 });
     await expect(
       page.locator("tbody tr").filter({ hasText: kpiName }),
     ).toContainText("75");

@@ -405,7 +405,7 @@ export function EdReviewWorkspace({
                   <div
                     key={reviewer.id}
                     className="flex flex-wrap items-center justify-between gap-3 rounded-lg border p-3"
-                    data-testid={`ed-review-reviewer-${reviewer.id}`}
+                    data-testid={`ed-review-reviewer-card-${reviewer.id}`}
                   >
                     <div className="flex items-center gap-2">
                       <span className="font-semibold">{reviewer.name}</span>

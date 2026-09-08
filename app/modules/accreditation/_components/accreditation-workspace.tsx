@@ -9,7 +9,6 @@ import {
   Settings,
 } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
-import { useRouter } from "next/navigation";
 
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -42,7 +41,6 @@ export function AccreditationWorkspace({
   activeTemplateCode?: string;
   data: AccreditationWorkspaceData;
 }) {
-  const router = useRouter();
   const initialTab = resolveTab(activeTab, data.configured);
   const [tab, setTab] = useState<AccreditationTab>(initialTab);
   const [isConfigured, setIsConfigured] = useState(data.configured);
@@ -68,15 +66,13 @@ export function AccreditationWorkspace({
   function changeTab(value: string) {
     const next = resolveTab(value, isConfigured);
     setTab(next);
-    router.replace(`/modules/accreditation?tab=${next}`, { scroll: false });
+    replaceAccreditationUrl({ tab: next });
   }
 
   function openTemplate(templateCode: string) {
     setSelectedCode(templateCode);
     setTab("editor");
-    router.replace(`/modules/accreditation?tab=editor&template=${templateCode}`, {
-      scroll: false,
-    });
+    replaceAccreditationUrl({ tab: "editor", template: templateCode });
   }
 
   async function handleExportPdf() {
@@ -128,9 +124,7 @@ export function AccreditationWorkspace({
             templates={data.templates}
             onSelectTemplate={(code) => {
               setSelectedCode(code);
-              router.replace(`/modules/accreditation?tab=editor&template=${code}`, {
-                scroll: false,
-              });
+              replaceAccreditationUrl({ tab: "editor", template: code });
             }}
           />
         </TabsContent>
@@ -140,15 +134,25 @@ export function AccreditationWorkspace({
             onSaved={() => {
               setIsConfigured(true);
               setTab("dashboard");
-              router.replace("/modules/accreditation?tab=dashboard", {
-                scroll: false,
-              });
+              replaceAccreditationUrl({ tab: "dashboard" });
             }}
           />
         </TabsContent>
       </Tabs>
     </section>
   );
+}
+
+function replaceAccreditationUrl({
+  tab,
+  template,
+}: {
+  tab: AccreditationTab;
+  template?: string;
+}) {
+  const params = new URLSearchParams({ tab });
+  if (template) params.set("template", template);
+  window.history.replaceState(null, "", `/modules/accreditation?${params}`);
 }
 
 function AccreditationHeader({

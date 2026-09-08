@@ -1,9 +1,11 @@
 "use client";
 
 import { Bell } from "lucide-react";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { usePathname } from "next/navigation";
 
 import {
+  getUnreadNotifications,
   markAllNotificationsRead,
   markNotificationRead,
 } from "@/app/notifications/actions";
@@ -113,6 +115,7 @@ function useHeaderNotifications({
   const [isPending, setIsPending] = useState(false);
   const [items, setItems] = useState<MemberNotification[]>(() => initialItems);
   const [unreadCount, setUnreadCount] = useState(() => initialUnreadCount);
+  const pathname = usePathname();
   const itemsRef = useRef(items);
   const unreadCountRef = useRef(unreadCount);
   const visibleItems = useMemo(
@@ -120,16 +123,37 @@ function useHeaderNotifications({
     [items],
   );
 
-  function syncState(nextItems: MemberNotification[], nextUnreadCount: number) {
+  const syncState = useCallback(function syncState(
+    nextItems: MemberNotification[],
+    nextUnreadCount: number,
+  ) {
     itemsRef.current = nextItems;
     unreadCountRef.current = nextUnreadCount;
     setItems(nextItems);
     setUnreadCount(nextUnreadCount);
-  }
+  }, []);
 
   useEffect(() => {
     syncState(initialItems, initialUnreadCount);
-  }, [initialItems, initialUnreadCount]);
+  }, [initialItems, initialUnreadCount, syncState]);
+
+  useEffect(() => {
+    if (!memberId) return;
+
+    let isCurrent = true;
+    void getUnreadNotifications()
+      .then((snapshot) => {
+        if (!isCurrent) return;
+        syncState(snapshot.items, snapshot.unreadCount);
+      })
+      .catch(() => {
+        if (isCurrent) setError(copy.notificationError);
+      });
+
+    return () => {
+      isCurrent = false;
+    };
+  }, [copy.notificationError, memberId, pathname, syncState]);
 
   useEffect(() => {
     setOpen(false);
@@ -147,7 +171,7 @@ function useHeaderNotifications({
         items: itemsRef.current,
       });
     });
-  }, [memberId, router]);
+  }, [memberId, router, syncState]);
 
   function openNotification(notification: MemberNotification) {
     const destination = notification.actionUrl ?? "/dashboard";
@@ -158,13 +182,13 @@ function useHeaderNotifications({
     );
     setUnreadCount((count) => Math.max(0, count - 1));
 
-    void markNotificationRead(notification.id).catch(() => {
-      setItems((currentItems) => [notification, ...currentItems]);
-      setUnreadCount((count) => count + 1);
-      setError(copy.notificationError);
-    });
-
-    router.push(destination);
+    void markNotificationRead(notification.id)
+      .catch(() => {
+        setItems((currentItems) => [notification, ...currentItems]);
+        setUnreadCount((count) => count + 1);
+        setError(copy.notificationError);
+      })
+      .finally(() => router.push(destination));
   }
 
   function markAllRead() {

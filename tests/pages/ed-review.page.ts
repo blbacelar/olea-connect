@@ -97,7 +97,7 @@ export class EdReviewPage {
 
   async expectReviewerRole(name: string, role: "board chair" | "hr reviewer") {
     const reviewerCard = this.page
-      .locator('[data-testid^="ed-review-reviewer-"]')
+      .locator('[data-testid^="ed-review-reviewer-card-"]')
       .filter({ hasText: name });
     await expect(reviewerCard).toHaveCount(1);
     await expect(reviewerCard.getByText(role, { exact: true })).toBeVisible();

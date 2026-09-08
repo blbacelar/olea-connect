@@ -390,10 +390,14 @@ test.describe("@critical Board Calendar & Operational Workflow", () => {
       );
       await boardCalendar.calendar.openDeleteDialog();
       await boardCalendar.calendar.cancelDelete();
+      await boardCalendar.calendar.cancelEntryEdit();
       await boardCalendar.calendar.expectSelectedDateText(
         "Parallel Finance Committee",
       );
 
+      await boardCalendar.calendar.editEntry(
+        /Edit Parallel Finance Committee/,
+      );
       await boardCalendar.calendar.openDeleteDialog();
       await boardCalendar.calendar.confirmDelete();
       await boardCalendar.calendar.expectSelectedDateTextCount(

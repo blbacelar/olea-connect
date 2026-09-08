@@ -22,8 +22,8 @@ export async function saveTemplateSelections(resourceIds: string[]) {
   if (countError) throw countError;
 
   const requiredSelectionCount = Math.min(3, publishedTemplateCount ?? 0);
-  if (requestedIds.length !== requiredSelectionCount) {
-    throw new Error(`Choose exactly ${requiredSelectionCount} templates.`);
+  if (!requestedIds.length || requestedIds.length > requiredSelectionCount) {
+    throw new Error(`Choose 1 to ${requiredSelectionCount} templates.`);
   }
 
   const { data: resources, error: resourcesError } = await supabase
@@ -33,7 +33,7 @@ export async function saveTemplateSelections(resourceIds: string[]) {
     .eq("type", "template")
     .eq("status", "published");
   if (resourcesError) throw resourcesError;
-  if (resources?.length !== requiredSelectionCount) {
+  if (resources?.length !== requestedIds.length) {
     throw new Error("One or more selected templates are unavailable.");
   }
 

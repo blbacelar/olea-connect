@@ -11,7 +11,10 @@ import {
   type CommunityActionState,
   type CreateCommunityPostState,
 } from "./community-action-support";
-import { syncCommunityMentions } from "./community-mention-support";
+import {
+  getMentionedUserIds,
+  syncCommunityMentions,
+} from "./community-mention-support";
 
 export async function createCommunityPost(
   _previousState: CreateCommunityPostState,
@@ -20,6 +23,7 @@ export async function createCommunityPost(
   try {
     const { member } = await getRequiredMemberContext();
     const input = validatePostInput(formData);
+    const mentionedUserIds = getMentionedUserIds(formData, member.id);
     const supabase = await getServerClient();
     const { data: space, error: spaceError } = await supabase
       .from("community_spaces")
@@ -48,7 +52,7 @@ export async function createCommunityPost(
     if (post?.id) {
       await syncCommunityMentions({
         actorUserId: member.id,
-        formData,
+        rawMentionedUserIds: mentionedUserIds,
         target: {
           communityId: space.community_id,
           postId: post.id,
@@ -81,6 +85,7 @@ export async function updateCommunityPost(
   try {
     const { member } = await getRequiredMemberContext();
     const input = validateCommunityPostUpdateInput(formData);
+    const mentionedUserIds = getMentionedUserIds(formData, member.id);
     const supabase = await getServerClient();
     const { data: post, error } = await supabase
       .from("community_posts")
@@ -96,7 +101,7 @@ export async function updateCommunityPost(
     if (error) throw error;
     await syncCommunityMentions({
       actorUserId: member.id,
-      formData,
+      rawMentionedUserIds: mentionedUserIds,
       target: {
         communityId: post.community_id,
         postId: post.id,

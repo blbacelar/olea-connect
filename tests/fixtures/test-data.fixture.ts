@@ -286,7 +286,7 @@ export class TestDataManager {
 }
 
 export const test = base.extend<{ testData: TestDataManager }>({
-  testData: async (_fixtures, use, testInfo) => {
+  testData: async ({ browserName: _browserName }, use, testInfo) => {
     const { url, serviceRoleKey } = getTestSupabaseEnvironment();
     const supabase = createClient(url, serviceRoleKey, {
       auth: {

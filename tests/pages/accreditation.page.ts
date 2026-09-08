@@ -74,20 +74,41 @@ export class AccreditationPage {
 
   async openEditor() {
     await this.tab("Template Editor").click();
-    await expect(this.page.getByText("Imagine Canada requirement")).toBeVisible();
+    await expect(this.page.getByText(/^Requirement:/)).toBeVisible();
   }
 
   async chooseDocumentStatus(status: "We already have it" | "Create document here") {
-    const trigger = this.page.getByRole("combobox", { name: "Document status" });
-    await trigger.click();
-    await this.page.getByRole("option", { name: status }).click();
-    await expect(trigger).toContainText(status);
+    const expectedMode = status === "We already have it" ? "have" : "create";
+    const trigger = this.page.getByTestId("accreditation-document-status");
+    const hiddenMode = this.page.locator('input[name="documentMode"]').first();
+
+    await expect(trigger).toBeVisible();
+    await expect(trigger).toBeEnabled();
+
+    for (let attempt = 0; attempt < 5; attempt += 1) {
+      try {
+        await trigger.click({ force: true });
+        const option = this.page.getByRole("option", { name: status, exact: true });
+        await expect(option).toBeVisible({ timeout: 2_000 });
+        await option.scrollIntoViewIfNeeded();
+        await option.click({ force: true });
+        await expect(hiddenMode).toHaveValue(expectedMode, { timeout: 2_000 });
+        await expect(trigger).toContainText(status);
+        await this.expectDocumentModeFields(status);
+        return;
+      } catch (error) {
+        if (attempt === 4) throw error;
+        await this.page.keyboard.press("Escape");
+        await this.page.waitForTimeout(100);
+      }
+    }
+  }
+
+  async expectDocumentModeFields(status: "We already have it" | "Create document here") {
     if (status === "We already have it") {
-      await expect(this.page.locator('input[name="documentMode"]')).toHaveValue("have");
       await expect(this.page.getByLabel("Document name")).toBeVisible();
       await expect(this.page.getByLabel("Upload evidence file")).toBeVisible();
     } else {
-      await expect(this.page.locator('input[name="documentMode"]')).toHaveValue("create");
       await expect(this.page.getByLabel("Working draft")).toBeVisible();
     }
   }

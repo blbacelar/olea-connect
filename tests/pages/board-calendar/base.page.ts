@@ -93,9 +93,14 @@ export class BoardCalendarBasePage {
 
   async chooseWorkspaceView(option: string) {
     const tabName = tabAliases[option] ?? option;
-    const tab = this.page.getByRole("tab", { name: tabName });
+    const tab = this.page
+      .getByRole("tab", {
+        name: new RegExp(`^${escapeRegExp(tabName)}(?:\\s+\\d+)?$`),
+      })
+      .first();
 
     for (let attempt = 0; attempt < 3; attempt += 1) {
+      await expect(tab).toBeVisible({ timeout: 10_000 });
       await tab.scrollIntoViewIfNeeded();
       if ((await tab.getAttribute("aria-selected")) === "true") return;
       await tab.click();

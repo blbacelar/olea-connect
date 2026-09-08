@@ -32,7 +32,7 @@ type OrganizationSubscription = {
 };
 
 const uuidPattern =
-  /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{12}$/i;
+  /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 export function getMentionedUserIds(formData: FormData, currentUserId: string) {
   return Array.from(
@@ -47,16 +47,16 @@ export function getMentionedUserIds(formData: FormData, currentUserId: string) {
 
 export async function syncCommunityMentions({
   actorUserId,
-  formData,
+  rawMentionedUserIds,
   target,
 }: {
   actorUserId: string;
-  formData: FormData;
+  rawMentionedUserIds: string[];
   target: MentionTarget;
 }) {
   const mentionedUserIds = await filterMentionedUsersForSpace(
     target.spaceId,
-    getMentionedUserIds(formData, actorUserId),
+    rawMentionedUserIds,
   );
   const supabase = await createClient();
   const targetColumn = target.targetType === "post" ? "post_id" : "comment_id";

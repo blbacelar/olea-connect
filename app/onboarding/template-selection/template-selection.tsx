@@ -107,7 +107,6 @@ export function TemplateSelection({ templates }: { templates: Template[] }) {
           onConfirm={confirm}
           onUpgrade={() => router.push("/subscription")}
           selectedCount={selected.length}
-          selectionLimit={selectionLimit}
         />
       </main>
     </div>
@@ -122,7 +121,7 @@ function SelectionTitle({
   selectionLimit: number;
 }) {
   return hasSelectableTemplates
-    ? `Choose your ${selectionLimit} templates`
+    ? `Choose up to ${selectionLimit} templates`
     : "Templates are coming soon";
 }
 
@@ -132,7 +131,7 @@ function SelectionDescription({
   hasSelectableTemplates: boolean;
 }) {
   return hasSelectableTemplates
-    ? "Your Seedling plan includes up to 3 templates. These become your permanent set and can be changed once per year."
+    ? "Your Seedling plan includes up to 3 templates. Choose at least one. These become your permanent set and can be changed once per year."
     : "We will let you know as soon as Seedling templates are available.";
 }
 
@@ -154,7 +153,7 @@ function SelectionProgress({
           Selected: {selectedCount} of {selectionLimit}
         </span>
         <span className="text-slate-400">
-          {selectedCount === selectionLimit ? "Ready to confirm" : "Choose more"}
+          {selectedCount > 0 ? "Ready to confirm" : "Choose at least one"}
         </span>
       </div>
       <div className="mt-2 h-2 overflow-hidden rounded-full bg-slate-200">
@@ -296,7 +295,6 @@ function SelectionActions({
   onConfirm,
   onUpgrade,
   selectedCount,
-  selectionLimit,
 }: {
   error: string;
   hasSelectableTemplates: boolean;
@@ -304,7 +302,6 @@ function SelectionActions({
   onConfirm: () => void;
   onUpgrade: () => void;
   selectedCount: number;
-  selectionLimit: number;
 }) {
   return (
     <>
@@ -317,10 +314,14 @@ function SelectionActions({
         {hasSelectableTemplates ? (
           <Button
             size="lg"
-            disabled={selectedCount !== selectionLimit || isPending}
+            disabled={selectedCount === 0 || isPending}
             onClick={onConfirm}
           >
-            {isPending ? "Saving..." : `Confirm my ${selectionLimit} templates →`}
+            {isPending
+              ? "Saving..."
+              : `Confirm my ${selectedCount} ${
+                  selectedCount === 1 ? "template" : "templates"
+                } →`}
           </Button>
         ) : null}
         <Button variant="link" className="px-0" onClick={onUpgrade}>

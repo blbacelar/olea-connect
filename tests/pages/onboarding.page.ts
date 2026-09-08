@@ -48,7 +48,7 @@ export class OnboardingPage {
 
   async expectTemplateSelection() {
     await expect(
-      this.page.getByRole("heading", { name: /Choose your \d+ templates/ }),
+      this.page.getByRole("heading", { name: /Choose up to \d+ templates/ }),
     ).toBeVisible();
   }
 

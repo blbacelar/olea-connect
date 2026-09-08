@@ -99,7 +99,16 @@ export class TemplateEditorPage {
   }
 
   private async chooseSelectOption(label: string, option: string) {
-    await this.page.getByLabel(label).click();
-    await this.page.getByRole("option", { name: option, exact: true }).click();
+    const trigger = this.page.getByLabel(label);
+    await expect(trigger).toBeVisible();
+    await expect(trigger).toBeEnabled();
+    await trigger.click();
+
+    const optionItem = this.page.getByRole("option", { name: option, exact: true });
+    await expect(optionItem).toBeVisible();
+    await expect(optionItem).toBeEnabled();
+    await optionItem.scrollIntoViewIfNeeded();
+    await optionItem.click({ force: true });
+    await expect(trigger).toContainText(option);
   }
 }

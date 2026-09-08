@@ -22,6 +22,7 @@ export async function createCommunityComment(
   try {
     const { member, organization } = await getRequiredMemberContext();
     const input = validateCommentInput(formData);
+    const mentionedUserIds = getMentionedUserIds(formData, member.id);
     const supabase = await getServerClient();
     const { data: post, error: postError } = await supabase
       .from("community_posts")
@@ -47,7 +48,7 @@ export async function createCommunityComment(
     if (comment?.id) {
       await syncCommunityMentions({
         actorUserId: member.id,
-        formData,
+        rawMentionedUserIds: mentionedUserIds,
         target: {
           commentId: comment.id,
           communityId: post.community_id,
@@ -70,7 +71,7 @@ export async function createCommunityComment(
             body: comment.body,
             createdAt: comment.created_at,
             id: comment.id,
-            mentionedUserIds: getMentionedUserIds(formData, member.id),
+            mentionedUserIds,
           }
         : undefined,
       message: "Your comment was added. Safety checks continue in the background.",
@@ -94,6 +95,7 @@ export async function updateCommunityComment(
   try {
     const { member } = await getRequiredMemberContext();
     const input = validateCommentUpdateInput(formData);
+    const mentionedUserIds = getMentionedUserIds(formData, member.id);
     const supabase = await getServerClient();
     const { data: comment, error } = await supabase
       .from("community_comments")
@@ -114,7 +116,7 @@ export async function updateCommunityComment(
 
     await syncCommunityMentions({
       actorUserId: member.id,
-      formData,
+      rawMentionedUserIds: mentionedUserIds,
       target: {
         commentId: comment.id,
         communityId: post.community_id,

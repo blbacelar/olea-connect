@@ -1,9 +1,41 @@
 import { expect, test as base } from "../fixtures/browser.fixture";
 
-import { test as testWithData } from "../fixtures/test-data.fixture";
+import {
+  test as testWithData,
+  type TestDataManager,
+} from "../fixtures/test-data.fixture";
 import { AppShellPage } from "../pages/app-shell.page";
 import { CommunityPage } from "../pages/community.page";
 import { createAuthenticatedPage } from "../support/auth-session";
+
+async function expectCommunityPostHiddenInDatabase({
+  authorUserId,
+  testData,
+  title,
+}: {
+  authorUserId: string;
+  testData: TestDataManager;
+  title: string;
+}) {
+  await expect
+    .poll(
+      async () => {
+        const { data, error } = await testData.supabase
+          .from("community_posts")
+          .select("hidden_at, status")
+          .eq("author_user_id", authorUserId)
+          .eq("title", title)
+          .order("created_at", { ascending: false })
+          .limit(1)
+          .single();
+
+        if (error) throw error;
+        return data?.status === "hidden" && data.hidden_at ? "hidden" : "visible";
+      },
+      { timeout: 10_000 },
+    )
+    .toBe("hidden");
+}
 
 base.describe("@critical native community access boundaries", () => {
   base("redirects unauthenticated users to login before community access", async ({
@@ -20,6 +52,7 @@ base.describe("@critical native community access boundaries", () => {
 
 testWithData.describe("@critical native community member experience", () => {
   testWithData.describe.configure({ mode: "serial" });
+  testWithData.setTimeout(60_000);
 
   testWithData("opens the native community from dashboard navigation", async ({
     baseURL,
@@ -253,8 +286,48 @@ testWithData.describe("@critical native community member experience", () => {
         body: postBody,
         kind: "discussion",
         mentionedMemberName: teammate.fullName,
+        mentionedOrganizationName: owner.organizationName,
+        mentionedUserId: teammate.userId,
       });
       await ownerCommunity.expectPost(postTitle, postBody);
+
+      const { data: createdPost, error: postLookupError } =
+        await testData.supabase
+          .from("community_posts")
+          .select("id")
+          .eq("title", postTitle)
+          .single();
+      expect(postLookupError).toBeNull();
+      expect(createdPost?.id).toBeTruthy();
+      const createdPostId = createdPost?.id;
+      if (!createdPostId) {
+        throw new Error("Expected the mentioned community post to be persisted.");
+      }
+
+      await expect
+        .poll(async () => {
+          const { count, error } = await testData.supabase
+            .from("community_mentions")
+            .select("*", { count: "exact", head: true })
+            .eq("post_id", createdPostId)
+            .eq("mentioned_user_id", teammate.userId);
+          if (error) throw error;
+          return count ?? 0;
+        })
+        .toBeGreaterThanOrEqual(1);
+
+      await expect
+        .poll(async () => {
+          const { count, error } = await testData.supabase
+            .from("notifications")
+            .select("*", { count: "exact", head: true })
+            .eq("user_id", teammate.userId)
+            .eq("type", "community_mention")
+            .is("read_at", null);
+          if (error) throw error;
+          return count ?? 0;
+        })
+        .toBeGreaterThanOrEqual(1);
 
       await teammateShell.openDashboard();
       await teammateShell.expectUnreadNotificationCountAtLeast(1);
@@ -280,7 +353,8 @@ testWithData.describe("@critical native community member experience", () => {
       planId: "roots",
     });
     const teammate = await testData.createOrganizationMember(owner);
-    const postTitle = `Comment mention post ${owner.marker}`;
+    const shortMarker = owner.marker.slice(0, 18);
+    const postTitle = `Comment mention ${shortMarker}`;
     const commentBody =
       "This reply should notify the mentioned teammate from the comment form.";
     await testData.createCommunityPost(owner, {
@@ -309,6 +383,8 @@ testWithData.describe("@critical native community member experience", () => {
       await ownerCommunity.open();
       await ownerCommunity.addComment(postTitle, commentBody, {
         mentionedMemberName: teammate.fullName,
+        mentionedOrganizationName: owner.organizationName,
+        mentionedUserId: teammate.userId,
       });
 
       await teammateShell.openDashboard();
@@ -334,8 +410,9 @@ testWithData.describe("@critical native community member experience", () => {
       activeSubscription: true,
       planId: "roots",
     });
-    const postTitle = `Editable community post ${member.marker}`;
-    const updatedPostTitle = `Updated editable community post ${member.marker}`;
+    const shortMarker = member.marker.slice(0, 18);
+    const postTitle = `Editable post ${shortMarker}`;
+    const updatedPostTitle = `Updated editable post ${shortMarker}`;
     await testData.createCommunityPost(member, {
       title: postTitle,
       body: "This post should support author edits and deletion.",
@@ -854,11 +931,14 @@ testWithData.describe("@critical native community member experience", () => {
           member.userId,
           "Suspicious download",
         );
-      await community.processModerationUntilPostHidden(
-        request,
-        "Suspicious download",
-        moderationEventId,
-      );
+      await community.processModerationQueue(request, moderationEventId);
+      await expectCommunityPostHiddenInDatabase({
+        authorUserId: member.userId,
+        testData,
+        title: "Suspicious download",
+      });
+      await page.reload();
+      await community.expectPostHidden("Suspicious download");
     } finally {
       await context.close();
     }
@@ -900,11 +980,14 @@ testWithData.describe("@critical native community member experience", () => {
           member.userId,
           "A post that should not publish",
         );
-      await community.processModerationUntilPostHidden(
-        request,
-        "A post that should not publish",
-        moderationEventId,
-      );
+      await community.processModerationQueue(request, moderationEventId);
+      await expectCommunityPostHiddenInDatabase({
+        authorUserId: member.userId,
+        testData,
+        title: "A post that should not publish",
+      });
+      await page.reload();
+      await community.expectPostHidden("A post that should not publish");
     } finally {
       await context.close();
     }

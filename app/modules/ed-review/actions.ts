@@ -42,12 +42,25 @@ function formValue(formData: FormData, key: string) {
   return String(formData.get(key) ?? "").trim();
 }
 
+function errorMessage(error: unknown) {
+  if (error instanceof Error) return error.message;
+  if (
+    typeof error === "object" &&
+    error !== null &&
+    "message" in error &&
+    typeof error.message === "string"
+  ) {
+    return error.message;
+  }
+  return "";
+}
+
 function revalidateReview() {
   revalidatePath(reviewPath);
 }
 
 function reviewerAccessFailurePath(error: unknown) {
-  const message = error instanceof Error ? error.message : "";
+  const message = errorMessage(error);
   const reason = message.includes(
     "Assign another Board Chair before changing or removing this access.",
   )
@@ -63,7 +76,7 @@ function reviewerAccessFailurePath(error: unknown) {
 }
 
 function reviewerAssignmentFailurePath(error: unknown) {
-  const message = error instanceof Error ? error.message : "";
+  const message = errorMessage(error);
   const reason = message.includes("already has confidential access")
     ? "duplicate-reviewer"
     : "assign-failed";

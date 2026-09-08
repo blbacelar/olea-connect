@@ -109,24 +109,6 @@ export class CommunityPage {
     ).toBeAttached({ timeout: 10000 });
   }
 
-  async processModerationUntilPostHidden(
-    request: APIRequestContext,
-    title: string,
-    eventId?: string,
-  ) {
-    for (let attempt = 0; attempt < 20; attempt += 1) {
-      await this.processModerationQueue(request, eventId);
-
-      if ((await this.page.getByRole("heading", { name: title }).count()) === 0) {
-        return;
-      }
-
-      await this.page.waitForTimeout(250);
-    }
-
-    await this.expectPostHidden(title);
-  }
-
   async editPost({
     currentTitle,
     nextBody,
@@ -140,10 +122,16 @@ export class CommunityPage {
   }) {
     const post = this.postArticle(currentTitle);
     await post.getByRole("button", { name: "Edit post" }).click();
-    await post.getByLabel("Edit post title").fill(nextTitle);
+    const titleField = post.getByLabel("Edit post title");
+    await expect(titleField).toBeVisible();
+    await titleField.fill(nextTitle);
     await post.getByLabel("Edit post body").fill(nextBody);
     await post.getByLabel("Edit resource link").fill(resourceUrl ?? "");
-    await post.getByRole("button", { name: "Save changes" }).click();
+    const saveButton = post.getByRole("button", { name: "Save changes" });
+    await expect(saveButton).toBeVisible();
+    await expect(saveButton).toBeEnabled();
+    await saveButton.scrollIntoViewIfNeeded();
+    await saveButton.click({ force: true });
 
     const updatedPost = this.postArticle(nextTitle);
     await expect(updatedPost).toBeVisible();
@@ -165,12 +153,16 @@ export class CommunityPage {
     body,
     kind = "discussion",
     mentionedMemberName,
+    mentionedOrganizationName,
+    mentionedUserId,
     resourceUrl,
     title,
   }: {
     body: string;
     kind?: "announcement" | "discussion" | "resource";
     mentionedMemberName?: string;
+    mentionedOrganizationName?: string;
+    mentionedUserId?: string;
     resourceUrl?: string;
     title: string;
   }) {
@@ -197,16 +189,43 @@ export class CommunityPage {
       await this.page.getByLabel("Mention members").fill(mentionedMemberName);
       await this.page
         .getByRole("button", {
-          name: new RegExp(`Mention ${mentionedMemberName}`),
+          name: mentionedOrganizationName
+            ? `Mention ${mentionedMemberName} from ${mentionedOrganizationName}`
+            : new RegExp(`Mention ${mentionedMemberName}`),
         })
         .click();
       await expect(this.page.getByText(mentionedMemberName)).toBeVisible();
+      await expect(this.page.locator('input[name="mentionedUserIds"]')).toHaveCount(
+        1,
+      );
+      if (mentionedUserId) {
+        await expect(
+          this.page.locator('form input[name="mentionedUserIds"]'),
+        ).toHaveValue(mentionedUserId);
+        await expect
+          .poll(async () =>
+            this.page
+              .locator('form:has(input[name="spaceId"])')
+              .first()
+              .evaluate((form) =>
+                new FormData(form as HTMLFormElement)
+                  .getAll("mentionedUserIds")
+                  .map(String),
+              ),
+          )
+          .toEqual([mentionedUserId]);
+      }
     }
 
     const publishButton = this.page.getByRole("button", { name: "Publish post" });
     await expect(publishButton).toBeVisible();
     await expect(publishButton).toBeEnabled();
     await publishButton.click();
+    await expect(
+      this.page.getByText(
+        "Your post is live. Safety checks continue in the background.",
+      ),
+    ).toBeVisible();
   }
 
   async processModerationQueue(request: APIRequestContext, eventId?: string) {
@@ -250,24 +269,41 @@ export class CommunityPage {
   async addComment(
     title: string,
     comment: string,
-    options: { mentionedMemberName?: string } = {},
+    options: {
+      mentionedMemberName?: string;
+      mentionedOrganizationName?: string;
+      mentionedUserId?: string;
+    } = {},
   ) {
     const post = this.postArticle(title);
     await post.getByPlaceholder("Add a reply...").fill(comment);
 
     if (options.mentionedMemberName) {
       await post.getByLabel("Mention members").fill(options.mentionedMemberName);
-      await post
-        .getByRole("button", {
-          name: new RegExp(`Mention ${options.mentionedMemberName}`),
-        })
-        .click();
+      const mentionButton = post.getByRole("button", {
+        name: options.mentionedOrganizationName
+          ? `Mention ${options.mentionedMemberName} from ${options.mentionedOrganizationName}`
+          : new RegExp(`Mention ${options.mentionedMemberName}`),
+      });
+      await expect(mentionButton).toBeVisible();
+      await expect(mentionButton).toBeEnabled();
+      await mentionButton.scrollIntoViewIfNeeded();
+      await mentionButton.click({ force: true });
       await expect(post.getByText(options.mentionedMemberName)).toBeVisible();
+      if (options.mentionedUserId) {
+        await expect(post.locator('input[name="mentionedUserIds"]')).toHaveValue(
+          options.mentionedUserId,
+        );
+      }
     }
 
-    await post.getByRole("button", { name: "Reply" }).click();
-    await expect(post.getByLabel("1 comments")).toBeVisible();
+    const replyButton = post.getByRole("button", { name: "Reply" });
+    await expect(replyButton).toBeVisible();
+    await expect(replyButton).toBeEnabled();
+    await replyButton.scrollIntoViewIfNeeded();
+    await replyButton.click({ force: true });
     await expect(post.getByText(comment)).toBeVisible();
+    await expect(post.getByLabel("1 comments")).toBeVisible();
   }
 
   async expectCommentAppearsByRealtime(title: string, comment: string) {

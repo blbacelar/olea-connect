@@ -3,6 +3,7 @@
 import { Save } from "lucide-react";
 import {
   type Dispatch,
+  type MutableRefObject,
   type SetStateAction,
   useEffect,
   useRef,
@@ -49,16 +50,24 @@ export function EditorTab({
 }) {
   const [draft, setDraft] = useState(response);
   const draftRef = useRef(response);
+  const dirtyRef = useRef(false);
+  const previousTemplateIdRef = useRef(response.templateId);
   const [state, setState] = useState<AccreditationActionResult>({ ok: true });
   const [pending, startTransition] = useTransition();
 
   function updateDraft(next: Partial<AccreditationTemplateResponse>) {
     const updated = { ...draftRef.current, ...next };
     draftRef.current = updated;
+    dirtyRef.current = true;
     setDraft(updated);
   }
 
   useEffect(() => {
+    const templateChanged = previousTemplateIdRef.current !== response.templateId;
+    if (!templateChanged && dirtyRef.current) return;
+
+    previousTemplateIdRef.current = response.templateId;
+    dirtyRef.current = false;
     draftRef.current = response;
     setDraft(response);
     setState({ ok: true });
@@ -73,6 +82,7 @@ export function EditorTab({
       const savedResponse = handleTemplateSaveResult({
         currentDraft,
         result,
+        dirtyRef,
         setDraft,
         setResponses,
         setState,
@@ -139,12 +149,14 @@ function prepareTemplateFormData({
 function handleTemplateSaveResult({
   currentDraft,
   result,
+  dirtyRef,
   setDraft,
   setResponses,
   setState,
   template,
 }: {
   currentDraft: AccreditationTemplateResponse;
+  dirtyRef: MutableRefObject<boolean>;
   result: AccreditationActionResult;
   setDraft: Dispatch<SetStateAction<AccreditationTemplateResponse>>;
   setResponses: Dispatch<SetStateAction<AccreditationTemplateResponse[]>>;
@@ -155,6 +167,7 @@ function handleTemplateSaveResult({
   if (!result.ok) return null;
 
   const savedResponse = result.response ?? getFallbackSavedResponse(currentDraft, template);
+  dirtyRef.current = false;
   setDraft(savedResponse);
   setResponses((current) => mergeResponse(current, savedResponse));
   return savedResponse;
