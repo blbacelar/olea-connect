@@ -104,7 +104,7 @@ export function GrantWritingTipsPanel() {
           </p>
           <p className="text-xs leading-relaxed opacity-95">
             We&apos;re building a network of expert grant writers. Interested in professional writing support? Let us know and
-            we&apos;ll connect you with writers who specialize in your area. Expected pricing: $500 first grant, $350 additional.
+            we&apos;ll connect you with writers who specialize in your area.
           </p>
         </div>
         <RequestWriterDialog
