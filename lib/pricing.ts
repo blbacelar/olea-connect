@@ -10,7 +10,6 @@ export type AddOnPackage = {
 export type AddOn = {
   name: string;
   description: string;
-  rateLabel: string;
   packages: AddOnPackage[];
 };
 
@@ -19,7 +18,6 @@ export const pricingAddOns: AddOn[] = [
     name: "Impact Coaching",
     description:
       "Hands-on support for KPI metrics, funder reporting, and impact strategy.",
-    rateLabel: "$162 CAD/hour",
     packages: [
       {
         name: "Light",
@@ -45,7 +43,6 @@ export const pricingAddOns: AddOn[] = [
     name: "Admin Support",
     description:
       "Practical help with board operations, meeting preparation, grants, and governance administration.",
-    rateLabel: "$100 CAD/hour",
     packages: [
       {
         name: "Light",

@@ -126,7 +126,6 @@ export type PublicSiteCopy = {
     addOns: Array<{
       name: string;
       description: string;
-      rateLabel: string;
       packages: Array<{
         name: string;
         hours: string;
@@ -342,7 +341,7 @@ export const publicSiteCopy: Record<Locale, PublicSiteCopy> = {
       optionalSupportDescription:
         "Add-ons are available to every tier. Canopy and Harvest members receive 10% off coaching and admin packages.",
       annualPlanningNote:
-        "Annual prices are shown for planning. Contact us for hourly or package support.",
+        "Package prices are shown as all-in rates for planning. Contact us to confirm availability.",
       packageSupportNote: "Available on an ad-hoc basis.",
       retreatTitle: "Board Retreat Facilitation",
       retreatDescription:
@@ -428,7 +427,6 @@ export const publicSiteCopy: Record<Locale, PublicSiteCopy> = {
           name: "Impact Coaching",
           description:
             "Hands-on support for KPI metrics, funder reporting, and impact strategy.",
-          rateLabel: "$162 CAD/hour",
           packages: [
             { name: "Light", hours: "4 hours/month" },
             { name: "Medium", hours: "8 hours/month" },
@@ -439,7 +437,6 @@ export const publicSiteCopy: Record<Locale, PublicSiteCopy> = {
           name: "Admin Support",
           description:
             "Practical help with board operations, meeting preparation, grants, and governance administration.",
-          rateLabel: "$100 CAD/hour",
           packages: [
             { name: "Light", hours: "4 hours/month" },
             { name: "Medium", hours: "8 hours/month" },
@@ -739,7 +736,7 @@ export const publicSiteCopy: Record<Locale, PublicSiteCopy> = {
       optionalSupportDescription:
         "Les options complémentaires sont offertes avec chaque forfait. Les membres Canopy et Harvest reçoivent 10 % de rabais sur les forfaits de coaching et de soutien administratif.",
       annualPlanningNote:
-        "Les prix annuels sont indiqués pour la planification. Contactez-nous pour du soutien à l'heure ou en forfait.",
+        "Les prix des forfaits sont indiqués comme tarifs tout compris aux fins de planification. Contactez-nous pour confirmer la disponibilité.",
       packageSupportNote: "Offert au besoin.",
       retreatTitle: "Animation de retraite du conseil",
       retreatDescription:
@@ -826,7 +823,6 @@ export const publicSiteCopy: Record<Locale, PublicSiteCopy> = {
           name: "Coaching d'impact",
           description:
             "Soutien pratique pour les indicateurs KPI, les rapports aux bailleurs de fonds et la stratégie d'impact.",
-          rateLabel: "162 $ CA/heure",
           packages: [
             { name: "Léger", hours: "4 heures/mois" },
             { name: "Moyen", hours: "8 heures/mois" },
@@ -837,7 +833,6 @@ export const publicSiteCopy: Record<Locale, PublicSiteCopy> = {
           name: "Soutien administratif",
           description:
             "Aide pratique pour les opérations du conseil, la préparation des réunions, les subventions et l'administration de la gouvernance.",
-          rateLabel: "100 $ CA/heure",
           packages: [
             { name: "Léger", hours: "4 heures/mois" },
             { name: "Moyen", hours: "8 heures/mois" },

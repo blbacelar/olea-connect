@@ -181,9 +181,6 @@ export function LandingPricing({
                 <p className="mt-2 text-sm leading-6 text-slate-500">
                   {addOnCopy.description}
                 </p>
-                <p className="mt-4 text-sm font-semibold text-olea-green">
-                  {addOnCopy.rateLabel}
-                </p>
                 <div className="mt-5 overflow-hidden rounded-lg border">
                   {addOn.packages.map((pack, packageIndex) => {
                     const packageCopy =
