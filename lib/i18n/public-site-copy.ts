@@ -205,7 +205,7 @@ export const publicSiteCopy: Record<Locale, PublicSiteCopy> = {
       quoteLabel: "The Olea Connects™ promise",
       preview: {
         nav: ["Dashboard", "Templates", "Webinars", "Olea Gives", "Community"],
-        organization: "JP Centre for Youth",
+        organization: "Maple Grove Community House",
         greeting: "Good morning, Sarah",
         title: "Your nonprofit home base",
         governanceTemplates: "Governance templates",
@@ -590,7 +590,7 @@ export const publicSiteCopy: Record<Locale, PublicSiteCopy> = {
           "Olea Gives",
           "Communauté",
         ],
-        organization: "Centre jeunesse JP",
+        organization: "Maison communautaire Maple Grove",
         greeting: "Bonjour, Sarah",
         title: "Votre espace central pour l'organisme",
         governanceTemplates: "Modèles de gouvernance",

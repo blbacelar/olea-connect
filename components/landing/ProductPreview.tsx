@@ -131,7 +131,7 @@ export function ProductPreview({ copy }: { copy: ProductPreviewCopy }) {
       <div className="absolute -bottom-7 -left-3 hidden w-52 rounded-xl border bg-white p-3 shadow-xl sm:block">
         <div className="flex items-center gap-3">
           <span className="grid size-10 place-items-center rounded-lg bg-olea-green text-xs font-bold text-white">
-            JP
+            MG
           </span>
           <div>
             <p className="text-xs font-bold">{copy.templateTitle}</p>
