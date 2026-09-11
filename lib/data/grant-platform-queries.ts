@@ -25,9 +25,10 @@ export type GrantPlatformApplicationRow = {
   focus_area: string;
   funding_request: string;
   grant_awards: { status: string } | Array<{ status: string }> | null;
-  grant_rounds: { closes_at: string | null; name: string } | Array<{
+  grant_rounds: { closes_at: string | null; name: string; public_notes: string | null } | Array<{
     closes_at: string | null;
     name: string;
+    public_notes: string | null;
   }> | null;
   id: string;
   requested_amount_cents: number;
@@ -51,7 +52,20 @@ export type GrantPlatformPartnerRow = {
   status: string;
 };
 
+export type GrantPlatformFunderInteractionRow = {
+  contact_method: string;
+  contact_name: string;
+  follow_up_date: string | null;
+  id: string;
+  interaction_date: string;
+  next_action: string;
+  partner_id: string;
+  summary: string;
+};
+
 export type GrantPlatformMemberRow = {
+  email?: string | null;
+  full_name?: string | null;
   role: string;
   status: string;
   user_id: string;
@@ -66,9 +80,15 @@ export type GrantPlatformVaultRow = {
 };
 
 export type GrantPlatformSettingsRow = {
+  board_chair_email: string | null;
+  board_chair_name: string | null;
+  board_chair_phone: string | null;
+  board_chair_user_id: string | null;
+  charity_registration_number: string | null;
   current_annual_revenue_cents: number | null;
   funding_sources: string[] | null;
   organization_type: string;
+  society_number: string | null;
 };
 
 export type GrantPlatformOrganizationRow = {
@@ -84,6 +104,9 @@ export async function loadGrantPlatformRows(
 
   return {
     applications: readQueryArray<GrantPlatformApplicationRow>(results.applications),
+    funderInteractions: readQueryArray<GrantPlatformFunderInteractionRow>(
+      results.funderInteractions,
+    ),
     members: readQueryArray<GrantPlatformMemberRow>(results.members),
     organizationRecord: readQueryRecord<GrantPlatformOrganizationRow>(
       results.organizationRecord,
@@ -128,7 +151,7 @@ function fetchGrantPlatformRows(
     supabase.from("organizations").select("name").eq("id", organizationId).maybeSingle(),
     supabase
       .from("grant_organization_settings")
-      .select("organization_type, current_annual_revenue_cents, funding_sources")
+      .select("organization_type, current_annual_revenue_cents, funding_sources, society_number, charity_registration_number, board_chair_user_id, board_chair_name, board_chair_email, board_chair_phone")
       .eq("organization_id", organizationId)
       .maybeSingle(),
     supabase
@@ -137,7 +160,7 @@ function fetchGrantPlatformRows(
       .order("opens_at", { ascending: true }),
     supabase
       .from("grant_applications")
-      .select("id, round_id, status, focus_area, funding_request, requested_amount_cents, submitted_at, collaboration_note, updated_at, grant_rounds(name, closes_at), grant_awards(status)")
+      .select("id, round_id, status, focus_area, funding_request, requested_amount_cents, submitted_at, collaboration_note, updated_at, grant_rounds(name, closes_at, public_notes), grant_awards(status)")
       .eq("organization_id", organizationId)
       .order("updated_at", { ascending: false }),
     supabase
@@ -146,10 +169,13 @@ function fetchGrantPlatformRows(
       .eq("organization_id", organizationId)
       .order("updated_at", { ascending: false }),
     supabase
-      .from("organization_members")
-      .select("user_id, role, status")
+      .from("grant_funder_interactions")
+      .select("id, partner_id, interaction_date, contact_method, contact_name, summary, next_action, follow_up_date")
       .eq("organization_id", organizationId)
-      .order("created_at", { ascending: true }),
+      .order("interaction_date", { ascending: false }),
+    supabase.rpc("get_team_directory", {
+      target_organization_id: organizationId,
+    }),
     supabase
       .from("grant_application_attachments")
       .select("id, file_name, content_type, size_bytes, created_at")
@@ -162,10 +188,12 @@ function fetchGrantPlatformRows(
       rounds,
       applications,
       partners,
+      funderInteractions,
       members,
       vault,
     ]) => ({
       applications,
+      funderInteractions,
       members,
       organizationRecord,
       partners,
@@ -185,6 +213,7 @@ function logGrantPlatformErrors(results: GrantPlatformQueryResults) {
   logQueryError(results.settings.error, "organization settings");
   logQueryError(results.rounds.error, "grant rounds");
   logQueryError(results.applications.error, "grant applications");
+  logQueryError(results.funderInteractions.error, "funder interactions");
   logQueryError(results.partners.error, "grant partners");
   logQueryError(results.members.error, "organization members");
   logQueryError(results.vault.error, "vault items");

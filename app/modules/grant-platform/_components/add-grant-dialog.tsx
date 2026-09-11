@@ -4,6 +4,7 @@ import { Plus } from "lucide-react";
 import { useState } from "react";
 
 import { Button } from "@/components/ui/button";
+import { CurrencyInput } from "@/components/ui/currency-input";
 import {
   Dialog,
   DialogContent,
@@ -77,7 +78,13 @@ export function AddGrantDialog() {
             </div>
             <div className="space-y-2">
               <Label htmlFor="amount-requested">Amount requested (CAD)</Label>
-              <Input id="amount-requested" min="1" name="requestedAmount" type="number" required />
+              <CurrencyInput
+                id="amount-requested"
+                min="1"
+                name="requestedAmount"
+                placeholder="$25,000.00"
+                required
+              />
             </div>
             <div className="space-y-2">
               <Label htmlFor="deadline">Application deadline</Label>

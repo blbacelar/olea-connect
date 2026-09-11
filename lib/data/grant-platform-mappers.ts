@@ -4,6 +4,7 @@ import type { OrganizationRole } from "@/lib/types";
 import type { GrantPlatformWorkspaceData } from "./grant-platform";
 import type {
   GrantPlatformApplicationRow,
+  GrantPlatformFunderInteractionRow,
   GrantPlatformMemberRow,
   GrantPlatformOrganizationRow,
   GrantPlatformPartnerRow,
@@ -22,6 +23,7 @@ type BuildGrantPlatformDataInput = {
   organization: { name: string };
   organizationRecord: GrantPlatformOrganizationRow | null;
   organizationSettings: GrantPlatformSettingsRow | null;
+  funderInteractions: GrantPlatformFunderInteractionRow[];
   partners: GrantPlatformPartnerRow[];
   profileMap: Map<string, string>;
   rawApplications: GrantPlatformApplicationRow[];
@@ -55,6 +57,7 @@ export function buildGrantPlatformWorkspaceData({
   organization,
   organizationRecord,
   organizationSettings,
+  funderInteractions,
   partners,
   profileMap,
   rawApplications,
@@ -70,7 +73,9 @@ export function buildGrantPlatformWorkspaceData({
     notes: buildGrantPlatformNotes(access.canEditOrgProfile),
     organizationName: organizationRecord?.name ?? organization.name,
     organizationSettings: buildOrganizationSettings(organizationSettings),
-    partners: partners.map(mapPartner),
+    partners: partners.map((partner) =>
+      mapPartner(partner, interactionsForPartner(funderInteractions, partner.id)),
+    ),
     rounds,
     sections: buildGrantPlatformSections(),
     summary: getGrantPlatformSummary(access.canViewReports),
@@ -109,6 +114,7 @@ function mapApplication(application: GrantPlatformApplicationRow) {
     collaborationNote: application.collaboration_note ?? null,
     deadlineAt: round?.closes_at ?? null,
     focusArea: application.focus_area,
+    funderName: parseFunderName(round?.public_notes) ?? "Unassigned funder",
     fundingRequest: application.funding_request,
     id: application.id,
     nextMilestone: nextMilestoneMap[application.status] ?? "Track the current milestone",
@@ -160,29 +166,57 @@ function buildOrganizationSettings(settings: GrantPlatformSettingsRow | null) {
   return settings
     ? {
         currentAnnualRevenueCents: settings.current_annual_revenue_cents ?? null,
+        boardChairEmail: settings.board_chair_email ?? "",
+        boardChairName: settings.board_chair_name ?? "",
+        boardChairPhone: settings.board_chair_phone ?? "",
+        boardChairUserId: settings.board_chair_user_id ?? null,
+        charityRegistrationNumber: settings.charity_registration_number ?? "",
         fundingSources: settings.funding_sources ?? [],
         organizationType: settings.organization_type,
+        societyNumber: settings.society_number ?? "",
       }
     : {
+        boardChairEmail: "",
+        boardChairName: "",
+        boardChairPhone: "",
+        boardChairUserId: null,
+        charityRegistrationNumber: "",
         currentAnnualRevenueCents: null,
         fundingSources: [],
         organizationType: "",
+        societyNumber: "",
       };
 }
 
-function mapPartner(partner: GrantPlatformPartnerRow) {
+function mapPartner(
+  partner: GrantPlatformPartnerRow,
+  interactions: GrantPlatformFunderInteractionRow[],
+) {
   return {
     addedNote: partner.added_note ?? null,
     contactName: partner.contact_name,
     email: partner.email,
     focusAreas: partner.focus_areas,
     id: partner.id,
+    interactions: interactions.map(mapFunderInteraction),
     lastCollaboration: partner.last_collaboration ?? null,
     name: partner.name,
     notes: partner.notes,
     partnerType: partner.partner_type,
     phone: partner.phone,
     status: partner.status,
+  };
+}
+
+function mapFunderInteraction(interaction: GrantPlatformFunderInteractionRow) {
+  return {
+    contactMethod: interaction.contact_method,
+    contactName: interaction.contact_name,
+    followUpDate: interaction.follow_up_date ?? null,
+    id: interaction.id,
+    interactionDate: interaction.interaction_date,
+    nextAction: interaction.next_action,
+    summary: interaction.summary,
   };
 }
 
@@ -201,8 +235,12 @@ function buildTeamMembers(
   profileMap: Map<string, string>,
 ) {
   return members.map((memberRecord) => ({
-    displayName: profileMap.get(memberRecord.user_id) ?? memberRecord.user_id,
-    email: "Email on file",
+    displayName:
+      memberRecord.full_name?.trim() ||
+      profileMap.get(memberRecord.user_id) ||
+      memberRecord.email?.split("@")[0] ||
+      memberRecord.user_id,
+    email: memberRecord.email ?? "Email on file",
     id: memberRecord.user_id,
     role: memberRecord.role as OrganizationRole,
     source: memberRecord.user_id,
@@ -238,6 +276,19 @@ function buildGrantPlatformMetrics(
       value: String(rounds.filter((round) => round.closesAt).length),
     },
   ];
+}
+
+function interactionsForPartner(
+  interactions: GrantPlatformFunderInteractionRow[],
+  partnerId: string,
+) {
+  return interactions.filter((interaction) => interaction.partner_id === partnerId);
+}
+
+function parseFunderName(value: string | null | undefined) {
+  if (!value) return null;
+  const match = /^Funder:\s*(.+)$/im.exec(value);
+  return match?.[1]?.trim() || null;
 }
 
 function buildWorkflowState(applications: GrantPlatformWorkspaceData["applications"]) {

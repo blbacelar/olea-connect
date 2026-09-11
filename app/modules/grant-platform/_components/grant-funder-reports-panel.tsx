@@ -1,406 +1,449 @@
 "use client";
 
-import {
-  BarChart3,
-  CheckCircle2,
-  Download,
-  HelpCircle,
-  PieChart,
-  ShieldAlert,
-  Sparkles,
-  TrendingUp,
-} from "lucide-react";
-import { useState } from "react";import { Button } from "@/components/ui/button";
+import { BarChart3, Download, Filter, PieChart, TrendingUp } from "lucide-react";
+import { useMemo, useState } from "react";
+
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import type { GrantPlatformWorkspaceData } from "@/lib/data/grant-platform";
 
-export function GrantFunderReportsPanel() {
-  const [activeReportModal, setActiveReportModal] = useState<"overview" | "success" | "trends" | null>(null);
-  const [exportModalOpen, setExportModalOpen] = useState(false);
+type Application = GrantPlatformWorkspaceData["applications"][number];
+type Funder = GrantPlatformWorkspaceData["partners"][number];
+type ReportMode = "overview" | "success" | "trends" | null;
 
-  const funderPerformance = [
-    {
-      name: "Province of BC",
-      apps: 2,
-      approved: 1,
-      rate: "50%",
-      awarded: "$50,000",
-      avg: "$50,000",
-      status: "Active",
-      statusColor: "text-olea-green font-bold",
-      rateBg: "bg-emerald-100 text-emerald-800 font-bold",
-    },
-    {
-      name: "Arts Council of BC",
-      apps: 1,
-      approved: 0,
-      rate: "0%",
-      awarded: "$0",
-      avg: "-",
-      status: "Pending",
-      statusColor: "text-orange-600 font-bold",
-      rateBg: "bg-rose-100 text-rose-800 font-bold",
-    },
-    {
-      name: "Community Foundation",
-      apps: 1,
-      approved: 1,
-      rate: "100%",
-      awarded: "$42,000",
-      avg: "$42,000",
-      status: "Active",
-      statusColor: "text-olea-green font-bold",
-      rateBg: "bg-emerald-100 text-emerald-800 font-bold",
-    },
-    {
-      name: "Provincial Health Ministry",
-      apps: 1,
-      approved: 0,
-      rate: "0%",
-      awarded: "$0",
-      avg: "-",
-      status: "Declined",
-      statusColor: "text-slate-400 font-medium",
-      rateBg: "bg-rose-100 text-rose-800 font-bold",
-    },
+type FunderReportRow = {
+  activeCount: number;
+  applications: Application[];
+  awardedCount: number;
+  funder: Funder | null;
+  latestNote: string;
+  name: string;
+  nextAction: string;
+  openFollowUps: number;
+  requestedAmountCents: number;
+  successRate: number;
+};
+
+const unassignedFunder = "Unassigned funder";
+
+function formatCurrency(cents: number) {
+  return new Intl.NumberFormat("en-CA", {
+    currency: "CAD",
+    maximumFractionDigits: 0,
+    style: "currency",
+  }).format(cents / 100);
+}
+
+function normalize(value: string) {
+  return value.trim().toLowerCase();
+}
+
+function isActiveApplication(application: Application) {
+  return !["approved", "declined", "withdrawn"].includes(application.status);
+}
+
+function isAwarded(application: Application) {
+  return application.awardStatus === "approved" || application.status === "approved";
+}
+
+function applicationMatchesFunder(application: Application, funderName: string) {
+  const normalizedFunder = normalize(funderName);
+  return (
+    normalize(application.funderName) === normalizedFunder ||
+    normalize(application.roundName).includes(normalizedFunder) ||
+    normalize(application.fundingRequest).includes(normalizedFunder)
+  );
+}
+
+function buildFunderNames(data: GrantPlatformWorkspaceData) {
+  const names = new Set<string>();
+  for (const funder of data.partners) names.add(funder.name);
+  for (const application of data.applications) {
+    if (application.funderName && application.funderName !== unassignedFunder) {
+      names.add(application.funderName);
+    }
+  }
+  if (!names.size && data.applications.length) names.add(unassignedFunder);
+  return [...names].sort((left, right) => left.localeCompare(right));
+}
+
+function getApplicationsForFunder(applications: Application[], funderName: string) {
+  if (funderName === unassignedFunder) {
+    return applications.filter((application) => application.funderName === unassignedFunder);
+  }
+  return applications.filter((application) =>
+    applicationMatchesFunder(application, funderName),
+  );
+}
+
+function buildReportRows(
+  data: GrantPlatformWorkspaceData,
+  funderNames: string[],
+  selectedGrantId: string,
+) {
+  const grantFilteredApplications =
+    selectedGrantId === "all"
+      ? data.applications
+      : data.applications.filter((application) => application.id === selectedGrantId);
+
+  return funderNames.map((name) => {
+    const funder = data.partners.find((partner) => normalize(partner.name) === normalize(name)) ?? null;
+    const applications = getApplicationsForFunder(grantFilteredApplications, name);
+    const awardedCount = applications.filter(isAwarded).length;
+    const interactions = funder?.interactions ?? [];
+    const latestInteraction = interactions[0] ?? null;
+
+    return {
+      activeCount: applications.filter(isActiveApplication).length,
+      applications,
+      awardedCount,
+      funder,
+      latestNote: latestInteraction?.summary ?? funder?.notes ?? "No funder notes recorded.",
+      name,
+      nextAction: latestInteraction?.nextAction || "No next action recorded.",
+      openFollowUps: interactions.filter((interaction) => interaction.followUpDate).length,
+      requestedAmountCents: applications.reduce(
+        (total, application) => total + application.requestedAmountCents,
+        0,
+      ),
+      successRate: applications.length
+        ? Math.round((awardedCount / applications.length) * 100)
+        : 0,
+    };
+  });
+}
+
+function downloadCsv(rows: FunderReportRow[]) {
+  const headers = [
+    "Funder",
+    "Applications",
+    "Active applications",
+    "Awarded applications",
+    "Success rate",
+    "Requested amount",
+    "Open follow-ups",
+    "Latest note",
+    "Next action",
   ];
+  const lines = rows.map((row) =>
+    [
+      row.name,
+      row.applications.length,
+      row.activeCount,
+      row.awardedCount,
+      `${row.successRate}%`,
+      (row.requestedAmountCents / 100).toFixed(2),
+      row.openFollowUps,
+      row.latestNote,
+      row.nextAction,
+    ]
+      .map((value) => `"${String(value).replace(/"/g, '""')}"`)
+      .join(","),
+  );
+  const csv = [headers.join(","), ...lines].join("\n");
+  const url = URL.createObjectURL(new Blob([csv], { type: "text/csv" }));
+  const link = document.createElement("a");
+  link.href = url;
+  link.download = "grant-funder-report.csv";
+  link.click();
+  URL.revokeObjectURL(url);
+}
 
-  const metrics = [
-    {
-      label: "Overall Win Rate",
-      val: "50%",
-      sub: "2 of 4 applications",
-      borderColor: "border-olea-green",
-      textColor: "text-olea-green",
-    },
-    {
-      label: "Total Awarded",
-      val: "$92,000",
-      sub: "From approved grants",
-      borderColor: "border-navy-blue",
-      textColor: "text-navy-blue",
-    },
-    {
-      label: "Best Performer",
-      val: "Community Foundation",
-      sub: "100% win rate",
-      borderColor: "border-orange-500",
-      textColor: "text-orange-600",
-    },
-    {
-      label: "Avg Decision Time",
-      val: "45 days",
-      sub: "Estimated turnaround",
-      borderColor: "border-indigo-500",
-      textColor: "text-indigo-600",
-    },
-  ];
+export function GrantFunderReportsPanel({
+  data,
+}: {
+  data: GrantPlatformWorkspaceData;
+}) {
+  const [selectedFunder, setSelectedFunder] = useState("all");
+  const [selectedGrantId, setSelectedGrantId] = useState("all");
+  const [reportMode, setReportMode] = useState<ReportMode>(null);
 
-  const successRates = [
-    { name: "Community Foundation", rate: 100, label: "100%", color: "bg-olea-green", textColor: "text-olea-green" },
-    { name: "Province of BC", rate: 50, label: "50%", color: "bg-orange-500", textColor: "text-orange-600" },
-    { name: "Arts Council of BC", rate: 0, label: "0%", color: "bg-slate-300", textColor: "text-slate-400" },
-    { name: "Provincial Health Ministry", rate: 0, label: "0%", color: "bg-slate-300", textColor: "text-slate-400" },
-  ];
-
-  const recommendations = [
-    {
-      title: "Strong Track Record",
-      borderColor: "border-olea-green",
-      bgColor: "bg-olea-light/40",
-      text: "50% overall win rate is above industry average (20-25%). Community Foundation at 100% indicates excellent fit with their priorities.",
-      icon: CheckCircle2,
-    },
-    {
-      title: "Action Item: Province of BC",
-      borderColor: "border-orange-500",
-      bgColor: "bg-orange-50",
-      text: "With 2 applications: 1 approved ($50K), 1 pending. Investigate what worked in the approved proposal and replicate for future applications.",
-      icon: ShieldAlert,
-    },
-    {
-      title: "Review Needed: Arts Council + Health Ministry",
-      borderColor: "border-rose-500",
-      bgColor: "bg-rose-50",
-      text: "0% approval rate. Either these funders aren't a good fit (consider removing from pipeline), or your applications need revision. Recommended: Skip future cycles or redesign approach.",
-      icon: ShieldAlert,
-    },
-    {
-      title: "Strategic Recommendation",
-      borderColor: "border-emerald-500",
-      bgColor: "bg-emerald-50",
-      text: "Focus future efforts on Community Foundation and similar funders. Investigate patterns in their funding priorities. Build on success, not on failed attempts.",
-      icon: Sparkles,
-    },
-  ];
-
-  const handleExportDownload = (format: string) => {
-    alert(`Starting export of Funder Performance Data in ${format.toUpperCase()} format...\nFile will save to your downloads folder.`);
-    setExportModalOpen(false);
+  const funderNames = useMemo(() => buildFunderNames(data), [data]);
+  const visibleFunderNames = useMemo(
+    () =>
+      selectedFunder === "all"
+        ? funderNames
+        : funderNames.filter((name) => name === selectedFunder),
+    [funderNames, selectedFunder],
+  );
+  const reportRows = useMemo(
+    () => buildReportRows(data, visibleFunderNames, selectedGrantId),
+    [data, selectedGrantId, visibleFunderNames],
+  );
+  const nonEmptyRows = reportRows.filter(
+    (row) =>
+      row.applications.length || (selectedGrantId === "all" && row.funder),
+  );
+  const totals = {
+    active: nonEmptyRows.reduce((total, row) => total + row.activeCount, 0),
+    applications: nonEmptyRows.reduce(
+      (total, row) => total + row.applications.length,
+      0,
+    ),
+    awarded: nonEmptyRows.reduce((total, row) => total + row.awardedCount, 0),
+    followUps: nonEmptyRows.reduce((total, row) => total + row.openFollowUps, 0),
+    requested: nonEmptyRows.reduce(
+      (total, row) => total + row.requestedAmountCents,
+      0,
+    ),
   };
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center gap-2">
-        <TrendingUp className="size-6 text-navy-blue" />
-        <h2 className="text-2xl font-bold text-navy-blue">Funder Performance Reports</h2>
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <div className="flex items-center gap-2">
+          <BarChart3 className="size-6 text-navy-blue" />
+          <h2 className="text-2xl font-bold text-navy-blue">Funder reporting</h2>
+        </div>
+        <div className="flex flex-wrap gap-2">
+          <Button type="button" variant="outline" onClick={() => setReportMode("overview")}>
+            <PieChart className="mr-2 size-4" />
+            Funder overview
+          </Button>
+          <Button type="button" variant="outline" onClick={() => setReportMode("success")}>
+            <TrendingUp className="mr-2 size-4" />
+            Success rate
+          </Button>
+          <Button type="button" variant="outline" onClick={() => setReportMode("trends")}>
+            <BarChart3 className="mr-2 size-4" />
+            Trends
+          </Button>
+        </div>
       </div>
 
-      {/* Quick Actions Buttons */}
-      <div className="flex flex-wrap gap-2">
-        <Button
-          type="button"
-          className="gap-2 bg-orange-600 font-bold text-white hover:bg-orange-700"
-          onClick={() => setActiveReportModal("overview")}
-        >
-          <BarChart3 className="size-4" />
-          Funder Overview
-        </Button>
-        <Button
-          type="button"
-          className="gap-2 bg-olea-green font-bold text-white hover:bg-olea-green/90"
-          onClick={() => setActiveReportModal("success")}
-        >
-          <CheckCircle2 className="size-4" />
-          Success Rates
-        </Button>
-        <Button
-          type="button"
-          className="gap-2 bg-navy-blue font-bold text-white hover:bg-navy-blue/90"
-          onClick={() => setActiveReportModal("trends")}
-        >
-          <TrendingUp className="size-4" />
-          Funding Trends
-        </Button>
-        <Button
-          type="button"
-          variant="outline"
-          className="gap-2 bg-slate-600 font-bold text-white hover:bg-slate-700"
-          onClick={() => setExportModalOpen(true)}
-        >
-          <Download className="size-4" />
-          Export Data
-        </Button>
-      </div>
-
-      {/* Funder Performance Table */}
       <Card className="shadow-soft">
         <CardHeader>
           <CardTitle className="flex items-center gap-2 text-lg">
-            <PieChart className="size-5 text-olea-green" />
-            Funder Performance Overview
+            <Filter className="size-5 text-olea-green" />
+            Report filters
           </CardTitle>
         </CardHeader>
-        <CardContent className="p-0">
-          <div className="overflow-x-auto">
-            <table className="w-full min-w-[650px] border-collapse text-xs">
-              <thead>
-                <tr className="border-b-2 border-olea-green bg-slate-100/70 text-left font-bold text-navy-blue">
-                  <th className="p-3">Funder</th>
-                  <th className="p-3 text-center">Applications</th>
-                  <th className="p-3 text-center">Approved</th>
-                  <th className="p-3 text-center">Success Rate</th>
-                  <th className="p-3 text-center">Total Awarded</th>
-                  <th className="p-3 text-center">Avg Award</th>
-                  <th className="p-3 text-center">Status</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-100">
-                {funderPerformance.map((row) => (
-                  <tr key={row.name} className="hover:bg-slate-50/60">
-                    <td className="p-3 font-semibold text-slate-900">{row.name}</td>
-                    <td className="p-3 text-center text-slate-700">{row.apps}</td>
-                    <td className="p-3 text-center text-slate-700">{row.approved}</td>
-                    <td className="p-3 text-center">
-                      <span className={`rounded px-2 py-0.5 text-xs ${row.rateBg}`}>{row.rate}</span>
-                    </td>
-                    <td className="p-3 text-center font-medium text-slate-800">{row.awarded}</td>
-                    <td className="p-3 text-center text-slate-600">{row.avg}</td>
-                    <td className={`p-3 text-center ${row.statusColor}`}>{row.status}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+        <CardContent className="grid gap-4 md:grid-cols-2">
+          <Select value={selectedFunder} onValueChange={setSelectedFunder}>
+            <SelectTrigger aria-label="Filter reports by funder">
+              <SelectValue placeholder="All funders" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All funders</SelectItem>
+              {funderNames.map((name) => (
+                <SelectItem key={name} value={name}>
+                  {name}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          <Select value={selectedGrantId} onValueChange={setSelectedGrantId}>
+            <SelectTrigger aria-label="Filter reports by grant">
+              <SelectValue placeholder="All grants" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All grants</SelectItem>
+              {data.applications.map((application) => (
+                <SelectItem key={application.id} value={application.id}>
+                  {application.roundName}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
         </CardContent>
       </Card>
 
-      {/* Key Metrics Grid */}
-      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-        {metrics.map((m) => (
-          <Card key={m.label} className={`border-l-4 ${m.borderColor} shadow-soft`}>
-            <CardContent className="p-4 space-y-1">
-              <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider">{m.label}</p>
-              <p className={`text-2xl font-extrabold ${m.textColor}`}>{m.val}</p>
-              <p className="text-xs text-slate-400">{m.sub}</p>
-            </CardContent>
-          </Card>
-        ))}
+      <div className="grid gap-4 md:grid-cols-4">
+        <MetricCard label="Applications" value={String(totals.applications)} />
+        <MetricCard label="Active grants" value={String(totals.active)} />
+        <MetricCard label="Awarded" value={String(totals.awarded)} />
+        <MetricCard label="Requested" value={formatCurrency(totals.requested)} />
       </div>
 
-      {/* Success Rate Breakdown */}
       <Card className="shadow-soft">
-        <CardHeader>
-          <CardTitle className="text-lg">Success Rate by Funder</CardTitle>
+        <CardHeader className="flex flex-row items-center justify-between gap-3">
+          <div>
+            <CardTitle className="text-lg">Funder overview table</CardTitle>
+            <p className="mt-1 text-sm text-slate-600">
+              Use the filters above to pull a report for one grant or one funder.
+            </p>
+          </div>
+          <Button type="button" variant="outline" onClick={() => downloadCsv(nonEmptyRows)}>
+            <Download className="mr-2 size-4" />
+            Export CSV
+          </Button>
         </CardHeader>
-        <CardContent className="space-y-4">
-          {successRates.map((s) => (
-            <div key={s.name} className="space-y-1.5">
-              <div className="flex justify-between text-xs font-semibold">
-                <span className="text-slate-800">{s.name}</span>
-                <span className={s.textColor}>{s.label}</span>
-              </div>
-              <div className="h-2 w-full overflow-hidden rounded-full bg-slate-100">
-                <div className={`h-full ${s.color}`} style={{ width: `${s.rate}%` }} />
-              </div>
-            </div>
-          ))}
+        <CardContent>
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Funder</TableHead>
+                <TableHead>Grants</TableHead>
+                <TableHead>Active</TableHead>
+                <TableHead>Awarded</TableHead>
+                <TableHead>Success</TableHead>
+                <TableHead>Requested</TableHead>
+                <TableHead>Follow-ups</TableHead>
+                <TableHead>Latest CRM note</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {nonEmptyRows.map((row) => (
+                <TableRow key={row.name}>
+                  <TableCell className="min-w-48 font-semibold text-slate-900">
+                    {row.name}
+                    {row.funder ? (
+                      <p className="mt-1 text-xs font-normal text-slate-500">
+                        {row.funder.contactName}
+                      </p>
+                    ) : null}
+                  </TableCell>
+                  <TableCell>{row.applications.length}</TableCell>
+                  <TableCell>{row.activeCount}</TableCell>
+                  <TableCell>{row.awardedCount}</TableCell>
+                  <TableCell>
+                    <Badge variant="outline">{row.successRate}%</Badge>
+                  </TableCell>
+                  <TableCell>{formatCurrency(row.requestedAmountCents)}</TableCell>
+                  <TableCell>{row.openFollowUps}</TableCell>
+                  <TableCell className="min-w-72 text-slate-600">
+                    <p className="line-clamp-2">{row.latestNote}</p>
+                    <p className="mt-1 text-xs text-slate-500">{row.nextAction}</p>
+                  </TableCell>
+                </TableRow>
+              ))}
+              {!nonEmptyRows.length ? (
+                <TableRow>
+                  <TableCell colSpan={8} className="py-8 text-center text-slate-500">
+                    No grant data matches the selected filters.
+                  </TableCell>
+                </TableRow>
+              ) : null}
+            </TableBody>
+          </Table>
         </CardContent>
       </Card>
 
-      {/* Funding Trends & Insights Tooltip */}
-      <Card className="shadow-soft">
-        <CardHeader className="flex flex-row items-center justify-between gap-2">
-          <CardTitle className="flex items-center gap-2 text-lg">
-            <TrendingUp className="size-5 text-olea-green" />
-            Funding Insights & Recommendations
-          </CardTitle>
-          <div className="group relative">
-            <button
-              type="button"
-              className="grid size-7 place-items-center rounded-full bg-slate-100 text-slate-600 transition hover:bg-olea-green hover:text-white"
-              aria-label="Funding insights help"
-            >
-              <HelpCircle className="size-4" />
-            </button>
-            <div className="pointer-events-none absolute right-0 top-9 z-30 w-80 scale-95 rounded-xl border border-slate-200 bg-white p-4 shadow-xl opacity-0 transition-all duration-150 group-hover:pointer-events-auto group-hover:scale-100 group-hover:opacity-100">
-              <p className="mb-2 font-bold text-slate-900 text-xs">Funding Insights & Recommendations</p>
-              <div className="space-y-2.5 text-xs text-slate-600">
-                {recommendations.map((rec, i) => (
-                  <div key={i} className="space-y-0.5">
-                    <p className="font-semibold text-slate-900">{rec.title}</p>
-                    <p className="text-[11px] text-slate-600 leading-normal">{rec.text}</p>
-                  </div>
-                ))}
-              </div>
-            </div>
-          </div>
-        </CardHeader>
-      </Card>
-
-      {/* Generated Report Dialog Modal */}
-      <Dialog open={activeReportModal !== null} onOpenChange={() => setActiveReportModal(null)}>
-        <DialogContent className="sm:max-w-lg">
+      <Dialog open={reportMode !== null} onOpenChange={(open) => !open && setReportMode(null)}>
+        <DialogContent className="max-w-3xl">
           <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
-              <BarChart3 className="size-5 text-olea-green" />
-              {activeReportModal === "overview" && "Funder Overview Summary"}
-              {activeReportModal === "success" && "Success Rate Analysis"}
-              {activeReportModal === "trends" && "Funding Trends & Recommendations"}
-            </DialogTitle>
-          </DialogHeader>
-
-          <div className="space-y-3 text-xs leading-relaxed text-slate-700 max-h-[60vh] overflow-y-auto pr-1">
-            {activeReportModal === "overview" && (
-              <div className="space-y-2">
-                <p className="font-bold text-slate-900">Funder Performance Summary (2026):</p>
-                <ul className="list-disc pl-4 space-y-1">
-                  <li><strong>Province of BC:</strong> 2 Apps | 1 Approved | 50% Win Rate | $50,000 Awarded</li>
-                  <li><strong>Arts Council of BC:</strong> 1 App | 0 Approved (Pending) | $0 Awarded</li>
-                  <li><strong>Community Foundation:</strong> 1 App | 1 Approved | 100% Win Rate | $42,000 Awarded</li>
-                  <li><strong>Provincial Health Ministry:</strong> 1 App | 0 Approved (Declined) | $0 Awarded</li>
-                </ul>
-                <div className="rounded border border-emerald-200 bg-emerald-50 p-2 text-emerald-800 font-semibold mt-2">
-                  Overall Win Rate: 50% (Industry average: 20-25%)
-                  <br />Total Awarded: $92,000
-                </div>
-              </div>
-            )}
-
-            {activeReportModal === "success" && (
-              <div className="space-y-2">
-                <p className="font-bold text-slate-900">Rankings & Recommendations:</p>
-                <div className="space-y-1.5">
-                  <p>1. <strong>Community Foundation: 100%</strong> (1/1 approved - $42,000) - Focus here, highest alignment.</p>
-                  <p>2. <strong>Province of BC: 50%</strong> (1/2 approved - $50,000) - Investigate winning narrative elements.</p>
-                  <p>3. <strong>Arts Council: 0%</strong> (Pending decision) - Review feedback once decision is announced.</p>
-                  <p>4. <strong>Health Ministry: 0%</strong> (Declined) - Exceeded 75% Govt limit. Diversify funding sources.</p>
-                </div>
-              </div>
-            )}
-
-            {activeReportModal === "trends" && (
-              <div className="space-y-2">
-                <p className="font-bold text-slate-900">Trends Identified:</p>
-                <ul className="list-disc pl-4 space-y-1">
-                  <li>Community Foundation yields highest return on effort.</li>
-                  <li>Average award is 48% of total requested value.</li>
-                  <li>Health & Arts sector grants face higher threshold restrictions.</li>
-                </ul>
-                <p className="font-semibold text-slate-900 pt-2">Next Steps:</p>
-                <p>Double down on Community Foundation style funders and target $50K–$100K grants.</p>
-              </div>
-            )}
-          </div>
-
-          <DialogFooter className="mt-4">
-            <Button variant="outline" onClick={() => setActiveReportModal(null)}>
-              Close
-            </Button>
-            <Button
-              className="bg-olea-green text-white hover:bg-olea-green/90"
-              onClick={() => {
-                setActiveReportModal(null);
-                setExportModalOpen(true);
-              }}
-            >
-              Export Report Data
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-
-      {/* Export Options Modal */}
-      <Dialog open={exportModalOpen} onOpenChange={setExportModalOpen}>
-        <DialogContent className="sm:max-w-md">
-          <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
-              <Download className="size-5 text-olea-green" />
-              Export Funder Performance Data
-            </DialogTitle>
+            <DialogTitle>{getReportTitle(reportMode)}</DialogTitle>
             <DialogDescription>
-              Select export format for board reporting and executive summary.
+              This report uses the selected funder and grant filters.
             </DialogDescription>
           </DialogHeader>
-
-          <div className="grid gap-2 py-2">
-            {[
-              { format: "csv", title: "CSV Format (.csv)", desc: "Open in Excel or Google Sheets" },
-              { format: "excel", title: "Excel Spreadsheet (.xlsx)", desc: "Formatted workbook with charts & tabs" },
-              { format: "pdf", title: "PDF Report (.pdf)", desc: "Board-ready printable document" },
-              { format: "json", title: "JSON Raw Data (.json)", desc: "Raw data for analytical tools" },
-            ].map((exp) => (
-              <Button
-                key={exp.format}
-                variant="outline"
-                className="justify-start text-left h-auto py-3 px-4"
-                onClick={() => handleExportDownload(exp.format)}
-              >
-                <div>
-                  <p className="font-bold text-slate-900 text-xs">{exp.title}</p>
-                  <p className="text-[11px] text-slate-500 font-normal">{exp.desc}</p>
-                </div>
-              </Button>
-            ))}
-          </div>
-
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setExportModalOpen(false)}>
-              Cancel
-            </Button>
-          </DialogFooter>
+          <ReportDialogContent rows={nonEmptyRows} totals={totals} mode={reportMode} />
         </DialogContent>
       </Dialog>
+    </div>
+  );
+}
+
+function MetricCard({ label, value }: { label: string; value: string }) {
+  return (
+    <Card className="shadow-soft">
+      <CardContent className="p-5">
+        <p className="text-xs font-semibold uppercase tracking-[0.12em] text-slate-500">
+          {label}
+        </p>
+        <p className="mt-2 text-3xl font-bold text-slate-900">{value}</p>
+      </CardContent>
+    </Card>
+  );
+}
+
+function getReportTitle(mode: ReportMode) {
+  if (mode === "success") return "Grant success rate report";
+  if (mode === "trends") return "Grant trend report";
+  return "Funder overview report";
+}
+
+function ReportDialogContent({
+  mode,
+  rows,
+  totals,
+}: {
+  mode: ReportMode;
+  rows: FunderReportRow[];
+  totals: {
+    active: number;
+    applications: number;
+    awarded: number;
+    followUps: number;
+    requested: number;
+  };
+}) {
+  if (mode === "success") {
+    return (
+      <div className="space-y-3">
+        {rows
+          .toSorted((left, right) => right.successRate - left.successRate)
+          .map((row) => (
+            <div key={row.name} className="rounded-lg border border-slate-200 p-4">
+              <div className="flex items-center justify-between gap-3">
+                <p className="font-semibold text-slate-900">{row.name}</p>
+                <Badge variant="outline">{row.successRate}% success</Badge>
+              </div>
+              <p className="mt-1 text-sm text-slate-600">
+                {row.awardedCount} awarded from {row.applications.length} tracked applications.
+              </p>
+            </div>
+          ))}
+      </div>
+    );
+  }
+
+  if (mode === "trends") {
+    return (
+      <div className="space-y-3">
+        {rows.map((row) => (
+          <div key={row.name} className="rounded-lg border border-slate-200 p-4">
+            <p className="font-semibold text-slate-900">{row.name}</p>
+            <p className="mt-1 text-sm text-slate-600">
+              {row.activeCount} active grants, {row.openFollowUps} open follow-ups, and{" "}
+              {formatCurrency(row.requestedAmountCents)} requested.
+            </p>
+            <p className="mt-2 text-xs text-slate-500">{row.nextAction}</p>
+          </div>
+        ))}
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-4">
+      <div className="grid gap-3 md:grid-cols-4">
+        <MetricCard label="Applications" value={String(totals.applications)} />
+        <MetricCard label="Active" value={String(totals.active)} />
+        <MetricCard label="Awarded" value={String(totals.awarded)} />
+        <MetricCard label="Follow-ups" value={String(totals.followUps)} />
+      </div>
+      <div className="space-y-3">
+        {rows.map((row) => (
+          <div key={row.name} className="rounded-lg border border-slate-200 p-4">
+            <p className="font-semibold text-slate-900">{row.name}</p>
+            <p className="mt-1 text-sm text-slate-600">{row.latestNote}</p>
+          </div>
+        ))}
+      </div>
     </div>
   );
 }

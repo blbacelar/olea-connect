@@ -1,12 +1,25 @@
 "use client";
 
-import { Edit3, Handshake, HelpCircle, Plus, Search } from "lucide-react";
-import { useMemo, useState } from "react";
+import { Edit3, Handshake, Plus, Search, Trash2 } from "lucide-react";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { useFormState } from "react-dom";
 
+import {
+  deleteGrantPlatformFunderInteraction,
+  saveGrantPlatformFunderInteraction,
+  saveGrantPlatformPartner,
+} from "@/app/modules/grant-platform/actions";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
@@ -16,320 +29,637 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
 import { Textarea } from "@/components/ui/textarea";
+import type { GrantPlatformWorkspaceData } from "@/lib/data/grant-platform";
 
-export function GrantFundersPanel() {
-  const [funders, setFunders] = useState([
-    {
-      id: "funder-1",
-      name: "Province of BC",
-      grants: "BC Community Gaming Grant - Arts (In Progress, $50K)",
-      status: "Active Pipeline",
-      activeRelationship: false,
-      notes: "Met with program officer in Jan. Emphasis on community benefit and local arts participation.",
-    },
-    {
-      id: "funder-2",
-      name: "Arts Council of BC",
-      grants: "Arts Futures Fund (Planning, $35K)",
-      status: "Planning",
-      activeRelationship: false,
-      notes: "Review guidelines thoroughly before May deadline.",
-    },
-    {
-      id: "funder-3",
-      name: "Community Foundation",
-      grants: "Youth Leadership Initiative (Approved, $42K awarded)",
-      status: "Approved Partner",
-      activeRelationship: true,
-      notes: "Strong alignment! Excellent relationship. Annual report due Dec 20, 2026.",
-    },
-    {
-      id: "funder-4",
-      name: "Provincial Health Ministry",
-      grants: "Health & Wellness Program Grant (Declined, $65K requested)",
-      status: "Declined",
-      activeRelationship: false,
-      notes: "Declined due to 75% govt funding limit. Re-evaluate funding mix before reapplying.",
-    },
-  ]);
+type Partner = GrantPlatformWorkspaceData["partners"][number];
+type Interaction = Partner["interactions"][number];
 
+const partnerType = "Government Agency";
+const partnerStatus = "Active Collaborator";
+
+function formatCurrency(cents: number) {
+  return new Intl.NumberFormat("en-CA", {
+    currency: "CAD",
+    maximumFractionDigits: 0,
+    style: "currency",
+  }).format(cents / 100);
+}
+
+function formatDate(value: string | null) {
+  if (!value) return "Not set";
+  return new Date(`${value}T00:00:00`).toLocaleDateString("en-CA", {
+    month: "short",
+    day: "numeric",
+    year: "numeric",
+  });
+}
+
+function contactMethodLabel(value: string) {
+  const labels: Record<string, string> = {
+    email: "Email",
+    meeting: "Meeting",
+    other: "Other",
+    phone: "Phone",
+    portal: "Portal",
+  };
+  return labels[value] ?? value;
+}
+
+function applicationsForFunder(
+  applications: GrantPlatformWorkspaceData["applications"],
+  funder: Partner,
+) {
+  const funderName = funder.name.toLowerCase();
+  return applications.filter((application) => {
+    return (
+      application.funderName.toLowerCase() === funderName ||
+      application.roundName.toLowerCase().includes(funderName) ||
+      application.fundingRequest.toLowerCase().includes(funderName)
+    );
+  });
+}
+
+function FunderRelationshipDialog({
+  canEditOrgProfile,
+  onOpenChange,
+  open,
+}: {
+  canEditOrgProfile: boolean;
+  onOpenChange: (open: boolean) => void;
+  open: boolean;
+}) {
+  const formRef = useRef<HTMLFormElement>(null);
+  const [state, formAction] = useFormState(saveGrantPlatformPartner, {
+    message: "",
+    success: false,
+  });
+
+  useEffect(() => {
+    if (!state.success) return;
+    formRef.current?.reset();
+    onOpenChange(false);
+  }, [onOpenChange, state.success]);
+
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-2xl">
+        <DialogHeader>
+          <DialogTitle>Add funder relationship</DialogTitle>
+          <DialogDescription>
+            Add the funder contact details your team will use for follow-up and reporting.
+          </DialogDescription>
+        </DialogHeader>
+        <form ref={formRef} action={formAction} className="space-y-4">
+          <input name="partnerId" type="hidden" value="" />
+          <input name="partnerType" type="hidden" value={partnerType} />
+          <input name="partnerStatus" type="hidden" value={partnerStatus} />
+          <input name="partnerAddedNote" type="hidden" value="" />
+          <input name="partnerLastCollaboration" type="hidden" value="" />
+          <div className="grid gap-4 md:grid-cols-2">
+            <label className="space-y-2 text-sm font-medium text-slate-700">
+              Funder name
+              <Input
+                disabled={!canEditOrgProfile}
+                name="partnerName"
+                placeholder="Province of B.C."
+                required
+              />
+            </label>
+            <label className="space-y-2 text-sm font-medium text-slate-700">
+              Primary contact
+              <Input
+                disabled={!canEditOrgProfile}
+                name="partnerContact"
+                placeholder="Program officer name"
+                required
+              />
+            </label>
+            <label className="space-y-2 text-sm font-medium text-slate-700">
+              Email
+              <Input
+                data-format="email"
+                disabled={!canEditOrgProfile}
+                name="partnerEmail"
+                placeholder="contact@example.org"
+                required
+                type="email"
+              />
+            </label>
+            <label className="space-y-2 text-sm font-medium text-slate-700">
+              Phone
+              <Input
+                disabled={!canEditOrgProfile}
+                name="partnerPhone"
+                placeholder="(604) 555-0000"
+                required
+                type="tel"
+              />
+            </label>
+            <label className="space-y-2 text-sm font-medium text-slate-700 md:col-span-2">
+              Grant programs or focus areas
+              <Input
+                disabled={!canEditOrgProfile}
+                name="partnerFocus"
+                placeholder="Community Gaming Grant, arts, youth, public safety"
+                required
+              />
+            </label>
+            <label className="space-y-2 text-sm font-medium text-slate-700 md:col-span-2">
+              Notes
+              <Textarea
+                disabled={!canEditOrgProfile}
+                name="partnerNotes"
+                placeholder="Relationship history, eligibility notes, and program preferences."
+                rows={4}
+              />
+            </label>
+          </div>
+          {state.message ? (
+            <p className={`text-sm ${state.success ? "text-olea-green" : "text-red-600"}`}>
+              {state.message}
+            </p>
+          ) : null}
+          <DialogFooter>
+            <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
+              Cancel
+            </Button>
+            <Button disabled={!canEditOrgProfile} type="submit">
+              Save funder
+            </Button>
+          </DialogFooter>
+        </form>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+function FunderInteractionDialog({
+  canEditOrgProfile,
+  interaction,
+  onOpenChange,
+  open,
+  partner,
+}: {
+  canEditOrgProfile: boolean;
+  interaction: Interaction | null;
+  onOpenChange: (open: boolean) => void;
+  open: boolean;
+  partner: Partner | null;
+}) {
+  const formRef = useRef<HTMLFormElement>(null);
+  const [state, formAction] = useFormState(saveGrantPlatformFunderInteraction, {
+    message: "",
+    success: false,
+  });
+  const [method, setMethod] = useState(interaction?.contactMethod ?? "email");
+  const title = interaction ? "Edit funder interaction" : "Add funder interaction";
+
+  useEffect(() => {
+    setMethod(interaction?.contactMethod ?? "email");
+  }, [interaction?.contactMethod, open]);
+
+  useEffect(() => {
+    if (!state.success) return;
+    formRef.current?.reset();
+    onOpenChange(false);
+  }, [onOpenChange, state.success]);
+
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-2xl">
+        <DialogHeader>
+          <DialogTitle>{title}</DialogTitle>
+          <DialogDescription>
+            Capture dated funder context so reporting and follow-up are easy to audit.
+          </DialogDescription>
+        </DialogHeader>
+        <form
+          key={`${partner?.id ?? "none"}-${interaction?.id ?? "new"}`}
+          ref={formRef}
+          action={formAction}
+          className="space-y-4"
+        >
+          <input name="partnerId" type="hidden" value={partner?.id ?? ""} />
+          <input name="interactionId" type="hidden" value={interaction?.id ?? ""} />
+          <input name="contactMethod" type="hidden" value={method} />
+          <div className="rounded-lg border bg-slate-50 p-3 text-sm text-slate-700">
+            <span className="font-semibold">Funder:</span> {partner?.name ?? "Choose a funder"}
+          </div>
+          <div className="grid gap-4 md:grid-cols-2">
+            <label className="space-y-2 text-sm font-medium text-slate-700">
+              Interaction date
+              <Input
+                defaultValue={interaction?.interactionDate ?? ""}
+                disabled={!canEditOrgProfile}
+                name="interactionDate"
+                required
+                type="date"
+              />
+            </label>
+            <div className="space-y-2 text-sm font-medium text-slate-700">
+              <Label>Contact method</Label>
+              <Select
+                disabled={!canEditOrgProfile}
+                value={method}
+                onValueChange={setMethod}
+              >
+                <SelectTrigger className="w-full">
+                  <SelectValue placeholder="Select contact method" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="email">Email</SelectItem>
+                  <SelectItem value="phone">Phone</SelectItem>
+                  <SelectItem value="meeting">Meeting</SelectItem>
+                  <SelectItem value="portal">Portal</SelectItem>
+                  <SelectItem value="other">Other</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <label className="space-y-2 text-sm font-medium text-slate-700">
+              Funder contact
+              <Input
+                defaultValue={interaction?.contactName ?? partner?.contactName ?? ""}
+                disabled={!canEditOrgProfile}
+                name="contactName"
+                placeholder="Program officer or reviewer"
+                required
+              />
+            </label>
+            <label className="space-y-2 text-sm font-medium text-slate-700">
+              Follow-up date
+              <Input
+                defaultValue={interaction?.followUpDate ?? ""}
+                disabled={!canEditOrgProfile}
+                name="followUpDate"
+                type="date"
+              />
+            </label>
+            <label className="space-y-2 text-sm font-medium text-slate-700 md:col-span-2">
+              Notes
+              <Textarea
+                defaultValue={interaction?.summary ?? ""}
+                disabled={!canEditOrgProfile}
+                name="summary"
+                placeholder="What changed, what guidance was received, and what should the team remember?"
+                required
+                rows={5}
+              />
+            </label>
+            <label className="space-y-2 text-sm font-medium text-slate-700 md:col-span-2">
+              Next action
+              <Input
+                defaultValue={interaction?.nextAction ?? ""}
+                disabled={!canEditOrgProfile}
+                name="nextAction"
+                placeholder="Send draft budget by Friday"
+              />
+            </label>
+          </div>
+          {state.message ? (
+            <p className={`text-sm ${state.success ? "text-olea-green" : "text-red-600"}`}>
+              {state.message}
+            </p>
+          ) : null}
+          <DialogFooter>
+            <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
+              Cancel
+            </Button>
+            <Button disabled={!canEditOrgProfile || !partner} type="submit">
+              Save interaction
+            </Button>
+          </DialogFooter>
+        </form>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+function DeleteInteractionDialog({
+  canEditOrgProfile,
+  interaction,
+  onOpenChange,
+  open,
+}: {
+  canEditOrgProfile: boolean;
+  interaction: Interaction | null;
+  onOpenChange: (open: boolean) => void;
+  open: boolean;
+}) {
+  const [state, formAction] = useFormState(deleteGrantPlatformFunderInteraction, {
+    message: "",
+    success: false,
+  });
+
+  useEffect(() => {
+    if (state.success) onOpenChange(false);
+  }, [onOpenChange, state.success]);
+
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent>
+        <DialogHeader>
+          <DialogTitle>Delete this funder interaction?</DialogTitle>
+          <DialogDescription>
+            This removes the dated CRM note from the funder history.
+          </DialogDescription>
+        </DialogHeader>
+        <form action={formAction} className="space-y-4">
+          <input name="interactionId" type="hidden" value={interaction?.id ?? ""} />
+          {state.message ? (
+            <p className={`text-sm ${state.success ? "text-olea-green" : "text-red-600"}`}>
+              {state.message}
+            </p>
+          ) : null}
+          <DialogFooter>
+            <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
+              Cancel
+            </Button>
+            <Button disabled={!canEditOrgProfile || !interaction} type="submit" variant="destructive">
+              Delete interaction
+            </Button>
+          </DialogFooter>
+        </form>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+export function GrantFundersPanel({
+  canEditOrgProfile,
+  data,
+}: {
+  canEditOrgProfile: boolean;
+  data: GrantPlatformWorkspaceData;
+}) {
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
-  const [addModalOpen, setAddModalOpen] = useState(false);
-  const [selectedFunder, setSelectedFunder] = useState<{ id: string; name: string; notes: string } | null>(null);
-  const [editNotesModalOpen, setEditNotesModalOpen] = useState(false);
-  const [notesInput, setNotesInput] = useState("");
+  const [addFunderOpen, setAddFunderOpen] = useState(false);
+  const [interactionDialogOpen, setInteractionDialogOpen] = useState(false);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [selectedPartnerId, setSelectedPartnerId] = useState<string | null>(null);
+  const [selectedInteractionId, setSelectedInteractionId] = useState<string | null>(null);
+
+  const selectedPartner = useMemo(
+    () => data.partners.find((partner) => partner.id === selectedPartnerId) ?? null,
+    [data.partners, selectedPartnerId],
+  );
+  const selectedInteraction = useMemo(
+    () =>
+      selectedPartner?.interactions.find(
+        (interaction) => interaction.id === selectedInteractionId,
+      ) ?? null,
+    [selectedInteractionId, selectedPartner?.interactions],
+  );
+
+  const funders = useMemo(
+    () =>
+      data.partners.map((funder) => ({
+        ...funder,
+        applications: applicationsForFunder(data.applications, funder),
+      })),
+    [data.applications, data.partners],
+  );
 
   const filteredFunders = useMemo(() => {
+    const query = searchQuery.toLowerCase();
     return funders.filter((funder) => {
+      const applicationText = funder.applications
+        .map((application) => `${application.roundName} ${application.status}`)
+        .join(" ");
+      const latestNote = funder.interactions[0]?.summary ?? "";
       const matchesSearch =
-        funder.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        funder.grants.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        funder.notes.toLowerCase().includes(searchQuery.toLowerCase());
-
+        !query ||
+        funder.name.toLowerCase().includes(query) ||
+        funder.focusAreas.toLowerCase().includes(query) ||
+        funder.notes.toLowerCase().includes(query) ||
+        latestNote.toLowerCase().includes(query) ||
+        applicationText.toLowerCase().includes(query);
+      const hasActiveGrant = funder.applications.some((application) =>
+        ["draft", "submitted", "in_review", "shortlisted"].includes(application.status),
+      );
       const matchesStatus =
         statusFilter === "all" ||
-        (statusFilter === "active" && funder.activeRelationship) ||
-        (statusFilter === "pipeline" && !funder.activeRelationship && funder.status !== "Declined") ||
-        (statusFilter === "declined" && funder.status === "Declined");
-
+        (statusFilter === "active" && hasActiveGrant) ||
+        (statusFilter === "relationship" && funder.interactions.length > 0) ||
+        (statusFilter === "no_notes" && funder.interactions.length === 0);
       return matchesSearch && matchesStatus;
     });
   }, [funders, searchQuery, statusFilter]);
 
-  const handleAddFunderSubmit = (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault();
-    const formData = new FormData(e.currentTarget);
-    const name = String(formData.get("name") ?? "").trim();
-    const grants = String(formData.get("grants") ?? "").trim();
-    const notes = String(formData.get("notes") ?? "").trim();
+  function openInteraction(partnerId: string, interactionId: string | null = null) {
+    setSelectedPartnerId(partnerId);
+    setSelectedInteractionId(interactionId);
+    setInteractionDialogOpen(true);
+  }
 
-    if (!name) return;
-
-    setFunders((prev) => [
-      ...prev,
-      {
-        id: `funder-${Date.now()}`,
-        name,
-        grants: grants || "New Opportunity",
-        status: "Prospect",
-        activeRelationship: false,
-        notes,
-      },
-    ]);
-
-    setAddModalOpen(false);
-  };
-
-  const handleEditNotesClick = (funder: { id: string; name: string; notes: string }) => {
-    setSelectedFunder(funder);
-    setNotesInput(funder.notes);
-    setEditNotesModalOpen(true);
-  };
-
-  const handleSaveNotesSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!selectedFunder) return;
-
-    setFunders((prev) =>
-      prev.map((f) => (f.id === selectedFunder.id ? { ...f, notes: notesInput.trim() } : f))
-    );
-
-    setEditNotesModalOpen(false);
-    setSelectedFunder(null);
-  };
+  function openDelete(partnerId: string, interactionId: string) {
+    setSelectedPartnerId(partnerId);
+    setSelectedInteractionId(interactionId);
+    setDeleteDialogOpen(true);
+  }
 
   return (
     <div className="space-y-6">
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <h2 className="text-2xl font-bold text-navy-blue">Funder Relationships</h2>
+        <div>
+          <h2 className="text-2xl font-bold text-navy-blue">Funder relationships</h2>
+          <p className="mt-1 text-sm text-slate-600">
+            Track funder contacts, dated conversations, grant history, and follow-up actions.
+          </p>
+        </div>
         <Button
-          type="button"
           className="gap-2 bg-orange-600 font-bold text-white hover:bg-orange-700"
-          onClick={() => setAddModalOpen(true)}
+          disabled={!canEditOrgProfile}
+          type="button"
+          onClick={() => setAddFunderOpen(true)}
         >
           <Plus className="size-4" />
-          Add Funder Relationship
+          Add funder
         </Button>
       </div>
 
-      {/* Funders DataTable Card */}
       <Card className="shadow-soft">
-        <CardHeader className="flex flex-row items-center justify-between gap-2 pb-3">
+        <CardHeader>
           <CardTitle className="flex items-center gap-2 text-lg">
             <Handshake className="size-5 text-olea-green" />
-            Funder Roster & History
+            Mini CRM
           </CardTitle>
-          <div className="group relative">
-            <button
-              type="button"
-              className="grid size-7 place-items-center rounded-full bg-slate-100 text-slate-600 transition hover:bg-olea-green hover:text-white"
-              aria-label="How to track funder relationships"
-            >
-              <HelpCircle className="size-4" />
-            </button>
-            <div className="pointer-events-none absolute right-0 top-9 z-30 w-80 scale-95 rounded-xl border border-slate-200 bg-white p-4 shadow-xl opacity-0 transition-all duration-150 group-hover:pointer-events-auto group-hover:scale-100 group-hover:opacity-100">
-              <p className="mb-2 font-bold text-slate-900 text-xs">How to Track Funder Relationships</p>
-              <div className="space-y-2 text-xs text-slate-600">
-                <p>• <strong>Add Funder:</strong> Register new foundations or government program officers.</p>
-                <p>• <strong>Notes & Feedback:</strong> Click &quot;Edit Notes&quot; or double-click to record program officer contacts and guidance.</p>
-                <p>• <strong>Track Success:</strong> Maintain historical memory across cycles so your team understands funder expectations.</p>
-              </div>
-            </div>
-          </div>
         </CardHeader>
         <CardContent className="p-0">
-          {/* Table Search & Filter Toolbar */}
-          <div className="flex flex-wrap items-center gap-3 border-b border-slate-100 p-3 bg-slate-50/50">
-            <div className="relative flex-1 min-w-[200px]">
-              <Search className="absolute left-3 top-2.5 size-4 text-slate-400" />
+          <div className="flex flex-wrap items-center gap-3 border-b border-slate-100 bg-slate-50/50 p-3">
+            <div className="relative min-w-[220px] flex-1">
+              <Search className="absolute left-3 top-3 size-4 text-slate-400" />
               <Input
-                placeholder="Search funders, programs, or notes..."
+                className="pl-9"
+                placeholder="Search funders, grants, notes, or contacts"
                 value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="h-9 pl-9 text-xs bg-white"
+                onChange={(event) => setSearchQuery(event.target.value)}
               />
             </div>
-            <div className="w-[170px]">
-              <Select value={statusFilter} onValueChange={setStatusFilter}>
-                <SelectTrigger className="h-9 text-xs bg-white">
-                  <SelectValue placeholder="All Relationships" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All Relationships</SelectItem>
-                  <SelectItem value="active">Active Relationship</SelectItem>
-                  <SelectItem value="pipeline">Pipeline / Prospect</SelectItem>
-                  <SelectItem value="declined">Declined</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
+            <Select value={statusFilter} onValueChange={setStatusFilter}>
+              <SelectTrigger className="w-full bg-white md:w-[220px]">
+                <SelectValue placeholder="All funders" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All funders</SelectItem>
+                <SelectItem value="active">With active grants</SelectItem>
+                <SelectItem value="relationship">With CRM notes</SelectItem>
+                <SelectItem value="no_notes">Needs notes</SelectItem>
+              </SelectContent>
+            </Select>
           </div>
 
-          <Table>
-            <TableHeader className="bg-slate-100/70">
-              <TableRow>
-                <TableHead className="w-[200px]">Funder Name</TableHead>
-                <TableHead className="w-[260px]">Grants / Programs</TableHead>
-                <TableHead className="w-[140px]">Relationship Status</TableHead>
-                <TableHead>Notes & Insights</TableHead>
-                <TableHead className="w-[100px] text-right">Actions</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {filteredFunders.length ? (
-                filteredFunders.map((funder) => (
-                  <TableRow
-                    key={funder.id}
-                    className="group cursor-pointer hover:bg-slate-50/80"
-                    onDoubleClick={() => handleEditNotesClick(funder)}
-                  >
-                    <TableCell className="font-semibold text-slate-900 text-xs">
-                      {funder.name}
-                    </TableCell>
-                    <TableCell className="text-xs text-slate-600">
-                      {funder.grants}
-                    </TableCell>
-                    <TableCell>
-                      {funder.activeRelationship ? (
-                        <Badge className="bg-emerald-100 font-bold text-emerald-800 text-[11px]">
-                          Active partner
-                        </Badge>
-                      ) : (
-                        <Badge variant="outline" className="text-[11px] text-slate-700">
-                          {funder.status}
-                        </Badge>
-                      )}
-                    </TableCell>
-                    <TableCell className="text-xs text-slate-600 max-w-[320px]">
-                      {funder.notes ? (
-                        <p className="line-clamp-2">{funder.notes}</p>
-                      ) : (
-                        <span className="italic text-slate-400">No notes added yet</span>
-                      )}
-                    </TableCell>
-                    <TableCell className="text-right">
-                      <Button
-                        size="sm"
-                        variant="ghost"
-                        className="h-8 gap-1 text-xs text-slate-600 hover:text-olea-green"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          handleEditNotesClick(funder);
-                        }}
-                      >
-                        <Edit3 className="size-3.5" />
-                        Edit Notes
-                      </Button>
+          <div className="overflow-x-auto">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Funder</TableHead>
+                  <TableHead>Related grants</TableHead>
+                  <TableHead>Latest CRM note</TableHead>
+                  <TableHead>Next action</TableHead>
+                  <TableHead className="text-right">Actions</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {filteredFunders.length ? (
+                  filteredFunders.map((funder) => {
+                    const latestInteraction = funder.interactions[0] ?? null;
+                    return (
+                      <TableRow key={funder.id} className="align-top">
+                        <TableCell className="min-w-[220px]">
+                          <p className="font-semibold text-slate-900">{funder.name}</p>
+                          <p className="mt-1 text-xs text-slate-500">
+                            {funder.contactName} - {funder.email}
+                          </p>
+                          <Badge className="mt-2 bg-emerald-100 text-emerald-800">
+                            {funder.status}
+                          </Badge>
+                        </TableCell>
+                        <TableCell className="min-w-[260px] text-sm text-slate-600">
+                          {funder.applications.length ? (
+                            <div className="space-y-2">
+                              {funder.applications.map((application) => (
+                                <div key={application.id}>
+                                  <p className="font-medium text-slate-800">
+                                    {application.roundName}
+                                  </p>
+                                  <p className="text-xs text-slate-500">
+                                    {application.status} -{" "}
+                                    {formatCurrency(application.requestedAmountCents)}
+                                  </p>
+                                </div>
+                              ))}
+                            </div>
+                          ) : (
+                            <span className="text-slate-500">{funder.focusAreas}</span>
+                          )}
+                        </TableCell>
+                        <TableCell className="min-w-[280px] text-sm text-slate-600">
+                          {latestInteraction ? (
+                            <div>
+                              <p className="font-medium text-slate-800">
+                                {formatDate(latestInteraction.interactionDate)} -{" "}
+                                {contactMethodLabel(latestInteraction.contactMethod)}
+                              </p>
+                              <p className="mt-1 line-clamp-2">
+                                {latestInteraction.summary}
+                              </p>
+                            </div>
+                          ) : (
+                            <span className="text-slate-500">No CRM notes yet.</span>
+                          )}
+                        </TableCell>
+                        <TableCell className="min-w-[220px] text-sm text-slate-600">
+                          {latestInteraction?.nextAction || "No next action set."}
+                          {latestInteraction?.followUpDate ? (
+                            <p className="mt-1 text-xs text-slate-500">
+                              Follow up {formatDate(latestInteraction.followUpDate)}
+                            </p>
+                          ) : null}
+                        </TableCell>
+                        <TableCell className="min-w-[160px] text-right">
+                          <div className="flex justify-end gap-2">
+                            <Button
+                              aria-label={`Add CRM note for ${funder.name}`}
+                              disabled={!canEditOrgProfile}
+                              size="icon"
+                              type="button"
+                              variant="outline"
+                              onClick={() => openInteraction(funder.id)}
+                            >
+                              <Plus className="size-4" />
+                            </Button>
+                            {latestInteraction ? (
+                              <>
+                                <Button
+                                  aria-label={`Edit latest CRM note for ${funder.name}`}
+                                  disabled={!canEditOrgProfile}
+                                  size="icon"
+                                  type="button"
+                                  variant="outline"
+                                  onClick={() =>
+                                    openInteraction(funder.id, latestInteraction.id)
+                                  }
+                                >
+                                  <Edit3 className="size-4" />
+                                </Button>
+                                <Button
+                                  aria-label={`Delete latest CRM note for ${funder.name}`}
+                                  disabled={!canEditOrgProfile}
+                                  size="icon"
+                                  type="button"
+                                  variant="outline"
+                                  onClick={() => openDelete(funder.id, latestInteraction.id)}
+                                >
+                                  <Trash2 className="size-4" />
+                                </Button>
+                              </>
+                            ) : null}
+                          </div>
+                        </TableCell>
+                      </TableRow>
+                    );
+                  })
+                ) : (
+                  <TableRow>
+                    <TableCell colSpan={5} className="py-10 text-center text-sm text-slate-500">
+                      No funder relationships match your filters.
                     </TableCell>
                   </TableRow>
-                ))
-              ) : (
-                <TableRow>
-                  <TableCell colSpan={5} className="h-24 text-center text-xs text-slate-500">
-                    No funder relationships found matching your filters.
-                  </TableCell>
-                </TableRow>
-              )}
-            </TableBody>
-          </Table>
+                )}
+              </TableBody>
+            </Table>
+          </div>
         </CardContent>
       </Card>
 
-      {/* Add Funder Dialog Modal */}
-      <Dialog open={addModalOpen} onOpenChange={setAddModalOpen}>
-        <DialogContent className="sm:max-w-md">
-          <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
-              <Handshake className="size-5 text-orange-600" />
-              Add Funder Relationship
-            </DialogTitle>
-            <DialogDescription>
-              Register a new foundation, ministry, or corporate sponsor to track relationship history.
-            </DialogDescription>
-          </DialogHeader>
-          <form onSubmit={handleAddFunderSubmit} className="space-y-3 text-xs">
-            <div className="space-y-1">
-              <Label htmlFor="funder-name">Funder Name</Label>
-              <Input id="funder-name" name="name" placeholder="e.g. BC Community Gaming" required />
-            </div>
-            <div className="space-y-1">
-              <Label htmlFor="funder-grants">Grant Program / Focus</Label>
-              <Input id="funder-grants" name="grants" placeholder="e.g. Community Arts Grant ($50K)" />
-            </div>
-            <div className="space-y-1">
-              <Label htmlFor="funder-notes">Initial Relationship Notes</Label>
-              <Textarea
-                id="funder-notes"
-                name="notes"
-                placeholder="Include program officer contacts, past feedback, funding focus..."
-                rows={3}
-              />
-            </div>
-            <DialogFooter className="mt-4">
-              <Button type="button" variant="outline" onClick={() => setAddModalOpen(false)}>
-                Cancel
-              </Button>
-              <Button type="submit" className="bg-orange-600 text-white hover:bg-orange-700">
-                Save Funder
-              </Button>
-            </DialogFooter>
-          </form>
-        </DialogContent>
-      </Dialog>
-
-      {/* Edit Notes Dialog Modal */}
-      <Dialog open={editNotesModalOpen} onOpenChange={setEditNotesModalOpen}>
-        <DialogContent className="sm:max-w-md">
-          <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
-              <Edit3 className="size-5 text-olea-green" />
-              Funder Notes: {selectedFunder?.name}
-            </DialogTitle>
-            <DialogDescription>
-              Record communication notes, meeting feedback, and key contacts for this funder.
-            </DialogDescription>
-          </DialogHeader>
-          <form onSubmit={handleSaveNotesSubmit} className="space-y-3">
-            <Textarea
-              value={notesInput}
-              onChange={(e) => setNotesInput(e.target.value)}
-              placeholder="Record notes on feedback received, contact persons, application history, and relationship status..."
-              rows={5}
-              className="text-xs"
-            />
-            <DialogFooter>
-              <Button type="button" variant="outline" onClick={() => setEditNotesModalOpen(false)}>
-                Cancel
-              </Button>
-              <Button type="submit" className="bg-olea-green text-white hover:bg-olea-green/90">
-                Save Notes
-              </Button>
-            </DialogFooter>
-          </form>
-        </DialogContent>
-      </Dialog>
+      <FunderRelationshipDialog
+        canEditOrgProfile={canEditOrgProfile}
+        open={addFunderOpen}
+        onOpenChange={setAddFunderOpen}
+      />
+      <FunderInteractionDialog
+        canEditOrgProfile={canEditOrgProfile}
+        interaction={selectedInteraction}
+        open={interactionDialogOpen}
+        partner={selectedPartner}
+        onOpenChange={setInteractionDialogOpen}
+      />
+      <DeleteInteractionDialog
+        canEditOrgProfile={canEditOrgProfile}
+        interaction={selectedInteraction}
+        open={deleteDialogOpen}
+        onOpenChange={setDeleteDialogOpen}
+      />
     </div>
   );
 }

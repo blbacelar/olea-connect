@@ -86,6 +86,34 @@ test.describe("@smoke @critical platform UI coverage gate", () => {
     await app.expectPageHeading("/grants", /Olea Gives|Grants/i);
     await app.expectNoServerError();
 
+    await app.expectPageHeading(
+      "/modules/grant-platform?tab=calendar",
+      "Grant platform workspace",
+    );
+    await app.expectText("Grant deadlines");
+    await app.expectText("B.C. Community Gaming Grant - Human and Social Services");
+    await page.getByRole("tab", { name: "Funders" }).click();
+    await expect(
+      page.getByRole("heading", { name: "Funder relationships" }),
+    ).toBeVisible();
+    await expect(page.getByText("Mini CRM")).toBeVisible();
+    await page.getByRole("tab", { name: "Reports" }).click();
+    await expect(
+      page.getByRole("heading", { name: "Funder reporting" }),
+    ).toBeVisible();
+    await expect(
+      page.getByRole("combobox", { name: "Filter reports by funder" }),
+    ).toBeVisible();
+    await expect(
+      page.getByRole("combobox", { name: "Filter reports by grant" }),
+    ).toBeVisible();
+    await page.getByRole("tab", { name: "Settings" }).click();
+    await expect(page.getByLabel("Society number")).toBeVisible();
+    await expect(page.getByLabel("Charity registration number")).toBeVisible();
+    await expect(page.getByLabel("Board chair platform user")).toBeVisible();
+    await expect(page.getByText("Choose from active workspace members only.")).toBeVisible();
+    await app.expectNoServerError();
+
     await app.expectPageHeading("/sponsors", "Sponsors & Olea Gives");
     await app.expectSectionHeading("Approved sponsor profiles");
     await app.expectNoServerError();

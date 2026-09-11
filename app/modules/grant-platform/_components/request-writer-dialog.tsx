@@ -111,6 +111,19 @@ export function RequestWriterDialog({ grantName, trigger }: RequestWriterDialogP
               <Input id="writer-timeline" name="timeline" placeholder="e.g. Need first draft in 2 weeks" required />
             </div>
             <div className="space-y-1">
+              <Label htmlFor="grant-circle-referral-code">Grant Circle referral code</Label>
+              <Input
+                id="grant-circle-referral-code"
+                name="grantCircleReferralCode"
+                placeholder="GC-12345"
+                pattern="[A-Za-z0-9-]{2,40}"
+                title="Use letters, numbers, or hyphens."
+              />
+              <p className="text-xs text-slate-500">
+                Optional. We will confirm eligibility once Grant Circle terms are finalized.
+              </p>
+            </div>
+            <div className="space-y-1">
               <Label htmlFor="writer-details">Project Summary / Specific Assistance Needed</Label>
               <Textarea id="writer-details" name="details" placeholder="Briefly describe what you need help writing (problem statement, logic model, full proposal review)..." rows={3} />
             </div>

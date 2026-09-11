@@ -51,6 +51,7 @@ export interface GrantPlatformWorkspaceData {
     awardStatus: string | null;
     summary: string;
     nextMilestone: string;
+    funderName: string;
   }>;
   sections: Array<{
     id: string;
@@ -62,6 +63,12 @@ export interface GrantPlatformWorkspaceData {
     organizationType: string;
     currentAnnualRevenueCents: number | null;
     fundingSources: string[];
+    societyNumber: string;
+    charityRegistrationNumber: string;
+    boardChairUserId: string | null;
+    boardChairName: string;
+    boardChairEmail: string;
+    boardChairPhone: string;
   };
   teamMembers: Array<{
     id: string;
@@ -83,6 +90,15 @@ export interface GrantPlatformWorkspaceData {
     notes: string;
     lastCollaboration: string | null;
     addedNote: string | null;
+    interactions: Array<{
+      id: string;
+      contactMethod: string;
+      contactName: string;
+      interactionDate: string;
+      summary: string;
+      nextAction: string;
+      followUpDate: string | null;
+    }>;
   }>;
   vaultItems: Array<{
     id: string;
@@ -103,6 +119,7 @@ export async function getGrantPlatformData(): Promise<GrantPlatformWorkspaceData
 
   return buildGrantPlatformWorkspaceData({
     access,
+    funderInteractions: rows.funderInteractions,
     members: rows.members,
     organization,
     organizationRecord: rows.organizationRecord,

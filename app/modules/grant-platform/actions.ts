@@ -13,10 +13,12 @@ import { requireMemberContext } from "@/lib/data/member-context";
 import { createAdminClient } from "@/utils/supabase/admin";
 import {
   createGrantPlanningEntry,
+  deleteGrantFunderInteraction,
   getCurrencyTextCents,
   getFundingSources,
   getMutationFormData,
   getText,
+  upsertGrantFunderInteraction,
   upsertGrantPartner,
   validateOrganizationSettingsInput,
 } from "./grant-platform-action-support";
@@ -111,25 +113,56 @@ export async function saveGrantPlatformOrganizationSettings(
   const revenueText = getText(formData, "currentAnnualRevenue");
   const revenueCents = revenueText ? getCurrencyTextCents(revenueText) : null;
   const fundingSources = getFundingSources(formData);
+  const boardChairUserId = getText(formData, "boardChairUserId") || null;
 
   if (!canEditOrgProfile) {
     return { message: "Only admins can edit organization settings.", success: false };
   }
 
   const validation = validateOrganizationSettingsInput({
+    boardChairEmail: getText(formData, "boardChairEmail"),
+    boardChairName: getText(formData, "boardChairName"),
+    boardChairPhone: getText(formData, "boardChairPhone"),
+    boardChairUserId,
+    charityRegistrationNumber: getText(formData, "charityRegistrationNumber"),
     fundingSources,
     organizationType,
     revenueCents,
     revenueText,
+    societyNumber: getText(formData, "societyNumber"),
   });
   if (!validation.ok) return { message: validation.message, success: false };
 
   const admin = createAdminClient();
+  if (boardChairUserId) {
+    const { data: boardChairMember, error: boardChairLookupError } = await admin
+      .from("organization_members")
+      .select("user_id")
+      .eq("organization_id", organization.id)
+      .eq("user_id", boardChairUserId)
+      .eq("status", "active")
+      .maybeSingle();
+
+    if (boardChairLookupError) throw boardChairLookupError;
+    if (!boardChairMember) {
+      return {
+        message: "Choose a board chair who belongs to this workspace.",
+        success: false,
+      };
+    }
+  }
+
   const { error } = await admin.from("grant_organization_settings").upsert({
+    board_chair_email: validation.boardChairEmail,
+    board_chair_name: validation.boardChairName,
+    board_chair_phone: validation.boardChairPhone,
+    board_chair_user_id: validation.boardChairUserId,
+    charity_registration_number: validation.charityRegistrationNumber,
     current_annual_revenue_cents: revenueCents,
     funding_sources: validation.fundingSources,
     organization_id: organization.id,
     organization_type: organizationType,
+    society_number: validation.societyNumber,
     updated_by: member.id,
   });
 
@@ -201,4 +234,48 @@ export async function deleteGrantPlatformPartner(
   revalidatePath("/modules/grant-platform");
 
   return { message: "Partner deleted.", success: true };
+}
+
+export async function saveGrantPlatformFunderInteraction(
+  firstArg: FormData | GrantPlatformMutationState,
+  secondArg?: FormData,
+) {
+  const { member, organization } = await requireMemberContext();
+  const { canEditOrgProfile } = getGrantPlatformUiAccess(member.role);
+  const formData = getMutationFormData(firstArg, secondArg);
+
+  if (!canEditOrgProfile) {
+    return { message: "Only admins can edit funder notes.", success: false };
+  }
+
+  const result = await upsertGrantFunderInteraction({
+    formData,
+    member,
+    organization,
+  });
+  if (!result.ok) return { message: result.message, success: false };
+
+  revalidatePath("/modules/grant-platform");
+
+  return { message: result.message, success: true };
+}
+
+export async function deleteGrantPlatformFunderInteraction(
+  firstArg: FormData | GrantPlatformMutationState,
+  secondArg?: FormData,
+) {
+  const { member, organization } = await requireMemberContext();
+  const { canEditOrgProfile } = getGrantPlatformUiAccess(member.role);
+  const formData = getMutationFormData(firstArg, secondArg);
+
+  if (!canEditOrgProfile) {
+    return { message: "Only admins can delete funder notes.", success: false };
+  }
+
+  const result = await deleteGrantFunderInteraction({ formData, organization });
+  if (!result.ok) return { message: result.message, success: false };
+
+  revalidatePath("/modules/grant-platform");
+
+  return { message: result.message, success: true };
 }
