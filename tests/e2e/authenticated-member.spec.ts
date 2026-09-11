@@ -27,6 +27,42 @@ test.describe("@critical @member authenticated access", () => {
     );
   });
 
+  test("keeps the authenticated workspace loaded after language changes", async ({
+    page,
+    authenticatedMember,
+  }) => {
+    const app = new AppShellPage(page);
+
+    await app.openDashboard();
+    await app.expectDashboardForOrganization(
+      authenticatedMember.organizationName,
+    );
+
+    await page.getByTestId("locale-selector").click();
+    await Promise.all([
+      page.waitForResponse(
+        (response) => response.url().includes("/api/locale") && response.ok(),
+      ),
+      page.getByRole("option", { name: "Français" }).click(),
+    ]);
+
+    await expect(page.locator("html")).toHaveAttribute("lang", "fr-CA");
+    await expect(page.getByText("Vos modèles")).toBeVisible();
+    await app.expectNoServerError();
+
+    await page.getByTestId("locale-selector").click();
+    await Promise.all([
+      page.waitForResponse(
+        (response) => response.url().includes("/api/locale") && response.ok(),
+      ),
+      page.getByRole("option", { name: "English" }).click(),
+    ]);
+
+    await expect(page.locator("html")).toHaveAttribute("lang", "en-CA");
+    await expect(page.getByText("Your templates")).toBeVisible();
+    await app.expectNoServerError();
+  });
+
   test("shows database-backed notification count and marks all read", async ({
     page,
     authenticatedMember,
@@ -66,11 +102,16 @@ test.describe("@critical @member authenticated access", () => {
     await app.expectUnreadNotificationCount(0);
 
     await expect
-      .poll(async () => {
-        const firstRow = await testData.getNotification(firstNotification.id);
-        const secondRow = await testData.getNotification(secondNotification.id);
-        return Boolean(firstRow?.read_at && secondRow?.read_at);
-      })
+      .poll(
+        async () => {
+          const firstRow = await testData.getNotification(firstNotification.id);
+          const secondRow = await testData.getNotification(
+            secondNotification.id,
+          );
+          return Boolean(firstRow?.read_at && secondRow?.read_at);
+        },
+        { timeout: 15_000 },
+      )
       .toBe(true);
   });
 

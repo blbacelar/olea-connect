@@ -1,7 +1,10 @@
 "use client";
 
 import { Languages } from "lucide-react";
-import { useRouter } from "next/navigation";
+import {
+  usePathname,
+  useRouter,
+} from "next/navigation";
 import { useEffect, useRef, useState, useTransition } from "react";
 
 import {
@@ -15,6 +18,7 @@ import {
   supportedLocales,
   type Locale,
 } from "@/lib/i18n/locales";
+import { isPublicRoute } from "@/lib/routes/public-routes";
 
 import { useLocaleContext } from "./LocaleProvider";
 
@@ -36,6 +40,7 @@ export function LocaleSelector({
   locale?: Locale;
   labels?: LocaleSelectorLabels;
 }) {
+  const pathname = usePathname();
   const router = useRouter();
   const context = useLocaleContext();
   const currentLocale = locale ?? context.locale;
@@ -76,7 +81,10 @@ export function LocaleSelector({
 
       context.setLocale(nextLocale);
       document.documentElement.lang = nextLocale;
-      router.refresh();
+
+      if (isPublicRoute(pathname)) {
+        router.refresh();
+      }
     });
   }
 

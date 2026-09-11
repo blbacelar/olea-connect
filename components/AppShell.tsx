@@ -12,32 +12,12 @@ import { Breadcrumbs } from "@/components/Breadcrumbs";
 import { Header } from "@/components/Header";
 import { FrenchRuntimeTranslator } from "@/components/i18n/FrenchRuntimeTranslator";
 import { Sidebar } from "@/components/Sidebar";
+import { isPublicRoute } from "@/lib/routes/public-routes";
 import { cn } from "@/lib/utils";
-
-const publicRouteMatchers = [
-  (pathname: string) => pathname === "/",
-  (pathname: string) => pathname === "/ref",
-  (pathname: string) => pathname.startsWith("/ref/"),
-  (pathname: string) => pathname === "/referrals",
-  (pathname: string) => pathname === "/sponsorship",
-  (pathname: string) => pathname === "/login",
-  (pathname: string) => pathname === "/reset-password",
-  (pathname: string) => pathname === "/update-password",
-  (pathname: string) => pathname.startsWith("/signup"),
-  (pathname: string) => pathname === "/verify-email",
-  (pathname: string) => pathname.startsWith("/auth"),
-  (pathname: string) => pathname.startsWith("/onboarding"),
-  (pathname: string) => pathname.startsWith("/legal"),
-  (pathname: string) => pathname === "/team/invitations/accept",
-];
 
 const sidebarStorageKey = "olea-connects-sidebar-collapsed";
 const useIsomorphicLayoutEffect =
   typeof window === "undefined" ? useEffect : useLayoutEffect;
-
-function isPublicRoute(pathname: string) {
-  return publicRouteMatchers.some((matches) => matches(pathname));
-}
 
 export function AppShell({ children }: { children: ReactNode }) {
   const pathname = usePathname();
