@@ -6,7 +6,7 @@ import { brandName } from "@/lib/brand";
 export function Logo({
   compact = false,
   href = "/dashboard",
-  ariaLabel = "Olea Connects governance platform",
+  ariaLabel = "Olea Connects™ governance platform",
   tagline = "Governance, branded.",
 }: {
   compact?: boolean;

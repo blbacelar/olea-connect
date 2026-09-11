@@ -25,6 +25,11 @@ test.describe("@smoke @critical public entry points", () => {
       }),
     ).toBeVisible();
     await expect(
+      page.getByText(
+        /Through Olive Social Impact Inc\., a portion of revenue is donated back to nonprofits\./,
+      ),
+    ).toBeVisible();
+    await expect(
       page.getByRole("link", { name: "Get started" }),
     ).toHaveAttribute("href", "/signup");
   });

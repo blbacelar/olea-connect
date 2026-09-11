@@ -173,7 +173,7 @@ export const publicSiteCopy: Record<Locale, PublicSiteCopy> = {
       french: "Français",
     },
     logo: {
-      ariaLabel: "Olea Connects governance platform",
+      ariaLabel: "Olea Connects™ governance platform",
       tagline: "Governance, branded.",
     },
     nav: {
@@ -279,8 +279,8 @@ export const publicSiteCopy: Record<Locale, PublicSiteCopy> = {
         },
         {
           title: "Access member-only grants.",
-          text: "Apply through a simple, one-page process for quarterly $500 capacity grants funded by Olea sponsors.",
-          outcome: "Sponsor investment flows back to nonprofits.",
+          text: "Apply through a simple, one-page process for quarterly $500 capacity grants. Through Olive Social Impact Inc., a portion of revenue is donated back to nonprofits.",
+          outcome: "A portion of Olea revenue flows back to nonprofits.",
         },
       ],
     },
@@ -554,7 +554,7 @@ export const publicSiteCopy: Record<Locale, PublicSiteCopy> = {
       french: "Français",
     },
     logo: {
-      ariaLabel: "Plateforme de gouvernance Olea Connects",
+      ariaLabel: "Plateforme de gouvernance Olea Connects™",
       tagline: "La gouvernance, à votre image.",
     },
     nav: {
@@ -667,9 +667,9 @@ export const publicSiteCopy: Record<Locale, PublicSiteCopy> = {
         },
         {
           title: "Accédez à des subventions réservées aux membres.",
-          text: "Soumettez une demande simple d'une page pour des subventions trimestrielles de capacité de 500 $ financées par les commanditaires d'Olea.",
+          text: "Soumettez une demande simple d'une page pour des subventions trimestrielles de capacité de 500 $. Par l'entremise d'Olive Social Impact Inc., une partie des revenus est redistribuée aux organismes sans but lucratif.",
           outcome:
-            "L'investissement des commanditaires retourne aux organismes.",
+            "Une partie des revenus d'Olea retourne aux organismes sans but lucratif.",
         },
       ],
     },

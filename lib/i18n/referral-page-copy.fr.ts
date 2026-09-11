@@ -5,7 +5,7 @@ export const referralPageCopyFr: ReferralPageCopy = {
   heroTitle: (amount) =>
     `Gagnez jusqu'à ${amount} pour chaque pair que vous envoyez à Olea.`,
   heroBody:
-    "Vous savez déjà quelles équipes sans but lucratif jonglent encore avec la gouvernance, les dossiers du conseil et les rapports. Présentez-les à Olea Connects et recevez une prime lorsqu'elles participent à une démonstration, puis lorsqu'elles restent.",
+    "Vous savez déjà quelles équipes sans but lucratif jonglent encore avec la gouvernance, les dossiers du conseil et les rapports. Présentez-les à Olea Connects™ et recevez une prime lorsqu'elles participent à une démonstration, puis lorsqu'elles restent.",
   signUp: "S'inscrire pour référer",
   dashboard: "Tableau de bord des références",
   demoPayout: "Pour une démonstration à laquelle la personne participe",

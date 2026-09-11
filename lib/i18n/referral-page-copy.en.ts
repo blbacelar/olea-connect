@@ -5,7 +5,7 @@ export const referralPageCopyEn: ReferralPageCopy = {
   heroTitle: (amount) =>
     `Earn up to ${amount} for every peer you send to Olea.`,
   heroBody:
-    "You already know which nonprofit teams are still wrestling with governance work, board packages, and reporting. Introduce them to Olea Connects and get paid when they show up and when they stay.",
+    "You already know which nonprofit teams are still wrestling with governance work, board packages, and reporting. Introduce them to Olea Connects™ and get paid when they show up and when they stay.",
   signUp: "Sign up to refer",
   dashboard: "Referrer dashboard",
   demoPayout: "On a demo attended",
