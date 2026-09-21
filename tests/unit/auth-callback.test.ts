@@ -81,6 +81,20 @@ describe("auth callback", () => {
     );
   });
 
+  it("rejects browser-normalized backslash next paths", async () => {
+    const { GET } = await import("@/app/auth/callback/route");
+
+    const response = await GET(
+      new Request(
+        "https://staging.oleaconnects.com/auth/callback?code=valid-code&next=/%5Cevil.example",
+      ),
+    );
+
+    expect(response.headers.get("location")).toBe(
+      "https://staging.oleaconnects.com/dashboard",
+    );
+  });
+
   it("keeps provisioning behavior for normal signup verification callbacks", async () => {
     const { GET } = await import("@/app/auth/callback/route");
     attemptUserWorkspaceProvisioning.mockResolvedValue({ status: "completed" });

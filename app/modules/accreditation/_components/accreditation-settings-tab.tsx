@@ -93,7 +93,7 @@ function SettingsFields({
           aria-label="Organization name"
           defaultValue={data.settings.organizationName}
           name="organizationName"
-          placeholder="BoraPost Community Services"
+          placeholder="Organization name"
         />
       </Field>
       <Field error={fieldError(state, "charityNumber")} label="CRA charity number">

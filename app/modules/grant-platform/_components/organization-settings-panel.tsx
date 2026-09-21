@@ -241,7 +241,7 @@ export function OrganizationSettingsPanel({
                   name="boardChairName"
                   defaultValue={data.organizationSettings.boardChairName}
                   disabled={disabled}
-                  placeholder="Jane Doe"
+                  placeholder="Board chair's full name"
                 />
               </div>
               <div className="space-y-2">

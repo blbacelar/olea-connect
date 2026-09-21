@@ -50,6 +50,10 @@ export type AuthFlowCopy = {
       referralCode: string;
       referralCodePlaceholder: string;
       referralCodeHelp: string;
+      foundingMemberCode: string;
+      foundingMemberCodePlaceholder: string;
+      foundingMemberCodeHelp: string;
+      foundingMemberCodeInvalid: string;
       password: string;
       passwordHelp: string;
       continueToPayment: string;
@@ -91,12 +95,15 @@ export type AuthFlowCopy = {
       renewalNotice: string;
       canadianDollars: string;
       foundingEligibility: string;
+      foundingCodeApplied: string;
+      regularPrice: string;
       canceled: string;
       consentError: string;
       errors: {
         accountState: string;
         checkoutRateLimited: string;
         checkoutUnavailable: string;
+        foundingCodeInvalid: string;
         signupValidation: string;
       };
       fallbackError: string;
@@ -105,16 +112,19 @@ export type AuthFlowCopy = {
       titles: {
         failed: string;
         completed: string;
+        pendingPayment: string;
         received: string;
       };
       descriptions: {
         failed: string;
         completed: string;
+        pendingPayment: string;
         received: string;
       };
       messages: {
         failed: string;
         completed: string;
+        pendingPayment: string;
         pendingVerification: string;
         pending: string;
       };
@@ -224,7 +234,7 @@ export const authFlowCopy: Record<Locale, AuthFlowCopy> = {
         annual: "Annual",
         bestValue: "best value",
         foundingEligibility:
-          "Founding-member eligibility is confirmed securely before payment.",
+          "A valid founding-member code provides 15% off Year 1 while the first 50 spots remain available.",
         selected: "Selected",
         selectPlan: "Select plan",
         policyNote:
@@ -253,6 +263,12 @@ export const authFlowCopy: Record<Locale, AuthFlowCopy> = {
         referralCodePlaceholder: "OLEA-ABC123",
         referralCodeHelp:
           "Optional. A valid code supports the referring organization's Olea Gives reward.",
+        foundingMemberCode: "Founding-member code",
+        foundingMemberCodePlaceholder: "ENTER-CODE",
+        foundingMemberCodeHelp:
+          "Optional. Founding members receive 15% off Year 1 while the first 50 spots remain available.",
+        foundingMemberCodeInvalid:
+          "Use 4-32 letters, numbers, or hyphens.",
         password: "Password *",
         passwordHelp: "Use at least 8 characters.",
         continueToPayment: "Continue to payment",
@@ -316,8 +332,8 @@ export const authFlowCopy: Record<Locale, AuthFlowCopy> = {
         },
         consentPrefix: "I agree to the",
         consentVersion: (version) => `(version ${version})`,
-        continuePending: "Opening secure checkout...",
-        continueToCheckout: "Continue to secure checkout",
+        continuePending: "Creating your account...",
+        continueToCheckout: "Create account and send confirmation",
         secureCheckoutLabel: "Secure checkout",
         orderSummary: "Order summary",
         billingSummary: (cycle) =>
@@ -328,7 +344,10 @@ export const authFlowCopy: Record<Locale, AuthFlowCopy> = {
         renewalNotice: "30-day notice before renewal",
         canadianDollars: "Prices in Canadian dollars",
         foundingEligibility:
-          "Founding-member eligibility is confirmed securely before payment.",
+          "Enter a valid founding-member code to receive 15% off Year 1. Limited to the first 50 paid organizations.",
+        foundingCodeApplied:
+          "Founding-member code entered. We will validate it securely and apply 15% off Year 1 at checkout if a spot remains.",
+        regularPrice: "Regular price",
         canceled:
           "Checkout was canceled. Your account was created, so verify your email and sign in when you are ready to continue.",
         consentError:
@@ -339,6 +358,8 @@ export const authFlowCopy: Record<Locale, AuthFlowCopy> = {
           checkoutRateLimited:
             "Verification emails are temporarily limited. Please wait a few minutes and try again.",
           checkoutUnavailable: "Unable to start secure checkout.",
+          foundingCodeInvalid:
+            "That founding-member code is invalid or expired. Return to account details to update it.",
           signupValidation: "Review your signup details and try again.",
         },
         fallbackError: "Unable to create your account.",
@@ -347,19 +368,23 @@ export const authFlowCopy: Record<Locale, AuthFlowCopy> = {
         titles: {
           failed: "Activation needs attention",
           completed: "Your membership is ready",
-          received: "Payment received",
+          pendingPayment: "Email confirmed",
+          received: "Check your email",
         },
         descriptions: {
           failed:
             "Your payment is safe, but workspace setup needs to be retried.",
           completed: "Your Olea Connects™ workspace is active.",
-          received: "Your Olea Connects™ membership is being activated.",
+          pendingPayment: "Sign in to continue to secure checkout.",
+          received: "Your Olea Connects™ account is waiting for confirmation.",
         },
         messages: {
           failed:
             "Sign in if prompted, then retry. The activation record is preserved so no organization or subscription will be duplicated.",
           completed:
             "Continue to your dashboard. If you are asked to sign in, use the same email address you used during checkout.",
+          pendingPayment:
+            "Your email is confirmed. Sign in with this account and we will continue you to secure checkout.",
           pendingVerification:
             "We sent a confirmation email from Olea Connects™. Open that email and confirm your address before signing in.",
           pending:
@@ -376,7 +401,7 @@ export const authFlowCopy: Record<Locale, AuthFlowCopy> = {
       password: "Password",
       forgotPassword: "Forgot password?",
       paymentVerifyMessage:
-        "Payment received. Check your inbox for a confirmation email from Olea Connects™, confirm your address, then sign in.",
+        "Check your inbox for a confirmation email from Olea Connects™, confirm your address, then sign in.",
       paymentSuccessMessage:
         "Payment received. Sign in to finish setting up your membership.",
       fallbackError: "Unable to sign in.",
@@ -484,7 +509,7 @@ export const authFlowCopy: Record<Locale, AuthFlowCopy> = {
         annual: "Annuel",
         bestValue: "meilleure valeur",
         foundingEligibility:
-          "L'admissibilité comme membre fondateur est confirmée de façon sécurisée avant le paiement.",
+          "Un code de membre fondateur valide donne 15 % de rabais la première année, tant que l'une des 50 places est disponible.",
         selected: "Sélectionné",
         selectPlan: "Choisir le forfait",
         policyNote:
@@ -514,6 +539,12 @@ export const authFlowCopy: Record<Locale, AuthFlowCopy> = {
         referralCodePlaceholder: "OLEA-ABC123",
         referralCodeHelp:
           "Facultatif. Un code valide soutient la récompense Olea Gives de l'organisme référent.",
+        foundingMemberCode: "Code de membre fondateur",
+        foundingMemberCodePlaceholder: "ENTRER-LE-CODE",
+        foundingMemberCodeHelp:
+          "Facultatif. Les membres fondateurs reçoivent 15 % de rabais la première année, jusqu'à concurrence des 50 premières places.",
+        foundingMemberCodeInvalid:
+          "Utilisez de 4 à 32 lettres, chiffres ou traits d'union.",
         password: "Mot de passe *",
         passwordHelp: "Utilisez au moins 8 caractères.",
         continueToPayment: "Continuer au paiement",
@@ -577,8 +608,8 @@ export const authFlowCopy: Record<Locale, AuthFlowCopy> = {
         },
         consentPrefix: "J'accepte",
         consentVersion: (version) => `(version ${version})`,
-        continuePending: "Ouverture de la caisse sécurisée...",
-        continueToCheckout: "Continuer à la caisse sécurisée",
+        continuePending: "Création du compte...",
+        continueToCheckout: "Créer le compte et envoyer la confirmation",
         secureCheckoutLabel: "Caisse sécurisée",
         orderSummary: "Résumé de la commande",
         billingSummary: (cycle) =>
@@ -591,7 +622,10 @@ export const authFlowCopy: Record<Locale, AuthFlowCopy> = {
         renewalNotice: "Préavis de 30 jours avant le renouvellement",
         canadianDollars: "Prix en dollars canadiens",
         foundingEligibility:
-          "L'admissibilité comme membre fondateur est confirmée de façon sécurisée avant le paiement.",
+          "Entrez un code de membre fondateur valide pour recevoir 15 % de rabais la première année. Offre limitée aux 50 premiers organismes payants.",
+        foundingCodeApplied:
+          "Code de membre fondateur saisi. Nous le validerons de façon sécurisée et appliquerons le rabais de 15 % à la caisse si une place demeure disponible.",
+        regularPrice: "Prix courant",
         canceled:
           "La caisse a été annulée. Votre compte a été créé; vérifiez donc votre courriel et connectez-vous lorsque vous serez prêt à continuer.",
         consentError:
@@ -602,6 +636,8 @@ export const authFlowCopy: Record<Locale, AuthFlowCopy> = {
           checkoutRateLimited:
             "Les courriels de vérification sont temporairement limités. Attendez quelques minutes, puis réessayez.",
           checkoutUnavailable: "Impossible de démarrer la caisse sécurisée.",
+          foundingCodeInvalid:
+            "Ce code de membre fondateur est invalide ou expiré. Retournez aux renseignements du compte pour le modifier.",
           signupValidation:
             "Vérifiez vos renseignements d'inscription, puis réessayez.",
         },
@@ -611,19 +647,25 @@ export const authFlowCopy: Record<Locale, AuthFlowCopy> = {
         titles: {
           failed: "L'activation demande votre attention",
           completed: "Votre adhésion est prête",
-          received: "Paiement reçu",
+          pendingPayment: "Courriel confirmé",
+          received: "Vérifiez votre courriel",
         },
         descriptions: {
           failed:
             "Votre paiement est sécurisé, mais la configuration de l'espace de travail doit être réessayée.",
           completed: "Votre espace Olea Connects™ est actif.",
-          received: "Votre adhésion Olea Connects™ est en cours d'activation.",
+          pendingPayment:
+            "Connectez-vous pour continuer vers la caisse sécurisée.",
+          received:
+            "Votre compte Olea Connects™ est en attente de confirmation.",
         },
         messages: {
           failed:
             "Connectez-vous si demandé, puis réessayez. Le dossier d'activation est conservé afin qu'aucun organisme ni abonnement ne soit créé en double.",
           completed:
             "Continuez vers votre tableau de bord. Si on vous demande de vous connecter, utilisez la même adresse courriel que lors du paiement.",
+          pendingPayment:
+            "Votre courriel est confirmé. Connectez-vous avec ce compte et nous vous redirigerons vers la caisse sécurisée.",
           pendingVerification:
             "Nous avons envoyé un courriel de confirmation d'Olea Connects™. Ouvrez ce courriel et confirmez votre adresse avant de vous connecter.",
           pending:
@@ -640,7 +682,7 @@ export const authFlowCopy: Record<Locale, AuthFlowCopy> = {
       password: "Mot de passe",
       forgotPassword: "Mot de passe oublié?",
       paymentVerifyMessage:
-        "Paiement reçu. Vérifiez votre boîte de réception pour un courriel de confirmation d'Olea Connects™, confirmez votre adresse, puis connectez-vous.",
+        "Vérifiez votre boîte de réception pour un courriel de confirmation d'Olea Connects™, confirmez votre adresse, puis connectez-vous.",
       paymentSuccessMessage:
         "Paiement reçu. Connectez-vous pour terminer la configuration de votre adhésion.",
       fallbackError: "Impossible de vous connecter.",

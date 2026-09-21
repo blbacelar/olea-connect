@@ -8,6 +8,7 @@ import { AuthCard } from "@/components/auth/AuthCard";
 import { PasswordInput } from "@/components/auth/PasswordInput";
 import { StepIndicator } from "@/components/auth/StepIndicator";
 import { useLocaleContext } from "@/components/i18n/LocaleProvider";
+import { FoundingMemberCodeField } from "@/components/signup/founding-member-code-field";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -19,6 +20,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { captureReferralCodeFromUrl } from "@/lib/referral-capture";
+import { isWellFormedFoundingMemberCode } from "@/lib/founding-member";
 import { useRegistration } from "@/hooks/use-registration";
 import { getAuthFlowCopy } from "@/lib/i18n/auth-flow-copy";
 import { getPublicSiteCopy } from "@/lib/i18n/public-site-copy";
@@ -77,8 +79,9 @@ export default function SignupAccountPage() {
     registration.password.length >= 8 &&
     registration.organizationKind !== "" &&
     registration.annualBudgetRange !== "" &&
-    registration.boardSizeRange !== "";
-
+    registration.boardSizeRange !== "" &&
+    (!registration.foundingMemberCode ||
+      isWellFormedFoundingMemberCode(registration.foundingMemberCode));
   const strength = Math.min(4, Math.floor(registration.password.length / 3));
 
   return (
@@ -259,6 +262,16 @@ export default function SignupAccountPage() {
             {accountCopy.referralCodeHelp}
           </p>
         </div>
+        <FoundingMemberCodeField
+          help={accountCopy.foundingMemberCodeHelp}
+          invalidMessage={accountCopy.foundingMemberCodeInvalid}
+          label={accountCopy.foundingMemberCode}
+          placeholder={accountCopy.foundingMemberCodePlaceholder}
+          value={registration.foundingMemberCode}
+          onChange={(foundingMemberCode) =>
+            updateRegistration({ foundingMemberCode })
+          }
+        />
         <div className="space-y-2">
           <Label htmlFor="password">{accountCopy.password}</Label>
           <PasswordInput

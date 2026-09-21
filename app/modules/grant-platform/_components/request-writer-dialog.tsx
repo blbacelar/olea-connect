@@ -85,7 +85,12 @@ export function RequestWriterDialog({ grantName, trigger }: RequestWriterDialogP
           <div className="grid gap-3">
             <div className="space-y-1">
               <Label htmlFor="writer-name">Your Name</Label>
-              <Input id="writer-name" name="name" placeholder="e.g. Jane Doe" required />
+              <Input
+                id="writer-name"
+                name="name"
+                placeholder="Full name"
+                required
+              />
             </div>
             <div className="space-y-1">
               <Label htmlFor="writer-email">Email Address</Label>

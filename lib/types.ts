@@ -46,6 +46,7 @@ export interface RegistrationState {
   phone: string;
   acquisitionSource: AcquisitionSource | "";
   referralCode: string;
+  foundingMemberCode: string;
   consents: {
     terms: boolean;
     privacy: boolean;

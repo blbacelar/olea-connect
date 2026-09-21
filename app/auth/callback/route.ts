@@ -2,6 +2,7 @@ import { createServerClient } from "@supabase/ssr";
 import { parse } from "cookie";
 import { NextResponse } from "next/server";
 
+import { getSafeNextPath } from "@/lib/auth/safe-next-path";
 import { logError } from "@/lib/observability/logger";
 import { getPostActivationPath } from "@/lib/onboarding/post-activation";
 import { attemptUserWorkspaceProvisioning } from "@/lib/stripe/registration";
@@ -10,12 +11,6 @@ import {
   applyAuthCookieDuration,
   AUTH_REMEMBER_COOKIE_NAME,
 } from "@/utils/supabase/auth-cookie-options";
-
-function getSafeNextPath(value: string | null) {
-  return value?.startsWith("/") && !value.startsWith("//")
-    ? value
-    : "/dashboard";
-}
 
 function shouldSkipProvisioning(next: string) {
   return next.startsWith("/update-password");
@@ -119,8 +114,10 @@ async function getProvisioningRedirect(
     result?.status === "pending_payment" ||
     result?.status === "pending_verification"
   ) {
+    const activationUrl = new URL("/signup/success", requestOrigin);
+    activationUrl.searchParams.set("activation", result.status);
     return NextResponse.redirect(
-      new URL("/signup/success?activation=pending", requestOrigin),
+      activationUrl,
     );
   }
 

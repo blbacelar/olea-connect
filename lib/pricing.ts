@@ -92,7 +92,8 @@ export const referralRewards = [
 export const pricingPolicies = {
   extraSeat: "$15 CAD one-time per seat",
   trial: "No free trial",
-  foundingMember: "The first 50 paid organizations receive 15% off Year 1 only.",
+  foundingMember:
+    "Founding members with a valid code receive 15% off Year 1, limited to the first 50 paid organizations.",
   taxes: "Prices are shown before tax; GST/PST is calculated at checkout by province.",
   cancellation: "30 days' notice before renewal; membership fees are non-refundable.",
 } as const;

@@ -166,7 +166,8 @@ test.describe("@critical @member authenticated access", () => {
     await team.expectMemberEmail(authenticatedMember.email);
 
     await app.openMemberSection("grants");
-    await app.expectSectionHeading("Q3 2026 Community Grant");
+    await app.expectSectionHeading("Olea Gives Fund");
+    await app.expectText("No grant round is available");
 
     await app.openMemberSection("webinars");
     await app.expectSectionHeading("Webinars");

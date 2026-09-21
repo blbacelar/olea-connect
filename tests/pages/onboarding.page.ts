@@ -1,6 +1,6 @@
 import { expect, type Page } from "@playwright/test";
 
-const registrationStorageKey = "olea-registration-demo";
+const registrationStorageKey = "olea-registration";
 
 export class OnboardingPage {
   constructor(private readonly page: Page) {}

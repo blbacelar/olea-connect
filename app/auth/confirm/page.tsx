@@ -4,6 +4,7 @@ import { redirect } from "next/navigation";
 
 import { AuthCard } from "@/components/auth/AuthCard";
 import { Button } from "@/components/ui/button";
+import { getSafeNextPath } from "@/lib/auth/safe-next-path";
 import { logError } from "@/lib/observability/logger";
 import { getPostActivationPath } from "@/lib/onboarding/post-activation";
 import { attemptUserWorkspaceProvisioning } from "@/lib/stripe/registration";
@@ -19,13 +20,6 @@ const allowedTypes = new Set<EmailOtpType>([
   "invite",
   "email_change",
 ]);
-
-function getSafeNextPath(value: string | string[] | undefined) {
-  const next = Array.isArray(value) ? value[0] : value;
-  return next?.startsWith("/") && !next.startsWith("//")
-    ? next
-    : "/dashboard";
-}
 
 function getSafeType(value: string | string[] | undefined) {
   const type = Array.isArray(value) ? value[0] : value;

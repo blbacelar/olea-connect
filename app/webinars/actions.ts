@@ -6,6 +6,7 @@ import { requireMemberContext } from "@/lib/data/member-context";
 import { eventTypes } from "@/lib/data/webinars";
 import { parseStrictInteger } from "@/lib/input-validation";
 import { createClient } from "@/utils/supabase/server";
+import { createAdminClient } from "@/utils/supabase/admin";
 import {
   getActionErrorMessage,
   getText,
@@ -29,7 +30,6 @@ export async function registerForEvent(formData: FormData) {
     organization,
     organizationRegistrationCount,
     registrationCount,
-    supabase,
     access,
   } = await loadRegistrationContext(eventId);
 
@@ -63,18 +63,19 @@ export async function registerForEvent(formData: FormData) {
     registration_source: "olea",
     last_provider_sync_at: new Date().toISOString(),
   };
+  const admin = createAdminClient();
 
   const query = existingRegistration
-    ? supabase
+    ? admin
         .from("event_registrations")
         .update(baseValues)
         .eq("id", existingRegistration.id)
-    : supabase.from("event_registrations").insert(baseValues);
+    : admin.from("event_registrations").insert(baseValues);
 
   const { data: registration, error } = await query.select("id").single();
   if (error) throw error;
 
-  const { error: providerError } = await supabase
+  const { error: providerError } = await admin
     .from("event_registrations")
     .update({
       provider_registration_id: `zoom-manual:${registration.id}`,

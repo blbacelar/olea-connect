@@ -34,7 +34,7 @@ export default async function CommunityPage() {
         />
         <EmptyPanel
           title="Community is coming soon"
-          description="The Olea Connects™ community has not been seeded in this environment yet."
+          description="Community spaces will appear here when they are available."
           icon={<MessageSquareText className="size-5" />}
         />
       </div>

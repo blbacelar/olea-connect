@@ -15,6 +15,7 @@ const registration = {
   phone: "",
   acquisitionSource: "",
   referralCode: "",
+  foundingMemberCode: "",
   consents: {
     terms: true,
     privacy: true,
@@ -28,6 +29,28 @@ const registration = {
 describe("startStripeCheckout", () => {
   afterEach(() => {
     vi.unstubAllGlobals();
+  });
+
+  it("returns the verification next path when signup must confirm email before payment", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn().mockResolvedValue(
+        new Response(
+          JSON.stringify({
+            nextPath: "/signup/success?activation=pending_verification",
+            status: "verification_required",
+          }),
+          {
+            headers: { "Content-Type": "application/json" },
+            status: 200,
+          },
+        ),
+      ),
+    );
+
+    await expect(startStripeCheckout(registration)).resolves.toBe(
+      "/signup/success?activation=pending_verification",
+    );
   });
 
   it("includes the safe correlation reference in checkout failures", async () => {

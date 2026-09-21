@@ -14,7 +14,7 @@ Referral rewards are finalized only after the paid signup is provisioned. Databa
 
 ## Founding members
 
-The first 50 paid organizations can receive the server-authoritative Year 1 discount. Configure `STRIPE_FOUNDING_COUPON_ID` with a Stripe recurring coupon configured for 15% off for the first year. The database reserves a claim under a transaction lock before checkout and marks it paid only after provisioning completes. The application never trusts a client-supplied founding-member flag or price.
+The first 50 paid organizations can receive the server-authoritative Year 1 discount. Configure `FOUNDING_MEMBER_CODE_SHA256` with the SHA-256 digest of the normalized private code and `STRIPE_FOUNDING_COUPON_ID` with a Stripe recurring coupon configured for 15% off for 12 months with 50 maximum redemptions. The code itself is never shipped to the browser. After email verification, checkout creates a short-lived claim under a transaction lock; expired reservations are released, and a claim is marked paid only after provisioning completes. The application never trusts a client-supplied founding-member flag or price.
 
 If the coupon variable is absent, checkout continues at the regular price and no founding discount is applied. A Stripe coupon must be configured with the intended duration and maximum redemptions in the Stripe environment used by the deployment.
 

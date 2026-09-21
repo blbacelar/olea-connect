@@ -134,6 +134,7 @@ describe("Stripe registration recovery", () => {
     vi.clearAllMocks();
     stripeMocks.retrieveCheckoutSession.mockResolvedValue({
       id: "cs_123",
+      status: "complete",
       metadata: {
         provisioning_request_id: "req_123",
         user_id: "user_123",
@@ -214,6 +215,28 @@ describe("Stripe registration recovery", () => {
     expect(stripeMocks.retrieveCheckoutSession).toHaveBeenCalledWith("cs_123", {
       expand: ["subscription"],
     });
+  });
+
+  it("leaves an open checkout session pending so the caller can reuse its URL", async () => {
+    stripeMocks.retrieveCheckoutSession.mockResolvedValue({
+      id: "cs_123",
+      status: "open",
+      url: "https://checkout.stripe.com/c/pay/cs_123",
+    });
+    const { attemptUserWorkspaceProvisioning } = await import(
+      "@/lib/stripe/registration"
+    );
+    const { client } = makeSupabaseMock([
+      { status: "pending_payment", request_id: "req_123" },
+    ]);
+
+    const result = await attemptUserWorkspaceProvisioning(
+      client as unknown as SupabaseClient,
+      "user_123",
+    );
+
+    expect(result?.status).toBe("pending_payment");
+    expect(stripeMocks.retrieveSubscription).not.toHaveBeenCalled();
   });
 
   it("repairs missing subscription metadata from checkout session metadata", async () => {

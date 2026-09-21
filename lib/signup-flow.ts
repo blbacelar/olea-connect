@@ -1,5 +1,6 @@
 import type { RegistrationState } from "@/lib/types";
 import { normalizeReferralCode } from "@/lib/referral-capture";
+import { normalizeFoundingMemberCode } from "@/lib/founding-member";
 import * as z from "zod";
 import {
   emailStringSchema,
@@ -79,6 +80,17 @@ const signupCheckoutSchema = z
       }
       return normalized;
     }),
+    foundingMemberCode: z.string().optional().default("").pipe(z.string().max(32)).transform((value, ctx) => {
+      const normalized = normalizeFoundingMemberCode(value);
+      if (normalized === null) {
+        ctx.addIssue({
+          code: "custom",
+          message: "Enter a valid founding-member code.",
+        });
+        return z.NEVER;
+      }
+      return normalized;
+    }),
     tier: z.enum(["seedling", "roots", "canopy", "harvest"]),
     billingCycle: z.enum(["quarterly", "annual"]),
     consents: z
@@ -118,6 +130,9 @@ export function parseSignupCheckoutInput(value: unknown): SignupCheckoutInput {
   }
   if (issue?.path[0] === "email") throw new SignupValidationError("Enter a valid email address.");
   if (issue?.path[0] === "phone") throw new SignupValidationError("Enter a valid phone number.");
+  if (issue?.path[0] === "foundingMemberCode") {
+    throw new SignupValidationError("Enter a valid founding-member code.");
+  }
   if (issue?.path[0] === "consents") {
     throw new SignupValidationError("Review and accept all required policies.");
   }

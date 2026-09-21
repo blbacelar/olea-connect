@@ -1,30 +1,23 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 const routeMocks = vi.hoisted(() => ({
-  attachCheckoutSession: vi.fn(),
   createAdminClient: vi.fn(),
-  createCheckoutSession: vi.fn(),
   createPublicServerClient: vi.fn(),
-  getStripe: vi.fn(),
-  getStripePriceId: vi.fn(() => "price_roots_annual"),
-  listUsers: vi.fn(),
+  deleteUser: vi.fn(),
   prepareCheckoutRegistration: vi.fn(),
-  signInWithPassword: vi.fn(),
   signUp: vi.fn(),
   storeSignupConsents: vi.fn(),
+  validateFoundingMemberCode: vi.fn(),
+  validateSignupReferralCode: vi.fn(),
 }));
 
 vi.mock("server-only", () => ({}));
 
 vi.mock("@/lib/stripe/registration", () => ({
-  attachCheckoutSession: routeMocks.attachCheckoutSession,
   prepareCheckoutRegistration: routeMocks.prepareCheckoutRegistration,
   storeSignupConsents: routeMocks.storeSignupConsents,
-}));
-
-vi.mock("@/lib/stripe/server", () => ({
-  getStripe: routeMocks.getStripe,
-  getStripePriceId: routeMocks.getStripePriceId,
+  validateFoundingMemberCode: routeMocks.validateFoundingMemberCode,
+  validateSignupReferralCode: routeMocks.validateSignupReferralCode,
 }));
 
 vi.mock("@/utils/supabase/admin", () => ({
@@ -44,6 +37,7 @@ const checkoutPayload = {
   phone: "",
   acquisitionSource: "",
   referralCode: "",
+  foundingMemberCode: "",
   consents: {
     terms: true,
     privacy: true,
@@ -68,40 +62,32 @@ function getLastErrorLog(consoleError: ReturnType<typeof vi.spyOn>) {
   return JSON.parse(String(serializedLog)) as Record<string, unknown>;
 }
 
-function existingUser(id = "user_existing") {
-  routeMocks.listUsers.mockResolvedValue({
-    data: { users: [{ id, email: checkoutPayload.email }] },
+function mockNewSignupUser(userId = "user_new") {
+  routeMocks.signUp.mockImplementation(async (input) => ({
+    data: {
+      user: {
+        id: userId,
+        identities: [{ id: "identity_123" }],
+        user_metadata: {
+          signup_attempt_id: input.options.data.signup_attempt_id,
+        },
+      },
+    },
     error: null,
-  });
-}
-
-function noExistingUser() {
-  routeMocks.listUsers.mockResolvedValue({
-    data: { users: [] },
-    error: null,
-  });
+  }));
 }
 
 describe("Stripe signup checkout route", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     routeMocks.createAdminClient.mockReturnValue({
-      auth: { admin: { listUsers: routeMocks.listUsers } },
+      auth: { admin: { deleteUser: routeMocks.deleteUser } },
     });
     routeMocks.createPublicServerClient.mockReturnValue({
       auth: {
-        signInWithPassword: routeMocks.signInWithPassword,
         signUp: routeMocks.signUp,
       },
     });
-    routeMocks.getStripe.mockReturnValue({
-      checkout: {
-        sessions: {
-          create: routeMocks.createCheckoutSession,
-        },
-      },
-    });
-    routeMocks.getStripePriceId.mockReturnValue("price_roots_annual");
     routeMocks.prepareCheckoutRegistration.mockResolvedValue({
       requestId: "request_123",
       referralCode: null,
@@ -109,120 +95,51 @@ describe("Stripe signup checkout route", () => {
       foundingDiscountIdentifier: null,
     });
     routeMocks.storeSignupConsents.mockResolvedValue(undefined);
-    routeMocks.attachCheckoutSession.mockResolvedValue(undefined);
-    routeMocks.createCheckoutSession.mockResolvedValue({
-      id: "cs_test_123",
-      url: "https://checkout.stripe.test/session",
-    });
+    routeMocks.validateFoundingMemberCode.mockReturnValue(null);
+    routeMocks.validateSignupReferralCode.mockResolvedValue(null);
+    routeMocks.deleteUser.mockResolvedValue({ error: null });
   });
 
-  it("continues checkout for an existing user with matching credentials", async () => {
-    existingUser();
-    routeMocks.signInWithPassword.mockResolvedValue({
-      data: { user: { id: "user_existing" } },
-      error: null,
-    });
+  it("records activation and returns verification guidance for a newly created signup user", async () => {
+    mockNewSignupUser();
     const { POST } = await import("@/app/api/stripe/checkout/route");
 
     const response = await POST(makeRequest());
 
     expect(response.status).toBe(200);
     await expect(response.json()).resolves.toEqual({
-      url: "https://checkout.stripe.test/session",
+      nextPath: "/signup/success?activation=pending_verification",
+      status: "verification_required",
     });
     expect(routeMocks.prepareCheckoutRegistration).toHaveBeenCalledWith(
       expect.anything(),
       expect.objectContaining({
         email: checkoutPayload.email,
-        userId: "user_existing",
+        userId: "user_new",
       }),
     );
-    expect(routeMocks.signUp).not.toHaveBeenCalled();
+    expect(routeMocks.signUp).toHaveBeenCalledWith(
+      expect.objectContaining({
+        email: checkoutPayload.email,
+        password: checkoutPayload.password,
+      }),
+    );
   });
 
-  it("continues checkout when valid credentials belong to an unconfirmed user", async () => {
-    existingUser("user_unconfirmed");
-    routeMocks.signInWithPassword.mockResolvedValue({
-      data: { user: null },
-      error: { code: "email_not_confirmed" },
-    });
+  it("does not test passwords before recording signup activation", async () => {
+    mockNewSignupUser();
     const { POST } = await import("@/app/api/stripe/checkout/route");
 
     const response = await POST(makeRequest());
 
     expect(response.status).toBe(200);
-    expect(routeMocks.prepareCheckoutRegistration).toHaveBeenCalledWith(
-      expect.anything(),
-      expect.objectContaining({ userId: "user_unconfirmed" }),
+    expect(routeMocks.createAdminClient).toHaveBeenCalledTimes(1);
+    expect(routeMocks.createAdminClient.mock.invocationCallOrder[0]).toBeLessThan(
+      routeMocks.prepareCheckoutRegistration.mock.invocationCallOrder[0],
     );
   });
 
-  it("returns a safe actionable conflict for mismatched existing-account credentials", async () => {
-    existingUser();
-    routeMocks.signInWithPassword.mockResolvedValue({
-      data: { user: null },
-      error: { code: "invalid_credentials", message: "Provider details" },
-    });
-    const { POST } = await import("@/app/api/stripe/checkout/route");
-
-    const response = await POST(makeRequest());
-    const body = (await response.json()) as { error: string };
-
-    expect(response.status).toBe(409);
-    expect(body).toEqual({
-      code: "account_state",
-      error:
-        "Unable to continue with these account details. Sign in or reset your password, then try again.",
-    });
-    expect(body.error).not.toContain("Provider details");
-    expect(routeMocks.prepareCheckoutRegistration).not.toHaveBeenCalled();
-    expect(routeMocks.createCheckoutSession).not.toHaveBeenCalled();
-  });
-
-  it("masks unexpected existing-user authentication failures", async () => {
-    existingUser();
-    routeMocks.signInWithPassword.mockResolvedValue({
-      data: { user: null },
-      error: {
-        code: "unexpected_failure",
-        message: "Authentication provider internals",
-      },
-    });
-    const consoleError = vi
-      .spyOn(console, "error")
-      .mockImplementation(() => undefined);
-    const { POST } = await import("@/app/api/stripe/checkout/route");
-
-    const response = await POST(makeRequest());
-    const body = (await response.json()) as {
-      correlationId: string;
-      error: string;
-    };
-
-    expect(response.status).toBe(500);
-    expect(body).toEqual({
-      code: "checkout_unavailable",
-      error: "Unable to start secure checkout.",
-      correlationId: expect.any(String),
-    });
-    expect(getLastErrorLog(consoleError)).toEqual(
-      expect.objectContaining({
-        message: "Unable to create Stripe Checkout session",
-        correlationId: body.correlationId,
-        stage: "sign_in_signup_user",
-        errorCode: "unexpected_failure",
-      }),
-    );
-    expect(JSON.stringify(consoleError.mock.calls)).not.toContain(
-      "Authentication provider internals",
-    );
-    expect(routeMocks.prepareCheckoutRegistration).not.toHaveBeenCalled();
-    expect(routeMocks.createCheckoutSession).not.toHaveBeenCalled();
-    consoleError.mockRestore();
-  });
-
-  it("returns the same safe conflict when signup reports a duplicate identity", async () => {
-    noExistingUser();
+  it("returns the same public response when signup reports a duplicate identity", async () => {
     routeMocks.signUp.mockResolvedValue({
       data: { user: { id: "duplicate", identities: [] } },
       error: null,
@@ -231,21 +148,84 @@ describe("Stripe signup checkout route", () => {
 
     const response = await POST(makeRequest());
 
-    expect(response.status).toBe(409);
+    expect(response.status).toBe(200);
     await expect(response.json()).resolves.toEqual({
-      code: "account_state",
-      error:
-        "Unable to continue with these account details. Sign in or reset your password, then try again.",
+      nextPath: "/signup/success?activation=pending_verification",
+      status: "verification_required",
     });
     expect(routeMocks.prepareCheckoutRegistration).not.toHaveBeenCalled();
+    expect(routeMocks.storeSignupConsents).not.toHaveBeenCalled();
+  });
+
+  it("validates referral codes before signup so account state cannot change the response", async () => {
+    const { SignupValidationError } = await import("@/lib/signup-flow");
+    routeMocks.validateSignupReferralCode.mockRejectedValue(
+      new SignupValidationError("That referral code is invalid or expired."),
+    );
+    const { POST } = await import("@/app/api/stripe/checkout/route");
+
+    const response = await POST(makeRequest({ referralCode: "OLEA-ABC123" }));
+
+    expect(response.status).toBe(400);
+    expect(routeMocks.signUp).not.toHaveBeenCalled();
+    await expect(response.json()).resolves.toEqual({
+      code: "signup_validation",
+      error: "That referral code is invalid or expired.",
+    });
+  });
+
+  it("rejects an invalid founding-member code before creating an account", async () => {
+    const { FoundingMemberCodeError } = await import(
+      "@/lib/stripe/checkout-errors"
+    );
+    routeMocks.validateFoundingMemberCode.mockImplementation(() => {
+      throw new FoundingMemberCodeError();
+    });
+    const { POST } = await import("@/app/api/stripe/checkout/route");
+
+    const response = await POST(
+      makeRequest({ foundingMemberCode: "NOT-A-FOUNDING-CODE" }),
+    );
+
+    expect(response.status).toBe(400);
+    expect(routeMocks.signUp).not.toHaveBeenCalled();
+    await expect(response.json()).resolves.toEqual({
+      code: "founding_code_invalid",
+      error: "That founding-member code is invalid or expired.",
+    });
+  });
+
+  it("validates an entered founding-member code before signup", async () => {
+    mockNewSignupUser();
+    routeMocks.validateFoundingMemberCode.mockReturnValue(
+      "olea_founding_15_year_1",
+    );
+    const { POST } = await import("@/app/api/stripe/checkout/route");
+
+    const response = await POST(
+      makeRequest({ foundingMemberCode: "FOUNDING-TEST-CODE" }),
+    );
+
+    expect(response.status).toBe(200);
+    expect(routeMocks.validateFoundingMemberCode).toHaveBeenCalledWith(
+      "FOUNDING-TEST-CODE",
+    );
+    expect(routeMocks.signUp).toHaveBeenCalledTimes(1);
+  });
+
+  it("removes a newly created auth user when activation persistence fails", async () => {
+    mockNewSignupUser();
+    routeMocks.storeSignupConsents.mockRejectedValue(new Error("write failed"));
+    const { POST } = await import("@/app/api/stripe/checkout/route");
+
+    const response = await POST(makeRequest());
+
+    expect(response.status).toBe(500);
+    expect(routeMocks.deleteUser).toHaveBeenCalledWith("user_new");
   });
 
   it("returns the existing validation response for a completed workspace", async () => {
-    existingUser();
-    routeMocks.signInWithPassword.mockResolvedValue({
-      data: { user: { id: "user_existing" } },
-      error: null,
-    });
+    mockNewSignupUser("user_existing");
     const { SignupValidationError } = await import("@/lib/signup-flow");
     routeMocks.prepareCheckoutRegistration.mockRejectedValue(
       new SignupValidationError(
@@ -261,7 +241,28 @@ describe("Stripe signup checkout route", () => {
       code: "signup_validation",
       error: "This account already has an active workspace.",
     });
-    expect(routeMocks.createCheckoutSession).not.toHaveBeenCalled();
+    expect(routeMocks.storeSignupConsents).not.toHaveBeenCalled();
+  });
+
+  it("never mutates or deletes a user that was not created by this request", async () => {
+    routeMocks.signUp.mockResolvedValue({
+      data: {
+        user: {
+          id: "user_existing",
+          identities: [{ id: "identity_123" }],
+          user_metadata: { signup_attempt_id: "another-request" },
+        },
+      },
+      error: null,
+    });
+    const { POST } = await import("@/app/api/stripe/checkout/route");
+
+    const response = await POST(makeRequest());
+
+    expect(response.status).toBe(200);
+    expect(routeMocks.prepareCheckoutRegistration).not.toHaveBeenCalled();
+    expect(routeMocks.storeSignupConsents).not.toHaveBeenCalled();
+    expect(routeMocks.deleteUser).not.toHaveBeenCalled();
   });
 
   it.each([
@@ -273,20 +274,6 @@ describe("Stripe signup checkout route", () => {
         }),
     },
     {
-      stage: "initialize_auth_admin",
-      fail: () =>
-        routeMocks.createAdminClient.mockImplementation(() => {
-          throw new Error("Admin client provider internals");
-        }),
-    },
-    {
-      stage: "lookup_signup_user",
-      fail: () =>
-        routeMocks.listUsers.mockRejectedValue(
-          new Error("Auth lookup provider internals"),
-        ),
-    },
-    {
       stage: "create_signup_user",
       fail: () =>
         routeMocks.signUp.mockRejectedValue(
@@ -296,13 +283,9 @@ describe("Stripe signup checkout route", () => {
     {
       stage: "initialize_registration_admin",
       fail: () =>
-        routeMocks.createAdminClient
-          .mockReturnValueOnce({
-            auth: { admin: { listUsers: routeMocks.listUsers } },
-          })
-          .mockImplementationOnce(() => {
-            throw new Error("Registration admin provider internals");
-          }),
+        routeMocks.createAdminClient.mockImplementationOnce(() => {
+          throw new Error("Registration admin provider internals");
+        }),
     },
     {
       stage: "prepare_registration",
@@ -320,40 +303,10 @@ describe("Stripe signup checkout route", () => {
           new Error("Consent provider internals"),
         ),
     },
-    {
-      stage: "resolve_price",
-      fail: () =>
-        routeMocks.getStripePriceId.mockImplementation(() => {
-          throw new Error("Stripe price provider internals");
-        }),
-    },
-    {
-      stage: "create_checkout_session",
-      fail: () =>
-        routeMocks.createCheckoutSession.mockRejectedValue(
-          Object.assign(new Error("Stripe provider internals"), {
-            code: "resource_missing",
-            type: "StripeInvalidRequestError",
-          }),
-        ),
-    },
-    {
-      stage: "attach_checkout_session",
-      fail: () =>
-        routeMocks.attachCheckoutSession.mockRejectedValue(
-          new Error("Session attachment provider internals"),
-        ),
-    },
   ])(
     "logs a sanitized $stage failure and masks it from the client",
     async ({ stage, fail }) => {
-      noExistingUser();
-      routeMocks.signUp.mockResolvedValue({
-        data: {
-          user: { id: "user_new", identities: [{ id: "identity_123" }] },
-        },
-        error: null,
-      });
+      mockNewSignupUser();
       fail();
       const consoleError = vi
         .spyOn(console, "error")

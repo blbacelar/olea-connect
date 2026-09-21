@@ -252,6 +252,7 @@ export function PaymentOrderSummary({
     registration.billingCycle === "annual"
       ? plan.annualPrice
       : plan.quarterlyPrice;
+  const foundingCodeEntered = Boolean(registration.foundingMemberCode);
   const billingPeriod =
     registration.billingCycle === "annual"
       ? publicCopy.pricing.perYear
@@ -272,8 +273,10 @@ export function PaymentOrderSummary({
           /{billingPeriod}
         </span>
       </p>
-      <p className="mt-1 text-xs font-semibold text-olea-green">
-        {copy.foundingEligibility}
+      <p className="mt-1 text-xs font-semibold leading-5 text-olea-green">
+        {foundingCodeEntered
+          ? copy.foundingCodeApplied
+          : copy.foundingEligibility}
       </p>
       <div className="my-5 border-t" />
       <p className="font-semibold text-olea-dark">{copy.membershipStarts}</p>

@@ -76,13 +76,10 @@ export function DynamicTemplateEditor({
     renderSectionsAsTabs &&
     Boolean(data.session.schemaSnapshot.presentation?.calendar?.enabled);
   const replaceSessionUrl = useCallback((url: string) => {
-    if (calendarEnabled && typeof window !== "undefined") {
+    if (typeof window !== "undefined") {
       window.history.replaceState(window.history.state, "", url);
-      return;
     }
-
-    router.replace(url, { scroll: false });
-  }, [calendarEnabled, router]);
+  }, []);
   const {
     session,
     updateTitle,

@@ -44,4 +44,36 @@ test.describe("@signup @critical approved signup flow", () => {
 
     await expect(signup.continueToPayment).toBeDisabled();
   });
+
+  test("normalizes a founding-member code and defers discount confirmation to checkout", async ({
+    page,
+  }) => {
+    const signup = new SignupFlowPage(page);
+
+    await signup.openAccount();
+    await signup.fillRequiredAccountDetails();
+    const code = await signup.enterFoundingMemberCode("founding-test-code");
+
+    await expect(code).toHaveValue("FOUNDING-TEST-CODE");
+    await signup.openPayment();
+    await expect(page.getByText("$3,200 CAD", { exact: false })).toBeVisible();
+    await expect(
+      page.getByText(/We will validate it securely and apply 15% off Year 1/),
+    ).toBeVisible();
+  });
+
+  test("blocks progression when the founding-member code is not valid", async ({
+    page,
+  }) => {
+    const signup = new SignupFlowPage(page);
+
+    await signup.openAccount();
+    await signup.fillRequiredAccountDetails();
+    await signup.enterFoundingMemberCode("NOT A CODE!");
+
+    await expect(
+      page.getByText("Use 4-32 letters, numbers, or hyphens."),
+    ).toBeVisible();
+    await expect(signup.continueToPayment).toBeDisabled();
+  });
 });

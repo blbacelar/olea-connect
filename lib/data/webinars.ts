@@ -31,9 +31,7 @@ type EventRow = {
   capacity: number | null;
   meeting_provider: string | null;
   provider_event_id: string | null;
-  join_url: string | null;
-  recording_storage_path: string | null;
-  recording_url: string | null;
+  has_recording: boolean;
 };
 
 const eventTypes = [
@@ -110,9 +108,17 @@ function mapWebinars({
       (rule) => rule.plan_id === organizationTier,
     );
     const allowedPlanIds = accessRules.map((rule) => rule.plan_id);
-    const recordingAvailable = Boolean(
-      event.recording_storage_path || event.recording_url,
+    const registrationStatus = registrationStatusByEvent.get(event.id) ?? null;
+    const registered = registrationsSet.has(event.id);
+    const joinEntitled = Boolean(
+      currentPlanAccess &&
+        (currentPlanAccess.included ||
+          currentPlanAccess.complimentary_ticket_limit !== null),
     );
+    const joinAvailable =
+      joinEntitled &&
+      (registrationStatus === "registered" || registrationStatus === "attended") &&
+      ["scheduled", "live", "rescheduled"].includes(event.status);
     return {
       id: event.id,
       slug: event.slug,
@@ -125,13 +131,13 @@ function mapWebinars({
       endsAt: event.ends_at,
       timezone: event.timezone,
       capacity: event.capacity,
-      joinUrl: event.join_url,
+      joinUrl: joinAvailable ? `/api/v1/events/${event.id}/join` : null,
       meetingProvider: event.meeting_provider,
       providerEventId: event.provider_event_id,
-      recordingAvailable,
+      recordingAvailable: event.status === "completed" && event.has_recording,
       available: Boolean(currentPlanAccess),
-      registered: registrationsSet.has(event.id),
-      registrationStatus: registrationStatusByEvent.get(event.id) ?? null,
+      registered,
+      registrationStatus,
       included: currentPlanAccess?.included ?? false,
       complimentaryTicketLimit:
         currentPlanAccess?.complimentary_ticket_limit ?? null,
@@ -171,7 +177,7 @@ export async function getWebinarCatalog({
     supabase
       .from("events")
       .select(
-        "id, type, slug, title, summary, description, status, starts_at, ends_at, timezone, capacity, meeting_provider, provider_event_id, join_url, recording_storage_path, recording_url",
+        "id, type, slug, title, summary, description, status, starts_at, ends_at, timezone, capacity, meeting_provider, provider_event_id, has_recording",
       )
       .in("type", [...eventTypes])
       .order("starts_at", { ascending: false }),
@@ -247,7 +253,7 @@ export async function getWebinarBySlug(slug: string): Promise<Webinar | null> {
     supabase
       .from("events")
       .select(
-        "id, type, slug, title, summary, description, status, starts_at, ends_at, timezone, capacity, meeting_provider, provider_event_id, join_url, recording_storage_path, recording_url",
+        "id, type, slug, title, summary, description, status, starts_at, ends_at, timezone, capacity, meeting_provider, provider_event_id, has_recording",
       )
       .eq("slug", slug)
       .in("type", [...eventTypes])

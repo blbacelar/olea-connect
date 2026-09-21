@@ -9,6 +9,7 @@ export type CheckoutErrorCode =
   | "account_state"
   | "checkout_rate_limited"
   | "checkout_unavailable"
+  | "founding_code_invalid"
   | "signup_validation";
 
 type CheckoutErrorResponse = {
@@ -31,9 +32,20 @@ export class CheckoutRateLimitError extends Error {
   }
 }
 
+export class FoundingMemberCodeError extends Error {
+  constructor() {
+    super("That founding-member code is invalid or expired.");
+    this.name = "FoundingMemberCodeError";
+  }
+}
+
 export function getCheckoutErrorResponse(
   error: unknown,
 ): CheckoutErrorResponse | null {
+  if (error instanceof FoundingMemberCodeError) {
+    return { code: "founding_code_invalid", error: error.message, status: 400 };
+  }
+
   if (error instanceof SignupValidationError) {
     return { code: "signup_validation", error: error.message, status: 400 };
   }

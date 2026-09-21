@@ -64,6 +64,10 @@ export default function LoginPage() {
         await signIn(email, password, { rememberFor30Days });
         try {
           const { response, result } = await retryMembershipActivation();
+          if (response.ok && result.checkoutUrl) {
+            window.location.assign(result.checkoutUrl);
+            return;
+          }
           if (response.ok && result.status === "completed") {
             router.push(getSafePath(result.nextPath));
             router.refresh();

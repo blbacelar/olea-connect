@@ -28,6 +28,7 @@ const validPayload = {
   phone: "+1 (604) 555-0123",
   acquisitionSource: "referral",
   referralCode: "olea-ab12cd",
+  foundingMemberCode: " founding-test-code ",
   tier: "roots",
   billingCycle: "annual",
   consents: {
@@ -45,6 +46,7 @@ describe("signup checkout contract", () => {
       fullName: "Community Owner",
       organizationName: "Community Arts Society",
       referralCode: "OLEA-AB12CD",
+      foundingMemberCode: "FOUNDING-TEST-CODE",
       billingCycle: "annual",
     });
   });
@@ -54,6 +56,7 @@ describe("signup checkout contract", () => {
     ["missing policy consent", { ...validPayload, consents: { ...validPayload.consents, privacy: false } }],
     ["invalid phone", { ...validPayload, phone: "call me" }],
     ["malformed referral", { ...validPayload, referralCode: "FREE-MONEY" }],
+    ["malformed founding code", { ...validPayload, foundingMemberCode: "bad code!" }],
     ["invalid organization type", { ...validPayload, organizationKind: "company" }],
   ])("rejects %s", (_label, payload) => {
     expect(() => parseSignupCheckoutInput(payload)).toThrow(SignupValidationError);

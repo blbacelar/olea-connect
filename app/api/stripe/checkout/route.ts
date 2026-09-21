@@ -3,9 +3,10 @@ import { randomUUID } from "node:crypto";
 import { NextResponse } from "next/server";
 
 import {
-  attachCheckoutSession,
   prepareCheckoutRegistration,
   storeSignupConsents,
+  validateFoundingMemberCode,
+  validateSignupReferralCode,
 } from "@/lib/stripe/registration";
 import {
   parseSignupCheckoutInput,
@@ -18,30 +19,29 @@ import {
   getCheckoutErrorResponse,
 } from "@/lib/stripe/checkout-errors";
 import { logError } from "@/lib/observability/logger";
-import { getStripe, getStripePriceId } from "@/lib/stripe/server";
+import { getSiteUrl } from "@/lib/site-metadata";
 import {
   createAdminClient,
   createPublicServerClient,
 } from "@/utils/supabase/admin";
-import { buildCheckoutMetadata } from "./checkout-route-metadata";
 
 export const runtime = "nodejs";
 
 type CheckoutStage =
   | "parse_request"
   | "initialize_signup_client"
-  | "initialize_auth_admin"
-  | "lookup_signup_user"
-  | "sign_in_signup_user"
+  | "validate_referral"
+  | "validate_founding_code"
   | "create_signup_user"
   | "initialize_registration_admin"
   | "prepare_registration"
-  | "store_consents"
-  | "initialize_stripe"
-  | "resolve_price"
-  | "create_checkout_session"
-  | "validate_checkout_session"
-  | "attach_checkout_session";
+  | "store_consents";
+
+const VERIFICATION_PENDING_RESPONSE = {
+  nextPath: "/signup/success?activation=pending_verification",
+  status: "verification_required",
+} as const;
+const MIN_CHECKOUT_RESPONSE_MS = 900;
 
 function getSafeErrorDetails(error: unknown) {
   const errorWithMetadata =
@@ -60,33 +60,6 @@ function getSafeErrorDetails(error: unknown) {
   };
 }
 
-async function findUserIdByEmail(
-  email: string,
-  setStage: (stage: CheckoutStage) => void,
-) {
-  setStage("initialize_auth_admin");
-  const supabase = createAdminClient();
-  const normalizedEmail = email.trim().toLowerCase();
-
-  setStage("lookup_signup_user");
-  for (let page = 1; page <= 10; page += 1) {
-    const { data, error } = await supabase.auth.admin.listUsers({
-      page,
-      perPage: 1000,
-    });
-
-    if (error) throw error;
-
-    const user = data.users.find(
-      (candidate) => candidate.email?.toLowerCase() === normalizedEmail,
-    );
-    if (user) return user.id;
-    if (data.users.length < 1000) break;
-  }
-
-  return null;
-}
-
 async function resolveSignupUser(
   body: SignupCheckoutInput,
   origin: string,
@@ -95,46 +68,8 @@ async function resolveSignupUser(
   setStage("initialize_signup_client");
   const signupClient = createPublicServerClient();
   const email = body.email.trim().toLowerCase();
-  const existingUserId = await findUserIdByEmail(email, setStage);
-
-  if (existingUserId) {
-    return signInExistingSignupUser({
-      email,
-      existingUserId,
-      password: body.password,
-      setStage,
-      signupClient,
-    });
-  }
 
   return createSignupUser({ body, email, origin, setStage, signupClient });
-}
-
-async function signInExistingSignupUser({
-  email,
-  existingUserId,
-  password,
-  setStage,
-  signupClient,
-}: {
-  email: string;
-  existingUserId: string;
-  password: string;
-  setStage: (stage: CheckoutStage) => void;
-  signupClient: ReturnType<typeof createPublicServerClient>;
-}) {
-  setStage("sign_in_signup_user");
-  const { data: signIn, error: signInError } =
-    await signupClient.auth.signInWithPassword({ email, password });
-
-  if (signIn.user || signInError?.code === "email_not_confirmed") {
-    return existingUserId;
-  }
-  if (signInError?.code === "invalid_credentials" || !signInError) {
-    throw new CheckoutAccountStateError();
-  }
-
-  throw signInError;
 }
 
 async function createSignupUser({
@@ -151,12 +86,14 @@ async function createSignupUser({
   signupClient: ReturnType<typeof createPublicServerClient>;
 }) {
   setStage("create_signup_user");
+  const signupAttemptId = randomUUID();
   const { data: signup, error: signupError } = await signupClient.auth.signUp({
     email,
     password: body.password,
     options: {
       emailRedirectTo: `${origin}/auth/callback`,
       data: {
+        signup_attempt_id: signupAttemptId,
         full_name: body.fullName.trim(),
         organization_name: body.organizationName.trim(),
         organization_kind: body.organizationKind,
@@ -165,6 +102,7 @@ async function createSignupUser({
         contact_phone: body.phone || null,
         acquisition_source: body.acquisitionSource || null,
         referral_code: body.referralCode || null,
+        founding_member_code_supplied: Boolean(body.foundingMemberCode),
         membership_tier: body.tier,
         billing_cycle: body.billingCycle,
         billing_province: body.province,
@@ -176,15 +114,28 @@ async function createSignupUser({
     throw new CheckoutRateLimitError(CHECKOUT_EMAIL_RATE_LIMIT_MESSAGE);
   }
   if (signupError) throw signupError;
-  if (!signup.user || signup.user.identities?.length === 0) {
+  if (!signup.user) {
     throw new CheckoutAccountStateError();
   }
 
-  return signup.user.id;
+  return {
+    createdByRequest:
+      (signup.user.identities?.length ?? 0) > 0 &&
+      signup.user.user_metadata?.signup_attempt_id === signupAttemptId,
+    userId: signup.user.id,
+  };
+}
+
+async function equalizeSuccessfulResponseTiming(startedAt: number) {
+  const remaining = MIN_CHECKOUT_RESPONSE_MS - (Date.now() - startedAt);
+  if (remaining > 0) {
+    await new Promise((resolve) => setTimeout(resolve, remaining));
+  }
 }
 
 export async function POST(request: Request) {
   const correlationId = randomUUID();
+  const startedAt = Date.now();
   let stage: CheckoutStage = "parse_request";
   let checkoutContext:
     | Pick<SignupCheckoutInput, "tier" | "billingCycle">
@@ -197,15 +148,15 @@ export async function POST(request: Request) {
       billingCycle: body.billingCycle,
     };
 
-    const sessionUrl = await createSignupCheckoutSession({
+    await createSignupActivationRequest({
       body,
-      request,
       setStage: (nextStage) => {
         stage = nextStage;
       },
     });
 
-    return NextResponse.json({ url: sessionUrl });
+    await equalizeSuccessfulResponseTiming(startedAt);
+    return NextResponse.json(VERIFICATION_PENDING_RESPONSE);
   } catch (error) {
     const safeResponse = getCheckoutErrorResponse(error);
     if (safeResponse) {
@@ -233,52 +184,67 @@ export async function POST(request: Request) {
   }
 }
 
-async function createSignupCheckoutSession({
+async function createSignupActivationRequest({
   body,
-  request,
   setStage,
 }: {
   body: SignupCheckoutInput;
-  request: Request;
   setStage: (stage: CheckoutStage) => void;
 }) {
-  const origin = new URL(request.url).origin;
-  const userId = await resolveSignupUser(body, origin, setStage);
-  const { prepared, supabase } = await prepareSignupRegistration({
-    body,
-    setStage,
-    userId,
-  });
-  const session = await createStripeCheckoutSession({
-    body,
-    origin,
-    prepared,
-    setStage,
-    userId,
-  });
+  const origin = getSiteUrl();
+  setStage("initialize_registration_admin");
+  const supabase = createAdminClient();
+  if (body.foundingMemberCode) {
+    setStage("validate_founding_code");
+    validateFoundingMemberCode(body.foundingMemberCode);
+  }
+  if (body.referralCode) {
+    setStage("validate_referral");
+    await validateSignupReferralCode(supabase, body.email, body.referralCode);
+  }
+  const signupUser = await resolveSignupUser(body, origin, setStage);
 
-  setStage("validate_checkout_session");
-  if (!session.url) {
-    throw new Error("Secure checkout did not return a checkout URL.");
+  if (!signupUser.createdByRequest) {
+    return;
   }
 
-  setStage("attach_checkout_session");
-  await attachCheckoutSession(supabase, prepared.requestId, session.id);
-
-  return session.url;
+  try {
+    await prepareSignupRegistration({
+      body,
+      setStage,
+      supabase,
+      userId: signupUser.userId,
+    });
+  } catch (error) {
+    try {
+      const { error: rollbackError } = await supabase.auth.admin.deleteUser(
+        signupUser.userId,
+      );
+      if (rollbackError) {
+        logError("Unable to roll back incomplete signup user", rollbackError, {
+          userId: signupUser.userId,
+        });
+      }
+    } catch (rollbackError) {
+      logError("Unable to roll back incomplete signup user", rollbackError, {
+        userId: signupUser.userId,
+      });
+    }
+    throw error;
+  }
 }
 
 async function prepareSignupRegistration({
   body,
   setStage,
+  supabase,
   userId,
 }: {
   body: SignupCheckoutInput;
   setStage: (stage: CheckoutStage) => void;
+  supabase: ReturnType<typeof createAdminClient>;
   userId: string;
 }) {
-  setStage("initialize_registration_admin");
-  const supabase = createAdminClient();
   setStage("prepare_registration");
   const prepared = await prepareCheckoutRegistration(supabase, {
     ...body,
@@ -291,43 +257,4 @@ async function prepareSignupRegistration({
     { ...body, userId, referralCode: prepared.referralCode ?? "" },
     prepared.requestId,
   );
-
-  return { prepared, supabase };
-}
-
-async function createStripeCheckoutSession({
-  body,
-  origin,
-  prepared,
-  setStage,
-  userId,
-}: {
-  body: SignupCheckoutInput;
-  origin: string;
-  prepared: Awaited<ReturnType<typeof prepareCheckoutRegistration>>;
-  setStage: (stage: CheckoutStage) => void;
-  userId: string;
-}) {
-  setStage("initialize_stripe");
-  const stripe = getStripe();
-  setStage("resolve_price");
-  const priceId = getStripePriceId(body.tier, body.billingCycle);
-  const metadata = buildCheckoutMetadata({ body, prepared, userId });
-
-  setStage("create_checkout_session");
-  return stripe.checkout.sessions.create({
-    mode: "subscription",
-    customer_email: body.email.trim().toLowerCase(),
-    client_reference_id: userId,
-    line_items: [{ price: priceId, quantity: 1 }],
-    billing_address_collection: "required",
-    allow_promotion_codes: !prepared.foundingDiscountIdentifier,
-    ...(prepared.foundingDiscountIdentifier
-      ? { discounts: [{ coupon: prepared.foundingDiscountIdentifier }] }
-      : {}),
-    metadata,
-    subscription_data: { metadata },
-    success_url: `${origin}/signup/success?session_id={CHECKOUT_SESSION_ID}`,
-    cancel_url: `${origin}/signup/payment?payment=canceled`,
-  });
 }

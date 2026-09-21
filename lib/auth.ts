@@ -113,6 +113,7 @@ export async function startStripeCheckout(registration: RegistrationState) {
       phone: registration.phone,
       acquisitionSource: registration.acquisitionSource,
       referralCode: registration.referralCode,
+      foundingMemberCode: registration.foundingMemberCode,
       consents: registration.consents,
       tier: registration.tier,
       billingCycle: registration.billingCycle,
@@ -124,9 +125,19 @@ export async function startStripeCheckout(registration: RegistrationState) {
         code?: string;
         correlationId?: string;
         error?: string;
+        nextPath?: string;
+        status?: string;
         url?: string;
       })
     : {};
+
+  if (
+    response.ok &&
+    result.status === "verification_required" &&
+    result.nextPath
+  ) {
+    return result.nextPath;
+  }
 
   if (!response.ok || !result.url) {
     const reference = result.correlationId

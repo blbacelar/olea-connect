@@ -6,6 +6,9 @@ import { LEGAL_DOCUMENTS } from "@/lib/legal-documents";
 import { normalizeReferralCode } from "@/lib/referral-capture";
 import { SignupValidationError } from "@/lib/signup-flow";
 import type { MembershipTier, RegistrationState } from "@/lib/types";
+import { validateFoundingMemberCode } from "@/lib/stripe/founding-member";
+
+export { validateFoundingMemberCode } from "@/lib/stripe/founding-member";
 
 type BillingCycle = RegistrationState["billingCycle"];
 
@@ -40,6 +43,7 @@ export interface CheckoutRegistration {
   phone: string;
   acquisitionSource: RegistrationState["acquisitionSource"];
   referralCode: string;
+  foundingMemberCode: string;
   consents: RegistrationState["consents"];
 }
 
@@ -55,6 +59,7 @@ type ExistingProvisioningRequest = {
   founding_member_eligible: boolean | null;
   founding_discount_identifier: string | null;
   founding_member_year: number | null;
+  founding_offer_requested: boolean | null;
 };
 
 async function validateOrganizationReferral(
@@ -78,7 +83,7 @@ async function validateOrganizationReferral(
 
 async function validatePartnerReferral(
   supabase: SupabaseClient,
-  registration: CheckoutRegistration,
+  email: string,
   referralCode: string,
 ) {
   const { data: partnerReferral, error: partnerReferralError } = await supabase
@@ -96,14 +101,14 @@ async function validatePartnerReferral(
     throw new SignupValidationError("That referral code is invalid or expired.");
   }
 
-  if (referrer.email?.toLowerCase() === registration.email.toLowerCase()) {
+  if (referrer.email?.toLowerCase() === email.trim().toLowerCase()) {
     throw new SignupValidationError("You cannot use your own referral link.");
   }
 }
 
-async function validateCheckoutReferralCode(
+export async function validateSignupReferralCode(
   supabase: SupabaseClient,
-  registration: CheckoutRegistration,
+  email: string,
   referralCode: string,
 ) {
   const { data: organizationReferral, error: organizationReferralError } =
@@ -116,15 +121,26 @@ async function validateCheckoutReferralCode(
   if (organizationReferralError) throw organizationReferralError;
 
   if (organizationReferral) {
-    await validateOrganizationReferral(
-      supabase,
-      registration,
-      organizationReferral.organization_id,
-    );
-    return;
+    return organizationReferral.organization_id as string;
   }
 
-  await validatePartnerReferral(supabase, registration, referralCode);
+  await validatePartnerReferral(supabase, email, referralCode);
+  return null;
+}
+
+async function validateCheckoutReferralCode(
+  supabase: SupabaseClient,
+  registration: CheckoutRegistration,
+  referralCode: string,
+) {
+  const organizationId = await validateSignupReferralCode(
+    supabase,
+    registration.email,
+    referralCode,
+  );
+  if (organizationId) {
+    await validateOrganizationReferral(supabase, registration, organizationId);
+  }
 }
 
 async function assertCheckoutAuthUser(
@@ -154,7 +170,7 @@ async function getExistingProvisioningRequest(
   const { data: existing, error: lookupError } = await supabase
     .from("workspace_provisioning_requests")
     .select(
-      "id, status, referral_code, founding_member_eligible, founding_discount_identifier, founding_member_year",
+      "id, status, referral_code, founding_member_eligible, founding_discount_identifier, founding_member_year, founding_offer_requested",
     )
     .eq("user_id", userId)
     .maybeSingle();
@@ -212,6 +228,7 @@ function buildProvisioningRequestValues({
     acquisition_source: registration.acquisitionSource || null,
     referral_code: referralCode || null,
     referral_status: referralCode ? "pending" : "none",
+    founding_offer_requested: Boolean(registration.foundingMemberCode),
     ...getFoundingReservationSnapshot(existing),
     plan_id: registration.tier,
     billing_interval: getBillingInterval(registration.billingCycle),
@@ -256,7 +273,7 @@ export async function prepareCheckoutRegistration(
     await validateCheckoutReferralCode(supabase, registration, referralCode);
   }
 
-  const foundingCouponId = process.env.STRIPE_FOUNDING_COUPON_ID ?? "";
+  validateFoundingMemberCode(registration.foundingMemberCode);
   const requestId = await upsertProvisioningRequest({
     existing,
     supabase,
@@ -268,15 +285,16 @@ export async function prepareCheckoutRegistration(
     }),
   });
 
-  return reserveFoundingMember(
-    supabase,
+  return {
     requestId,
-    foundingCouponId,
-    referralCode || null,
-  );
+    referralCode: referralCode || null,
+    foundingMemberEligible: existing?.founding_member_eligible === true,
+    foundingDiscountIdentifier:
+      existing?.founding_discount_identifier ?? null,
+  };
 }
 
-async function reserveFoundingMember(
+export async function reserveFoundingMember(
   supabase: SupabaseClient,
   requestId: string,
   couponId: string,
@@ -339,6 +357,7 @@ export async function storeSignupConsents(
         billing_cycle: registration.billingCycle,
         organization_kind: registration.organizationKind,
         referral_present: Boolean(registration.referralCode),
+        founding_member_code_present: Boolean(registration.foundingMemberCode),
       },
     })),
     { onConflict: "signup_request_id,consent_type" },

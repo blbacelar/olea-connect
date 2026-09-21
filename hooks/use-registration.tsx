@@ -11,7 +11,8 @@ import {
 
 import type { RegistrationState } from "@/lib/types";
 
-const STORAGE_KEY = "olea-registration-demo";
+const STORAGE_KEY = "olea-registration";
+const LEGACY_STORAGE_KEY = "olea-registration-demo";
 
 const initialState: RegistrationState = {
   tier: "roots",
@@ -27,6 +28,7 @@ const initialState: RegistrationState = {
   phone: "",
   acquisitionSource: "",
   referralCode: "",
+  foundingMemberCode: "",
   consents: {
     terms: false,
     privacy: false,
@@ -82,12 +84,16 @@ export function RegistrationProvider({ children }: { children: ReactNode }) {
   const [hydrated, setHydrated] = useState(false);
 
   useEffect(() => {
-    const stored = window.localStorage.getItem(STORAGE_KEY);
+    const stored =
+      window.localStorage.getItem(STORAGE_KEY) ??
+      window.localStorage.getItem(LEGACY_STORAGE_KEY);
     if (stored) {
       try {
         setRegistration(normalizeStoredRegistration(JSON.parse(stored)));
+        window.localStorage.removeItem(LEGACY_STORAGE_KEY);
       } catch {
         window.localStorage.removeItem(STORAGE_KEY);
+        window.localStorage.removeItem(LEGACY_STORAGE_KEY);
         setRegistration(initialState);
       }
     }
@@ -106,7 +112,11 @@ export function RegistrationProvider({ children }: { children: ReactNode }) {
     setRegistration((current) => ({ ...current, ...updates }));
   }, []);
 
-  const resetRegistration = useCallback(() => setRegistration(initialState), []);
+  const resetRegistration = useCallback(() => {
+    window.localStorage.removeItem(STORAGE_KEY);
+    window.localStorage.removeItem(LEGACY_STORAGE_KEY);
+    setRegistration(initialState);
+  }, []);
 
   return (
     <RegistrationContext.Provider

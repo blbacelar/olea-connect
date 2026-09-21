@@ -42,6 +42,13 @@ export class SignupFlowPage {
     await this.page.getByLabel("Password *").fill("StrongPass123!");
   }
 
+  async enterFoundingMemberCode(code: string) {
+    const field = this.page.getByLabel("Founding-member code");
+    await field.fill(code);
+    await field.blur();
+    return field;
+  }
+
   async select(label: string, option: string) {
     await this.page.getByRole("combobox", { name: label }).click();
     await this.page.getByRole("option", { name: option, exact: true }).click();
@@ -61,7 +68,7 @@ export class SignupFlowPage {
 
   get secureCheckoutButton() {
     return this.page.getByRole("button", {
-      name: "Continue to secure checkout",
+      name: "Create account and send confirmation",
     });
   }
 

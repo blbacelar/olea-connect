@@ -31,6 +31,7 @@ function getLocalizedCheckoutError(error: unknown, copy: PaymentCopy) {
   if (code === "account_state") return copy.errors.accountState;
   if (code === "checkout_rate_limited") return copy.errors.checkoutRateLimited;
   if (code === "checkout_unavailable") return copy.errors.checkoutUnavailable;
+  if (code === "founding_code_invalid") return copy.errors.foundingCodeInvalid;
   if (code === "signup_validation") return copy.errors.signupValidation;
 
   return copy.fallbackError;

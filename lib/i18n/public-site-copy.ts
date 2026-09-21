@@ -205,8 +205,8 @@ export const publicSiteCopy: Record<Locale, PublicSiteCopy> = {
       quoteLabel: "The Olea Connects™ promise",
       preview: {
         nav: ["Dashboard", "Templates", "Webinars", "Olea Gives", "Community"],
-        organization: "Maple Grove Community House",
-        greeting: "Good morning, Sarah",
+        organization: "Your organization",
+        greeting: "Good morning",
         title: "Your nonprofit home base",
         governanceTemplates: "Governance templates",
         learningResources: "Learning resources",
@@ -323,10 +323,10 @@ export const publicSiteCopy: Record<Locale, PublicSiteCopy> = {
       eyebrow: "Membership",
       title: "Choose the support that fits today.",
       description:
-        "The first 50 paid organizations receive 15% off Year 1 only. Annual and quarterly memberships are paid upfront.",
+        "Founding members with a valid code receive 15% off Year 1, limited to the first 50 paid organizations. Annual and quarterly memberships are paid upfront.",
       foundingLabel: "Founding member offer:",
       foundingNotice:
-        "The first 50 paid organizations receive 15% off Year 1 only. Prices below show regular rates and the potential Year 1 founding rate. Eligibility is confirmed before payment.",
+        "Enter your founding-member code during signup to receive 15% off Year 1 while the first 50 spots remain available. Prices below show regular rates and the potential Year 1 founding rate.",
       quarterly: "Quarterly",
       annual: "Annual",
       annualBadge: "Best for renewal planning",
@@ -334,7 +334,7 @@ export const publicSiteCopy: Record<Locale, PublicSiteCopy> = {
       perYear: "year",
       perQuarter: "quarter",
       foundingYearPrefix: "Founding Year 1:",
-      eligibility: "eligibility confirmed before payment",
+      eligibility: "valid code and availability confirmed before payment",
       choosePlan: "Choose",
       optionalSupportEyebrow: "Optional support",
       optionalSupportTitle: "Add capacity when your team needs it.",
@@ -485,12 +485,12 @@ export const publicSiteCopy: Record<Locale, PublicSiteCopy> = {
         {
           question: "Is there a free trial?",
           answer:
-            "No. Olea Connects™ does not offer a free trial. The founding-member offer gives the first 50 organizations 15% off Year 1 instead.",
+            "No. Olea Connects™ does not offer a free trial. Founding members with a valid code can receive 15% off Year 1 while the first 50 spots remain available.",
         },
         {
           question: "What is the founding-member offer?",
           answer:
-            "The first 50 paid organizations receive 15% off their first year. After Year 1, the membership renews at the regular tier price.",
+            "Enter the founding-member code supplied by Olea during signup. The first 50 paid organizations with a valid code receive 15% off their first year. After Year 1, the membership renews at the regular tier price.",
         },
         {
           question: "How many seats are included?",
@@ -590,8 +590,8 @@ export const publicSiteCopy: Record<Locale, PublicSiteCopy> = {
           "Olea Gives",
           "Communauté",
         ],
-        organization: "Maison communautaire Maple Grove",
-        greeting: "Bonjour, Sarah",
+        organization: "Votre organisme",
+        greeting: "Bonjour",
         title: "Votre espace central pour l'organisme",
         governanceTemplates: "Modèles de gouvernance",
         learningResources: "Ressources d'apprentissage",
@@ -717,10 +717,10 @@ export const publicSiteCopy: Record<Locale, PublicSiteCopy> = {
       eyebrow: "Adhésion",
       title: "Choisissez le soutien qui convient aujourd'hui.",
       description:
-        "Les 50 premiers organismes payants reçoivent 15 % de rabais sur la première année seulement. Les adhésions annuelles et trimestrielles sont payées à l'avance.",
+        "Les membres fondateurs qui possèdent un code valide reçoivent 15 % de rabais sur la première année, jusqu'à concurrence des 50 premiers organismes payants. Les adhésions annuelles et trimestrielles sont payées à l'avance.",
       foundingLabel: "Offre membre fondateur :",
       foundingNotice:
-        "Les 50 premiers organismes payants reçoivent 15 % de rabais sur la première année seulement. Les tarifs ci-dessous indiquent les prix réguliers et le tarif potentiel de la première année. L'admissibilité est confirmée avant le paiement.",
+        "Entrez votre code de membre fondateur pendant l'inscription pour recevoir 15 % de rabais sur la première année, tant que l'une des 50 places est disponible. Les tarifs ci-dessous indiquent les prix réguliers et le tarif potentiel de la première année.",
       quarterly: "Trimestriel",
       annual: "Annuel",
       annualBadge: "Idéal pour planifier le renouvellement",
@@ -728,7 +728,7 @@ export const publicSiteCopy: Record<Locale, PublicSiteCopy> = {
       perYear: "an",
       perQuarter: "trimestre",
       foundingYearPrefix: "Année 1 fondatrice :",
-      eligibility: "admissibilité confirmée avant le paiement",
+      eligibility: "code valide et disponibilité confirmés avant le paiement",
       choosePlan: "Choisir",
       optionalSupportEyebrow: "Soutien optionnel",
       optionalSupportTitle:
@@ -881,12 +881,12 @@ export const publicSiteCopy: Record<Locale, PublicSiteCopy> = {
         {
           question: "Y a-t-il un essai gratuit?",
           answer:
-            "Non. Olea Connects™ n'offre pas d'essai gratuit. L'offre membre fondateur donne plutôt 15 % de rabais sur la première année aux 50 premiers organismes.",
+            "Non. Olea Connects™ n'offre pas d'essai gratuit. Les membres fondateurs qui possèdent un code valide peuvent recevoir 15 % de rabais sur la première année, tant que l'une des 50 places est disponible.",
         },
         {
           question: "Qu'est-ce que l'offre membre fondateur?",
           answer:
-            "Les 50 premiers organismes payants reçoivent 15 % de rabais sur leur première année. Après l'année 1, l'adhésion se renouvelle au prix régulier du forfait.",
+            "Entrez pendant l'inscription le code de membre fondateur fourni par Olea. Les 50 premiers organismes payants qui possèdent un code valide reçoivent 15 % de rabais sur leur première année. Après l'année 1, l'adhésion se renouvelle au prix régulier du forfait.",
         },
         {
           question: "Combien de sièges sont inclus?",

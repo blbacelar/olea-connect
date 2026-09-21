@@ -290,10 +290,15 @@ export async function attemptUserWorkspaceProvisioning(
 
   const result = await attemptWorkspaceProvisioning(supabase, data.id);
   if (result.status === "pending_payment" && data.checkout_session_id) {
-    return recoverCheckoutSessionProvisioning(
-      supabase,
+    const session = await getStripe().checkout.sessions.retrieve(
       data.checkout_session_id,
     );
+    if (session.status === "complete") {
+      return recoverCheckoutSessionProvisioning(
+        supabase,
+        data.checkout_session_id,
+      );
+    }
   }
 
   return result;

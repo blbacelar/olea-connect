@@ -23,6 +23,18 @@ function firstParam(value: string | string[] | undefined) {
   return Array.isArray(value) ? value[0] : value;
 }
 
+function getActivationStatus(value: string | undefined) {
+  if (
+    value === "failed" ||
+    value === "pending_payment" ||
+    value === "pending_verification"
+  ) {
+    return value;
+  }
+
+  return null;
+}
+
 async function finalizeCheckoutSession(
   sessionId: string | undefined,
   fallbackError: string,
@@ -57,11 +69,15 @@ export default async function SignupSuccessPage({
   );
   const activationStatus =
     finalizedActivation?.status ??
-    (searchParams?.activation === "failed" ? "failed" : null);
+    getActivationStatus(firstParam(searchParams?.activation));
   const activationFailed = activationStatus === "failed";
+  const activationPendingPayment = activationStatus === "pending_payment";
   const activationPendingVerification =
     activationStatus === "pending_verification";
-  const activationCompleted = activationStatus === "completed";
+  const activationCompleted = finalizedActivation?.status === "completed";
+  const signInHref = activationPendingPayment
+    ? "/login?next=/signup/success?activation=pending_payment"
+    : "/login?verify=email";
 
   return (
     <AuthCard
@@ -71,14 +87,18 @@ export default async function SignupSuccessPage({
           ? successCopy.titles.failed
           : activationCompleted
             ? successCopy.titles.completed
-            : successCopy.titles.received
+            : activationPendingPayment
+              ? successCopy.titles.pendingPayment
+              : successCopy.titles.received
       }
       description={
         activationFailed
           ? successCopy.descriptions.failed
           : activationCompleted
             ? successCopy.descriptions.completed
-            : successCopy.descriptions.received
+            : activationPendingPayment
+              ? successCopy.descriptions.pendingPayment
+              : successCopy.descriptions.received
       }
     >
       <div className="text-center">
@@ -92,7 +112,9 @@ export default async function SignupSuccessPage({
               ? successCopy.messages.completed
               : activationPendingVerification
                 ? successCopy.messages.pendingVerification
-                : successCopy.messages.pending}
+                : activationPendingPayment
+                  ? successCopy.messages.pendingPayment
+                  : successCopy.messages.pending}
         </p>
         {activationFailed ? (
           <ActivationRetryButton />
@@ -102,7 +124,7 @@ export default async function SignupSuccessPage({
               href={
                 activationCompleted
                   ? "/dashboard"
-                  : "/login?payment=success&verify=email"
+                  : signInHref
               }
             >
               {activationCompleted

@@ -1,6 +1,7 @@
 import { apiRoutes } from "@/lib/api-routes";
 
 export interface ProvisioningRetryResult {
+  checkoutUrl?: string;
   status?: string;
   error?: string;
   nextPath?: string;

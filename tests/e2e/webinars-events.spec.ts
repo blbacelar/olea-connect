@@ -294,6 +294,9 @@ testWithData.describe("@critical webinar and event access", () => {
     await webinars.expectEventVisible(event.title);
     await webinars.registerForEvent(event.title);
     await webinars.expectRegistered(event.title);
+    await expect(
+      webinars.eventCard(event.title).getByRole("link", { name: "Join Zoom" }),
+    ).toHaveAttribute("href", `/api/v1/events/${event.id}/join`);
 
     const registration = await testData.getEventRegistration(
       event.id,
@@ -309,6 +312,59 @@ testWithData.describe("@critical webinar and event access", () => {
     expect(
       await testData.getEventRegistrationCount(event.id, member.userId),
     ).toBe(1);
+  });
+
+  testWithData("does not reveal the meeting link to a waitlisted member", async ({
+    baseURL,
+    page,
+    testData,
+  }) => {
+    if (!baseURL) throw new Error("Playwright baseURL is required.");
+
+    const member = await testData.createOrganizationOwner({
+      activeSubscription: true,
+      planId: "roots",
+    });
+    const event = await testData.createEvent({
+      accessPlanIds: ["roots"],
+      title: "Waitlisted Governance Roundtable",
+    });
+    await testData.createEventRegistration(event, member, {
+      status: "waitlisted",
+    });
+    await signInPage(page, baseURL, member.email, member.password);
+    const webinars = new WebinarsPage(page);
+
+    await webinars.open();
+    await expect(
+      webinars.eventCard(event.title).getByRole("link", { name: "Join Zoom" }),
+    ).toHaveCount(0);
+    const response = await page.goto(`/api/v1/events/${event.id}/join`);
+    expect(response?.status()).toBe(403);
+  });
+
+  testWithData("blocks direct join access for an unpaid ticket registration", async ({
+    baseURL,
+    page,
+    testData,
+  }) => {
+    if (!baseURL) throw new Error("Playwright baseURL is required.");
+
+    const member = await testData.createOrganizationOwner({
+      activeSubscription: true,
+      planId: "roots",
+    });
+    const event = await testData.createEvent({
+      accessPlanIds: ["roots"],
+      included: false,
+      ticketPriceCents: 2500,
+      title: "Paid Direct Access Check",
+    });
+    await testData.createEventRegistration(event, member);
+    await signInPage(page, baseURL, member.email, member.password);
+
+    const response = await page.goto(`/api/v1/events/${event.id}/join`);
+    expect(response?.status()).toBe(403);
   });
 
   testWithData("allows registration for rescheduled Zoom events", async ({
@@ -537,6 +593,69 @@ testWithData.describe("@critical webinar and event access", () => {
     const response = await page.goto(`/api/v1/events/${event.id}/recording`);
 
     expect(response?.status()).toBe(403);
+  });
+
+  testWithData("blocks paid-only recordings without a payment entitlement", async ({
+    baseURL,
+    page,
+    testData,
+  }) => {
+    if (!baseURL) throw new Error("Playwright baseURL is required.");
+
+    const member = await testData.createOrganizationOwner({
+      activeSubscription: true,
+      planId: "roots",
+    });
+    const event = await testData.createEvent({
+      accessPlanIds: ["roots"],
+      included: false,
+      recordingUrl: "https://example.com/paid-recording",
+      status: "completed",
+      ticketPriceCents: 2500,
+      title: "Paid Recording Without Checkout",
+    });
+    await testData.createEventRegistration(event, member);
+    await signInPage(page, baseURL, member.email, member.password);
+
+    const response = await page.request.get(
+      `${baseURL}/api/v1/events/${event.id}/recording`,
+      { maxRedirects: 0 },
+    );
+
+    expect(response.status()).toBe(403);
+  });
+
+  testWithData("allows registered complimentary recording access", async ({
+    baseURL,
+    page,
+    testData,
+  }) => {
+    if (!baseURL) throw new Error("Playwright baseURL is required.");
+
+    const member = await testData.createOrganizationOwner({
+      activeSubscription: true,
+      planId: "roots",
+    });
+    const event = await testData.createEvent({
+      accessPlanIds: ["roots"],
+      complimentaryTicketLimit: 1,
+      included: false,
+      recordingUrl: "https://example.com/complimentary-recording",
+      status: "completed",
+      title: "Complimentary Registered Recording",
+    });
+    await testData.createEventRegistration(event, member);
+    await signInPage(page, baseURL, member.email, member.password);
+
+    const response = await page.request.get(
+      `${baseURL}/api/v1/events/${event.id}/recording`,
+      { maxRedirects: 0 },
+    );
+
+    expect(response.status()).toBe(307);
+    expect(response.headers().location).toBe(
+      "https://example.com/complimentary-recording",
+    );
   });
 
   testWithData("enqueues email events when registered webinars are rescheduled or canceled", async ({

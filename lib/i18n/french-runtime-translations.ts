@@ -1,4 +1,8 @@
 const exactTranslations = new Map<string, string>([
+  [
+    "Community spaces will appear here when they are available.",
+    "Les espaces communautaires apparaîtront ici lorsqu'ils seront disponibles.",
+  ],
   ["A chair must be a committee member.", "La présidence doit être membre du comité."],
   ["AGM / Annual Meeting", "AGA / réunion annuelle"],
   ["AGM milestone", "Jalon d'AGA"],
@@ -1199,7 +1203,6 @@ const exactTranslations = new Map<string, string>([
   ],
   ["Available to choose", "Disponible à la sélection"],
   ["BC Community Gaming Grant - Arts", "Subvention communautaire de la C.-B. - Arts"],
-  ["BoraPost Community Services", "Services communautaires BoraPost"],
   ["Billing cycle", "Cycle de facturation"],
   ["Billing history", "Historique de facturation"],
   ["Billing setup is incomplete", "La configuration de facturation est incomplète"],
@@ -1255,7 +1258,6 @@ const exactTranslations = new Map<string, string>([
   ["Grant Platform Workspace", "Espace de plateforme de subventions"],
   ["Grant platform workspace", "Espace de plateforme de subventions"],
   ["Grassroots Community Organizing", "Organisation communautaire de terrain"],
-  ["Hands-on support for BoraPost", "Soutien pratique pour BoraPost"],
   ["Included with your membership", "Inclus avec votre adhésion"],
   ["Introductions, questions, and member-to-member support.", "Présentations, questions et soutien entre membres."],
   ["Invite a team member", "Inviter un membre de l'équipe"],
@@ -1300,7 +1302,6 @@ const exactTranslations = new Map<string, string>([
   ["Print / Save PDF", "Imprimer / enregistrer le PDF"],
   ["Print / save PDF", "Imprimer / enregistrer le PDF"],
   ["Product updates, new resources, and platform announcements.", "Mises à jour du produit, nouvelles ressources et annonces de la plateforme."],
-  ["Q3 2026 Community Grant", "Subvention communautaire T3 2026"],
   [
     "Quarterly $500 capacity grants funded by Olea Connects sponsors.",
     "Subventions trimestrielles de renforcement des capacités de 500 $ financées par les commanditaires d'Olea Connects.",

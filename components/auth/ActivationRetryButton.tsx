@@ -33,6 +33,11 @@ export function ActivationRetryButton() {
           return;
         }
 
+        if (result.checkoutUrl) {
+          window.location.assign(result.checkoutUrl);
+          return;
+        }
+
         if (result.status === "completed") {
           router.push(getSafePath(result.nextPath));
           router.refresh();
