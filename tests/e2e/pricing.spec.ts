@@ -28,19 +28,21 @@ test.describe("public pricing package", () => {
     ).toBeVisible();
     await expect(page.getByText("Optional support")).toBeVisible();
     await expect(page.getByText("Impact Coaching")).toBeVisible();
-    await expect(page.getByText("$7,776 CAD")).toBeVisible();
+    await expect(page.getByText("$7,776 CAD")).toHaveCount(0);
     await expect(page.getByText("$162 CAD/hour")).toHaveCount(0);
     await expect(page.getByText("$100 CAD/hour")).toHaveCount(0);
-    await expect(
-      page.getByText(
-        "Package prices are shown as all-in rates for planning. Contact us to confirm availability.",
-      ),
-    ).toHaveCount(2);
+    await expect(page.getByRole("link", { name: "Contact us for a quote" }).first())
+      .toHaveAttribute("href", /mailto:hello@olivesocialimpact.com\?subject=/);
     await expect(
       page.getByRole("heading", { name: "Board Retreat Facilitation" }),
     ).toBeVisible();
-    await expect(page.getByText("Circle of generosity")).toBeVisible();
-    await expect(page.getByText("$250 Olea Gives grant")).toBeVisible();
+    await expect(page.locator("#plans").getByText("Circle of generosity"))
+      .toBeVisible();
+    await expect(page.getByText(/15% of its profits to nonprofits as unrestricted donations/).first())
+      .toBeVisible();
+    await expect(page.getByText("$250 Olea Gives grant")).toHaveCount(0);
+    await expect(page.getByRole("link", { name: "Explore the referral program" }))
+      .toHaveAttribute("href", "/referrals");
     await expect(page.getByText("No free trial")).toBeVisible();
     await expect(
       page.getByText(
@@ -73,13 +75,23 @@ test.describe("public pricing package", () => {
     await switchToFrench(page);
 
     await expect(page.getByText("Coaching d'impact")).toBeVisible();
-    await expect(page.getByText("1\u00A0944\u00A0$ CA")).toBeVisible();
+    await expect(page.getByText("1\u00A0944\u00A0$ CA")).toHaveCount(0);
     await expect(page.getByText("162 $ CA/heure")).toHaveCount(0);
     await expect(page.getByText("100 $ CA/heure")).toHaveCount(0);
-    await expect(
-      page.getByText(
-        "Les prix des forfaits sont indiqués comme tarifs tout compris aux fins de planification. Contactez-nous pour confirmer la disponibilité.",
-      ),
-    ).toHaveCount(2);
+    await expect(page.getByRole("link", { name: "Contactez-nous pour obtenir un devis" }).first())
+      .toHaveAttribute("href", /mailto:hello@olivesocialimpact.com\?subject=/);
+    await expect(page.getByText(/15 % de ses bénéfices à des organismes sans but lucratif/).first())
+      .toBeVisible();
+  });
+
+  test("shows the capped commission without legacy milestones in French", async ({ page }) => {
+    await page.goto("/referrals");
+    await switchToFrench(page);
+
+    await expect(page.getByText("10 %", { exact: true })).toBeVisible();
+    await expect(page.getByText(/jusqu'à 500/).first()).toBeVisible();
+    await expect(page.getByText(/démonstration à laquelle la personne participe/))
+      .toHaveCount(0);
+    await expect(page.getByText(/Lorsqu'elle reste/)).toHaveCount(0);
   });
 });

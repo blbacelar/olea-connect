@@ -4,7 +4,6 @@ import { revalidatePath } from "next/cache";
 
 import { requireReferralAdmin } from "@/lib/data/referrals";
 import {
-  centsFromDecimal,
   payoutDecisionSchema,
   referralMilestoneSchema,
   referralSettingsSchema,
@@ -23,7 +22,9 @@ import {
 type ActionResult = { ok: boolean; message: string };
 
 function formDataToObject(formData: FormData) {
-  return Object.fromEntries(formData.entries());
+  return Object.fromEntries(
+    [...formData.entries()].filter(([key]) => !key.startsWith("$ACTION_")),
+  );
 }
 
 export async function updateReferralProgramSettings(
@@ -41,9 +42,6 @@ export async function updateReferralProgramSettings(
     .from("referral_program_settings")
     .update({
       program_enabled: input.programEnabled,
-      demo_attended_payout_cents: centsFromDecimal(input.demoAttendedPayout),
-      retained_customer_payout_cents: centsFromDecimal(input.retainedCustomerPayout),
-      retention_days: input.retentionDays,
       contact_email: input.contactEmail,
       terms_url: input.termsUrl || null,
     })

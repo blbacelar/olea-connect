@@ -4,6 +4,7 @@ import type Stripe from "stripe";
 import type { SupabaseClient } from "@supabase/supabase-js";
 
 import { getStripe } from "@/lib/stripe/server";
+import { recordFirstPaymentReferralCommission } from "@/lib/referrals/first-payment-commission";
 import { recordStripeSubscription } from "@/lib/stripe/subscription-recording";
 import { syncStripeSubscription } from "@/lib/stripe/subscriptions";
 
@@ -163,17 +164,22 @@ async function recordCompletedReferral(
 
   const partnerReferralResult = partnerReferral as { status?: string } | null;
   if (partnerReferralResult?.status && partnerReferralResult.status !== "none") {
+    if (partnerReferralResult.status === "subscription_started") {
+      const { data: request, error: requestError } = await supabase
+        .from("workspace_provisioning_requests")
+        .select("provider_subscription_id")
+        .eq("id", requestId)
+        .single();
+      if (requestError) throw requestError;
+      if (request.provider_subscription_id) {
+        await recordFirstPaymentReferralCommission(
+          supabase,
+          request.provider_subscription_id,
+        );
+      }
+    }
     return;
   }
-
-  const { error: referralError } = await supabase.rpc(
-    "finalize_signup_referral",
-    {
-      target_request_id: requestId,
-      target_organization_id: organizationId,
-    },
-  );
-  if (referralError) throw referralError;
 }
 
 async function markFoundingMemberPaid(

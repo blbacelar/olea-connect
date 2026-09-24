@@ -1,7 +1,5 @@
 import {
-  BadgeDollarSign,
   CheckCircle2,
-  CircleDollarSign,
   Handshake,
   Lock,
 } from "lucide-react";
@@ -19,6 +17,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { getSponsorsData } from "@/lib/data/sponsors";
+import { getRequestLocale } from "@/lib/i18n/server";
 import type {
   SponsorDirectoryProfile,
   SponsorReport,
@@ -174,6 +173,7 @@ function SponsorshipReportCard({
 }: {
   sponsorship: SponsorshipReport;
 }) {
+  const isFrench = getRequestLocale() === "fr-CA";
   const recognitionName =
     typeof sponsorship.recognitionPreferences.public_name === "string"
       ? sponsorship.recognitionPreferences.public_name
@@ -201,25 +201,22 @@ function SponsorshipReportCard({
         </Badge>
       </div>
 
-      <div className="mt-4 grid gap-3 md:grid-cols-4">
+      <div className="mt-4 grid gap-3 md:grid-cols-2">
         <Metric
           label="Contract"
           value={formatMoney(sponsorship.contractAmountCents)}
         />
         <Metric
-          label="Committed to Olea Gives"
-          value={formatMoney(sponsorship.committedContributionCents)}
-        />
-        <Metric
           label="Recorded contributions"
           value={formatMoney(sponsorship.contributionAmountCents)}
         />
-        <Metric
-          label="Allocated"
-          value={formatMoney(sponsorship.allocatedAmountCents)}
-          tone={sponsorship.isReconciled ? "text-green-700" : "text-amber-700"}
-        />
       </div>
+
+      {sponsorship.committedContributionCents > 0 || sponsorship.allocatedAmountCents > 0 ? (
+        <div className="mt-3 rounded-lg border bg-white p-3 text-sm text-slate-600">
+          {isFrench ? "Anciens dossiers de subventions" : "Legacy grant records"}: {formatMoney(sponsorship.committedContributionCents)} {isFrench ? "engagés" : "committed"}; {formatMoney(sponsorship.allocatedAmountCents)} {isFrench ? "attribués" : "allocated"}.
+        </div>
+      ) : null}
 
       {sponsorship.privateTerms || sponsorship.financialNotes ? (
         <div className="mt-4 rounded-lg border border-amber-200 bg-amber-50 p-3 text-sm text-amber-900">
@@ -246,7 +243,7 @@ function SponsorshipReportCard({
                 <TableHead>Status</TableHead>
                 <TableHead>Amount</TableHead>
                 <TableHead>Pledged</TableHead>
-                <TableHead>Allocations</TableHead>
+                <TableHead>Legacy allocations</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -274,7 +271,7 @@ function SponsorshipReportCard({
                               }: ${formatMoney(allocation.amountCents)}`,
                           )
                           .join("; ")
-                      : "Not allocated"}
+                      : "—"}
                   </TableCell>
                 </TableRow>
               ))}
@@ -306,11 +303,10 @@ function Metric({
 }
 
 export default async function SponsorsPage() {
+  const isFrench = getRequestLocale() === "fr-CA";
   const {
     canManageSponsors,
     directorySponsors,
-    grantPrograms,
-    grantRounds,
     packages,
     reports,
   } = await getSponsorsData();
@@ -318,14 +314,14 @@ export default async function SponsorsPage() {
   return (
     <div>
       <PageHeader
-        title="Sponsors & Olea Gives"
-        description="Browse approved sponsor profiles and track how sponsor contributions flow into Olea Gives grants."
+        title={isFrench ? "Commanditaires et Cercle de générosité d'Olea" : "Sponsors & Olea's Circle of Generosity"}
+        description={isFrench
+          ? "Découvrez les commanditaires approuvés. Olive Social Impact remet 15 % de ses bénéfices aux organismes sans but lucratif sous forme de dons sans restriction."
+          : "Browse approved sponsors. Olive Social Impact donates 15% of its profits to nonprofits as unrestricted donations."}
       />
 
       {canManageSponsors ? (
         <SponsorManagement
-          grantPrograms={grantPrograms}
-          grantRounds={grantRounds}
           packages={packages}
           reports={reports}
         />
@@ -337,10 +333,10 @@ export default async function SponsorsPage() {
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div>
             <p className="text-xs font-semibold uppercase tracking-[0.16em] text-olea-green">
-              Member directory
+              {isFrench ? "Répertoire des commanditaires" : "Sponsor directory"}
             </p>
             <h2 className="mt-1 text-2xl font-bold text-slate-900">
-              Approved sponsor profiles
+              {isFrench ? "Profils des commanditaires approuvés" : "Approved sponsor profiles"}
             </h2>
           </div>
           <Badge
@@ -348,7 +344,7 @@ export default async function SponsorsPage() {
             className="border-green-200 bg-green-50 text-green-700"
           >
             <CheckCircle2 className="mr-1 size-3" />
-            Active and approved only
+            {isFrench ? "Actifs et approuvés seulement" : "Active and approved only"}
           </Badge>
         </div>
         <div className="mt-5">
@@ -358,28 +354,6 @@ export default async function SponsorsPage() {
 
       <ReportingSummary reports={reports} />
 
-      <section className="mt-8 grid gap-4 md:grid-cols-2">
-        <div className="rounded-xl border bg-white p-5 shadow-soft">
-          <p className="flex items-center gap-2 text-sm font-semibold text-olea-green">
-            <CircleDollarSign className="size-4" />
-            Reconciliation rule
-          </p>
-          <p className="mt-2 text-sm leading-6 text-slate-500">
-            Contribution totals are compared against grant-program allocations
-            so finance can spot unallocated sponsor dollars before reporting.
-          </p>
-        </div>
-        <div className="rounded-xl border bg-white p-5 shadow-soft">
-          <p className="flex items-center gap-2 text-sm font-semibold text-olea-green">
-            <BadgeDollarSign className="size-4" />
-            Private finance boundary
-          </p>
-          <p className="mt-2 text-sm leading-6 text-slate-500">
-            Contract terms and financial notes are only rendered for finance and
-            platform administrators, not members or sponsor contacts.
-          </p>
-        </div>
-      </section>
     </div>
   );
 }

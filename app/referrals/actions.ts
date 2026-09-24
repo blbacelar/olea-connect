@@ -1,7 +1,5 @@
 "use server";
 
-import { revalidatePath } from "next/cache";
-
 import {
   getReferralProgramSettings,
   referralProgramSettingsDefaults,
@@ -19,7 +17,9 @@ export type ReferralApplicationState = {
 };
 
 function formDataToObject(formData: FormData) {
-  return Object.fromEntries(formData.entries());
+  return Object.fromEntries(
+    [...formData.entries()].filter(([key]) => !key.startsWith("$ACTION_")),
+  );
 }
 
 function getReferralActionCopy(formData: FormData) {
@@ -88,7 +88,7 @@ export async function applyToReferralProgram(
 
   const supabase = createAdminClient();
   const settings = await getReferralProgramSettings().catch(
-    () => referralProgramSettingsDefaults,
+    () => ({ ...referralProgramSettingsDefaults, programEnabled: false }),
   );
   if (!settings.programEnabled) {
     return {
@@ -184,7 +184,6 @@ export async function applyToReferralProgram(
     });
   }
 
-  revalidatePath("/referrals");
   return {
     ok: true,
     message: copy.submitted,

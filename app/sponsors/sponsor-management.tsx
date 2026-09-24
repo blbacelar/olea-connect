@@ -10,7 +10,6 @@ import { FormSelect } from "@/components/ui/form-select";
 import { Input } from "@/components/ui/input";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Textarea } from "@/components/ui/textarea";
-import type { SponsorGrantRoundOption } from "@/lib/data/sponsors";
 import { FORM_SELECT_EMPTY_VALUE } from "@/lib/forms/constants";
 import type { SponsorReport, SponsorshipPackageSummary } from "@/lib/types";
 
@@ -242,8 +241,7 @@ function SponsorshipTermsForm({
     <form action={formAction} className="rounded-xl border bg-slate-50 p-5">
       <h2 className="font-bold text-slate-900">Sponsorship terms</h2>
       <p className="mt-1 text-sm text-slate-500">
-        Track package, term dates, committed contribution, and private finance
-        notes.
+        Track package, term dates, and private finance notes.
       </p>
       <SponsorFormNotice state={state} />
       <div className="mt-4 grid gap-4 md:grid-cols-2">
@@ -303,13 +301,6 @@ function SponsorshipTermsForm({
           <Input name="endsOn" type="date" required />
         </label>
         <label className="text-sm font-semibold text-slate-700">
-          Olea Gives commitment
-          <SponsorCurrencyInput
-            name="committedContribution"
-            placeholder="$3,000.00"
-          />
-        </label>
-        <label className="text-sm font-semibold text-slate-700">
           Category exclusivity
           <Input name="categoryExclusivity" placeholder="Governance tools" />
         </label>
@@ -337,15 +328,7 @@ function SponsorshipTermsForm({
   );
 }
 
-function SponsorContributionForm({
-  grantPrograms,
-  grantRounds,
-  reports,
-}: {
-  grantPrograms: Array<{ id: string; name: string; slug: string }>;
-  grantRounds: SponsorGrantRoundOption[];
-  reports: SponsorReport[];
-}) {
+function SponsorContributionForm({ reports }: { reports: SponsorReport[] }) {
   const [state, formAction] = useFormState(
     saveSponsorContribution,
     initialSponsorActionState,
@@ -354,9 +337,9 @@ function SponsorContributionForm({
 
   return (
     <form action={formAction} className="rounded-xl border bg-slate-50 p-5">
-      <h2 className="font-bold text-slate-900">Contribution allocation</h2>
+      <h2 className="font-bold text-slate-900">Sponsor contributions</h2>
       <p className="mt-1 text-sm text-slate-500">
-        Record contributions and connect allocations to grant programs.
+        Record sponsor contributions without creating grant rounds or applications.
       </p>
       <SponsorFormNotice state={state} />
       <div className="mt-4 grid gap-4 md:grid-cols-2">
@@ -382,7 +365,6 @@ function SponsorContributionForm({
               { label: "Pledged", value: "pledged" },
               { label: "Invoiced", value: "invoiced" },
               { label: "Received", value: "received" },
-              { label: "Allocated", value: "allocated" },
             ]}
           />
         </label>
@@ -403,49 +385,8 @@ function SponsorContributionForm({
           <Input name="receivedOn" type="date" />
         </label>
         <label className="text-sm font-semibold text-slate-700">
-          Allocated on
-          <Input name="allocatedOn" type="date" />
-        </label>
-        <label className="text-sm font-semibold text-slate-700">
           QuickBooks transaction ID
           <Input name="quickbooksTransactionId" />
-        </label>
-        <label className="text-sm font-semibold text-slate-700">
-          Grant program
-          <FormSelect
-            defaultValue={FORM_SELECT_EMPTY_VALUE}
-            name="grantProgramId"
-            placeholder="No allocation yet"
-            options={[
-              { label: "No allocation yet", value: FORM_SELECT_EMPTY_VALUE },
-              ...grantPrograms.map((program) => ({
-                label: program.name,
-                value: program.id,
-              })),
-            ]}
-          />
-        </label>
-        <label className="text-sm font-semibold text-slate-700">
-          Grant round
-          <FormSelect
-            defaultValue={FORM_SELECT_EMPTY_VALUE}
-            name="grantRoundId"
-            placeholder="No specific round"
-            options={[
-              { label: "No specific round", value: FORM_SELECT_EMPTY_VALUE },
-              ...grantRounds.map((round) => ({
-                label: `${round.name} · ${round.status}`,
-                value: round.id,
-              })),
-            ]}
-          />
-        </label>
-        <label className="text-sm font-semibold text-slate-700">
-          Allocation amount
-          <SponsorCurrencyInput
-            name="allocationAmount"
-            placeholder="$5,000.00"
-          />
         </label>
       </div>
       <label className="mt-4 block text-sm font-semibold text-slate-700">
@@ -458,13 +399,9 @@ function SponsorContributionForm({
 }
 
 export function SponsorManagement({
-  grantPrograms,
-  grantRounds,
   packages,
   reports,
 }: {
-  grantPrograms: Array<{ id: string; name: string; slug: string }>;
-  grantRounds: SponsorGrantRoundOption[];
   packages: SponsorshipPackageSummary[];
   reports: SponsorReport[];
 }) {
@@ -480,7 +417,7 @@ export function SponsorManagement({
             <TabsTrigger value="profile">Sponsor profile</TabsTrigger>
             <TabsTrigger value="terms">Sponsorship terms</TabsTrigger>
             <TabsTrigger value="contributions">
-              Contribution allocation
+              Sponsor contributions
             </TabsTrigger>
           </TabsList>
         </div>
@@ -491,11 +428,7 @@ export function SponsorManagement({
           <SponsorshipTermsForm packages={packages} reports={reports} />
         </TabsContent>
         <TabsContent value="contributions" className="mt-5">
-          <SponsorContributionForm
-            grantPrograms={grantPrograms}
-            grantRounds={grantRounds}
-            reports={reports}
-          />
+          <SponsorContributionForm reports={reports} />
         </TabsContent>
       </Tabs>
     </section>

@@ -3,13 +3,13 @@ import type { ReferralPageCopy } from "./referral-page-copy";
 export const referralPageCopyFr: ReferralPageCopy = {
   heroEyebrow: "Programme de références maintenant ouvert",
   heroTitle: (amount) =>
-    `Gagnez jusqu'à ${amount} pour chaque pair que vous envoyez à Olea.`,
+    `Gagnez jusqu'à ${amount} après le premier paiement d'adhésion de l'organisme que vous recommandez.`,
   heroBody:
-    "Vous savez déjà quelles équipes sans but lucratif jonglent encore avec la gouvernance, les dossiers du conseil et les rapports. Présentez-les à Olea Connects™ et recevez une prime lorsqu'elles participent à une démonstration, puis lorsqu'elles restent.",
+    "Présentez Olea Connects™ à vos pairs du secteur sans but lucratif. Les personnes référentes approuvées peuvent recevoir 10 % du premier paiement d'adhésion trimestriel ou annuel réussi de l'organisme référé, jusqu'à 500 $. Les renouvellements ne donnent pas droit à une autre commission. Chaque versement est vérifié au préalable.",
   signUp: "S'inscrire pour référer",
   dashboard: "Tableau de bord des références",
-  demoPayout: "Pour une démonstration à laquelle la personne participe",
-  retainedPayout: "Lorsqu'elle reste",
+  commissionLabel: "Commission sur le premier paiement",
+  capLabel: "Maximum par organisme référé",
   howItWorks: "Comment ça fonctionne",
   steps: [
     {
@@ -26,10 +26,10 @@ export const referralPageCopyFr: ReferralPageCopy = {
     },
     {
       title: "Suivez les paiements",
-      body: "Vous pouvez voir le statut de chaque référence pendant qu'Olea suit les démonstrations et les clients retenus.",
+      body: "Consultez le statut des références et les commissions vérifiées dans votre tableau de bord. Les versements sont examinés avant paiement.",
     },
   ],
-  closingTitle: (amount) => `Une introduction. Jusqu'à ${amount}.`,
+  closingTitle: (amount) => `Une première adhésion payée. Jusqu'à ${amount} pour vous.`,
   closingBody:
     "Partagez votre lien aussi largement que vous le souhaitez. Il n'y a aucune limite au nombre de pairs qualifiés que vous pouvez référer.",
   faqs: [
@@ -99,11 +99,11 @@ export const referralPageCopyFr: ReferralPageCopy = {
     back: "Programme de références",
     title: "Tableau de bord des références",
     description:
-      "Suivez votre lien approuvé, les organismes référés et les jalons de paiement.",
+      "Suivez votre lien approuvé, les organismes référés et les versements vérifiés.",
     emptyReferrals:
       "Aucune référence pour le moment. Partagez votre lien lorsque vous faites une introduction chaleureuse.",
     emptyPayouts:
-      "Les paiements apparaissent ici lorsqu'une référence atteint un jalon admissible.",
+      "Une commission apparaît ici après le premier paiement d'adhésion réussi de l'organisme référé.",
     table: {
       referral: "Référence",
       organization: "Organisme",
@@ -165,6 +165,7 @@ export const referralPageCopyFr: ReferralPageCopy = {
       milestones: {
         demo_attended: "Démonstration suivie",
         retained: "Client retenu",
+        first_payment: "Premier paiement d'adhésion",
       },
     },
   },

@@ -5,6 +5,7 @@ import {
   enqueueCircleMemberSync,
 } from "@/lib/circle/provisioning";
 import { enqueueSubscriptionIntegrationSyncs } from "@/lib/integrations/subscription-sync";
+import { recordFirstPaymentReferralCommission } from "@/lib/referrals/first-payment-commission";
 import {
   type getRequestContext,
   logCritical,
@@ -298,6 +299,9 @@ export async function processStripeWebhookEvent(
       );
     } else {
       await syncStripeSubscription(supabase, subscription);
+    }
+    if (event.type === "invoice.paid") {
+      await recordFirstPaymentReferralCommission(supabase, subscription.id);
     }
   }
 

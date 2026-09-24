@@ -19,21 +19,27 @@ import { getRequestLocale } from "@/lib/i18n/server";
 import { formatReferralMoney } from "@/lib/referrals/domain";
 
 import { ReferralApplicationForm } from "./referral-application-form";
+import { ReferralInvalidNotice } from "./referral-invalid-notice";
 
-export default async function ReferralProgramPage() {
+export default async function ReferralProgramPage({
+  searchParams,
+}: {
+  searchParams?: { referral?: string };
+}) {
   const locale = getRequestLocale();
   const copy = getReferralPageCopy(locale);
   const settings = await getReferralProgramSettings().catch(
-    () => referralProgramSettingsDefaults,
+    () => ({ ...referralProgramSettingsDefaults, programEnabled: false }),
   );
-  const total =
-    settings.demoAttendedPayoutCents + settings.retainedCustomerPayoutCents;
-  const totalFormatted = formatReferralMoney(total, settings.currency, locale);
+  const totalFormatted = formatReferralMoney(50000, "CAD", locale);
 
   return (
     <div className="min-h-screen bg-olea-light">
       <PublicHeader />
       <main>
+        {searchParams?.referral === "invalid" ? (
+          <ReferralInvalidNotice isFrench={locale === "fr-CA"} />
+        ) : null}
         <section className="mx-auto grid max-w-7xl gap-10 px-4 py-16 md:grid-cols-[1.05fr_0.95fr] md:px-8 lg:py-20">
           <div>
             <p className="text-sm font-bold uppercase tracking-[0.22em] text-olea-green">
@@ -60,27 +66,19 @@ export default async function ReferralProgramPage() {
               <div className="rounded-2xl border bg-white p-6 shadow-soft">
                 <HandCoins className="size-8 text-olea-green" />
                 <p className="mt-4 text-3xl font-black text-slate-950">
-                  {formatReferralMoney(
-                    settings.demoAttendedPayoutCents,
-                    settings.currency,
-                    locale,
-                  )}
+                  {locale === "fr-CA" ? "10 %" : "10%"}
                 </p>
                 <p className="mt-1 font-semibold text-slate-700">
-                  {copy.demoPayout}
+                  {copy.commissionLabel}
                 </p>
               </div>
               <div className="rounded-2xl border bg-white p-6 shadow-soft">
                 <ShieldCheck className="size-8 text-olea-green" />
                 <p className="mt-4 text-3xl font-black text-slate-950">
-                  {formatReferralMoney(
-                    settings.retainedCustomerPayoutCents,
-                    settings.currency,
-                    locale,
-                  )}
+                  {totalFormatted}
                 </p>
                 <p className="mt-1 font-semibold text-slate-700">
-                  {copy.retainedPayout}
+                  {copy.capLabel}
                 </p>
               </div>
             </div>

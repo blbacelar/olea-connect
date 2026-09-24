@@ -61,30 +61,21 @@ describe("referral program domain", () => {
     ).toThrow();
   });
 
-  it("validates payout settings as formatted numeric inputs", () => {
+  it("validates referral settings without legacy demo payout fields", () => {
     expect(
       referralSettingsSchema.parse({
         programEnabled: "on",
-        demoAttendedPayout: "100.00",
-        retainedCustomerPayout: "400.00",
-        retentionDays: "90",
         contactEmail: "referrals@olivesocialimpact.com",
         termsUrl: "https://oleaconnects.com/legal/referrals",
       }),
     ).toMatchObject({
       programEnabled: true,
-      demoAttendedPayout: "100.00",
-      retainedCustomerPayout: "400.00",
-      retentionDays: 90,
     });
 
     expect(() =>
       referralSettingsSchema.parse({
         programEnabled: "false",
-        demoAttendedPayout: "$100",
-        retainedCustomerPayout: "400.00",
-        retentionDays: "90",
-        contactEmail: "referrals@olivesocialimpact.com",
+        contactEmail: "invalid",
         termsUrl: "",
       }),
     ).toThrow();

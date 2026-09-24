@@ -4,12 +4,13 @@ import { Input } from "@/components/ui/input";
 import { SubmitButton } from "@/components/ui/submit-button";
 import { Textarea } from "@/components/ui/textarea";
 import type { getReferralAdminData } from "@/lib/data/referrals";
+import { getRequestLocale } from "@/lib/i18n/server";
 import {
   formatReferralMoney,
+  manualReferralStatuses,
   payoutStatusLabels,
   referralPayoutStatuses,
   referralStatusLabels,
-  referralStatuses,
   referrerStatusLabels,
 } from "@/lib/referrals/domain";
 
@@ -24,7 +25,7 @@ const referrerActionOptions = [
   { label: "Archive", value: "archived" },
 ];
 
-const referralStatusOptions = referralStatuses.map((status) => ({
+const referralStatusOptions = manualReferralStatuses.map((status) => ({
   label: referralStatusLabels[status],
   value: status,
 }));
@@ -235,25 +236,31 @@ function ReferralMilestoneRow({
         {formatDateTime(referral.lastMilestoneAt)}
       </td>
       <td className="px-4 py-4">
-        <form action={saveReferralMilestone} className="space-y-2">
-          <input type="hidden" name="referralId" value={referral.id} />
-          <FormSelect
-            name="status"
-            defaultValue={referral.status}
-            placeholder="Choose milestone"
-            options={referralStatusOptions}
-            required
-          />
-          <Textarea
-            name="notes"
-            placeholder="Evidence note or reason"
-            maxLength={700}
-            className="min-h-20"
-          />
-          <SubmitButton size="sm" pendingText="Saving...">
-            Save milestone
-          </SubmitButton>
-        </form>
+        {manualReferralStatuses.some((status) => status === referral.status) ? (
+          <form action={saveReferralMilestone} className="space-y-2">
+            <input type="hidden" name="referralId" value={referral.id} />
+            <FormSelect
+              name="status"
+              defaultValue={referral.status}
+              placeholder="Choose milestone"
+              options={referralStatusOptions}
+              required
+            />
+            <Textarea
+              name="notes"
+              placeholder="Evidence note or reason"
+              maxLength={700}
+              className="min-h-20"
+            />
+            <SubmitButton size="sm" pendingText="Saving...">
+              Save milestone
+            </SubmitButton>
+          </form>
+        ) : (
+          <p className="text-sm text-slate-600">
+            Purchase and payout milestones are verified through billing.
+          </p>
+        )}
       </td>
     </tr>
   );
@@ -272,7 +279,7 @@ function ReferralPayoutsTable({
       {payouts.length === 0 ? (
         <EmptyState>No payout records yet.</EmptyState>
       ) : (
-        <div className="overflow-hidden rounded-xl border bg-white shadow-soft">
+        <div className="overflow-x-auto rounded-xl border bg-white shadow-soft">
           <table className="w-full min-w-[980px] text-left text-sm">
             <ReferralTableHead columns={["Payout", "Status", "Due", "Paid", "Action"]} />
             <tbody className="divide-y">
@@ -298,15 +305,27 @@ function ReferralPayoutRow({
   payout: ReferralAdminData["payouts"][number];
   saveReferralPayout: (formData: FormData) => Promise<void>;
 }) {
+  const locale = getRequestLocale();
+  const isFrench = locale === "fr-CA";
   return (
     <tr className="align-top">
       <td className="px-4 py-4">
         <p className="font-bold text-slate-900">
-          {payout.milestone === "demo_attended" ? "Demo attended" : "Customer retained"}
+          {payout.milestone === "first_payment"
+            ? isFrench ? "Premier paiement d'adhésion" : "First membership payment"
+            : payout.milestone === "demo_attended"
+              ? isFrench ? "Démonstration suivie (historique)" : "Demo attended (legacy)"
+              : isFrench ? "Client conservé (historique)" : "Customer retained (legacy)"}
         </p>
         <p className="text-slate-600">
-          {formatReferralMoney(payout.amountCents, payout.currency)}
+          {formatReferralMoney(payout.amountCents, payout.currency, locale)}
         </p>
+        {payout.sourceInvoiceId && payout.purchaseAmountCents !== null ? (
+          <p className="mt-1 text-xs text-slate-500">
+            {isFrench ? "Premier paiement" : "First payment"}: {formatReferralMoney(payout.purchaseAmountCents, payout.currency, locale)}
+            <br />{isFrench ? "Facture Stripe" : "Stripe invoice"}: <span className="font-mono">{payout.sourceInvoiceId}</span>
+          </p>
+        ) : null}
       </td>
       <td className="px-4 py-4">
         <Badge variant="outline" className="bg-white">
@@ -316,7 +335,7 @@ function ReferralPayoutRow({
       <td className="px-4 py-4 text-slate-600">{formatDateTime(payout.dueAt)}</td>
       <td className="px-4 py-4 text-slate-600">{formatDateTime(payout.paidAt)}</td>
       <td className="px-4 py-4">
-        <form action={saveReferralPayout} className="space-y-2">
+        {payout.milestone === "first_payment" ? <form action={saveReferralPayout} className="space-y-2">
           <input type="hidden" name="payoutId" value={payout.id} />
           <FormSelect
             name="status"
@@ -328,7 +347,7 @@ function ReferralPayoutRow({
           <Input
             name="evidenceUrl"
             type="url"
-            placeholder="https://evidence.example"
+            placeholder="https://finance.example/payout-receipt"
             defaultValue={payout.evidenceUrl ?? ""}
           />
           <Textarea
@@ -341,7 +360,7 @@ function ReferralPayoutRow({
           <SubmitButton size="sm" pendingText="Saving...">
             Save payout
           </SubmitButton>
-        </form>
+        </form> : <span className="text-xs text-slate-500">{isFrench ? "Dossier historique" : "Historical record"}</span>}
       </td>
     </tr>
   );

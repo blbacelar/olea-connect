@@ -1,32 +1,20 @@
 import { describe, expect, it } from "vitest";
 
-import {
-  formatCad,
-  pricingAddOns,
-  pricingPolicies,
-  referralRewards,
-  retreatFacilitation,
-} from "@/lib/pricing";
+import { publicSiteCopy } from "@/lib/i18n/public-site-copy";
+import { formatCad, pricingPolicies } from "@/lib/pricing";
 
 describe("pricing package", () => {
-  it("matches the approved add-on catalog", () => {
-    expect(pricingAddOns.map(({ name }) => name)).toEqual([
+  it("offers custom-quoted support without unapproved public package prices", () => {
+    const addOns = publicSiteCopy["en-CA"].pricing.addOns;
+    expect(addOns.map(({ name }) => name)).toEqual([
       "Impact Coaching",
       "Admin Support",
     ]);
-    expect(
-      pricingAddOns[0].packages.map(({ quarterlyPrice }) => quarterlyPrice),
-    ).toEqual([1944, 3888, 5832]);
-    expect(
-      pricingAddOns[1].packages.map(({ quarterlyPrice }) => quarterlyPrice),
-    ).toEqual([1200, 2400, 3600]);
-    expect(retreatFacilitation.map(({ price }) => price)).toEqual([1400, 2300]);
+    expect(addOns.every(({ description }) => description.length > 0)).toBe(true);
+    expect(publicSiteCopy["en-CA"].pricing.requestQuote).toMatch(/quote/i);
   });
 
-  it("exposes referral rewards and public pricing policies", () => {
-    expect(referralRewards).toHaveLength(3);
-    expect(referralRewards[0].grant).toContain("$250");
-    expect(referralRewards[1].coaching).toContain("4");
+  it("exposes public pricing policies", () => {
     expect(pricingPolicies.trial).toBe("No free trial");
     expect(pricingPolicies.extraSeat).toContain("$15 CAD");
   });

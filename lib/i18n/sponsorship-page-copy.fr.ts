@@ -178,7 +178,7 @@ export const sponsorshipPageCopyFr: SponsorshipPageCopy = {
     {
       title: "Impact communautaire",
       description:
-        "Votre commandite finance directement le soutien aux organismes et renforce tout le secteur.",
+        "Votre investissement renforce le soutien aux organismes. Olive Social Impact remet 15 % de ses bénéfices aux organismes sans but lucratif sous forme de dons sans restriction.",
     },
     {
       title: "Mastermind des commanditaires",
@@ -200,7 +200,7 @@ export const sponsorshipPageCopyFr: SponsorshipPageCopy = {
     {
       title: "Capital réel",
       description:
-        "Expertise pro bono, dons admissibles avec rapports d'impact complets, mentorat, connexions. Vous choisissez.",
+        "Expertise pro bono, mentorat, mises en relation et autres façons de contribuer. Vous choisissez.",
     },
     {
       title: "Voix stratégique",

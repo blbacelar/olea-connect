@@ -62,25 +62,6 @@ type ExistingProvisioningRequest = {
   founding_offer_requested: boolean | null;
 };
 
-async function validateOrganizationReferral(
-  supabase: SupabaseClient,
-  registration: CheckoutRegistration,
-  organizationId: string,
-) {
-  const { data: currentMembership, error: membershipError } = await supabase
-    .from("organization_members")
-    .select("organization_id")
-    .eq("user_id", registration.userId)
-    .eq("status", "active")
-    .maybeSingle();
-  if (membershipError) throw membershipError;
-  if (currentMembership?.organization_id === organizationId) {
-    throw new SignupValidationError(
-      "You cannot use your own organization referral code.",
-    );
-  }
-}
-
 async function validatePartnerReferral(
   supabase: SupabaseClient,
   email: string,
@@ -111,36 +92,7 @@ export async function validateSignupReferralCode(
   email: string,
   referralCode: string,
 ) {
-  const { data: organizationReferral, error: organizationReferralError } =
-    await supabase
-      .from("referral_codes")
-      .select("organization_id")
-      .eq("code", referralCode)
-      .eq("active", true)
-      .maybeSingle();
-  if (organizationReferralError) throw organizationReferralError;
-
-  if (organizationReferral) {
-    return organizationReferral.organization_id as string;
-  }
-
   await validatePartnerReferral(supabase, email, referralCode);
-  return null;
-}
-
-async function validateCheckoutReferralCode(
-  supabase: SupabaseClient,
-  registration: CheckoutRegistration,
-  referralCode: string,
-) {
-  const organizationId = await validateSignupReferralCode(
-    supabase,
-    registration.email,
-    referralCode,
-  );
-  if (organizationId) {
-    await validateOrganizationReferral(supabase, registration, organizationId);
-  }
 }
 
 async function assertCheckoutAuthUser(
@@ -270,7 +222,7 @@ export async function prepareCheckoutRegistration(
   const referralCode =
     normalizeReferralCode(existing?.referral_code ?? registration.referralCode) ?? "";
   if (referralCode) {
-    await validateCheckoutReferralCode(supabase, registration, referralCode);
+    await validateSignupReferralCode(supabase, registration.email, referralCode);
   }
 
   validateFoundingMemberCode(registration.foundingMemberCode);

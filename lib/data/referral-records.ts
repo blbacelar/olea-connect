@@ -8,10 +8,7 @@ import type {
 export type ReferralProgramSettings = {
   contactEmail: string;
   currency: string;
-  demoAttendedPayoutCents: number;
   programEnabled: boolean;
-  retainedCustomerPayoutCents: number;
-  retentionDays: number;
   termsUrl: string | null;
 };
 
@@ -57,7 +54,9 @@ export type ReferralPayoutRecord = {
   milestone: ReferralPayoutMilestone;
   notes: string | null;
   paidAt: string | null;
+  purchaseAmountCents: number | null;
   referralId: string;
+  sourceInvoiceId: string | null;
   status: ReferralPayoutStatus;
 };
 
@@ -77,9 +76,6 @@ export type ReferralDashboardData = {
 
 export const referralProgramSettingsDefaults: ReferralProgramSettings = {
   programEnabled: true,
-  demoAttendedPayoutCents: 10000,
-  retainedCustomerPayoutCents: 40000,
-  retentionDays: 90,
   currency: "CAD",
   contactEmail: "hello@olivesocialimpact.com",
   termsUrl: null,
@@ -88,17 +84,11 @@ export const referralProgramSettingsDefaults: ReferralProgramSettings = {
 export function mapSettings(row: {
   contact_email: string;
   currency: string;
-  demo_attended_payout_cents: number;
   program_enabled: boolean;
-  retained_customer_payout_cents: number;
-  retention_days: number;
   terms_url: string | null;
 }): ReferralProgramSettings {
   return {
     programEnabled: row.program_enabled,
-    demoAttendedPayoutCents: row.demo_attended_payout_cents,
-    retainedCustomerPayoutCents: row.retained_customer_payout_cents,
-    retentionDays: row.retention_days,
     currency: row.currency,
     contactEmail: row.contact_email,
     termsUrl: row.terms_url,
@@ -185,7 +175,9 @@ export function mapPayout(row: {
   milestone: ReferralPayoutMilestone;
   notes: string | null;
   paid_at: string | null;
+  purchase_amount_cents: number | null;
   referral_id: string;
+  source_invoice_id: string | null;
   status: ReferralPayoutStatus;
 }): ReferralPayoutRecord {
   return {
@@ -199,5 +191,7 @@ export function mapPayout(row: {
     paidAt: row.paid_at,
     notes: row.notes,
     evidenceUrl: row.evidence_url,
+    purchaseAmountCents: row.purchase_amount_cents,
+    sourceInvoiceId: row.source_invoice_id,
   };
 }

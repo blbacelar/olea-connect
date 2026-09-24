@@ -8,7 +8,7 @@ export const appShellCopyFr: AppShellCopy = {
     settings: "Paramètres",
     brand: "Profil de marque",
     community: "Communauté",
-    grants: "Fonds Olea Gives",
+    grants: "Cercle de générosité d'Olea",
     webinars: "Webinaires",
     team: "Équipe",
     subscription: "Abonnement",
@@ -36,7 +36,7 @@ export const appShellCopyFr: AppShellCopy = {
     "/modules/grant-platform": "Plateforme de subventions",
     "/modules/ed-review": "Évaluation DG/PDG",
     "/community": "Communauté",
-    "/grants": "Subventions",
+    "/grants": "Cercle de générosité",
     "/sponsors": "Commanditaires",
     "/webinars": "Webinaires",
     "/consulting": "Consultation",
@@ -121,15 +121,15 @@ export const appShellCopyFr: AppShellCopy = {
       keywords: ["publications", "espaces", "discussion", "réseau"],
     },
     grants: {
-      title: "Subventions",
-      description: "Explorer les occasions et demandes du fonds Olea Gives.",
-      keywords: ["financement", "olea gives", "demandes"],
+      title: "Cercle de générosité",
+      description: "Découvrir comment 15 % des bénéfices d'Olea soutiennent les organismes sans but lucratif grâce à des dons sans restriction.",
+      keywords: ["dons", "générosité", "impact"],
     },
     sponsors: {
       title: "Commanditaires",
       description:
-        "Consulter les commanditaires approuvés et les rapports de contribution Olea Gives.",
-      keywords: ["partenaires", "olea gives", "contributions", "financement"],
+        "Consulter les commanditaires approuvés et les rapports de contribution.",
+      keywords: ["partenaires", "contributions", "impact"],
     },
     webinars: {
       title: "Webinaires",

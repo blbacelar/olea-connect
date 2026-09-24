@@ -160,7 +160,7 @@ export const sponsorBenefits = [
   {
     title: "Community Impact",
     description:
-      "Your sponsorship directly funds nonprofit support and strengthens the entire sector.",
+      "Your investment strengthens nonprofit support. Olive Social Impact donates 15% of its profits to nonprofits as unrestricted donations.",
   },
   {
     title: "Sponsor Mastermind",
@@ -183,7 +183,7 @@ export const impactCircleFeatures = [
   {
     title: "Real Capital",
     description:
-      "Pro-bono expertise, tax-deductible donations with full impact reporting, mentoring, connections. You choose.",
+      "Pro-bono expertise, mentoring, connections, and other ways to contribute. You choose.",
   },
   {
     title: "Strategic Voice",

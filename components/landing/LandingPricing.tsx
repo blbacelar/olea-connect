@@ -10,11 +10,7 @@ import { Card } from "@/components/ui/card";
 import type { Locale } from "@/lib/i18n/locales";
 import type { PublicSiteCopy } from "@/lib/i18n/public-site-copy";
 import { membershipPlans } from "@/lib/plans";
-import {
-  formatCad,
-  pricingAddOns,
-  retreatFacilitation,
-} from "@/lib/pricing";
+import { formatCad } from "@/lib/pricing";
 import { cn } from "@/lib/utils";
 
 type LandingPricingCopy = PublicSiteCopy["pricing"];
@@ -27,6 +23,15 @@ export function LandingPricing({
   locale: Locale;
 }) {
   const [annual, setAnnual] = useState(true);
+  const quoteHref = (service: string) => {
+    const subject = encodeURIComponent(`Olea Connects: ${service} quote request`);
+    const body = encodeURIComponent(
+      locale === "fr-CA"
+        ? "Organisme :\nSoutien souhaité :\nÉchéancier :\n"
+        : "Organization:\nSupport needed:\nPreferred timeline:\n",
+    );
+    return `mailto:hello@olivesocialimpact.com?subject=${subject}&body=${body}`;
+  };
 
   return (
     <section id="plans" className="bg-slate-50 px-4 py-20 md:py-28">
@@ -82,9 +87,6 @@ export function LandingPricing({
           {membershipPlans.map((plan) => {
             const planCopy = copy.plans[plan.id];
             const price = annual ? plan.annualPrice : plan.quarterlyPrice;
-            const foundingPrice = annual
-              ? plan.foundingAnnualPrice
-              : plan.foundingQuarterlyPrice;
             return (
               <Card
                 key={plan.id}
@@ -113,11 +115,6 @@ export function LandingPricing({
                     /{annual ? copy.perYear : copy.perQuarter}
                   </span>
                 </div>
-                <p className="mt-2 text-xs font-semibold text-olea-green">
-                  {copy.foundingYearPrefix} {formatCad(foundingPrice, locale)}/
-                  {annual ? copy.perYear : copy.perQuarter} ·{" "}
-                  {copy.eligibility}
-                </p>
                 <p className="mt-5 min-h-12 text-sm leading-6 text-slate-500">
                   {planCopy.summary}
                 </p>
@@ -172,81 +169,29 @@ export function LandingPricing({
           centered
         />
         <div className="mt-10 grid gap-5 lg:grid-cols-3">
-          {pricingAddOns.map((addOn, addOnIndex) => {
-            const addOnCopy = copy.addOns[addOnIndex] ?? addOn;
-
-            return (
-              <Card key={addOn.name} className="p-6 shadow-none">
-                <h3 className="text-xl font-bold">{addOnCopy.name}</h3>
-                <p className="mt-2 text-sm leading-6 text-slate-500">
-                  {addOnCopy.description}
-                </p>
-                <div className="mt-5 overflow-hidden rounded-lg border">
-                  {addOn.packages.map((pack, packageIndex) => {
-                    const packageCopy =
-                      addOnCopy.packages[packageIndex] ?? pack;
-
-                    return (
-                      <div
-                        key={pack.name}
-                        className="flex flex-col gap-2 border-b px-4 py-3 text-sm last:border-b-0 sm:flex-row sm:items-center sm:justify-between"
-                      >
-                        <span>
-                          <span className="font-semibold">
-                            {packageCopy.name}
-                          </span>
-                          <span className="ml-2 text-slate-500">
-                            {packageCopy.hours}
-                          </span>
-                        </span>
-                        <span className="font-semibold text-slate-700 sm:text-right">
-                          <span className="block whitespace-nowrap">
-                            {formatCad(pack.quarterlyPrice, locale)}/
-                            {copy.perQuarter}
-                          </span>
-                          <span className="block whitespace-nowrap text-xs font-normal text-slate-500">
-                            {formatCad(pack.annualPrice, locale)}/
-                            {copy.perYear}
-                          </span>
-                        </span>
-                      </div>
-                    );
-                  })}
-                </div>
-                <p className="mt-4 text-xs text-slate-500">
-                  {copy.annualPlanningNote}
-                </p>
-              </Card>
-            );
-          })}
-          <Card className="p-6 shadow-none">
+          {copy.addOns.map((addOn) => (
+            <Card key={addOn.name} className="flex flex-col p-6 shadow-none">
+              <h3 className="text-xl font-bold">{addOn.name}</h3>
+              <p className="mt-2 flex-1 text-sm leading-6 text-slate-500">
+                {addOn.description}
+              </p>
+              <Button asChild variant="outline" className="mt-6">
+                <a href={quoteHref(addOn.name)}>
+                  {copy.requestQuote}
+                </a>
+              </Button>
+            </Card>
+          ))}
+          <Card className="flex flex-col p-6 shadow-none">
             <h3 className="text-xl font-bold">{copy.retreatTitle}</h3>
-            <p className="mt-2 text-sm leading-6 text-slate-500">
+            <p className="mt-2 flex-1 text-sm leading-6 text-slate-500">
               {copy.retreatDescription}
             </p>
-            <div className="mt-5 overflow-hidden rounded-lg border">
-              {retreatFacilitation.map((option, index) => {
-                const optionCopy = copy.retreat[index] ?? option;
-
-                return (
-                  <div
-                    key={option.name}
-                    className="flex items-center justify-between border-b px-4 py-3 text-sm last:border-b-0"
-                  >
-                    <span>
-                      <span className="font-semibold">{optionCopy.name}</span>
-                      <span className="ml-2 text-slate-500">
-                        {optionCopy.detail}
-                      </span>
-                    </span>
-                    <span className="font-semibold text-slate-700">
-                      {formatCad(option.price, locale)}
-                    </span>
-                  </div>
-                );
-              })}
-            </div>
-            <p className="mt-4 text-xs text-slate-500">{copy.retreatNote}</p>
+            <Button asChild variant="outline" className="mt-6">
+              <a href={quoteHref(copy.retreatTitle)}>
+                {copy.requestQuote}
+              </a>
+            </Button>
           </Card>
         </div>
       </div>
@@ -260,14 +205,10 @@ export function LandingPricing({
             centered
             inverse
           />
-          <div className="mt-8 grid gap-4 md:grid-cols-3">
-            {copy.referralRewards.map((reward) => (
-              <div key={reward.referrals} className="rounded-xl bg-white/10 p-5">
-                <p className="font-bold text-amber-100">{reward.referrals}</p>
-                <p className="mt-3 text-sm text-white">{reward.grant}</p>
-                <p className="mt-2 text-sm text-white/70">{reward.coaching}</p>
-              </div>
-            ))}
+          <div className="mt-8 text-center">
+            <Button asChild className="bg-white text-olea-dark hover:bg-green-50">
+              <Link href="/referrals">{copy.referralsCta}</Link>
+            </Button>
           </div>
         </Card>
       </div>

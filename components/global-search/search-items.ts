@@ -34,14 +34,6 @@ function buildBaseCommandItems(locale: Locale): CommandItem[] {
     keywords: copy.dashboard.keywords,
   },
   {
-    id: "templates",
-    title: copy.templates.title,
-    description: copy.templates.description,
-    href: "/templates",
-    type: "page",
-    keywords: copy.templates.keywords,
-  },
-  {
     id: "board-calendar-module",
     title: copy.boardCalendarModule.title,
     description: copy.boardCalendarModule.description,
@@ -66,14 +58,6 @@ function buildBaseCommandItems(locale: Locale): CommandItem[] {
     keywords: copy.community.keywords,
   },
   {
-    id: "grants",
-    title: copy.grants.title,
-    description: copy.grants.description,
-    href: "/grants",
-    type: "resource",
-    keywords: copy.grants.keywords,
-  },
-  {
     id: "sponsors",
     title: copy.sponsors.title,
     description: copy.sponsors.description,
@@ -88,14 +72,6 @@ function buildBaseCommandItems(locale: Locale): CommandItem[] {
     href: "/webinars",
     type: "resource",
     keywords: copy.webinars.keywords,
-  },
-  {
-    id: "consulting",
-    title: copy.consulting.title,
-    description: copy.consulting.description,
-    href: "/consulting",
-    type: "page",
-    keywords: copy.consulting.keywords,
   },
   {
     id: "brand-profile",

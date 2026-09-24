@@ -10,11 +10,9 @@ import {
   requireSponsorManager,
   selectText,
   text,
-  upsertGrantProgramContribution,
   upsertSponsorPrimaryContact,
   writeSponsorAudit,
 } from "./action-support";
-import { validateOptionalCurrencyToCents } from "@/lib/sponsors/domain";
 
 export type SponsorActionState = {
   message: string;
@@ -73,12 +71,19 @@ export async function saveSponsorshipTerm(
   try {
     const { admin, organizationId, userId } = await requireSponsorManager();
     const sponsorshipId = text(formData, "sponsorshipId");
+    if (text(formData, "committedContribution")) {
+      throw new Error("New Olea grant commitments are no longer available.");
+    }
     const values = buildSponsorshipTermValues(formData);
 
     if (!values.package_id) throw new Error("Choose a sponsorship package.");
     const query = sponsorshipId
       ? admin.from("sponsorships").update(values).eq("id", sponsorshipId)
-      : admin.from("sponsorships").insert({ ...values, created_by: userId });
+      : admin.from("sponsorships").insert({
+          ...values,
+          committed_contribution_cents: 0,
+          created_by: userId,
+        });
 
     const { data: sponsorship, error } = await query.select("id").single();
     if (error) throw error;
@@ -117,6 +122,13 @@ export async function saveSponsorContribution(
 ): Promise<SponsorActionState> {
   try {
     const { admin, organizationId, userId } = await requireSponsorManager();
+    if (
+      selectText(formData, "grantProgramId") ||
+      selectText(formData, "grantRoundId") ||
+      text(formData, "allocationAmount")
+    ) {
+      throw new Error("Olea grant allocations are no longer available.");
+    }
     const contributionId = text(formData, "contributionId");
     const values = buildSponsorContributionValues(formData);
 
@@ -130,31 +142,11 @@ export async function saveSponsorContribution(
 
     if (error) throw error;
 
-    const grantProgramId = selectText(formData, "grantProgramId");
-    const grantRoundId = selectText(formData, "grantRoundId");
-    const allocationAmountCents = validateOptionalCurrencyToCents(
-      text(formData, "allocationAmount"),
-      "Allocation amount",
-    );
-
-    await upsertGrantProgramContribution({
-      admin,
-      allocationAmountCents,
-      contributionId: contribution.id,
-      grantProgramId,
-      grantRoundId,
-    });
-
     await writeSponsorAudit({
       action: contributionId
         ? "sponsor_contribution.updated"
         : "sponsor_contribution.created",
-      changes: {
-        ...values,
-        allocation_amount_cents: allocationAmountCents,
-        grant_program_id: grantProgramId || null,
-        grant_round_id: grantRoundId || null,
-      },
+      changes: values,
       entityId: contribution.id,
       entityType: "sponsor_contribution",
       metadata: { sponsorship_id: values.sponsorship_id },

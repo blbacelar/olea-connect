@@ -4,12 +4,10 @@ import {
   ClipboardList,
   CircleHelp,
   CreditCard,
-  FileText,
   Gift,
   Handshake,
   Home,
   Megaphone,
-  MessagesSquare,
   Palette,
   ShieldCheck,
   Users,
@@ -32,7 +30,6 @@ export type NavigationItem = {
 export const navigationGroups: NavigationItem[][] = [
   [
     { label: "Dashboard", href: "/dashboard", icon: Home },
-    { label: "Templates", href: "/templates", icon: FileText, dot: true },
     {
       label: "Board Calendar",
       href: "/modules/board-calendar",
@@ -62,10 +59,8 @@ export const navigationGroups: NavigationItem[][] = [
       requiredOrganizationRoles: ["owner", "admin"],
     },
     { label: "Community", href: "/community", icon: Users },
-    { label: "Grants", href: "/grants", icon: Gift },
     { label: "Sponsors", href: "/sponsors", icon: Handshake },
     { label: "Webinars", href: "/webinars", icon: CalendarDays },
-    { label: "Consulting", href: "/consulting", icon: MessagesSquare },
   ],
   [
     { label: "Brand Profile", href: "/settings/brand", icon: Palette },

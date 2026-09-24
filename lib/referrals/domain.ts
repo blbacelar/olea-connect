@@ -4,7 +4,6 @@ import * as z from "zod";
 
 import { normalizeReferralCode } from "@/lib/referral-capture";
 import {
-  decimalStringSchema,
   emailStringSchema,
   formBooleanValueSchema,
   httpUrlStringSchema,
@@ -31,6 +30,13 @@ export const referralStatuses = [
   "rejected",
 ] as const;
 
+export const manualReferralStatuses = [
+  "lead_created",
+  "demo_booked",
+  "demo_attended",
+  "rejected",
+] as const;
+
 export const referralPayoutStatuses = [
   "pending",
   "eligible",
@@ -38,7 +44,7 @@ export const referralPayoutStatuses = [
   "rejected",
 ] as const;
 
-export const referralPayoutMilestones = ["demo_attended", "retained"] as const;
+export const referralPayoutMilestones = ["demo_attended", "retained", "first_payment"] as const;
 
 export type ReferralReferrerStatus = (typeof referralReferrerStatuses)[number];
 export type ReferralStatus = (typeof referralStatuses)[number];
@@ -89,9 +95,6 @@ export const referralSettingsSchema = z
     programEnabled: formBooleanValueSchema.transform(
       (value) => value === "on" || value === "true",
     ),
-    demoAttendedPayout: decimalStringSchema(2),
-    retainedCustomerPayout: decimalStringSchema(2),
-    retentionDays: z.coerce.number().int().min(1).max(730),
     contactEmail: emailStringSchema,
     termsUrl: z.union([z.literal(""), httpUrlStringSchema]),
   })

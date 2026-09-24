@@ -156,7 +156,7 @@ function mapRound(
     id: round.id,
     name: round.name,
     opensAt: round.opens_at,
-    programName: program?.name ?? "Olea Gives",
+    programName: program?.name ?? "Unnamed grant program",
     programType: program?.type ?? "quarterly",
     status: round.status,
   };

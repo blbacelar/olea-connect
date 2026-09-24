@@ -26,8 +26,8 @@ test.describe("@smoke @critical public entry points", () => {
     ).toBeVisible();
     await expect(
       page.getByText(
-        /Through Olive Social Impact Inc\., a portion of revenue is donated back to nonprofits\./,
-      ),
+        /Olive Social Impact donates 15% of its profits to nonprofits as unrestricted donations\./,
+      ).first(),
     ).toBeVisible();
     await expect(
       page.getByRole("link", { name: "Get started" }),
@@ -97,7 +97,7 @@ test.describe("@smoke @critical public entry points", () => {
     await page.goto("/referrals");
     await expect(
       page.getByRole("heading", {
-        name: /Gagnez jusqu'à .* pour chaque pair que vous envoyez à Olea\./,
+        name: /Gagnez jusqu'à .* après le premier paiement d'adhésion/,
       }),
     ).toBeVisible();
     await expect(

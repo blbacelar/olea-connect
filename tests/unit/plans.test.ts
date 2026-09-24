@@ -8,12 +8,6 @@ describe("membership plans", () => {
 
     for (const plan of membershipPlans) {
       expect(plan.annualPrice).toBe(plan.quarterlyPrice * 4);
-      expect(plan.foundingAnnualPrice).toBe(
-        Math.round(plan.annualPrice * 0.85),
-      );
-      expect(plan.foundingQuarterlyPrice).toBe(
-        Math.round(plan.quarterlyPrice * 0.85),
-      );
       expect(plan.features.length).toBeGreaterThan(0);
     }
   });
@@ -25,6 +19,11 @@ describe("membership plans", () => {
       ["canopy", "15 seats included"],
       ["harvest", "20 seats included"],
     ]);
+  });
+
+  it("does not advertise discontinued Olea grant applications in tiers", () => {
+    const features = membershipPlans.flatMap((plan) => plan.features).join(" ");
+    expect(features).not.toMatch(/Olea Gives applications|member-only grants/i);
   });
 
   it("keeps strategic planning unavailable below Canopy", () => {

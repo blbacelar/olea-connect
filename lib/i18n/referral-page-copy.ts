@@ -15,8 +15,8 @@ export type ReferralPageCopy = {
   heroBody: string;
   signUp: string;
   dashboard: string;
-  demoPayout: string;
-  retainedPayout: string;
+  commissionLabel: string;
+  capLabel: string;
   howItWorks: string;
   steps: {
     title: string;

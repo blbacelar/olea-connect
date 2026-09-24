@@ -6,8 +6,10 @@ import { createAdminClient } from "@/utils/supabase/admin";
 const referralCookieName = "olea_referral_code";
 const referralCookieMaxAge = 60 * 60 * 24 * 30;
 
+export const dynamic = "force-dynamic";
+
 async function isActiveApprovedReferralCode(code: string) {
-  const supabase = createAdminClient();
+  const supabase = createAdminClient({ noStore: true });
   const { data, error } = await supabase
     .from("referral_links")
     .select("id, referrers(status)")
@@ -35,6 +37,8 @@ export async function GET(
     _request.url,
   );
   const response = NextResponse.redirect(redirectUrl);
+  response.headers.set("Cache-Control", "private, no-store, max-age=0");
+  const secureCookie = _request.nextUrl.protocol === "https:";
 
   if (validCode) {
     response.cookies.set(referralCookieName, code, {
@@ -42,10 +46,16 @@ export async function GET(
       maxAge: referralCookieMaxAge,
       path: "/",
       sameSite: "lax",
-      secure: process.env.NODE_ENV === "production",
+      secure: secureCookie,
     });
   } else {
-    response.cookies.delete(referralCookieName);
+    response.cookies.set(referralCookieName, "", {
+      httpOnly: false,
+      maxAge: 0,
+      path: "/",
+      sameSite: "lax",
+      secure: secureCookie,
+    });
   }
 
   return response;

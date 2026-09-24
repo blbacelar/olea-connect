@@ -2,7 +2,10 @@ import "server-only";
 
 import type * as z from "zod";
 
+import { hasVerifiedUnrefundedPayment } from "@/lib/referrals/payment-verification";
+import { getStripe } from "@/lib/stripe/server";
 import {
+  manualReferralStatuses,
   payoutDecisionSchema,
   referralMilestoneSchema,
   type ReferralPayoutStatus,
@@ -43,20 +46,6 @@ async function insertReferralAuditEvent(
   return error ? "Referral audit log could not be saved." : null;
 }
 
-async function loadReferralSettings(supabase: SupabaseAdminClient) {
-  const { data, error } = await supabase
-    .from("referral_program_settings")
-    .select("demo_attended_payout_cents, retained_customer_payout_cents, currency")
-    .eq("id", true)
-    .single();
-
-  if (error) {
-    return { ok: false, message: "Referral settings could not be loaded." } as const;
-  }
-
-  return { ok: true, settings: data } as const;
-}
-
 async function updateReferralStatus(
   supabase: SupabaseAdminClient,
   input: ReferralMilestone,
@@ -90,139 +79,24 @@ async function upsertReferralMilestone(
   return error ? "Referral milestone could not be saved." : null;
 }
 
-function payoutAmountForMilestone(
-  settings: {
-    demo_attended_payout_cents: number;
-    retained_customer_payout_cents: number;
-  },
-  status: ReferralMilestone["status"],
-) {
-  return status === "demo_attended"
-    ? settings.demo_attended_payout_cents
-    : settings.retained_customer_payout_cents;
-}
-
-function milestoneCreatesPayout(status: ReferralMilestone["status"]) {
-  return status === "demo_attended" || status === "retained";
-}
-
-async function upsertEligiblePayout({
-  supabase,
-  input,
-  settings,
-  actorId,
-}: {
-  supabase: SupabaseAdminClient;
-  input: ReferralMilestone;
-  settings: {
-    demo_attended_payout_cents: number;
-    retained_customer_payout_cents: number;
-    currency: string;
-  };
-  actorId: string;
-}) {
-  if (!milestoneCreatesPayout(input.status)) {
-    return null;
-  }
-
-  const { data: existingPayout, error: payoutLookupError } = await supabase
-    .from("referral_payouts")
-    .select("id, status")
-    .eq("referral_id", input.referralId)
-    .eq("milestone", input.status)
-    .maybeSingle();
-
-  if (payoutLookupError) {
-    return "Referral payout could not be checked.";
-  }
-
-  return existingPayout
-    ? updateEligiblePayout({ supabase, existingPayout, input, settings })
-    : insertEligiblePayout({ supabase, input, settings, actorId });
-}
-
-async function insertEligiblePayout({
-  supabase,
-  input,
-  settings,
-  actorId,
-}: {
-  supabase: SupabaseAdminClient;
-  input: ReferralMilestone;
-  settings: {
-    demo_attended_payout_cents: number;
-    retained_customer_payout_cents: number;
-    currency: string;
-  };
-  actorId: string;
-}) {
-  const { error } = await supabase.from("referral_payouts").insert({
-    referral_id: input.referralId,
-    milestone: input.status,
-    amount_cents: payoutAmountForMilestone(settings, input.status),
-    currency: settings.currency,
-    status: "eligible",
-    due_at: new Date().toISOString(),
-    notes: input.notes || null,
-    created_by: actorId,
-  });
-
-  return error ? "Referral payout could not be created." : null;
-}
-
-async function updateEligiblePayout({
-  supabase,
-  existingPayout,
-  input,
-  settings,
-}: {
-  supabase: SupabaseAdminClient;
-  existingPayout: { id: string; status: string };
-  input: ReferralMilestone;
-  settings: {
-    demo_attended_payout_cents: number;
-    retained_customer_payout_cents: number;
-    currency: string;
-  };
-}) {
-  if (existingPayout.status === "paid" || existingPayout.status === "rejected") {
-    return null;
-  }
-
-  const { error } = await supabase
-    .from("referral_payouts")
-    .update({
-      amount_cents: payoutAmountForMilestone(settings, input.status),
-      currency: settings.currency,
-      status: "eligible",
-      notes: input.notes || null,
-    })
-    .eq("id", existingPayout.id);
-
-  return error ? "Referral payout could not be updated." : null;
-}
-
 export async function saveReferralMilestone(
   input: ReferralMilestone,
   actorId: string,
 ): Promise<ActionResult> {
+  if (!manualReferralStatuses.some((status) => status === input.status)) {
+    return {
+      ok: false,
+      message: "Purchase and payout statuses require verified billing evidence.",
+    };
+  }
+
   const supabase = createAdminClient();
-  const settingsResult = await loadReferralSettings(supabase);
-  if (!settingsResult.ok) return settingsResult;
 
   const statusError = await updateReferralStatus(supabase, input);
   if (statusError) return { ok: false, message: statusError };
 
   const milestoneError = await upsertReferralMilestone(supabase, input, actorId);
   if (milestoneError) return { ok: false, message: milestoneError };
-
-  const payoutError = await upsertEligiblePayout({
-    supabase,
-    input,
-    settings: settingsResult.settings,
-    actorId,
-  });
-  if (payoutError) return { ok: false, message: payoutError };
 
   const auditError = await insertReferralAuditEvent(supabase, {
     referralId: input.referralId,
@@ -244,8 +118,8 @@ function validatePayoutDecision(
     return `Payout cannot move from ${currentPayoutStatus} to ${input.status}.`;
   }
 
-  if (input.status === "paid" && !input.evidenceUrl && !input.notes) {
-    return "Add a payment note or evidence URL before marking a payout paid.";
+  if (input.status === "paid" && !input.evidenceUrl) {
+    return "Add a payout receipt URL before marking a commission paid.";
   }
 
   return null;
@@ -258,29 +132,76 @@ export async function saveReferralPayoutDecision(
   const supabase = createAdminClient();
   const { data: existingPayout, error: payoutLookupError } = await supabase
     .from("referral_payouts")
-    .select("id, referral_id, milestone, status")
+    .select("id, referral_id, milestone, status, paid_at, source_invoice_id, purchase_amount_cents")
     .eq("id", input.payoutId)
     .single();
 
   if (payoutLookupError) return { ok: false, message: "Payout could not be loaded." };
 
+  if (existingPayout.milestone !== "first_payment" && input.status !== existingPayout.status) {
+    return { ok: false, message: "Legacy rewards cannot be approved under the current referral policy." };
+  }
+
+  if (["eligible", "paid"].includes(input.status) && existingPayout.milestone === "first_payment") {
+    if (!existingPayout.source_invoice_id || !existingPayout.purchase_amount_cents) {
+      return { ok: false, message: "Stripe invoice evidence is missing." };
+    }
+    let invoice;
+    let paymentIsUnrefunded;
+    try {
+      const stripe = getStripe();
+      invoice = await stripe.invoices.retrieve(existingPayout.source_invoice_id);
+      paymentIsUnrefunded = await hasVerifiedUnrefundedPayment(
+        stripe,
+        existingPayout.source_invoice_id,
+      );
+    } catch {
+      return { ok: false, message: "Stripe payment could not be checked. Try again before approving." };
+    }
+    if (
+      invoice.status !== "paid" ||
+      invoice.currency.toUpperCase() !== "CAD" ||
+      invoice.amount_paid !== existingPayout.purchase_amount_cents ||
+      !paymentIsUnrefunded
+    ) {
+      return { ok: false, message: "Payment, refund, or dispute status could not be verified. Keep this commission pending." };
+    }
+  }
+
   const currentPayoutStatus = existingPayout.status as ReferralPayoutStatus;
   const validationError = validatePayoutDecision(input, currentPayoutStatus);
   if (validationError) return { ok: false, message: validationError };
+
+  if (["eligible", "paid"].includes(input.status)) {
+    const { data: referral, error: referralError } = await supabase
+      .from("referrals")
+      .select("status")
+      .eq("id", existingPayout.referral_id)
+      .single();
+    if (referralError || referral.status === "rejected") {
+      return { ok: false, message: "Rejected or unavailable referrals cannot receive a payout." };
+    }
+  }
 
   const { data: payout, error } = await supabase
     .from("referral_payouts")
     .update({
       status: input.status,
-      paid_at: input.status === "paid" ? new Date().toISOString() : null,
+      paid_at: input.status === "paid"
+        ? existingPayout.paid_at ?? new Date().toISOString()
+        : null,
       notes: input.notes || null,
       evidence_url: input.evidenceUrl || null,
     })
     .eq("id", input.payoutId)
+    .eq("status", currentPayoutStatus)
     .select("id, referral_id, milestone")
-    .single();
+    .maybeSingle();
 
   if (error) return { ok: false, message: "Payout could not be updated." };
+  if (!payout) {
+    return { ok: false, message: "Payout changed since you opened it. Refresh and review the latest status." };
+  }
 
   const auditError = await insertReferralAuditEvent(supabase, {
     referralId: payout.referral_id,

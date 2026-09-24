@@ -4,19 +4,16 @@ import { revalidatePath } from "next/cache";
 
 import { requireMemberContext } from "@/lib/data/member-context";
 import { createAdminClient } from "@/utils/supabase/admin";
-import { createClient } from "@/utils/supabase/server";
 import {
   assertGrantAwardStatus,
   getBoolean,
-  getMoneyCents,
   getText,
   requireGrantsAdmin,
 } from "./grant-action-utils";
-import { saveGrantApplicationFromForm } from "./grant-application-action";
 import { reviewGrantApplicationFromForm } from "./grant-review-action";
 
-export async function saveGrantApplication(formData: FormData) {
-  await saveGrantApplicationFromForm(formData);
+export async function saveGrantApplication(_formData: FormData) {
+  throw new Error("Olea grant applications are no longer being accepted.");
 }
 
 export async function withdrawGrantApplication(formData: FormData) {
@@ -57,18 +54,8 @@ export async function reviewGrantApplication(formData: FormData) {
   await reviewGrantApplicationFromForm(formData);
 }
 
-export async function awardGrantApplication(formData: FormData) {
-  const applicationId = getText(formData, "applicationId");
-  const amountCents = getMoneyCents(formData, "awardAmount");
-  await requireGrantsAdmin();
-  const supabase = await createClient();
-  const { error } = await supabase.rpc("create_grant_award", {
-    target_amount_cents: amountCents,
-    target_application_id: applicationId,
-  });
-
-  if (error) throw new Error(error.message);
-  revalidatePath("/grants");
+export async function awardGrantApplication(_formData: FormData) {
+  throw new Error("Olea grant awards are no longer being created.");
 }
 
 export async function updateGrantAward(formData: FormData) {

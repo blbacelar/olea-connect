@@ -12,6 +12,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { brandName } from "@/lib/brand";
 import { getCommunityHome } from "@/lib/data/community";
+import { getRequestLocale } from "@/lib/i18n/server";
 
 import { CommunityFeed } from "./community-feed";
 
@@ -24,6 +25,7 @@ function formatEventDate(value: string) {
 
 export default async function CommunityPage() {
   const community = await getCommunityHome();
+  const isFrench = getRequestLocale() === "fr-CA";
 
   if (!community) {
     return (
@@ -63,6 +65,17 @@ export default async function CommunityPage() {
           ) : null
         }
       />
+
+      <section className="mb-7 rounded-[14px] border border-olea-green/20 bg-white px-5 py-4 shadow-soft" aria-label={isFrench ? "Règles de la communauté" : "Community guidelines"}>
+        <h2 className="font-semibold text-slate-900">
+          {isFrench ? "Règles de la communauté" : "Community guidelines"}
+        </h2>
+        <p className="mt-2 text-sm leading-6 text-slate-600">
+          {isFrench
+            ? "Échangez avec respect. Ne publiez pas de renseignements confidentiels sur des personnes ou des organismes sans leur consentement. Signalez tout contenu préoccupant à l'équipe Olea pour examen."
+            : "Collaborate respectfully. Do not share another person's or organization's confidential information without permission. Report concerning content to the Olea team for review."}
+        </p>
+      </section>
 
       <section className="mb-7 overflow-hidden rounded-[14px] border bg-white shadow-soft">
         <div className="flex flex-wrap items-center justify-between gap-3 border-b bg-[#FAFBFA] px-[22px] py-4">

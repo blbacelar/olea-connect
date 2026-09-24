@@ -48,6 +48,18 @@ test.describe("@critical @member authenticated access", () => {
 
     await expect(page.locator("html")).toHaveAttribute("lang", "fr-CA");
     await expect(page.getByText("Vos modèles")).toBeVisible();
+    await expect(
+      page.getByTestId("app-sidebar").getByRole("link", {
+        name: "Tableau de bord",
+        exact: true,
+      }),
+    ).toBeVisible();
+    await expect(page.getByTestId("app-breadcrumbs")).toHaveText(
+      "Tableau de bord",
+    );
+    await expect(
+      page.getByRole("button", { name: "Ouvrir la recherche globale" }).first(),
+    ).toBeVisible();
     await app.expectNoServerError();
 
     await page.getByTestId("locale-selector").click();
@@ -60,6 +72,19 @@ test.describe("@critical @member authenticated access", () => {
 
     await expect(page.locator("html")).toHaveAttribute("lang", "en-CA");
     await expect(page.getByText("Your templates")).toBeVisible();
+    await expect(
+      page.getByTestId("app-sidebar").getByRole("link", {
+        name: "Dashboard",
+        exact: true,
+      }),
+    ).toBeVisible();
+    await expect(
+      page.getByTestId("app-sidebar").getByRole("link", { name: "Templates" }),
+    ).toHaveCount(0);
+    await expect(page.getByTestId("app-breadcrumbs")).toHaveText("Dashboard");
+    await expect(
+      page.getByRole("button", { name: "Open global search" }).first(),
+    ).toBeVisible();
     await app.expectNoServerError();
   });
 
@@ -166,8 +191,8 @@ test.describe("@critical @member authenticated access", () => {
     await team.expectMemberEmail(authenticatedMember.email);
 
     await app.openMemberSection("grants");
-    await app.expectSectionHeading("Olea Gives Fund");
-    await app.expectText("No grant round is available");
+    await app.expectSectionHeading("Olea's Circle of Generosity");
+    await app.expectText(/15% of its profits to nonprofits as unrestricted donations/);
 
     await app.openMemberSection("webinars");
     await app.expectSectionHeading("Webinars");

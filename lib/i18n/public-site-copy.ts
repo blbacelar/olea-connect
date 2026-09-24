@@ -107,38 +107,22 @@ export type PublicSiteCopy = {
     mostPopular: string;
     perYear: string;
     perQuarter: string;
-    foundingYearPrefix: string;
-    eligibility: string;
     choosePlan: string;
     optionalSupportEyebrow: string;
     optionalSupportTitle: string;
     optionalSupportDescription: string;
-    annualPlanningNote: string;
-    packageSupportNote: string;
     retreatTitle: string;
     retreatDescription: string;
-    retreatNote: string;
+    requestQuote: string;
     referralsEyebrow: string;
     referralsTitle: string;
     referralsDescription: string;
+    referralsCta: string;
     plans: Record<MembershipTier, LocalizedPlanCopy>;
     policies: string[];
     addOns: Array<{
       name: string;
       description: string;
-      packages: Array<{
-        name: string;
-        hours: string;
-      }>;
-    }>;
-    retreat: Array<{
-      name: string;
-      detail: string;
-    }>;
-    referralRewards: Array<{
-      referrals: string;
-      grant: string;
-      coaching: string;
     }>;
   };
   faq: {
@@ -192,7 +176,7 @@ export const publicSiteCopy: Record<Locale, PublicSiteCopy> = {
       title:
         "The tools, community, and funding connections your nonprofit needs to grow.",
       description:
-        "Create board-ready documents in your own brand, learn from sector experts, find grant opportunities, and connect with nonprofit leaders who understand the work.",
+        "Create board-ready documents in your own brand, learn from sector experts, manage funding opportunities, and connect with nonprofit leaders who understand the work.",
       primaryCta: "Join Olea Connects™",
       secondaryCta: "See how it works",
       assurances: [
@@ -204,16 +188,16 @@ export const publicSiteCopy: Record<Locale, PublicSiteCopy> = {
         "Whatever stage your organization is at, there is a place for you here.",
       quoteLabel: "The Olea Connects™ promise",
       preview: {
-        nav: ["Dashboard", "Templates", "Webinars", "Olea Gives", "Community"],
+        nav: ["Dashboard", "Board Calendar", "Webinars", "Community"],
         organization: "Your organization",
         greeting: "Good morning",
         title: "Your nonprofit home base",
         governanceTemplates: "Governance templates",
         learningResources: "Learning resources",
-        fundTitle: "Olea Gives Fund",
-        fundSubtitle: "Quarterly grant applications",
+        fundTitle: "Olea's Circle of Generosity",
+        fundSubtitle: "15% of profits",
         fundDescription:
-          "Simple, one-page applications for $500 capacity grants.",
+          "Unrestricted donations flow back to nonprofits.",
         brandProfile: "Brand profile",
         appliedToDownloads: "Applied to every download",
         templateTitle: "Board Self-Evaluation",
@@ -232,7 +216,7 @@ export const publicSiteCopy: Record<Locale, PublicSiteCopy> = {
         },
         {
           title: "Advice scattered everywhere",
-          text: "Resources, grant alerts, expert learning, and peer support live in too many disconnected places.",
+          text: "Resources, funding leads, expert learning, and peer support live in too many disconnected places.",
         },
         {
           title: "Templates that do not feel like yours",
@@ -277,9 +261,9 @@ export const publicSiteCopy: Record<Locale, PublicSiteCopy> = {
           outcome: "Turn expert knowledge into practical next steps.",
         },
         {
-          title: "Access member-only grants.",
-          text: "Apply through a simple, one-page process for quarterly $500 capacity grants. Through Olive Social Impact Inc., a portion of revenue is donated back to nonprofits.",
-          outcome: "A portion of Olea revenue flows back to nonprofits.",
+          title: "Grow through Olea's Circle of Generosity.",
+          text: "Olive Social Impact donates 15% of its profits to nonprofits as unrestricted donations. There is no grant application or guaranteed payment for members.",
+          outcome: "15% of profits flow back to nonprofits.",
         },
       ],
     },
@@ -289,8 +273,8 @@ export const publicSiteCopy: Record<Locale, PublicSiteCopy> = {
       signals: [
         { value: "Every tier", label: "includes the full peer community" },
         {
-          value: "Portion of funds",
-          label: "of sponsorship fees flow to Olea Gives",
+          value: "15% of profits",
+          label: "flow back to nonprofits as unrestricted donations",
         },
         { value: "English + French", label: "core governance resources" },
         { value: "WCAG 2.1 AA", label: "accessibility standard" },
@@ -315,7 +299,7 @@ export const publicSiteCopy: Record<Locale, PublicSiteCopy> = {
         {
           number: "03",
           title: "Use your home base",
-          text: "Open resources with your brand already applied, download board-ready PDFs, join the community, and explore learning and grants.",
+          text: "Open resources with your brand already applied, download board-ready PDFs, join the community, and explore learning and funding tools.",
         },
       ],
     },
@@ -326,31 +310,27 @@ export const publicSiteCopy: Record<Locale, PublicSiteCopy> = {
         "Founding members with a valid code receive 15% off Year 1, limited to the first 50 paid organizations. Annual and quarterly memberships are paid upfront.",
       foundingLabel: "Founding member offer:",
       foundingNotice:
-        "Enter your founding-member code during signup to receive 15% off Year 1 while the first 50 spots remain available. Prices below show regular rates and the potential Year 1 founding rate.",
+        "Enter your founding-member code during signup to receive 15% off Year 1 while the first 50 spots remain available. Prices below show regular rates; your discount is confirmed before payment.",
       quarterly: "Quarterly",
       annual: "Annual",
       annualBadge: "Best for renewal planning",
       mostPopular: "Most popular",
       perYear: "year",
       perQuarter: "quarter",
-      foundingYearPrefix: "Founding Year 1:",
-      eligibility: "valid code and availability confirmed before payment",
       choosePlan: "Choose",
       optionalSupportEyebrow: "Optional support",
       optionalSupportTitle: "Add capacity when your team needs it.",
       optionalSupportDescription:
-        "Add-ons are available to every tier. Canopy and Harvest members receive 10% off coaching and admin packages.",
-      annualPlanningNote:
-        "Package prices are shown as all-in rates for planning. Contact us to confirm availability.",
-      packageSupportNote: "Available on an ad-hoc basis.",
+        "Custom support is available to every tier. Canopy and Harvest members receive 10% off coaching and admin support quotes.",
       retreatTitle: "Board Retreat Facilitation",
       retreatDescription:
         "Professional facilitation for annual board retreats and strategic planning sessions.",
-      retreatNote: "Available on an ad-hoc basis.",
+      requestQuote: "Contact us for a quote",
       referralsEyebrow: "Circle of generosity",
       referralsTitle: "Your referrals help another nonprofit access support.",
       referralsDescription:
-        "Referral credit is earned after a referred organization completes its first successful payment. Self-referrals are not eligible.",
+        "Approved referrers can earn 10% of a referred organization's first successful quarterly or annual membership payment, up to $500. Renewals and self-referrals are not eligible.",
+      referralsCta: "Explore the referral program",
       plans: {
         seedling: {
           name: "Seedling",
@@ -360,10 +340,8 @@ export const publicSiteCopy: Record<Locale, PublicSiteCopy> = {
             "Core governance operations, branded resources, and community access.",
           features: [
             "Board calendar, meetings, workflows, and packages",
-            "Board HR directory, roles, and term tracking",
             "Grant checklists, templates, dashboard, and deadlines",
             "Olea Connects™ Community, webinars, and forums",
-            "Branded templates and quarterly Olea Gives applications",
             "48-hour email support",
           ],
         },
@@ -378,7 +356,6 @@ export const publicSiteCopy: Record<Locale, PublicSiteCopy> = {
             "Board recruitment toolkit and skills matrix",
             "KPI and impact dashboard",
             "Quarterly Impact Accelerator Cohorts",
-            "Sponsor webinars",
             "Priority email support within 48 hours",
           ],
         },
@@ -426,43 +403,12 @@ export const publicSiteCopy: Record<Locale, PublicSiteCopy> = {
         {
           name: "Impact Coaching",
           description:
-            "Hands-on support for KPI metrics, funder reporting, and impact strategy.",
-          packages: [
-            { name: "Light", hours: "4 hours/month" },
-            { name: "Medium", hours: "8 hours/month" },
-            { name: "Deep", hours: "12 hours/month" },
-          ],
+            "One-to-one support for KPI metrics, funder reporting, and impact strategy. Tell us what you need for a tailored quote.",
         },
         {
           name: "Admin Support",
           description:
-            "Practical help with board operations, meeting preparation, grants, and governance administration.",
-          packages: [
-            { name: "Light", hours: "4 hours/month" },
-            { name: "Medium", hours: "8 hours/month" },
-            { name: "Deep", hours: "12 hours/month" },
-          ],
-        },
-      ],
-      retreat: [
-        { name: "Half-day", detail: "4 hours" },
-        { name: "Full day", detail: "8 hours" },
-      ],
-      referralRewards: [
-        {
-          referrals: "1 referral",
-          grant: "$250 Olea Gives grant",
-          coaching: "2 free coaching hours",
-        },
-        {
-          referrals: "2 referrals",
-          grant: "$500 Olea Gives grant",
-          coaching: "4 free coaching hours",
-        },
-        {
-          referrals: "3+ referrals",
-          grant: "Olea Champion recognition",
-          coaching: "Quarterly newsletter feature",
+            "Practical help with board operations, meeting preparation, and governance administration. We quote based on your team's needs.",
         },
       ],
     },
@@ -510,17 +456,17 @@ export const publicSiteCopy: Record<Locale, PublicSiteCopy> = {
         {
           question: "How do referrals work?",
           answer:
-            "Every organization receives a referral code. Referral credit is earned only after the referred organization completes its first successful payment; self-referrals are blocked.",
+            "Approved referrers receive a unique link. Eligible referrals can earn 10% of the referred organization's first successful quarterly or annual membership payment, up to $500. Renewals, self-referrals, and duplicate credits are not eligible.",
         },
         {
           question: "Are coaching and admin support included?",
           answer:
-            "Coaching, admin support, and board retreat facilitation are available as add-ons. Canopy and Harvest members receive 10% off coaching and admin packages.",
+            "Coaching, admin support, and board retreat facilitation are available by custom quote. Canopy and Harvest members receive 10% off coaching and admin support quotes.",
         },
         {
-          question: "How does Olea Gives support access?",
+          question: "What is Olea's Circle of Generosity?",
           answer:
-            "Olea Gives provides quarterly grant opportunities funded by Olea's generosity engine. There is no sliding-scale membership pricing; organizations with limited budgets can apply for an unrestricted Olea Gives gift.",
+            "Olive Social Impact donates 15% of its profits to nonprofits as unrestricted donations. This is not a grant program: there is no application, and membership does not guarantee a donation.",
         },
         {
           question: "What happens to our data if we cancel?",
@@ -585,9 +531,8 @@ export const publicSiteCopy: Record<Locale, PublicSiteCopy> = {
       preview: {
         nav: [
           "Tableau de bord",
-          "Modèles",
+          "Calendrier du conseil",
           "Webinaires",
-          "Olea Gives",
           "Communauté",
         ],
         organization: "Votre organisme",
@@ -595,10 +540,10 @@ export const publicSiteCopy: Record<Locale, PublicSiteCopy> = {
         title: "Votre espace central pour l'organisme",
         governanceTemplates: "Modèles de gouvernance",
         learningResources: "Ressources d'apprentissage",
-        fundTitle: "Fonds Olea Gives",
-        fundSubtitle: "Demandes de subvention trimestrielles",
+        fundTitle: "Le Cercle de générosité d'Olea",
+        fundSubtitle: "15 % des bénéfices",
         fundDescription:
-          "Des demandes simples d'une page pour des subventions de capacité de 500 $ CA.",
+          "Des dons sans restriction sont remis à des organismes sans but lucratif.",
         brandProfile: "Profil de marque",
         appliedToDownloads: "Appliqué à chaque téléchargement",
         templateTitle: "Autoévaluation du conseil",
@@ -617,7 +562,7 @@ export const publicSiteCopy: Record<Locale, PublicSiteCopy> = {
         },
         {
           title: "Des conseils dispersés partout",
-          text: "Les ressources, les alertes de subvention, l'apprentissage avec des experts et le soutien entre pairs vivent dans trop d'endroits déconnectés.",
+          text: "Les ressources, les pistes de financement, l'apprentissage avec des experts et le soutien entre pairs vivent dans trop d'endroits déconnectés.",
         },
         {
           title: "Des modèles qui ne vous ressemblent pas",
@@ -663,10 +608,9 @@ export const publicSiteCopy: Record<Locale, PublicSiteCopy> = {
           outcome: "Transformez l'expertise en prochaines étapes concrètes.",
         },
         {
-          title: "Accédez à des subventions réservées aux membres.",
-          text: "Soumettez une demande simple d'une page pour des subventions trimestrielles de capacité de 500 $. Par l'entremise d'Olive Social Impact Inc., une partie des revenus est redistribuée aux organismes sans but lucratif.",
-          outcome:
-            "Une partie des revenus d'Olea retourne aux organismes sans but lucratif.",
+          title: "Grandissez avec le Cercle de générosité d'Olea.",
+          text: "Olive Social Impact remet 15 % de ses bénéfices à des organismes sans but lucratif sous forme de dons sans restriction. Il n'y a ni demande de subvention ni paiement garanti aux membres.",
+          outcome: "15 % des bénéfices sont remis aux organismes sans but lucratif.",
         },
       ],
     },
@@ -679,8 +623,8 @@ export const publicSiteCopy: Record<Locale, PublicSiteCopy> = {
           label: "inclut toute la communauté de pairs",
         },
         {
-          value: "Une part des fonds",
-          label: "des commandites soutient Olea Gives",
+          value: "15 % des bénéfices",
+          label: "sont remis aux organismes sous forme de dons sans restriction",
         },
         {
           value: "Anglais + français",
@@ -709,7 +653,7 @@ export const publicSiteCopy: Record<Locale, PublicSiteCopy> = {
         {
           number: "03",
           title: "Utilisez votre espace central",
-          text: "Ouvrez des ressources déjà adaptées à votre marque, téléchargez des PDF prêts pour le conseil, rejoignez la communauté et explorez les formations et les subventions.",
+          text: "Ouvrez des ressources déjà adaptées à votre marque, téléchargez des PDF prêts pour le conseil, rejoignez la communauté et explorez les formations et outils de financement.",
         },
       ],
     },
@@ -720,33 +664,29 @@ export const publicSiteCopy: Record<Locale, PublicSiteCopy> = {
         "Les membres fondateurs qui possèdent un code valide reçoivent 15 % de rabais sur la première année, jusqu'à concurrence des 50 premiers organismes payants. Les adhésions annuelles et trimestrielles sont payées à l'avance.",
       foundingLabel: "Offre membre fondateur :",
       foundingNotice:
-        "Entrez votre code de membre fondateur pendant l'inscription pour recevoir 15 % de rabais sur la première année, tant que l'une des 50 places est disponible. Les tarifs ci-dessous indiquent les prix réguliers et le tarif potentiel de la première année.",
+        "Entrez votre code de membre fondateur pendant l'inscription pour recevoir 15 % de rabais sur la première année, tant que l'une des 50 places est disponible. Les tarifs ci-dessous sont les prix réguliers; votre rabais est confirmé avant le paiement.",
       quarterly: "Trimestriel",
       annual: "Annuel",
       annualBadge: "Idéal pour planifier le renouvellement",
       mostPopular: "Le plus populaire",
       perYear: "an",
       perQuarter: "trimestre",
-      foundingYearPrefix: "Année 1 fondatrice :",
-      eligibility: "code valide et disponibilité confirmés avant le paiement",
       choosePlan: "Choisir",
       optionalSupportEyebrow: "Soutien optionnel",
       optionalSupportTitle:
         "Ajoutez de la capacité quand votre équipe en a besoin.",
       optionalSupportDescription:
-        "Les options complémentaires sont offertes avec chaque forfait. Les membres Canopy et Harvest reçoivent 10 % de rabais sur les forfaits de coaching et de soutien administratif.",
-      annualPlanningNote:
-        "Les prix des forfaits sont indiqués comme tarifs tout compris aux fins de planification. Contactez-nous pour confirmer la disponibilité.",
-      packageSupportNote: "Offert au besoin.",
+        "Le soutien personnalisé est offert avec chaque forfait. Les membres Canopy et Harvest reçoivent 10 % de rabais sur les devis de coaching et de soutien administratif.",
       retreatTitle: "Animation de retraite du conseil",
       retreatDescription:
         "Animation professionnelle pour les retraites annuelles du conseil et les séances de planification stratégique.",
-      retreatNote: "Offert au besoin.",
+      requestQuote: "Contactez-nous pour obtenir un devis",
       referralsEyebrow: "Cercle de générosité",
       referralsTitle:
         "Vos références aident un autre organisme à accéder au soutien.",
       referralsDescription:
-        "Le crédit de référence est gagné lorsqu'un organisme référé effectue son premier paiement réussi. Les auto-références ne sont pas admissibles.",
+        "Les personnes approuvées peuvent recevoir 10 % du premier paiement d'adhésion trimestriel ou annuel réussi d'un organisme référé, jusqu'à 500 $. Les renouvellements et les auto-références sont exclus.",
+      referralsCta: "Découvrir le programme de référencement",
       plans: {
         seedling: {
           name: "Seedling",
@@ -756,10 +696,8 @@ export const publicSiteCopy: Record<Locale, PublicSiteCopy> = {
             "Opérations de gouvernance de base, ressources personnalisées et accès à la communauté.",
           features: [
             "Calendrier du conseil, réunions, flux de travail et dossiers",
-            "Répertoire RH du conseil, rôles et suivi des mandats",
             "Listes de vérification, modèles, tableau de bord et échéances de subventions",
             "Communauté Olea Connects™, webinaires et forums",
-            "Modèles personnalisés et demandes trimestrielles Olea Gives",
             "Soutien par courriel sous 48 heures",
           ],
         },
@@ -774,7 +712,6 @@ export const publicSiteCopy: Record<Locale, PublicSiteCopy> = {
             "Boîte à outils de recrutement du conseil et matrice des compétences",
             "Tableau de bord KPI et impact",
             "Cohortes trimestrielles Impact Accelerator",
-            "Webinaires commanditaires",
             "Soutien prioritaire par courriel sous 48 heures",
           ],
         },
@@ -822,43 +759,12 @@ export const publicSiteCopy: Record<Locale, PublicSiteCopy> = {
         {
           name: "Coaching d'impact",
           description:
-            "Soutien pratique pour les indicateurs KPI, les rapports aux bailleurs de fonds et la stratégie d'impact.",
-          packages: [
-            { name: "Léger", hours: "4 heures/mois" },
-            { name: "Moyen", hours: "8 heures/mois" },
-            { name: "Approfondi", hours: "12 heures/mois" },
-          ],
+            "Soutien individuel pour les indicateurs KPI, les rapports aux bailleurs de fonds et la stratégie d'impact. Décrivez-nous vos besoins pour obtenir un devis adapté.",
         },
         {
           name: "Soutien administratif",
           description:
-            "Aide pratique pour les opérations du conseil, la préparation des réunions, les subventions et l'administration de la gouvernance.",
-          packages: [
-            { name: "Léger", hours: "4 heures/mois" },
-            { name: "Moyen", hours: "8 heures/mois" },
-            { name: "Approfondi", hours: "12 heures/mois" },
-          ],
-        },
-      ],
-      retreat: [
-        { name: "Demi-journée", detail: "4 heures" },
-        { name: "Journée complète", detail: "8 heures" },
-      ],
-      referralRewards: [
-        {
-          referrals: "1 référence",
-          grant: "Subvention Olea Gives de 250 $ CA",
-          coaching: "2 heures gratuites de coaching",
-        },
-        {
-          referrals: "2 références",
-          grant: "Subvention Olea Gives de 500 $ CA",
-          coaching: "4 heures gratuites de coaching",
-        },
-        {
-          referrals: "3 références ou plus",
-          grant: "Reconnaissance Olea Champion",
-          coaching: "Mention dans l'infolettre trimestrielle",
+            "Aide pratique pour les opérations du conseil, la préparation des réunions et la gouvernance. Le devis dépend des besoins de votre équipe.",
         },
       ],
     },
@@ -906,17 +812,17 @@ export const publicSiteCopy: Record<Locale, PublicSiteCopy> = {
         {
           question: "Comment fonctionnent les références?",
           answer:
-            "Chaque organisme reçoit un code de référence. Le crédit est gagné seulement après que l'organisme référé effectue son premier paiement réussi; les auto-références sont bloquées.",
+            "Les personnes approuvées reçoivent un lien unique. Une référence admissible peut rapporter 10 % du premier paiement d'adhésion trimestriel ou annuel réussi de l'organisme référé, jusqu'à 500 $. Les renouvellements, les auto-références et les crédits en double sont exclus.",
         },
         {
           question: "Le coaching et le soutien administratif sont-ils inclus?",
           answer:
-            "Le coaching, le soutien administratif et l'animation de retraite du conseil sont offerts comme options complémentaires. Les membres Canopy et Harvest reçoivent 10 % de rabais sur les forfaits de coaching et de soutien administratif.",
+            "Le coaching, le soutien administratif et l'animation de retraite du conseil sont offerts sur devis personnalisé. Les membres Canopy et Harvest reçoivent 10 % de rabais sur les devis de coaching et de soutien administratif.",
         },
         {
-          question: "Comment Olea Gives améliore-t-il l'accès?",
+          question: "Qu'est-ce que le Cercle de générosité d'Olea?",
           answer:
-            "Olea Gives offre des possibilités de subventions trimestrielles financées par le moteur de générosité d'Olea. Il n'y a pas de tarification à échelle mobile; les organismes avec un budget limité peuvent demander un don non restreint Olea Gives.",
+            "Olive Social Impact remet 15 % de ses bénéfices à des organismes sans but lucratif sous forme de dons sans restriction. Ce n'est pas un programme de subventions : il n'y a aucune demande à soumettre et l'adhésion ne garantit pas de don.",
         },
         {
           question: "Qu'arrive-t-il à nos données si nous annulons?",

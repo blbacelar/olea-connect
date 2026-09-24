@@ -262,7 +262,7 @@ export const authFlowCopy: Record<Locale, AuthFlowCopy> = {
         referralCode: "Referral code",
         referralCodePlaceholder: "OLEA-ABC123",
         referralCodeHelp:
-          "Optional. A valid code supports the referring organization's Olea Gives reward.",
+          "Optional. A valid code credits the person who referred your organization.",
         foundingMemberCode: "Founding-member code",
         foundingMemberCodePlaceholder: "ENTER-CODE",
         foundingMemberCodeHelp:
@@ -538,7 +538,7 @@ export const authFlowCopy: Record<Locale, AuthFlowCopy> = {
         referralCode: "Code de référence",
         referralCodePlaceholder: "OLEA-ABC123",
         referralCodeHelp:
-          "Facultatif. Un code valide soutient la récompense Olea Gives de l'organisme référent.",
+          "Facultatif. Un code valide attribue la référence à la personne qui a recommandé votre organisme.",
         foundingMemberCode: "Code de membre fondateur",
         foundingMemberCodePlaceholder: "ENTRER-LE-CODE",
         foundingMemberCodeHelp:

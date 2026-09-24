@@ -24,3 +24,9 @@ export function captureReferralCodeFromUrl() {
   }
   return captured;
 }
+
+export function clearReferralCapture() {
+  if (typeof window === "undefined") return;
+  window.localStorage.removeItem(REFERRAL_STORAGE_KEY);
+  document.cookie = `${REFERRAL_COOKIE}=; Max-Age=0; Path=/; SameSite=Lax`;
+}

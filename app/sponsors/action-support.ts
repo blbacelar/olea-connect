@@ -26,7 +26,6 @@ const contributionStatuses = [
   "pledged",
   "invoiced",
   "received",
-  "allocated",
 ] as const;
 
 type SupabaseAdminClient = ReturnType<typeof createAdminClient>;
@@ -245,10 +244,6 @@ export function buildSponsorshipTermValues(formData: FormData) {
 
   return {
     category_exclusivity: nullableText(formData, "categoryExclusivity"),
-    committed_contribution_cents: validateOptionalCurrencyToCents(
-      text(formData, "committedContribution"),
-      "Olea Gives commitment",
-    ),
     contract_amount_cents: validateCurrencyToCents(
       text(formData, "contractAmount"),
       "Contract amount",
@@ -276,8 +271,6 @@ export function buildSponsorContributionValues(formData: FormData) {
   if (!sponsorshipId) throw new Error("Choose a sponsorship term.");
 
   return {
-    allocated_on:
-      status === "allocated" ? text(formData, "allocatedOn") || null : null,
     amount_cents: validateCurrencyToCents(text(formData, "amount"), "Amount"),
     currency: "CAD",
     notes: nullableText(formData, "notes"),

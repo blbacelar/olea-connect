@@ -11,7 +11,6 @@ export async function getDashboardSummary() {
   const [
     { count: completedTemplates, error: templateError },
     { data: notifications, count: unreadNotifications, error: notificationError },
-    { data: grantRound, error: grantError },
   ] = await Promise.all([
     supabase
       .from("template_instances")
@@ -26,23 +25,14 @@ export async function getDashboardSummary() {
       .or(`expires_at.is.null,expires_at.gt.${now}`)
       .order("created_at", { ascending: false })
       .limit(3),
-    supabase
-      .from("grant_rounds")
-      .select("name, status, closes_at")
-      .in("status", ["upcoming", "open"])
-      .order("opens_at", { ascending: true })
-      .limit(1)
-      .maybeSingle(),
   ]);
 
   if (templateError) throw templateError;
   if (notificationError) throw notificationError;
-  if (grantError) throw grantError;
 
   return {
     completedTemplates: completedTemplates ?? 0,
     unreadNotifications: unreadNotifications ?? 0,
     notifications: notifications ?? [],
-    grantRound,
   };
 }

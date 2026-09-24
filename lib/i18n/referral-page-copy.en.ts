@@ -3,13 +3,13 @@ import type { ReferralPageCopy } from "./referral-page-copy";
 export const referralPageCopyEn: ReferralPageCopy = {
   heroEyebrow: "Now open for referrals",
   heroTitle: (amount) =>
-    `Earn up to ${amount} for every peer you send to Olea.`,
+    `Earn up to ${amount} after your referral's first paid membership.`,
   heroBody:
-    "You already know which nonprofit teams are still wrestling with governance work, board packages, and reporting. Introduce them to Olea Connects™ and get paid when they show up and when they stay.",
+    "Introduce nonprofit peers to Olea Connects™. Approved referrers can earn 10% of the referred organization's first successful quarterly or annual membership payment, capped at $500. Renewals do not earn another commission. Payouts are reviewed first.",
   signUp: "Sign up to refer",
   dashboard: "Referrer dashboard",
-  demoPayout: "On a demo attended",
-  retainedPayout: "When they stay",
+  commissionLabel: "Commission on first payment",
+  capLabel: "Maximum per referred organization",
   howItWorks: "How it works",
   steps: [
     {
@@ -26,10 +26,10 @@ export const referralPageCopyEn: ReferralPageCopy = {
     },
     {
       title: "Track payouts",
-      body: "You can see the referral status while Olea tracks demo attendance and retained customers.",
+      body: "See referral status and any verified commission in your dashboard. Payouts are reviewed before payment.",
     },
   ],
-  closingTitle: (amount) => `One introduction. Up to ${amount}.`,
+  closingTitle: (amount) => `One first paid membership. Up to ${amount} for you.`,
   closingBody:
     "Share your link as widely as you like. There is no cap on how many qualified peers you can refer.",
   faqs: [
@@ -94,11 +94,11 @@ export const referralPageCopyEn: ReferralPageCopy = {
     back: "Referral program",
     title: "Referral dashboard",
     description:
-      "Track your approved link, referred organizations, and payout milestones.",
+      "Track your approved link, referred organizations, and reviewed payouts.",
     emptyReferrals:
       "No referrals yet. Share your link when you make a warm introduction.",
     emptyPayouts:
-      "Payouts appear here once a referral reaches an eligible milestone.",
+      "A commission appears here after the referred organization's first successful membership payment.",
     table: {
       referral: "Referral",
       organization: "Organization",
@@ -159,6 +159,7 @@ export const referralPageCopyEn: ReferralPageCopy = {
       milestones: {
         demo_attended: "Demo attended",
         retained: "Customer retained",
+        first_payment: "First membership payment",
       },
     },
   },

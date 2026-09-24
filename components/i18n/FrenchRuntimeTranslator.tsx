@@ -46,11 +46,28 @@ function translateTextNode(node: Text) {
     previousOriginal && value === previousTranslation ? previousOriginal : value;
   const translated = translateFrenchUiText(originalValue);
 
-  originalTextValues.set(node, originalValue);
-
-  if (translated !== node.nodeValue) {
-    node.nodeValue = translated;
+  if (translated === value) {
+    if (previousOriginal !== undefined && value !== previousTranslation) {
+      originalTextValues.delete(node);
+    }
+    return;
   }
+
+  originalTextValues.set(node, originalValue);
+  node.nodeValue = translated;
+}
+
+function rememberOriginalAttribute(
+  element: Element,
+  attribute: string,
+  value: string,
+) {
+  let originals = originalAttributeValues.get(element);
+  if (!originals) {
+    originals = new Map<string, string>();
+    originalAttributeValues.set(element, originals);
+  }
+  originals.set(attribute, value);
 }
 
 function translateElementAttributes(element: Element) {
@@ -60,13 +77,7 @@ function translateElementAttributes(element: Element) {
     const value = element.getAttribute(attribute);
     if (!value) continue;
 
-    let originalAttributes = originalAttributeValues.get(element);
-    if (!originalAttributes) {
-      originalAttributes = new Map<string, string>();
-      originalAttributeValues.set(element, originalAttributes);
-    }
-
-    const previousOriginal = originalAttributes.get(attribute);
+    const previousOriginal = originalAttributeValues.get(element)?.get(attribute);
     const previousTranslation = previousOriginal
       ? translateFrenchUiText(previousOriginal)
       : null;
@@ -76,11 +87,15 @@ function translateElementAttributes(element: Element) {
         : value;
     const translated = translateFrenchUiText(originalValue);
 
-    originalAttributes.set(attribute, originalValue);
-
-    if (translated !== value) {
-      element.setAttribute(attribute, translated);
+    if (translated === value) {
+      if (previousOriginal !== undefined && value !== previousTranslation) {
+        originalAttributeValues.get(element)?.delete(attribute);
+      }
+      continue;
     }
+
+    rememberOriginalAttribute(element, attribute, originalValue);
+    element.setAttribute(attribute, translated);
   }
 }
 
@@ -102,23 +117,27 @@ function translateTree(root: ParentNode) {
 
 function restoreOriginalText() {
   for (const [node, value] of originalTextValues) {
-    if (!node.isConnected) {
-      originalTextValues.delete(node);
-    } else if (!shouldSkipNode(node)) {
+    if (
+      node.isConnected &&
+      !shouldSkipNode(node) &&
+      node.nodeValue === translateFrenchUiText(value)
+    ) {
       node.nodeValue = value;
     }
   }
+  originalTextValues.clear();
 
   for (const [element, attributes] of originalAttributeValues) {
-    if (!element.isConnected) {
-      originalAttributeValues.delete(element);
-      continue;
-    }
-
     for (const [attribute, value] of attributes) {
-      element.setAttribute(attribute, value);
+      if (
+        element.isConnected &&
+        element.getAttribute(attribute) === translateFrenchUiText(value)
+      ) {
+        element.setAttribute(attribute, value);
+      }
     }
   }
+  originalAttributeValues.clear();
 }
 
 export function FrenchRuntimeTranslator({

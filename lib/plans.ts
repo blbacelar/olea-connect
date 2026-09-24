@@ -5,8 +5,6 @@ export interface MembershipPlan {
   name: string;
   quarterlyPrice: number;
   annualPrice: number;
-  foundingQuarterlyPrice: number;
-  foundingAnnualPrice: number;
   seats: string;
   audience: string;
   summary: string;
@@ -21,18 +19,14 @@ export const membershipPlans: MembershipPlan[] = [
     name: "Seedling",
     quarterlyPrice: 200,
     annualPrice: 800,
-    foundingQuarterlyPrice: 170,
-    foundingAnnualPrice: 680,
     seats: "5 seats included",
     audience: "Organizations with under $500k annual budget",
     summary:
       "Core governance operations, branded resources, and community access.",
     features: [
       "Board calendar, meetings, workflows, and packages",
-      "Board HR directory, roles, and term tracking",
       "Grant checklists, templates, dashboard, and deadlines",
       "Olea Connects™ Community, webinars, and forums",
-      "Branded templates and quarterly Olea Gives applications",
       "48-hour email support",
     ],
     notIncluded: [
@@ -48,8 +42,6 @@ export const membershipPlans: MembershipPlan[] = [
     name: "Roots",
     quarterlyPrice: 800,
     annualPrice: 3200,
-    foundingQuarterlyPrice: 680,
-    foundingAnnualPrice: 2720,
     seats: "10 seats included",
     audience: "Organizations with $500k-$2M annual budget",
     summary:
@@ -59,7 +51,6 @@ export const membershipPlans: MembershipPlan[] = [
       "Board recruitment toolkit and skills matrix",
       "KPI and impact dashboard",
       "Quarterly Impact Accelerator Cohorts",
-      "Sponsor webinars",
       "Priority email support within 48 hours",
     ],
     notIncluded: [
@@ -73,8 +64,6 @@ export const membershipPlans: MembershipPlan[] = [
     name: "Canopy",
     quarterlyPrice: 1500,
     annualPrice: 6000,
-    foundingQuarterlyPrice: 1275,
-    foundingAnnualPrice: 5100,
     seats: "15 seats included",
     audience: "Organizations with $2M-$5M annual budget",
     summary:
@@ -96,8 +85,6 @@ export const membershipPlans: MembershipPlan[] = [
     name: "Harvest",
     quarterlyPrice: 2400,
     annualPrice: 9600,
-    foundingQuarterlyPrice: 2040,
-    foundingAnnualPrice: 8160,
     seats: "20 seats included",
     audience: "Organizations with $5M+ annual budget",
     summary:

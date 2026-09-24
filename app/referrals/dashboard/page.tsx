@@ -36,13 +36,28 @@ function StatusBadge({ children }: { children: string }) {
   );
 }
 
+function referralStatusLabel(
+  referral: ReferralRecord,
+  payouts: ReferralPayoutRecord[],
+  copy: ReferralDashboardCopy,
+) {
+  const firstPayment = payouts.find(
+    (payout) => payout.referralId === referral.id && payout.milestone === "first_payment",
+  );
+  return firstPayment
+    ? `${copy.statuses.milestones.first_payment} · ${copy.statuses.payout[firstPayment.status]}`
+    : copy.statuses.referral[referral.status];
+}
+
 function ReferralTable({
   copy,
   locale,
+  payouts,
   referrals,
 }: {
   copy: ReferralDashboardCopy;
   locale: Locale;
+  payouts: ReferralPayoutRecord[];
   referrals: ReferralRecord[];
 }) {
   if (referrals.length === 0) {
@@ -54,7 +69,7 @@ function ReferralTable({
   }
 
   return (
-    <div className="overflow-hidden rounded-2xl border bg-white shadow-soft">
+    <div className="overflow-x-auto rounded-2xl border bg-white shadow-soft">
       <table className="w-full min-w-[760px] text-left text-sm">
         <thead className="bg-slate-50 text-xs font-bold uppercase tracking-[0.16em] text-slate-500">
           <tr>
@@ -76,7 +91,7 @@ function ReferralTable({
               </td>
               <td className="px-4 py-4">
                 <StatusBadge>
-                  {copy.statuses.referral[referral.status]}
+                  {referralStatusLabel(referral, payouts, copy)}
                 </StatusBadge>
               </td>
               <td className="px-4 py-4 text-slate-600">
@@ -112,7 +127,7 @@ function PayoutTable({
   }
 
   return (
-    <div className="overflow-hidden rounded-2xl border bg-white shadow-soft">
+    <div className="overflow-x-auto rounded-2xl border bg-white shadow-soft">
       <table className="w-full min-w-[760px] text-left text-sm">
         <thead className="bg-slate-50 text-xs font-bold uppercase tracking-[0.16em] text-slate-500">
           <tr>
@@ -222,7 +237,10 @@ export default async function ReferralDashboardPage() {
               </Button>
             </div>
             <div className="mt-5">
-              <ReferralLinkCopy copy={copy} referralUrl={referralUrl} />
+              <ReferralLinkCopy
+                copy={{ copied: copy.copied, copyLink: copy.copyLink }}
+                referralUrl={referralUrl}
+              />
             </div>
           </section>
 
@@ -269,6 +287,7 @@ export default async function ReferralDashboardPage() {
             <ReferralTable
               copy={copy}
               locale={locale}
+              payouts={data.payouts}
               referrals={data.referrals}
             />
           </section>

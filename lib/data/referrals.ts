@@ -30,14 +30,14 @@ export {
 } from "./referral-records";
 
 const settingsSelect =
-  "program_enabled, demo_attended_payout_cents, retained_customer_payout_cents, retention_days, currency, contact_email, terms_url";
+  "program_enabled, currency, contact_email, terms_url";
 const referrerSelect =
   "id, user_id, full_name, email, organization_name, relationship_to_olea, payout_contact, status, status_reason, approved_at, created_at, referral_links(code, active, created_at)";
 const referralSelect =
   "id, referral_code, referred_email, status, created_at, last_milestone_at, organizations(name)";
 const adminReferralSelect = `${referralSelect}, referrers(full_name, email)`;
 const payoutSelect =
-  "id, referral_id, milestone, amount_cents, currency, status, due_at, paid_at, notes, evidence_url";
+  "id, referral_id, milestone, amount_cents, currency, status, due_at, paid_at, notes, evidence_url, source_invoice_id, purchase_amount_cents";
 
 export const getReferralProgramSettings = cache(async () => {
   const { data, error } = await createAdminClient()

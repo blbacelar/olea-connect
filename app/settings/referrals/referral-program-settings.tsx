@@ -1,10 +1,9 @@
 import { Handshake } from "lucide-react";
 
-import { CurrencyInput } from "@/components/ui/currency-input";
 import { Input } from "@/components/ui/input";
 import { SubmitButton } from "@/components/ui/submit-button";
 import type { getReferralAdminData } from "@/lib/data/referrals";
-import { decimalFromCents } from "@/lib/referrals/domain";
+import { getRequestLocale } from "@/lib/i18n/server";
 
 type ReferralSettings = Awaited<
   ReturnType<typeof getReferralAdminData>
@@ -17,6 +16,7 @@ export function ReferralProgramSettings({
   saveReferralProgramSettings: (formData: FormData) => Promise<void>;
   settings: ReferralSettings;
 }) {
+  const isFrench = getRequestLocale() === "fr-CA";
   return (
     <section className="rounded-xl border bg-white p-5 shadow-soft">
       <div className="flex items-center gap-2">
@@ -28,39 +28,11 @@ export function ReferralProgramSettings({
         className="mt-5 grid gap-4 md:grid-cols-2"
       >
         <ProgramEnabledField enabled={settings.programEnabled} />
-        <label className="text-sm font-semibold text-slate-700">
-          Demo attended payout
-          <CurrencyInput
-            name="demoAttendedPayout"
-            defaultValue={decimalFromCents(settings.demoAttendedPayoutCents)}
-            placeholder="$100.00"
-            required
-            className="mt-2"
-          />
-        </label>
-        <label className="text-sm font-semibold text-slate-700">
-          Retained customer payout
-          <CurrencyInput
-            name="retainedCustomerPayout"
-            defaultValue={decimalFromCents(settings.retainedCustomerPayoutCents)}
-            placeholder="$400.00"
-            required
-            className="mt-2"
-          />
-        </label>
-        <label className="text-sm font-semibold text-slate-700">
-          Retention window in days
-          <Input
-            name="retentionDays"
-            type="number"
-            min={1}
-            max={730}
-            defaultValue={settings.retentionDays}
-            placeholder="90"
-            required
-            className="mt-2"
-          />
-        </label>
+        <p className="text-sm text-slate-600 md:col-span-2">
+          {isFrench
+            ? "Une seule commission par organisme référé : 10 % de son premier paiement d'adhésion trimestriel ou annuel réussi, jusqu'à concurrence de 500 $ CA. Une présentation ou une démonstration seule ne donne droit à aucune récompense. Les versements sont soumis à une vérification."
+            : "One commission per referred organization: 10% of its first successful quarterly or annual membership payment, capped at CAD $500. No reward is earned for an introduction or demo alone. Payouts require review."}
+        </p>
         <label className="text-sm font-semibold text-slate-700">
           Program contact email
           <Input
@@ -108,7 +80,7 @@ function ProgramEnabledField({ enabled }: { enabled: boolean }) {
         </span>
         <span className="mt-1 block text-slate-600">
           Turn this off to pause public applications without disabling existing
-          referral links or admin milestone tracking.
+          referral links or existing commission records.
         </span>
       </span>
     </label>

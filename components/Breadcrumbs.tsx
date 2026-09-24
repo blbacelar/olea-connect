@@ -25,7 +25,10 @@ export function Breadcrumbs() {
         }));
 
   return (
-    <div className="flex h-[42px] shrink-0 items-center border-b bg-white px-4 text-[13px] md:px-6">
+    <div
+      data-testid="app-breadcrumbs"
+      className="flex h-[42px] shrink-0 items-center border-b bg-white px-4 text-[13px] md:px-6"
+    >
       {crumbs.map((crumb, index) => {
         const current = index === crumbs.length - 1;
         return (
