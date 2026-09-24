@@ -11,6 +11,7 @@ import { buildTemplateExportModel } from "@/lib/template-renderer/export-model";
 import { renderTemplateDocxBuffer } from "@/lib/template-renderer/docx-export";
 import {
   buildBoardCalendarReportFooterText,
+  buildBoardCalendarReportHeaderHtml,
   buildBoardCalendarReportHtml,
   isBoardCalendarSchema,
 } from "@/lib/template-renderer/board-calendar-report-html";
@@ -288,6 +289,7 @@ async function renderPdfExportBuffer({
       }),
       {
         footerText: buildBoardCalendarReportFooterText(brand, organizationName),
+        headerHtml: buildBoardCalendarReportHeaderHtml(organizationName, title),
       },
     );
   }
@@ -301,35 +303,16 @@ async function renderPdfExportBuffer({
 }
 
 export async function createTemplateExportDownloadUrl(exportId: string) {
-  const { member, organization } = await requireMemberContext();
+  const { organization } = await requireMemberContext();
   const supabase = await createClient();
   const { data: exportRecord, error: exportError } = await supabase
     .from("template_exports")
-    .select("id, organization_id, storage_path, file_name")
+    .select("id")
     .eq("id", exportId)
     .eq("organization_id", organization.id)
     .single();
 
   if (exportError) throw exportError;
 
-  const { error: eventError } = await supabase
-    .from("template_export_downloads")
-    .insert({
-      export_id: exportRecord.id,
-      organization_id: organization.id,
-      downloaded_by: member.id,
-      metadata: { file_name: exportRecord.file_name },
-    });
-
-  if (eventError) throw eventError;
-
-  const { data: signedUrl, error: signedUrlError } = await supabase.storage
-    .from("generated-documents")
-    .createSignedUrl(exportRecord.storage_path, 60, {
-      download: exportRecord.file_name,
-    });
-
-  if (signedUrlError) throw signedUrlError;
-
-  return signedUrl.signedUrl;
+  return `/api/template-exports/${exportRecord.id}/download`;
 }

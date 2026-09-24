@@ -4,7 +4,6 @@ import { z } from "zod";
 
 import type { requireMemberContext } from "@/lib/data/member-context";
 import type { MembershipTier } from "@/lib/types";
-import { normalizeGrantPlatformRoundStatus } from "@/lib/grants/workflow";
 import {
   normalizeOptionalEmail,
   normalizeOptionalPhone,
@@ -243,7 +242,6 @@ function parseGrantCreationForm(formData: FormData) {
     name,
     notes: getText(formData, "notes"),
     requestedAmountCents,
-    status: getText(formData, "status") || "planning",
   } as const;
 }
 
@@ -277,7 +275,7 @@ async function insertGrantRound(
       opens_at: new Date().toISOString(),
       program_id: programId,
       public_notes: formatGrantPublicNotes(input.funderName, input.notes),
-      status: normalizeGrantPlatformRoundStatus(input.status),
+      status: "draft",
     })
     .select("id")
     .single();

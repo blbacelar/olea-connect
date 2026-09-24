@@ -1,3 +1,4 @@
+import { getDocument } from "pdfjs-dist/legacy/build/pdf.mjs";
 import { describe, expect, it } from "vitest";
 
 import { brandName } from "@/lib/brand";
@@ -124,5 +125,20 @@ describe("KPI dashboard PDF export", () => {
     expect(reportText).toContain("Quarterly survey response rate may decline.");
     expect(reportText).toContain("A year of steady service improvement.");
     expect(reportText).toContain("Page 5 of 5");
+  });
+
+  it("keeps the branded footer and page number on the landscape results page", async () => {
+    const buffer = await renderKpiDashboardPdfBuffer(data, brand);
+    const loadingTask = getDocument({ data: new Uint8Array(buffer), disableFontFace: true, useSystemFonts: true });
+    const document = await loadingTask.promise;
+    try {
+      const page = await document.getPage(3);
+      const content = await page.getTextContent();
+      const text = content.items.map((item) => ("str" in item ? item.str : "")).join(" ");
+      expect(text).toContain("Olea QA Foundation");
+      expect(text).toContain("Page 3 of 5");
+    } finally {
+      await loadingTask.destroy();
+    }
   });
 });

@@ -106,7 +106,7 @@ export function GrantPlatformWorkspace({
         </div>
 
         <TabsContent value="pipeline" className="space-y-5">
-          <GrantPipelineTable canEditGrants={canEditGrants} data={data} onSwitchTab={changeTab} />
+          <GrantPipelineTable canEditGrants={canEditGrants} canViewReports={canViewReports} data={data} onSwitchTab={changeTab} />
         </TabsContent>
 
         <TabsContent value="dashboard" className="space-y-5">

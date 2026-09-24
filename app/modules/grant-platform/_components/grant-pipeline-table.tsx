@@ -1,20 +1,12 @@
 "use client";
 
+import { FileDown } from "lucide-react";
 import { useState } from "react";
 
 import { AddGrantDialog } from "@/app/modules/grant-platform/_components/add-grant-dialog";
-import {
-  grantPipelineGrants,
-  initialGrantPipelineNotes,
-  type GrantPipelineNote,
-} from "@/app/modules/grant-platform/_components/grant-pipeline-data";
-import {
-  GrantPortalDialog,
-  GrantSubmissionDialog,
-} from "@/app/modules/grant-platform/_components/grant-pipeline-dialogs";
-import { GrantPipelineRow } from "@/app/modules/grant-platform/_components/grant-pipeline-row";
-import { ApplicationWorkflowDialog } from "@/app/modules/grant-platform/_components/grant-platform-workspace";
+import { ApplicationWorkflowDialog } from "@/app/modules/grant-platform/_components/application-workflow-dialog";
 import { RequestWriterDialog } from "@/app/modules/grant-platform/_components/request-writer-dialog";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -24,263 +16,143 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
 import type { GrantPlatformWorkspaceData } from "@/lib/data/grant-platform";
+import { filterGrantApplications, isGrantApplicationPastDue } from "@/lib/grants/pipeline";
 
 interface GrantPipelineTableProps {
   canEditGrants: boolean;
+  canViewReports: boolean;
   data: GrantPlatformWorkspaceData;
   onSwitchTab: (tab: string) => void;
 }
 
 export function GrantPipelineTable({
   canEditGrants,
+  canViewReports,
   data,
   onSwitchTab,
 }: GrantPipelineTableProps) {
-  const [expandedId, setExpandedId] = useState<string | null>("grant-1");
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
-  const [submissionModalOpen, setSubmissionModalOpen] = useState(false);
-  const [portalModalOpen, setPortalModalOpen] = useState(false);
-  const [activeGrantForSubmission, setActiveGrantForSubmission] =
-    useState<string | null>(null);
-  const [confirmationNumber, setConfirmationNumber] = useState("");
-  const [submissionSuccessMsg, setSubmissionSuccessMsg] = useState<
-    string | null
-  >(null);
-  const [statusMessages, setStatusMessages] = useState<Record<string, string>>(
-    {},
-  );
-  const [postedNotes, setPostedNotes] =
-    useState<Record<string, GrantPipelineNote[]>>(initialGrantPipelineNotes);
-  const [newNoteText, setNewNoteText] = useState("");
-  const filteredGrants = grantPipelineGrants.filter((grant) =>
-    matchesGrantFilters(grant, { searchQuery, statusFilter }),
-  );
-
-  function handlePostNote(grantId: string) {
-    if (!newNoteText.trim()) return;
-    setPostedNotes((currentNotes) => ({
-      ...currentNotes,
-      [grantId]: [
-        ...(currentNotes[grantId] || []),
-        { author: "Grant Manager", date: "Just now", text: newNoteText.trim() },
-      ],
-    }));
-    setNewNoteText("");
-  }
-
-  function handleStatusChange(grantId: string, status: string) {
-    setStatusMessages((currentMessages) => ({
-      ...currentMessages,
-      [grantId]: `Status updated to ${status}. Team notified.`,
-    }));
-  }
-
-  function handleMarkSubmitted(grantName: string) {
-    setActiveGrantForSubmission(grantName);
-    setSubmissionModalOpen(true);
-  }
-
-  function handleRecordSubmissionSubmit(event: React.FormEvent) {
-    event.preventDefault();
-    if (!confirmationNumber.trim()) return;
-
-    setSubmissionSuccessMsg(
-      `GRANT SUBMISSION RECORDED!\nFunder Confirmation #: ${confirmationNumber.trim()}\nStatus changed to: Applied.`,
-    );
-    window.setTimeout(() => {
-      setSubmissionModalOpen(false);
-      setSubmissionSuccessMsg(null);
-      setConfirmationNumber("");
-    }, 2000);
-  }
+  const statuses = [...new Set(data.applications.map((application) => application.status))];
+  const filteredApplications = filterGrantApplications(data.applications, {
+    searchQuery,
+    statusFilter,
+  });
 
   return (
-    <div className="space-y-6">
-      <GrantPipelineHeader
-        canEditGrants={canEditGrants}
-        data={data}
-        onSwitchTab={onSwitchTab}
-      />
-      <GrantPipelineFilters
-        searchQuery={searchQuery}
-        statusFilter={statusFilter}
-        onSearchQueryChange={setSearchQuery}
-        onStatusFilterChange={setStatusFilter}
-      />
-      <GrantPipelineRows
-        expandedId={expandedId}
-        grants={filteredGrants}
-        newNoteText={newNoteText}
-        postedNotes={postedNotes}
-        statusMessages={statusMessages}
-        onMarkSubmitted={handleMarkSubmitted}
-        onNewNoteTextChange={setNewNoteText}
-        onOpenPortal={() => setPortalModalOpen(true)}
-        onPostNote={handlePostNote}
-        onStatusChange={handleStatusChange}
-        onToggleExpanded={setExpandedId}
-      />
-      <GrantPortalDialog
-        open={portalModalOpen}
-        onOpenChange={setPortalModalOpen}
-      />
-      <GrantSubmissionDialog
-        activeGrantForSubmission={activeGrantForSubmission}
-        confirmationNumber={confirmationNumber}
-        open={submissionModalOpen}
-        submissionSuccessMsg={submissionSuccessMsg}
-        onConfirmationNumberChange={setConfirmationNumber}
-        onOpenChange={setSubmissionModalOpen}
-        onSubmit={handleRecordSubmissionSubmit}
-      />
-    </div>
-  );
-}
-
-function GrantPipelineHeader({
-  canEditGrants,
-  data,
-  onSwitchTab,
-}: GrantPipelineTableProps) {
-  return (
-    <div className="flex flex-wrap items-center justify-between gap-3">
-      <h2 className="text-2xl font-bold text-navy-blue">Grant Pipeline</h2>
-      <div className="flex flex-wrap items-center gap-2">
-        {canEditGrants ? <AddGrantDialog /> : null}
-        <Button
-          type="button"
-          className="bg-olea-green text-white hover:bg-olea-green/90"
-          onClick={() => onSwitchTab("partners")}
-        >
-          Add Partner
-        </Button>
-        <ApplicationWorkflowDialog data={data} />
-        <RequestWriterDialog />
-        <Button
-          type="button"
-          variant="outline"
-          className="bg-slate-100 text-slate-800"
-          onClick={() => window.print()}
-        >
-          Export Board Report
-        </Button>
+    <section className="space-y-5" aria-labelledby="grant-pipeline-title">
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <div>
+          <h2 id="grant-pipeline-title" className="text-2xl font-bold text-navy-blue">
+            Grant Pipeline
+          </h2>
+          <p className="mt-1 text-sm text-slate-600">
+            Saved applications in this workspace. Reports use the same records.
+          </p>
+        </div>
+        <div className="flex flex-wrap gap-2">
+          {canEditGrants ? <AddGrantDialog /> : null}
+          <Button type="button" variant="outline" onClick={() => onSwitchTab("partners")}>Add Partner</Button>
+          <ApplicationWorkflowDialog data={data} />
+          <RequestWriterDialog />
+          {canViewReports ? (
+            <Button asChild variant="outline">
+              <a href="/api/grant-platform/export">
+                <FileDown className="size-4" />
+                Export Board Report
+              </a>
+            </Button>
+          ) : null}
+        </div>
       </div>
-    </div>
-  );
-}
 
-function GrantPipelineFilters({
-  searchQuery,
-  statusFilter,
-  onSearchQueryChange,
-  onStatusFilterChange,
-}: {
-  searchQuery: string;
-  statusFilter: string;
-  onSearchQueryChange: (value: string) => void;
-  onStatusFilterChange: (value: string) => void;
-}) {
-  return (
-    <div className="flex flex-wrap items-center gap-3 rounded-lg border border-slate-200 bg-white p-3 shadow-soft">
-      <div className="min-w-[200px] flex-1">
+      <div className="flex flex-wrap gap-3 rounded-lg border border-slate-200 bg-white p-3 shadow-soft">
         <Input
+          aria-label="Search grants or funders"
+          className="min-w-[220px] flex-1"
+          onChange={(event) => setSearchQuery(event.target.value)}
           placeholder="Search grants or funders..."
           value={searchQuery}
-          onChange={(event) => onSearchQueryChange(event.target.value)}
-          className="h-9"
         />
-      </div>
-      <div className="w-[180px]">
-        <Select value={statusFilter} onValueChange={onStatusFilterChange}>
-          <SelectTrigger className="h-9">
-            <SelectValue placeholder="All Statuses" />
+        <Select value={statusFilter} onValueChange={setStatusFilter}>
+          <SelectTrigger aria-label="Filter grants by status" className="w-[190px]">
+            <SelectValue placeholder="All statuses" />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="all">All Statuses</SelectItem>
-            <SelectItem value="planning">Planning</SelectItem>
-            <SelectItem value="in_progress">In Progress</SelectItem>
-            <SelectItem value="applied">Applied</SelectItem>
-            <SelectItem value="approved">Approved</SelectItem>
-            <SelectItem value="declined">Declined</SelectItem>
+            <SelectItem value="all">All statuses</SelectItem>
+            {statuses.map((status) => (
+              <SelectItem key={status} value={status}>{formatStatus(status)}</SelectItem>
+            ))}
           </SelectContent>
         </Select>
       </div>
-    </div>
+
+      <div className="overflow-x-auto rounded-xl border border-slate-200 bg-white shadow-soft">
+        <Table className="min-w-[800px]">
+          <TableHeader>
+            <TableRow>
+              <TableHead>Grant</TableHead>
+              <TableHead>Funder</TableHead>
+              <TableHead>Status</TableHead>
+              <TableHead>Requested</TableHead>
+              <TableHead>Deadline</TableHead>
+              <TableHead>Next step</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {filteredApplications.map((application) => (
+              <TableRow key={application.id}>
+                <TableCell className="min-w-48 font-medium text-slate-900">
+                  <span className="block">{application.roundName}</span>
+                  <span className="mt-1 block text-xs font-normal text-slate-500">{application.focusArea}</span>
+                </TableCell>
+                <TableCell>{application.funderName}</TableCell>
+                <TableCell><Badge variant="outline">{formatStatus(application.status)}</Badge></TableCell>
+                <TableCell>{formatCurrency(application.requestedAmountCents)}</TableCell>
+                <TableCell>
+                  {formatDeadline(application.deadlineAt)}
+                  {isGrantApplicationPastDue(application) ? <span className="block text-xs font-semibold text-red-700">Past due</span> : null}
+                </TableCell>
+                <TableCell className="min-w-52 text-slate-600">{application.nextMilestone}</TableCell>
+              </TableRow>
+            ))}
+            {!filteredApplications.length ? (
+              <TableRow>
+                <TableCell colSpan={6} className="py-10 text-center text-slate-600">
+                  {data.applications.length
+                    ? "No grants match your filters."
+                    : "No saved grants yet. Add a grant to start the pipeline."}
+                </TableCell>
+              </TableRow>
+            ) : null}
+          </TableBody>
+        </Table>
+      </div>
+    </section>
   );
 }
 
-function GrantPipelineRows({
-  expandedId,
-  grants,
-  newNoteText,
-  postedNotes,
-  statusMessages,
-  onMarkSubmitted,
-  onNewNoteTextChange,
-  onOpenPortal,
-  onPostNote,
-  onStatusChange,
-  onToggleExpanded,
-}: {
-  expandedId: string | null;
-  grants: typeof grantPipelineGrants;
-  newNoteText: string;
-  postedNotes: Record<string, GrantPipelineNote[]>;
-  statusMessages: Record<string, string>;
-  onMarkSubmitted: (grantName: string) => void;
-  onNewNoteTextChange: (value: string) => void;
-  onOpenPortal: () => void;
-  onPostNote: (grantId: string) => void;
-  onStatusChange: (grantId: string, status: string) => void;
-  onToggleExpanded: (grantId: string | null) => void;
-}) {
-  return (
-    <div className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-soft">
-      <div className="grid grid-cols-[2.5fr_1.5fr_1.2fr_1fr_1fr_1.2fr] bg-navy-blue px-4 py-3 text-xs font-semibold uppercase tracking-wider text-white">
-        <div>Grant Name</div>
-        <div>Funder</div>
-        <div>Status</div>
-        <div>Requested</div>
-        <div>Awarded</div>
-        <div>Deadline</div>
-      </div>
-      <div className="divide-y divide-slate-100">
-        {grants.map((grant) => {
-          const isExpanded = expandedId === grant.id;
-          return (
-            <GrantPipelineRow
-              key={grant.id}
-              grant={grant}
-              isExpanded={isExpanded}
-              newNoteText={newNoteText}
-              notes={postedNotes[grant.id] || []}
-              statusMessage={statusMessages[grant.id]}
-              onMarkSubmitted={onMarkSubmitted}
-              onNewNoteTextChange={onNewNoteTextChange}
-              onOpenPortal={onOpenPortal}
-              onPostNote={onPostNote}
-              onStatusChange={onStatusChange}
-              onToggle={() => onToggleExpanded(isExpanded ? null : grant.id)}
-            />
-          );
-        })}
-      </div>
-    </div>
-  );
+function formatStatus(value: string) {
+  return value.replace(/_/g, " ").replace(/\b\w/g, (letter) => letter.toUpperCase());
 }
 
-function matchesGrantFilters(
-  grant: (typeof grantPipelineGrants)[number],
-  filters: { searchQuery: string; statusFilter: string },
-) {
-  const normalizedSearch = filters.searchQuery.toLowerCase();
-  const matchesSearch =
-    grant.name.toLowerCase().includes(normalizedSearch) ||
-    grant.funder.toLowerCase().includes(normalizedSearch);
-  const matchesStatus =
-    filters.statusFilter === "all" || grant.status === filters.statusFilter;
+function formatCurrency(cents: number) {
+  return new Intl.NumberFormat("en-CA", { style: "currency", currency: "CAD" }).format(cents / 100);
+}
 
-  return matchesSearch && matchesStatus;
+function formatDeadline(value: string | null) {
+  if (!value) return "Not set";
+  const date = new Date(value);
+  return Number.isNaN(date.getTime())
+    ? "Not set"
+    : date.toLocaleDateString("en-CA", { year: "numeric", month: "short", day: "numeric", timeZone: "UTC" });
 }

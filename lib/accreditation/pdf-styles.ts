@@ -11,8 +11,8 @@ export const accreditationPdfStyles = StyleSheet.create({
     fontSize: 10,
   },
   coverLogo: {
-    width: 76,
-    height: 76,
+    width: 176,
+    height: 72,
     borderRadius: 12,
     color: "#ffffff",
     alignItems: "center",
@@ -21,12 +21,12 @@ export const accreditationPdfStyles = StyleSheet.create({
     fontFamily: "Helvetica-Bold",
   },
   coverLogoImage: {
-    width: 64,
-    height: 64,
+    width: 158,
+    height: 56,
     objectFit: "contain",
   },
   logo: {
-    width: 34,
+    width: 92,
     height: 34,
     borderRadius: 8,
     color: "#ffffff",
@@ -36,7 +36,7 @@ export const accreditationPdfStyles = StyleSheet.create({
     fontFamily: "Helvetica-Bold",
   },
   headerLogoImage: {
-    width: 28,
+    width: 82,
     height: 28,
     objectFit: "contain",
   },

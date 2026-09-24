@@ -101,7 +101,7 @@ const styles = StyleSheet.create({
     borderBottomColor: "#DCE3E8",
   },
   logo: {
-    width: 30,
+    width: 92,
     height: 30,
     borderRadius: 7,
     alignItems: "center",
@@ -112,7 +112,7 @@ const styles = StyleSheet.create({
     fontFamily: "Helvetica-Bold",
   },
   logoImage: {
-    width: 25,
+    width: 82,
     height: 25,
     objectFit: "contain",
   },
@@ -486,7 +486,7 @@ function BrandMark({
       style={[
         styles.logo,
         ...(cover
-          ? [{ width: 84, height: 84, borderRadius: 16, fontSize: 22 }]
+          ? [{ width: 176, height: 72, borderRadius: 16, fontSize: 22 }]
           : []),
         { backgroundColor: brand.primaryColor },
       ]}
@@ -496,7 +496,7 @@ function BrandMark({
           src={logoDataUrl}
           style={
             cover
-              ? { width: 70, height: 70, objectFit: "contain" }
+              ? { width: 158, height: 56, objectFit: "contain" }
               : styles.logoImage
           }
         />

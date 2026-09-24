@@ -1,6 +1,7 @@
 "use client";
 
 import { Plus } from "lucide-react";
+import { useRouter } from "next/navigation";
 import { useState } from "react";
 
 import { Button } from "@/components/ui/button";
@@ -16,42 +17,41 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { createGrantPlatformGrant } from "@/app/modules/grant-platform/actions";
 
 export function AddGrantDialog() {
+  const router = useRouter();
   const [open, setOpen] = useState(false);
   const [pending, setPending] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
-  const [status, setStatus] = useState("planning");
 
   async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
+    const form = event.currentTarget;
     setPending(true);
     setMessage(null);
 
-    const formData = new FormData(event.currentTarget);
-    const result = await createGrantPlatformGrant(formData);
-
-    setPending(false);
-    setMessage(result.message);
-
-    if (result.success) {
-      setOpen(false);
-      event.currentTarget.reset();
-      setStatus("planning");
+    try {
+      const result = await createGrantPlatformGrant(new FormData(form));
+      setMessage(result.message);
+      if (result.success) {
+        form.reset();
+        setOpen(false);
+        router.refresh();
+      }
+    } catch {
+      setMessage("The grant could not be created right now. Try again.");
+    } finally {
+      setPending(false);
     }
   }
 
   return (
-    <Dialog open={open} onOpenChange={setOpen}>
+    <Dialog open={open} onOpenChange={(nextOpen) => {
+      setOpen(nextOpen);
+      if (nextOpen) setMessage(null);
+    }}>
       <DialogTrigger asChild>
         <Button type="button" variant="outline" className="gap-2">
           <Plus className="size-4" />
@@ -62,11 +62,10 @@ export function AddGrantDialog() {
         <DialogHeader>
           <DialogTitle>Add new grant</DialogTitle>
           <DialogDescription>
-            Capture the core details for a new opportunity and start the workflow from planning.
+            Capture the core details for a new opportunity. New grants start as drafts.
           </DialogDescription>
         </DialogHeader>
         <form className="space-y-4" onSubmit={handleSubmit}>
-          <input type="hidden" name="status" value={status} />
           <div className="grid gap-4 md:grid-cols-2">
             <div className="space-y-2 md:col-span-2">
               <Label htmlFor="grant-name">Grant name</Label>
@@ -89,21 +88,6 @@ export function AddGrantDialog() {
             <div className="space-y-2">
               <Label htmlFor="deadline">Application deadline</Label>
               <Input id="deadline" name="deadline" type="date" required />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="status">Current status</Label>
-              <Select value={status} onValueChange={setStatus}>
-                <SelectTrigger id="status" className="w-full">
-                  <SelectValue placeholder="Select status" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="planning">Planning</SelectItem>
-                  <SelectItem value="in_progress">In Progress</SelectItem>
-                  <SelectItem value="applied">Applied</SelectItem>
-                  <SelectItem value="approved">Approved</SelectItem>
-                  <SelectItem value="declined">Declined</SelectItem>
-                </SelectContent>
-              </Select>
             </div>
             <div className="space-y-2 md:col-span-2">
               <Label htmlFor="notes">Notes</Label>

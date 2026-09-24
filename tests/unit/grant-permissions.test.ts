@@ -15,8 +15,9 @@ describe("grant platform permissions", () => {
     expect(normalizeGrantPlatformRole("grant_manager")).toBe("grant_manager");
     expect(normalizeGrantPlatformRole("finance")).toBe("finance");
     expect(normalizeGrantPlatformRole("owner")).toBe("admin");
+    expect(normalizeGrantPlatformRole("Organization owner")).toBe("admin");
     expect(normalizeGrantPlatformRole("member")).toBe("partner");
-    expect(normalizeGrantPlatformRole("unknown")).toBe("admin");
+    expect(normalizeGrantPlatformRole("unknown")).toBe("partner");
   });
 
   it("returns the correct permission flags for each role", () => {

@@ -1,11 +1,14 @@
 import { describe, expect, it } from "vitest";
+import { getDocument } from "pdfjs-dist/legacy/build/pdf.mjs";
 
 import {
   buildBoardCalendarReport,
+  buildBoardCalendarReportHeaderHtml,
   buildBoardCalendarReportHtml,
   isBoardCalendarSchema,
 } from "@/lib/template-renderer/board-calendar-report-html";
 import type { BrandProfile } from "@/lib/types";
+import { renderHtmlToPdfBuffer } from "@/lib/template-renderer/html-pdf-export";
 import type {
   TemplateFieldSchema,
   TemplateFormData,
@@ -171,4 +174,35 @@ describe("board calendar HTML report export", () => {
     expect(html).toContain("object-fit: contain");
     expect(html).not.toContain("background:#fff");
   });
+
+  it("escapes the repeating print header", () => {
+    const header = buildBoardCalendarReportHeaderHtml("A&B", "Calendar <Report>");
+    expect(header).toContain("A&amp;B");
+    expect(header).toContain("Calendar &lt;Report&gt;");
+  });
+
+  it("prints the report header and footer on later PDF pages", async () => {
+    const html = `<html><body>${Array.from({ length: 4 }, (_, index) =>
+      `<section style="height:700px;page-break-after:always">Report section ${index + 1}</section>`,
+    ).join("")}</body></html>`;
+    const buffer = await renderHtmlToPdfBuffer(html, {
+      headerHtml: buildBoardCalendarReportHeaderHtml("Olea QA", "Board Calendar"),
+      footerText: "Olea QA | Board Calendar",
+    });
+    const loadingTask = getDocument({ data: new Uint8Array(buffer), disableFontFace: true, useSystemFonts: true });
+    const document = await loadingTask.promise;
+    try {
+      expect(document.numPages).toBeGreaterThanOrEqual(4);
+      for (let pageNumber = 3; pageNumber <= 4; pageNumber += 1) {
+        const page = await document.getPage(pageNumber);
+        const content = await page.getTextContent();
+        const text = content.items.map((item) => ("str" in item ? item.str : "")).join(" ");
+        expect(text).toContain("Board Calendar");
+        expect(text).toContain(`Page ${pageNumber} of`);
+        page.cleanup();
+      }
+    } finally {
+      await loadingTask.destroy();
+    }
+  }, 30_000);
 });

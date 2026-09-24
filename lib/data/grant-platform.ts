@@ -110,11 +110,13 @@ export interface GrantPlatformWorkspaceData {
   notes: GrantPlatformStatusNote[];
 }
 
-export async function getGrantPlatformData(): Promise<GrantPlatformWorkspaceData> {
+export async function getGrantPlatformData(
+  options: { requireApplications?: boolean } = {},
+): Promise<GrantPlatformWorkspaceData> {
   const { member, organization } = await requireMemberContext();
   const supabase = await createClient();
   const access = getGrantPlatformUiAccess(member.role);
-  const rows = await loadGrantPlatformRows(supabase, organization.id);
+  const rows = await loadGrantPlatformRows(supabase, organization.id, options);
   const profileMap = await loadGrantPlatformProfileMap(supabase, rows.members);
 
   return buildGrantPlatformWorkspaceData({

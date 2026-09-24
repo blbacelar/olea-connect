@@ -131,14 +131,14 @@ export function buildBoardCalendarReportHtml({
       border-radius: 14px;
       color: #fff;
       display: flex;
-      flex: 0 0 76px;
+      flex: 0 0 176px;
       font-size: 18px;
       font-weight: 800;
-      height: 76px;
+      height: 72px;
       justify-content: center;
       letter-spacing: 0.08em;
       overflow: hidden;
-      width: 76px;
+      width: 176px;
     }
     .cover-logo img {
       height: 100%;
@@ -199,14 +199,14 @@ export function buildBoardCalendarReportHtml({
       border-radius: 9px;
       color: #fff;
       display: flex;
-      flex: 0 0 42px;
+      flex: 0 0 92px;
       font-size: 12px;
       font-weight: 800;
       height: 42px;
       justify-content: center;
       letter-spacing: 0.08em;
       overflow: hidden;
-      width: 42px;
+      width: 92px;
     }
     .logo img {
       height: 100%;
@@ -333,6 +333,13 @@ export function buildBoardCalendarReportFooterText(
   return contactItems.length
     ? contactItems.map((item) => item ?? "").join(" | ")
     : organizationName;
+}
+
+export function buildBoardCalendarReportHeaderHtml(
+  organizationName: string,
+  title: string,
+) {
+  return `<div style="display:flex;justify-content:space-between;border-bottom:1px solid #d8dee8;padding-bottom:5px;width:100%"><strong>${escapeHtml(organizationName)}</strong><span>${escapeHtml(title)}</span></div>`;
 }
 
 function buildMeetingsSection(data: TemplateFormData): BoardCalendarReportSection {

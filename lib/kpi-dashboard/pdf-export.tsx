@@ -49,8 +49,8 @@ const styles = StyleSheet.create({
     height: 14,
   },
   coverLogo: {
-    width: 84,
-    height: 84,
+    width: 176,
+    height: 72,
     borderRadius: 16,
     alignItems: "center",
     justifyContent: "center",
@@ -60,8 +60,8 @@ const styles = StyleSheet.create({
     fontFamily: "Helvetica-Bold",
   },
   coverLogoImage: {
-    width: 70,
-    height: 70,
+    width: 158,
+    height: 56,
     objectFit: "contain",
   },
   coverContent: {
@@ -136,7 +136,7 @@ const styles = StyleSheet.create({
     borderBottomColor: "#DCE3E8",
   },
   headerLogo: {
-    width: 30,
+    width: 92,
     height: 30,
     borderRadius: 7,
     alignItems: "center",
@@ -147,7 +147,7 @@ const styles = StyleSheet.create({
     fontFamily: "Helvetica-Bold",
   },
   headerLogoImage: {
-    width: 25,
+    width: 82,
     height: 25,
     objectFit: "contain",
   },
@@ -322,6 +322,9 @@ const styles = StyleSheet.create({
     fontSize: 7,
     fontFamily: "Helvetica-Bold",
   },
+  landscapeFooterRule: { top: 555 },
+  landscapeFooterText: { top: 568 },
+  landscapeFooterPage: { top: 568 },
 });
 
 type ReportBrand = BrandProfile & {
@@ -427,7 +430,7 @@ function KpiDashboardDocument({
           assessment.
         </Text>
         <KpiResultsTable data={data} brand={brand} />
-        <Footer footer={footer} />
+        <Footer footer={footer} landscape />
       </Page>
 
       <ReportPage brand={brand} data={data} footer={footer} logoDataUrl={logoDataUrl}>
@@ -517,15 +520,15 @@ function PageHeader({
   );
 }
 
-function Footer({ footer }: { footer: string }) {
+function Footer({ footer, landscape = false }: { footer: string; landscape?: boolean }) {
   return (
     <>
-      <View style={styles.footerRule} fixed />
-      <Text style={styles.footerText} fixed wrap={false}>
+      <View style={[styles.footerRule, ...(landscape ? [styles.landscapeFooterRule] : [])]} fixed />
+      <Text style={[styles.footerText, ...(landscape ? [styles.landscapeFooterText] : [])]} fixed wrap={false}>
         {footer}
       </Text>
       <Text
-        style={styles.footerPage}
+        style={[styles.footerPage, ...(landscape ? [styles.landscapeFooterPage] : [])]}
         fixed
         render={({ pageNumber, totalPages }) => `Page ${pageNumber} of ${totalPages}`}
       />

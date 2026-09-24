@@ -128,12 +128,13 @@ export function normalizeGrantPlatformRole(role: string | null | undefined): Gra
       return "grant_manager";
     case "admin":
     case "owner":
+    case "organization owner":
     case "super_admin":
     case "community_admin":
     case "consulting_admin":
     case "consultant":
       return "admin";
     default:
-      return "admin";
+      return "partner";
   }
 }

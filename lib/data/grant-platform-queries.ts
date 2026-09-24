@@ -98,9 +98,13 @@ export type GrantPlatformOrganizationRow = {
 export async function loadGrantPlatformRows(
   supabase: SupabaseServerClient,
   organizationId: string,
+  options: { requireApplications?: boolean } = {},
 ) {
   const results = await fetchGrantPlatformRows(supabase, organizationId);
   logGrantPlatformErrors(results);
+  if (options.requireApplications && results.applications.error) {
+    throw results.applications.error;
+  }
 
   return {
     applications: readQueryArray<GrantPlatformApplicationRow>(results.applications),
