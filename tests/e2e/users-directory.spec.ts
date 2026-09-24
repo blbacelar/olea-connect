@@ -2,8 +2,8 @@ import { expect, test } from "../fixtures/authenticated.fixture";
 import type { Page } from "@playwright/test";
 
 async function openUserRow(page: Page, email: string) {
-  await page.goto("/users");
-  await expect(page.getByRole("heading", { name: "Users Directory" })).toBeVisible();
+  await page.goto("/settings/users");
+  await expect(page.getByRole("heading", { name: "Account registry" })).toBeVisible();
   const row = page.getByTestId("directory-user-row").filter({ hasText: email });
   for (let pageNumber = 1; pageNumber <= 100; pageNumber += 1) {
     if (await row.count()) return row;
@@ -22,6 +22,7 @@ test.describe("@critical users directory", () => {
     testData,
   }) => {
     const uniqueName = `Directory Member ${authenticatedMember.userId.slice(0, 8)}`;
+    const colleague = await testData.createOrganizationMember(authenticatedMember);
     const { error: profileError } = await testData.supabase
       .from("profiles")
       .update({ full_name: uniqueName })
@@ -53,14 +54,25 @@ test.describe("@critical users directory", () => {
     }).click();
     await expect(page).toHaveURL(/\/users$/);
     await expect(page.getByRole("heading", { name: "Users Directory" })).toBeVisible();
-    const row = await openUserRow(page, uniqueName);
-    await expect(row.getByText("Sponsor", { exact: true })).toBeVisible();
-    await expect(row).not.toContainText(sponsorName);
+    await page.getByLabel("Search directory").fill(authenticatedMember.organizationName);
+    await page.getByRole("button", { name: "Search directory" }).click();
+    const organization = page.getByTestId("organization-card").filter({
+      has: page.getByRole("heading", { name: authenticatedMember.organizationName }),
+    });
+    await expect(organization).toBeVisible();
+    await expect(organization.getByText(colleague.fullName)).toBeVisible();
+    const person = organization.getByTestId("directory-person").filter({ hasText: uniqueName });
+    await expect(person.getByText("Sponsor", { exact: true })).toBeVisible();
+    await expect(person).not.toContainText(sponsorName);
     await expect(page.getByRole("main").getByText(authenticatedMember.email)).toHaveCount(0);
-    await expect(page.getByRole("columnheader", { name: "Email" })).toHaveCount(0);
-    await expect(page.getByRole("columnheader", { name: "Workspace" })).toHaveCount(0);
-    await expect(page.getByRole("columnheader", { name: "Email status" })).toHaveCount(0);
-    await expect(page.getByRole("columnheader", { name: "Signed up" })).toHaveCount(0);
+
+    await page.getByLabel("Search directory").fill(colleague.fullName);
+    await page.getByRole("button", { name: "Search directory" }).click();
+    await expect(organization).toBeVisible();
+    await expect(organization.getByText(uniqueName)).toBeVisible();
+    await page.getByLabel("Search directory").fill("No organization named like this");
+    await page.getByRole("button", { name: "Search directory" }).click();
+    await expect(page.getByText("No organizations or people match your search.")).toBeVisible();
 
     await page.goto("/settings/users");
     await expect(page).toHaveURL(/\/users$/);
@@ -98,7 +110,7 @@ test.describe("@critical users directory", () => {
     });
 
     const row = await openUserRow(page, authenticatedMember.email);
-    await expect(page.getByRole("heading", { name: "Users Directory" })).toBeVisible();
+    await expect(page.getByRole("heading", { name: "Account registry" })).toBeVisible();
     await expect(page.getByTestId("app-sidebar").getByRole("link", {
       name: "Users Directory",
     })).toBeVisible();
@@ -149,13 +161,13 @@ test.describe("@critical users directory", () => {
       .listUsers({ page: 1, perPage: 50 });
     if (listError) throw listError;
     const lastPage = Math.max(1, Math.ceil(userList.total / 50));
-    await page.goto("/users?page=9999");
+    await page.goto("/settings/users?page=9999");
     await expect(page.getByText(`Page ${lastPage} of ${lastPage}`)).toBeVisible();
     await expect(page.getByTestId("directory-user-row").first()).toBeVisible();
 
     await page.setViewportSize({ width: 390, height: 844 });
-    const mobileRow = await openUserRow(page, authenticatedMember.email);
-    await expect(mobileRow).toBeVisible();
+    await page.goto(`/users?q=${encodeURIComponent(authenticatedMember.organizationName)}`);
+    await expect(page.getByTestId("organization-card")).toBeVisible();
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth))
       .toBe(true);
 
@@ -205,7 +217,7 @@ test.describe("@critical users directory", () => {
       if (creationError) throw creationError;
     }
 
-    await page.goto("/users");
+    await page.goto("/settings/users");
     await expect(page.getByText(/Page 1 of [2-9]\d*/)).toBeVisible();
     await expect(page.getByRole("link", { name: "Previous" })).toHaveCount(0);
     await page.getByRole("link", { name: "Next" }).click();
@@ -213,5 +225,79 @@ test.describe("@critical users directory", () => {
     await expect(page.getByTestId("directory-user-row").first()).toBeVisible();
     await page.getByRole("link", { name: "Previous" }).click();
     await expect(page.getByText(/Page 1 of [2-9]\d*/)).toBeVisible();
+  });
+
+  test("renders organization cards across the mobile viewport", async ({
+    authenticatedMember,
+    page,
+  }) => {
+    await page.setViewportSize({ width: 390, height: 844 });
+    await page.goto(`/users?q=${encodeURIComponent(authenticatedMember.organizationName)}`);
+    await expect(page.getByRole("heading", { name: "Users Directory" })).toBeVisible();
+    await expect(page.getByTestId("organization-card")).toBeVisible();
+    await expect(page.getByText("1 organization")).toBeVisible();
+    const layout = await page.evaluate(() => ({
+      mainLeft: document.querySelector("main")?.getBoundingClientRect().left,
+      mainWidth: document.querySelector("main")?.getBoundingClientRect().width,
+      viewportWidth: window.innerWidth,
+      scrollWidth: document.documentElement.scrollWidth,
+    }));
+    expect(layout.mainLeft).toBe(0);
+    expect(layout.mainWidth).toBe(layout.viewportWidth);
+    expect(layout.scrollWidth).toBeLessThanOrEqual(layout.viewportWidth);
+  });
+
+  test("keeps organization groups and search intact across directory pages", async ({
+    authenticatedMember,
+    page,
+    testData,
+  }) => {
+    const prefix = `Directory Batch ${authenticatedMember.userId.slice(0, 8)}`;
+    const { data: organizations, error: organizationError } = await testData.supabase
+      .from("organizations")
+      .insert(Array.from({ length: 13 }, (_, index) => ({
+        name: `${prefix} ${String(index).padStart(2, "0")}`,
+        slug: `directory-batch-${authenticatedMember.userId}-${index}`,
+        created_by: authenticatedMember.userId,
+      })))
+      .select("id");
+    if (organizationError || !organizations) throw organizationError ?? new Error("Organizations not created");
+    const ids = organizations.map((organization) => organization.id);
+    testData.registerCleanup({
+      label: `directory organizations ${prefix}`,
+      run: async () => {
+        const { error } = await testData.supabase.from("organizations").delete().in("id", ids);
+        if (error) throw error;
+      },
+    });
+
+    const { error: membershipError } = await testData.supabase
+      .from("organization_members")
+      .insert(ids.map((organizationId) => ({
+        organization_id: organizationId,
+        user_id: authenticatedMember.userId,
+        role: "member",
+        status: "active",
+      })));
+    if (membershipError) throw membershipError;
+    testData.registerCleanup({
+      label: `directory memberships ${prefix}`,
+      run: async () => {
+        const { error } = await testData.supabase.from("organization_members")
+          .delete().in("organization_id", ids).eq("user_id", authenticatedMember.userId);
+        if (error) throw error;
+      },
+    });
+
+    await page.goto(`/users?q=${encodeURIComponent(prefix)}`);
+    await expect(page.getByText("13 organizations")).toBeVisible();
+    await expect(page.getByTestId("organization-card")).toHaveCount(12);
+    await page.getByRole("link", { name: "Next" }).click();
+    await expect(page).toHaveURL(/\/users\?page=2/);
+    expect(new URL(page.url()).searchParams.get("q")).toBe(prefix);
+    await expect(page.getByTestId("organization-card")).toHaveCount(1);
+    await expect(page.getByRole("heading", { name: `${prefix} 12` })).toBeVisible();
+    await page.getByRole("link", { name: "Previous" }).click();
+    await expect(page.getByTestId("organization-card")).toHaveCount(12);
   });
 });
