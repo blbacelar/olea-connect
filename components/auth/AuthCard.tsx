@@ -7,17 +7,21 @@ export function AuthCard({
   description,
   children,
   logo,
+  topBanner,
 }: {
   title: string;
   description?: string;
   children: ReactNode;
+  topBanner?: ReactNode;
   logo?: {
     ariaLabel: string;
     tagline: string;
   };
 }) {
   return (
-    <main className="min-h-screen bg-slate-100 px-4 py-10">
+    <>
+      {topBanner ? <div className="sticky top-0 z-50">{topBanner}</div> : null}
+      <main className="min-h-screen bg-slate-100 px-4 py-10">
       <div className="mx-auto mb-8 w-fit">
         <Logo href="/" ariaLabel={logo?.ariaLabel} tagline={logo?.tagline} />
       </div>
@@ -32,6 +36,7 @@ export function AuthCard({
         ) : null}
         <div className="mt-7">{children}</div>
       </div>
-    </main>
+      </main>
+    </>
   );
 }

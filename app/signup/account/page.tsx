@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { useEffect } from "react";
 
 import { AuthCard } from "@/components/auth/AuthCard";
+import { FoundingOfferBanner } from "@/components/auth/PublicHeader";
 import { PasswordInput } from "@/components/auth/PasswordInput";
 import { StepIndicator } from "@/components/auth/StepIndicator";
 import { useLocaleContext } from "@/components/i18n/LocaleProvider";
@@ -89,6 +90,7 @@ export default function SignupAccountPage() {
       title={accountCopy.title}
       description={`${authCopy.signup.step(2, 3)} · ${accountCopy.description}`}
       logo={publicCopy.logo}
+      topBanner={<FoundingOfferBanner showSignupLink={false} />}
     >
       <StepIndicator current={2} />
       <div className="mt-7 space-y-5">

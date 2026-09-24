@@ -17,7 +17,7 @@ export default function HomePage() {
 
   return (
     <div className="min-h-screen bg-white">
-      <PublicHeader />
+      <PublicHeader showFoundingOffer />
       <main>
         <LandingHero copy={copy.hero} />
         <LandingTransformation copy={copy.transformation} />

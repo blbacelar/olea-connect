@@ -31,6 +31,11 @@ export type PublicSiteCopy = {
     referrals: string;
     getStarted: string;
   };
+  foundingBanner: {
+    message: string;
+    codeLabel: string;
+    signup: string;
+  };
   hero: {
     badge: string;
     title: string;
@@ -170,6 +175,11 @@ export const publicSiteCopy: Record<Locale, PublicSiteCopy> = {
       sponsorship: "Sponsorship",
       referrals: "Referrals",
       getStarted: "Get started",
+    },
+    foundingBanner: {
+      message: "15% off Year 1 for the first 50 paid organizations, while spots last.",
+      codeLabel: "Use code",
+      signup: "Join now",
     },
     hero: {
       badge: "Built for nonprofit organizations",
@@ -511,6 +521,11 @@ export const publicSiteCopy: Record<Locale, PublicSiteCopy> = {
       sponsorship: "Commandites",
       referrals: "Références",
       getStarted: "Commencer",
+    },
+    foundingBanner: {
+      message: "15 % de rabais la première année pour les 50 premiers organismes payants, jusqu'à épuisement des places.",
+      codeLabel: "Code",
+      signup: "S'inscrire",
     },
     hero: {
       badge: "Conçu pour les organismes sans but lucratif",

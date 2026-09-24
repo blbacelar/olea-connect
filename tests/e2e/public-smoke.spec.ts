@@ -19,6 +19,11 @@ test.describe("@smoke @critical public entry points", () => {
   }) => {
     await page.goto("/");
 
+    const offer = page.getByTestId("founding-offer-banner");
+    await expect(offer).toContainText("15% off Year 1 for the first 50 paid organizations, while spots last.");
+    await expect(offer).toContainText("OLEAFOUNDING15");
+    await expect(offer.getByRole("link", { name: "Join now" })).toHaveAttribute("href", "/signup");
+
     await expect(
       page.getByRole("heading", {
         name: /tools, community, and funding connections/i,
@@ -40,6 +45,9 @@ test.describe("@smoke @critical public entry points", () => {
     await page.goto("/");
 
     await switchToFrench(page);
+    await expect(page.getByTestId("founding-offer-banner")).toContainText(
+      "15 % de rabais la première année pour les 50 premiers organismes payants, jusqu'à épuisement des places.",
+    );
     await expect(
       page.getByRole("heading", {
         name: /Les outils, la communauté et les liens de financement/i,
@@ -57,6 +65,40 @@ test.describe("@smoke @critical public entry points", () => {
         name: /Les outils, la communauté et les liens de financement/i,
       }),
     ).toBeVisible();
+  });
+
+  test("keeps the offer visible while scrolling on mobile without horizontal overflow", async ({ page }) => {
+    await page.setViewportSize({ width: 390, height: 844 });
+    await page.goto("/");
+    await page.evaluate(() => window.scrollTo(0, 900));
+    await expect.poll(() => page.evaluate(() => window.scrollY)).toBeGreaterThan(0);
+    await expect.poll(() =>
+      page.getByTestId("founding-offer-banner").evaluate((element) => element.getBoundingClientRect().top),
+    ).toBe(0);
+    await expect(page.getByTestId("founding-offer-banner")).toBeVisible();
+    expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(390);
+
+    await switchToFrench(page);
+    await page.goto("/signup");
+    await expect(page.getByTestId("founding-offer-banner")).toContainText("OLEAFOUNDING15");
+    expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(390);
+  });
+
+  test("limits the founding offer to membership marketing and signup", async ({ page }) => {
+    await page.goto("/signup");
+    await expect(page.getByTestId("founding-offer-banner")).toContainText("OLEAFOUNDING15");
+
+    await page.goto("/sponsorship");
+    await expect(page.getByTestId("founding-offer-banner")).toHaveCount(0);
+
+    await page.goto("/login");
+    await expect(page.getByTestId("founding-offer-banner")).toHaveCount(0);
+  });
+
+  test("keeps the offer code visible where founding members enter it", async ({ page }) => {
+    await page.goto("/signup/account");
+    await expect(page.getByTestId("founding-offer-banner")).toContainText("OLEAFOUNDING15");
+    await expect(page.getByLabel(/founding.member code/i)).toBeVisible();
   });
 
   test("keeps the signup flow in French Canadian after language selection", async ({

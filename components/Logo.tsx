@@ -5,11 +5,13 @@ import { brandName } from "@/lib/brand";
 
 export function Logo({
   compact = false,
+  hideTaglineOnMobile = false,
   href = "/dashboard",
   ariaLabel = "Olea Connects™ governance platform",
   tagline = "Governance, branded.",
 }: {
   compact?: boolean;
+  hideTaglineOnMobile?: boolean;
   href?: string;
   ariaLabel?: string;
   tagline?: string;
@@ -32,7 +34,7 @@ export function Logo({
         <span className="block text-[15px] font-bold leading-tight text-olea-green">
           {brandName}
         </span>
-        <span className="block text-[11px] font-medium text-slate-600">
+        <span className={`${hideTaglineOnMobile ? "hidden sm:block" : "block"} text-[11px] font-medium text-slate-600`}>
           {tagline}
         </span>
       </span>
