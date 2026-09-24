@@ -3,6 +3,7 @@ import "server-only";
 import type Stripe from "stripe";
 
 import { PAID_SEAT_PRICE_CENTS, PAID_SEAT_CURRENCY } from "@/lib/billing/seat-pricing";
+import { isMissingStripeCustomerError } from "@/lib/billing/stripe-customer";
 import { getStripe } from "@/lib/stripe/server";
 import { createAdminClient } from "@/utils/supabase/admin";
 import { createClient } from "@/utils/supabase/server";
@@ -32,6 +33,7 @@ export interface BillingSummary {
   canceledAt: string | null;
   customerId: string | null;
   subscriptionId: string | null;
+  billingUnavailable: boolean;
   localSubscriptionId: string;
   amountCents: number;
   currency: string;
@@ -173,39 +175,45 @@ export async function getBillingSummary(): Promise<BillingSummary | null> {
 
   let paymentMethod: Stripe.PaymentMethod | null = null;
   let invoices: BillingSummary["invoices"] = [];
+  let billingUnavailable = false;
 
   if (subscription.provider_customer_id) {
     const stripe = getStripe();
-    const [methods, invoiceList] = await Promise.all([
-      stripe.paymentMethods.list({
-        customer: subscription.provider_customer_id,
-        type: "card",
-        limit: 1,
-      }),
-      stripe.invoices.list({
-        customer: subscription.provider_customer_id,
-        limit: 12,
-      }),
-    ]);
+    try {
+      const [methods, invoiceList] = await Promise.all([
+        stripe.paymentMethods.list({
+          customer: subscription.provider_customer_id,
+          type: "card",
+          limit: 1,
+        }),
+        stripe.invoices.list({
+          customer: subscription.provider_customer_id,
+          limit: 12,
+        }),
+      ]);
 
-    paymentMethod = methods.data[0] ?? null;
-    invoices = invoiceList.data
-      .filter((invoice) => {
-        const invoiceSubscriptionId = getInvoiceSubscriptionId(invoice);
-        return (
-          !subscription.provider_subscription_id ||
-          invoiceSubscriptionId === subscription.provider_subscription_id
-        );
-      })
-      .map((invoice) => ({
-        id: invoice.id,
-        createdAt: new Date(invoice.created * 1000).toISOString(),
-        amountCents: invoice.amount_paid || invoice.amount_due,
-        currency: invoice.currency.toUpperCase(),
-        status: invoice.status,
-        hostedUrl: invoice.hosted_invoice_url ?? null,
-        pdfUrl: invoice.invoice_pdf ?? null,
-      }));
+      paymentMethod = methods.data[0] ?? null;
+      invoices = invoiceList.data
+        .filter((invoice) => {
+          const invoiceSubscriptionId = getInvoiceSubscriptionId(invoice);
+          return (
+            !subscription.provider_subscription_id ||
+            invoiceSubscriptionId === subscription.provider_subscription_id
+          );
+        })
+        .map((invoice) => ({
+          id: invoice.id,
+          createdAt: new Date(invoice.created * 1000).toISOString(),
+          amountCents: invoice.amount_paid || invoice.amount_due,
+          currency: invoice.currency.toUpperCase(),
+          status: invoice.status,
+          hostedUrl: invoice.hosted_invoice_url ?? null,
+          pdfUrl: invoice.invoice_pdf ?? null,
+        }));
+    } catch (error) {
+      if (!isMissingStripeCustomerError(error)) throw error;
+      billingUnavailable = true;
+    }
   }
 
   return {
@@ -222,8 +230,9 @@ export async function getBillingSummary(): Promise<BillingSummary | null> {
     pauseEndsAt: subscription.pause_ends_at,
     cancelAtPeriodEnd: subscription.cancel_at_period_end,
     canceledAt: subscription.canceled_at,
-    customerId: subscription.provider_customer_id,
-    subscriptionId: subscription.provider_subscription_id,
+    customerId: billingUnavailable ? null : subscription.provider_customer_id,
+    subscriptionId: billingUnavailable ? null : subscription.provider_subscription_id,
+    billingUnavailable,
     localSubscriptionId: subscription.id,
     amountCents,
     currency: plan?.currency ?? "CAD",

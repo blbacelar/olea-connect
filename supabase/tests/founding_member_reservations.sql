@@ -1,6 +1,6 @@
 begin;
 
-select plan(4);
+select plan(7);
 
 delete from public.founding_member_claims;
 
@@ -62,6 +62,36 @@ begin
   end loop;
 end;
 $$;
+
+select is(
+  (
+    select public.reserve_founding_member(request_id, 'live_coupon')->>'discount_identifier'
+    from founding_test_users
+    where sequence_number = 1
+  ),
+  'live_coupon',
+  'an active reservation switches to the current Stripe coupon'
+);
+
+select is(
+  (
+    select discount_identifier from public.founding_member_claims
+    where provisioning_request_id = (
+      select request_id from founding_test_users where sequence_number = 1
+    )
+  ),
+  'live_coupon',
+  'the reservation stores the new coupon for later reconciliation'
+);
+
+select is(
+  (
+    select founding_discount_identifier from public.workspace_provisioning_requests
+    where id = (select request_id from founding_test_users where sequence_number = 1)
+  ),
+  'live_coupon',
+  'the activation request also stores the current coupon'
+);
 
 select is(
   (select count(*)::integer from public.founding_member_claims where status = 'reserved'),

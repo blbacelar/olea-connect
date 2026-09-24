@@ -15,7 +15,7 @@ function getSafePath(value: string | undefined) {
     : "/dashboard";
 }
 
-export function ActivationRetryButton() {
+export function ActivationRetryButton({ label }: { label?: string }) {
   const router = useRouter();
   const { locale } = useLocaleContext();
   const copy = getAuthFlowCopy(locale).activationRetry;
@@ -62,7 +62,7 @@ export function ActivationRetryButton() {
     <div className="mt-6">
       <Button className="w-full" disabled={isPending} onClick={retry}>
         {isPending ? <LoaderCircle className="size-4 animate-spin" /> : null}
-        {isPending ? copy.pending : copy.submit}
+        {isPending ? copy.pending : label ?? copy.submit}
       </Button>
       {error ? (
         <p className="mt-3 rounded-lg bg-red-50 p-3 text-sm text-red-700">

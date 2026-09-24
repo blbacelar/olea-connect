@@ -11,7 +11,7 @@ import {
   reserveFoundingMember,
 } from "@/lib/stripe/registration";
 import { assertFoundingCouponConfiguration } from "@/lib/stripe/founding-member";
-import { getStripe, getStripePriceId } from "@/lib/stripe/server";
+import { getStripe, getStripePriceId, isLegacyTestCheckoutSession } from "@/lib/stripe/server";
 import type { RegistrationState } from "@/lib/types";
 import { createAdminClient } from "@/utils/supabase/admin";
 import { createClient } from "@/utils/supabase/server";
@@ -111,7 +111,10 @@ async function createPendingPaymentCheckout({
   let request = await getPendingPaymentRequest(admin, userId);
   if (!request) return {};
 
-  if (request.checkout_session_id) {
+  if (
+    request.checkout_session_id &&
+    !isLegacyTestCheckoutSession(request.checkout_session_id)
+  ) {
     const existingSession = await getStripe().checkout.sessions.retrieve(
       request.checkout_session_id,
     );
@@ -160,7 +163,9 @@ async function createPendingPaymentCheckout({
         },
       ],
       billing_address_collection: "required",
-      allow_promotion_codes: !request.founding_discount_identifier,
+      ...(!request.founding_discount_identifier
+        ? { allow_promotion_codes: true }
+        : {}),
       ...(request.founding_discount_identifier
         ? { discounts: [{ coupon: request.founding_discount_identifier }] }
         : {}),

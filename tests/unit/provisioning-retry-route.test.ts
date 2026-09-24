@@ -37,6 +37,7 @@ vi.mock("@/lib/stripe/server", () => ({
     },
   }),
   getStripePriceId: routeMocks.getStripePriceId,
+  isLegacyTestCheckoutSession: (id: string) => id.startsWith("cs_test_"),
 }));
 vi.mock("@/lib/site-metadata", () => ({ getSiteUrl: routeMocks.getSiteUrl }));
 vi.mock("@/lib/onboarding/post-activation", () => ({
@@ -152,6 +153,7 @@ describe("provisioning retry route", () => {
       expect.objectContaining({
         success_url:
           "https://staging.oleaconnects.com/signup/success?session_id={CHECKOUT_SESSION_ID}",
+        allow_promotion_codes: true,
       }),
       {
         idempotencyKey: `signup-checkout:${pendingRequest.id}:initial`,
@@ -221,11 +223,13 @@ describe("provisioning retry route", () => {
     );
     expect(routeMocks.createSession).toHaveBeenCalledWith(
       expect.objectContaining({
-        allow_promotion_codes: false,
         discounts: [{ coupon: "olea_founding_15_year_1" }],
         expires_at: expect.any(Number),
       }),
       expect.anything(),
+    );
+    expect(routeMocks.createSession.mock.calls[0][0]).not.toHaveProperty(
+      "allow_promotion_codes",
     );
   });
 
@@ -248,5 +252,34 @@ describe("provisioning retry route", () => {
 
     expect(response.status).toBe(500);
     expect(routeMocks.createSession).not.toHaveBeenCalled();
+  });
+
+  it("replaces a test-mode checkout after switching Stripe modes", async () => {
+    const query = provisioningRequestQuery({
+      ...pendingRequest,
+      checkout_session_id: "cs_test_old",
+    });
+    routeMocks.createAdminClient.mockReturnValue({
+      from: vi.fn().mockReturnValue(query),
+    });
+    const { POST } = await import("@/app/api/provisioning/retry/route");
+
+    const response = await POST(
+      new Request("https://oleaconnects.com/api/provisioning/retry", {
+        method: "POST",
+      }),
+    );
+
+    expect(response.status).toBe(200);
+    expect(routeMocks.createSession).toHaveBeenCalledWith(
+      expect.anything(),
+      { idempotencyKey: `signup-checkout:${pendingRequest.id}:cs_test_old` },
+    );
+    expect(routeMocks.attachCheckoutSession).toHaveBeenCalledWith(
+      expect.anything(),
+      pendingRequest.id,
+      "cs_new",
+    );
+    expect(routeMocks.retrieveSession).not.toHaveBeenCalled();
   });
 });

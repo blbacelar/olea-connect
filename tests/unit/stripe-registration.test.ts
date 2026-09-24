@@ -23,6 +23,7 @@ vi.mock("@/lib/stripe/server", () => ({
       update: stripeMocks.updateSubscription,
     },
   }),
+  isLegacyTestCheckoutSession: () => false,
 }));
 
 vi.mock("@/lib/stripe/subscriptions", () => ({

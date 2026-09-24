@@ -11,6 +11,7 @@ import { logError } from "@/lib/observability/logger";
 import { recoverCheckoutSessionProvisioning } from "@/lib/stripe/registration";
 import type { ProvisioningResult } from "@/lib/stripe/registration";
 import { createAdminClient } from "@/utils/supabase/admin";
+import { createClient } from "@/utils/supabase/server";
 
 interface SignupSuccessPageProps {
   searchParams?: {
@@ -75,6 +76,9 @@ export default async function SignupSuccessPage({
   const activationPendingVerification =
     activationStatus === "pending_verification";
   const activationCompleted = finalizedActivation?.status === "completed";
+  const signedInForPayment = activationPendingPayment && Boolean(
+    (await (await createClient()).auth.getUser()).data.user,
+  );
   const signInHref = activationPendingPayment
     ? "/login?next=/signup/success?activation=pending_payment"
     : "/login?verify=email";
@@ -118,6 +122,8 @@ export default async function SignupSuccessPage({
         </p>
         {activationFailed ? (
           <ActivationRetryButton />
+        ) : signedInForPayment ? (
+          <ActivationRetryButton label={successCopy.continueToCheckout} />
         ) : (
           <Button asChild className="mt-6 w-full">
             <Link

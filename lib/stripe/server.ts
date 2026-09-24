@@ -61,6 +61,14 @@ export function getWebhookSecret() {
   return webhookSecret;
 }
 
+export function isLegacyTestCheckoutSession(sessionId: string) {
+  const secretKey = process.env.STRIPE_SECRET_KEY;
+  return (
+    sessionId.startsWith("cs_test_") &&
+    (secretKey?.startsWith("sk_live_") || secretKey?.startsWith("rk_live_"))
+  );
+}
+
 async function getPortalUpdateProducts() {
   const stripe = getStripe();
   const priceIds = membershipTiers.flatMap((tier) =>

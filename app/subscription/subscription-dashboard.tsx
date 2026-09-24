@@ -47,7 +47,11 @@ export function SubscriptionDashboard({
   const accessRestricted = !["active", "trialing"].includes(billing.status);
   const totalSeats = billing.includedSeats + billing.seatQuantity;
   const isPaused = billing.status === "paused";
-  const primaryDate = isPaused ? billing.pauseEndsAt : billing.currentPeriodEnd;
+  const primaryDate = billing.billingUnavailable
+    ? null
+    : isPaused
+      ? billing.pauseEndsAt
+      : billing.currentPeriodEnd;
   const currentPlanId = isMembershipTier(billing.planId)
     ? billing.planId
     : "seedling";
@@ -58,7 +62,11 @@ export function SubscriptionDashboard({
         title="Subscription"
         description={`Manage billing for ${billing.organizationName}.`}
       />
-      <AccessNotice accessRestricted={accessRestricted} status={billing.status} />
+      <AccessNotice
+        accessRestricted={accessRestricted}
+        billingUnavailable={billing.billingUnavailable}
+        status={billing.status}
+      />
       <CurrentPlanCard
         accessRestricted={accessRestricted}
         billing={billing}
@@ -107,11 +115,29 @@ export function SubscriptionDashboard({
 
 function AccessNotice({
   accessRestricted,
+  billingUnavailable,
   status,
 }: {
   accessRestricted: boolean;
+  billingUnavailable: boolean;
   status: BillingSummary["status"];
 }) {
+  if (billingUnavailable) {
+    return (
+      <section className="mb-6 flex gap-3 rounded-xl border border-amber-200 bg-amber-50 p-4 text-amber-950">
+        <AlertTriangle className="mt-0.5 size-5 shrink-0" />
+        <div>
+          <p className="font-semibold">Billing connection needs attention</p>
+          <p className="mt-1 text-sm leading-6">
+            Your plan is visible, but billing actions are unavailable. Contact
+            support before changing your plan or payment method. Do not start a
+            second checkout.
+          </p>
+        </div>
+      </section>
+    );
+  }
+
   if (accessRestricted) {
     return (
       <section className="mb-6 flex gap-3 rounded-xl border border-amber-200 bg-amber-50 p-4 text-amber-950">
@@ -200,12 +226,14 @@ function PlanStatusColumn({
       <Badge
         variant="outline"
         className={
-          accessRestricted
+          accessRestricted || billing.billingUnavailable
             ? "mt-2 border-amber-300 bg-amber-50 text-amber-800"
             : "mt-2 border-emerald-300 bg-emerald-50 text-emerald-800"
         }
       >
-        {statusLabels[billing.status]}
+        {billing.billingUnavailable
+          ? "Billing unverified"
+          : statusLabels[billing.status]}
       </Badge>
       {billing.cancelAtPeriodEnd ? (
         <p className="mt-2 text-xs text-amber-700">

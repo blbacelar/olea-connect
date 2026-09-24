@@ -12,3 +12,10 @@ export function getSafeNextPath(
 
   return next;
 }
+
+export function getPostLoginRecoveryFailurePath(value: string | undefined) {
+  const next = getSafeNextPath(value);
+  return next.startsWith("/signup/success")
+    ? "/signup/success?activation=failed"
+    : next;
+}
