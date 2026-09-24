@@ -25,6 +25,7 @@ export const appShellCopyEn: AppShellCopy = {
     consulting: "Consulting",
     integrations: "Operations",
     referrals: "Referrals",
+    users: "Users Directory",
   },
   navigation: {
     "/dashboard": "Dashboard",
@@ -45,6 +46,7 @@ export const appShellCopyEn: AppShellCopy = {
     "/subscription": "Subscription",
     "/settings/integrations": "Operations",
     "/settings/referrals": "Referrals",
+    "/settings/users": "Users Directory",
     "/help": "Help",
     "/whats-new": "What's new",
   },

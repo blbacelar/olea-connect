@@ -36,9 +36,18 @@ describe("application navigation", () => {
 
   it("hides operator navigation from regular members", () => {
     expect(navigationLabelsFor([])).not.toContain("Operations");
+    expect(navigationLabelsFor([])).not.toContain("Users Directory");
   });
 
   it("shows the operations console to super admins", () => {
     expect(navigationLabelsFor(["super_admin"])).toContain("Operations");
+    expect(navigationLabelsFor(["super_admin"])).toContain("Users Directory");
+  });
+
+  it("translates the super-admin directory link into Canadian French", () => {
+    const labels = getNavigationGroups(["super_admin"], "owner", "fr-CA")
+      .flat()
+      .map((item) => item.label);
+    expect(labels).toContain("Répertoire des utilisateurs");
   });
 });

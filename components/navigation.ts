@@ -3,6 +3,7 @@ import {
   CalendarDays,
   ClipboardList,
   CircleHelp,
+  ContactRound,
   CreditCard,
   Gift,
   Handshake,
@@ -70,6 +71,12 @@ export const navigationGroups: NavigationItem[][] = [
       label: "Operations",
       href: "/settings/integrations",
       icon: ShieldCheck,
+      requiredPlatformRole: "super_admin",
+    },
+    {
+      label: "Users Directory",
+      href: "/settings/users",
+      icon: ContactRound,
       requiredPlatformRole: "super_admin",
     },
     {
