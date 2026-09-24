@@ -58,7 +58,7 @@ export default function SignupPlanPage() {
 
   return (
     <div className="min-h-screen bg-slate-100">
-      <PublicHeader minimal />
+      <PublicHeader minimal showFoundingOffer />
       <main className="mx-auto max-w-6xl px-4 py-12">
         <StepIndicator current={1} />
         <h1 className="mt-5 text-center text-3xl font-bold">

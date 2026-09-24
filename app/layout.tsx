@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Inter } from "next/font/google";
 
 import { AppShell } from "@/components/AppShell";
+import { OleaAnalytics } from "@/components/analytics/OleaAnalytics";
 import { LocaleProvider } from "@/components/i18n/LocaleProvider";
 import { SessionProvider } from "@/hooks/use-session";
 import { RegistrationProvider } from "@/hooks/use-registration";
@@ -39,6 +40,7 @@ export default async function RootLayout({
             </RegistrationProvider>
           </LocaleProvider>
         </SessionProvider>
+        <OleaAnalytics />
       </body>
     </html>
   );
