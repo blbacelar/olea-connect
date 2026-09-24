@@ -79,6 +79,8 @@ test.describe("@smoke @critical public entry points", () => {
     expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(390);
 
     await switchToFrench(page);
+    await page.goto("/");
+    expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(390);
     await page.goto("/signup");
     await expect(page.getByTestId("founding-offer-banner")).toContainText("OLEAFOUNDING15");
     expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(390);

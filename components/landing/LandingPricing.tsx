@@ -47,7 +47,7 @@ export function LandingPricing({
           {copy.foundingNotice}
         </div>
         <div className="mt-8 flex justify-center">
-          <div className="inline-flex rounded-lg border bg-white p-1 shadow-sm">
+          <div className="flex w-full flex-col rounded-lg border bg-white p-1 shadow-sm sm:inline-flex sm:w-auto sm:flex-row">
             <Button
               type="button"
               aria-pressed={!annual}
