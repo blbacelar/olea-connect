@@ -66,17 +66,12 @@ export const navigationGroups: NavigationItem[][] = [
   [
     { label: "Brand Profile", href: "/settings/brand", icon: Palette },
     { label: "Team", href: "/team", icon: Users },
+    { label: "Users Directory", href: "/users", icon: ContactRound },
     { label: "Subscription", href: "/subscription", icon: CreditCard },
     {
       label: "Operations",
       href: "/settings/integrations",
       icon: ShieldCheck,
-      requiredPlatformRole: "super_admin",
-    },
-    {
-      label: "Users Directory",
-      href: "/settings/users",
-      icon: ContactRound,
       requiredPlatformRole: "super_admin",
     },
     {

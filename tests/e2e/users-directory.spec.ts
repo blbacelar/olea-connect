@@ -2,7 +2,7 @@ import { expect, test } from "../fixtures/authenticated.fixture";
 import type { Page } from "@playwright/test";
 
 async function openUserRow(page: Page, email: string) {
-  await page.goto("/settings/users");
+  await page.goto("/users");
   await expect(page.getByRole("heading", { name: "Users Directory" })).toBeVisible();
   const row = page.getByTestId("directory-user-row").filter({ hasText: email });
   for (let pageNumber = 1; pageNumber <= 100; pageNumber += 1) {
@@ -16,15 +16,58 @@ async function openUserRow(page: Page, email: string) {
 }
 
 test.describe("@critical users directory", () => {
-  test("denies members", async ({ page }) => {
+  test("shows members a private-safe directory and requires sign-in", async ({
+    authenticatedMember,
+    page,
+    testData,
+  }) => {
+    const uniqueName = `Directory Member ${authenticatedMember.userId.slice(0, 8)}`;
+    const { error: profileError } = await testData.supabase
+      .from("profiles")
+      .update({ full_name: uniqueName })
+      .eq("id", authenticatedMember.userId);
+    if (profileError) throw profileError;
+    const sponsorName = `Member Sponsor ${authenticatedMember.userId.slice(0, 8)}`;
+    const { data: sponsor, error: sponsorError } = await testData.supabase
+      .from("sponsors")
+      .insert({
+        name: sponsorName,
+        slug: `member-directory-${authenticatedMember.userId}`,
+        status: "active",
+        directory_email: authenticatedMember.email,
+      })
+      .select("id")
+      .single();
+    if (sponsorError) throw sponsorError;
+    testData.registerCleanup({
+      label: `sponsor ${sponsor.id}`,
+      run: async () => {
+        const { error } = await testData.supabase.from("sponsors").delete().eq("id", sponsor.id);
+        if (error) throw error;
+      },
+    });
+
     await page.goto("/dashboard");
-    await expect(page.getByTestId("app-sidebar").getByRole("link", {
+    await page.getByTestId("app-sidebar").getByRole("link", {
       name: "Users Directory",
-    })).toHaveCount(0);
+    }).click();
+    await expect(page).toHaveURL(/\/users$/);
+    await expect(page.getByRole("heading", { name: "Users Directory" })).toBeVisible();
+    const row = await openUserRow(page, uniqueName);
+    await expect(row.getByText("Sponsor", { exact: true })).toBeVisible();
+    await expect(row).not.toContainText(sponsorName);
+    await expect(page.getByRole("main").getByText(authenticatedMember.email)).toHaveCount(0);
+    await expect(page.getByRole("columnheader", { name: "Email" })).toHaveCount(0);
+    await expect(page.getByRole("columnheader", { name: "Workspace" })).toHaveCount(0);
+    await expect(page.getByRole("columnheader", { name: "Email status" })).toHaveCount(0);
+    await expect(page.getByRole("columnheader", { name: "Signed up" })).toHaveCount(0);
 
     await page.goto("/settings/users");
-    await expect(page.getByRole("heading", { name: "404" })).toBeVisible();
-    await expect(page.getByRole("heading", { name: "Users Directory" })).toHaveCount(0);
+    await expect(page).toHaveURL(/\/users$/);
+
+    await page.context().clearCookies();
+    await page.goto("/users");
+    await expect(page).toHaveURL(/\/login/);
   });
 
   test("marks sponsors", async ({
@@ -106,7 +149,7 @@ test.describe("@critical users directory", () => {
       .listUsers({ page: 1, perPage: 50 });
     if (listError) throw listError;
     const lastPage = Math.max(1, Math.ceil(userList.total / 50));
-    await page.goto("/settings/users?page=9999");
+    await page.goto("/users?page=9999");
     await expect(page.getByText(`Page ${lastPage} of ${lastPage}`)).toBeVisible();
     await expect(page.getByTestId("directory-user-row").first()).toBeVisible();
 
@@ -123,7 +166,7 @@ test.describe("@critical users directory", () => {
       page.getByRole("option", { name: "Français" }).click(),
     ]);
     await expect(page.locator("html")).toHaveAttribute("lang", "fr-CA");
-    await page.goto("/settings/users");
+    await page.goto("/users");
     await expect(page.getByRole("heading", { name: "Répertoire des utilisateurs" })).toBeVisible();
   });
 
@@ -162,7 +205,7 @@ test.describe("@critical users directory", () => {
       if (creationError) throw creationError;
     }
 
-    await page.goto("/settings/users");
+    await page.goto("/users");
     await expect(page.getByText(/Page 1 of [2-9]\d*/)).toBeVisible();
     await expect(page.getByRole("link", { name: "Previous" })).toHaveCount(0);
     await page.getByRole("link", { name: "Next" }).click();

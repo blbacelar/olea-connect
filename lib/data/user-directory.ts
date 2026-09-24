@@ -1,7 +1,5 @@
 import "server-only";
 
-import { notFound } from "next/navigation";
-
 import { requireMemberContext } from "@/lib/data/member-context";
 import { createAdminClient } from "@/utils/supabase/admin";
 
@@ -12,13 +10,15 @@ export type DirectoryUser = {
   id: string;
   name: string;
   email: string | null;
-  confirmed: boolean;
-  createdAt: string;
+  confirmed: boolean | null;
+  createdAt: string | null;
   organizations: string[];
+  isSponsor: boolean;
   sponsorNames: string[];
 };
 
 export type UserDirectoryData = {
+  canViewPrivateDetails: boolean;
   users: DirectoryUser[];
   page: number;
   lastPage: number;
@@ -58,7 +58,7 @@ async function collectRows<T>(
 
 export async function getUserDirectory(requestedPage: number): Promise<UserDirectoryData> {
   const session = await requireMemberContext();
-  if (!session.platformRoles?.includes("super_admin")) notFound();
+  const canViewPrivateDetails = session.platformRoles?.includes("super_admin") ?? false;
 
   const supabase = createAdminClient();
   const listUsers = (page: number) => supabase.auth.admin.listUsers({
@@ -88,7 +88,7 @@ export async function getUserDirectory(requestedPage: number): Promise<UserDirec
 
   const authUsers = result.data.users;
   if (authUsers.length === 0) {
-    return { users: [], page, lastPage, total };
+    return { canViewPrivateDetails, users: [], page, lastPage, total };
   }
 
   const ids = authUsers.map((user) => user.id);
@@ -98,14 +98,16 @@ export async function getUserDirectory(requestedPage: number): Promise<UserDirec
 
   const [profilesResult, memberships, contacts, sponsors] = await Promise.all([
     supabase.from("profiles").select("id, full_name").in("id", ids),
-    collectRows((from, to) => supabase
-      .from("organization_members")
-      .select("user_id, organizations(name)")
-      .in("user_id", ids)
-      .eq("status", "active")
-      .order("organization_id")
-      .order("user_id")
-      .range(from, to)),
+    canViewPrivateDetails
+      ? collectRows((from, to) => supabase
+          .from("organization_members")
+          .select("user_id, organizations(name)")
+          .in("user_id", ids)
+          .eq("status", "active")
+          .order("organization_id")
+          .order("user_id")
+          .range(from, to))
+      : Promise.resolve([]),
     emails.length
       ? collectRows((from, to) => supabase
           .from("sponsor_contacts")
@@ -156,26 +158,34 @@ export async function getUserDirectory(requestedPage: number): Promise<UserDirec
   }
 
   return {
+    canViewPrivateDetails,
     page,
     lastPage,
     total,
     users: authUsers.map((user) => {
       const email = user.email?.trim() || null;
       const confirmed = Boolean(user.email_confirmed_at);
-      const name = profileNames.get(user.id)
-        || String(user.user_metadata?.full_name ?? "").trim()
-        || email?.split("@")[0]
-        || "User";
+      const sponsorNames = confirmed
+        ? [...(sponsorNamesByEmail.get(email?.toLowerCase() ?? "") ?? [])].sort()
+        : [];
+      const suppliedName = profileNames.get(user.id)
+        || String(user.user_metadata?.full_name ?? "").trim();
+      const name = suppliedName && (canViewPrivateDetails || (confirmed && !suppliedName.includes("@")))
+        ? suppliedName
+        : canViewPrivateDetails
+          ? email?.split("@")[0] || "User"
+          : `Olea member ${user.id.slice(0, 8)}`;
       return {
         id: user.id,
         name,
-        email,
-        confirmed,
-        createdAt: user.created_at,
-        organizations: [...(organizationsByUser.get(user.id) ?? [])].sort(),
-        sponsorNames: confirmed
-          ? [...(sponsorNamesByEmail.get(email?.toLowerCase() ?? "") ?? [])].sort()
+        email: canViewPrivateDetails ? email : null,
+        confirmed: canViewPrivateDetails ? confirmed : null,
+        createdAt: canViewPrivateDetails ? user.created_at : null,
+        organizations: canViewPrivateDetails
+          ? [...(organizationsByUser.get(user.id) ?? [])].sort()
           : [],
+        isSponsor: sponsorNames.length > 0,
+        sponsorNames: canViewPrivateDetails ? sponsorNames : [],
       };
     }),
   };

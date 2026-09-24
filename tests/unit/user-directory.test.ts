@@ -119,4 +119,71 @@ describe("user directory", () => {
     expect(builders.organization_members.range).toHaveBeenCalledTimes(2);
     expect(builders.sponsor_contacts.range).toHaveBeenCalledTimes(2);
   });
+
+  it("returns only display names and sponsor badges to ordinary members", async () => {
+    requireMemberContext.mockResolvedValue({ platformRoles: [] });
+    const from = vi.fn((table: string) => {
+      if (table === "organization_members") throw new Error("Private membership query was made");
+      if (table === "profiles") return query([{ id: "member", full_name: "Taylor Member" }]);
+      if (table === "sponsors") return query([{
+        name: "Community Sponsor",
+        directory_email: "member@example.com",
+      }]);
+      return query([]);
+    });
+    createAdminClient.mockReturnValue({
+      auth: { admin: { listUsers: vi.fn(async () => ({
+        data: { users: [user("member")], total: 1, lastPage: 1 },
+        error: null,
+      })) } },
+      from,
+    });
+
+    const directory = await getUserDirectory(1);
+    expect(directory.canViewPrivateDetails).toBe(false);
+    expect(directory.users[0]).toMatchObject({
+      name: "Taylor Member",
+      email: null,
+      confirmed: null,
+      createdAt: null,
+      organizations: [],
+      isSponsor: true,
+      sponsorNames: [],
+    });
+    expect(from).not.toHaveBeenCalledWith("organization_members");
+  });
+
+  it("does not expose an email used as a display name", async () => {
+    requireMemberContext.mockResolvedValue({ platformRoles: [] });
+    createAdminClient.mockReturnValue({
+      auth: { admin: { listUsers: vi.fn(async () => ({
+        data: { users: [user("member")], total: 1, lastPage: 1 },
+        error: null,
+      })) } },
+      from: (table: string) => table === "profiles"
+        ? query([{ id: "member", full_name: "private@example.com" }])
+        : query([]),
+    });
+
+    const directory = await getUserDirectory(1);
+    expect(directory.users[0]?.name).toBe("Olea member member");
+    expect(directory.users[0]?.email).toBeNull();
+  });
+
+  it("does not expose the name of an unconfirmed account to members", async () => {
+    requireMemberContext.mockResolvedValue({ platformRoles: [] });
+    createAdminClient.mockReturnValue({
+      auth: { admin: { listUsers: vi.fn(async () => ({
+        data: { users: [{ ...user("pending"), email_confirmed_at: null }], total: 1, lastPage: 1 },
+        error: null,
+      })) } },
+      from: (table: string) => table === "profiles"
+        ? query([{ id: "pending", full_name: "Private Pending Name" }])
+        : query([]),
+    });
+
+    const directory = await getUserDirectory(1);
+    expect(directory.users[0]?.name).toBe("Olea member pending");
+    expect(directory.users[0]?.confirmed).toBeNull();
+  });
 });

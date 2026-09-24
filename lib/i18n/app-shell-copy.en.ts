@@ -47,6 +47,7 @@ export const appShellCopyEn: AppShellCopy = {
     "/settings/integrations": "Operations",
     "/settings/referrals": "Referrals",
     "/settings/users": "Users Directory",
+    "/users": "Users Directory",
     "/help": "Help",
     "/whats-new": "What's new",
   },

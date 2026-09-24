@@ -34,9 +34,9 @@ describe("application navigation", () => {
     expect(navigationLabelsFor([], "admin")).toContain("Board Recruitment");
   });
 
-  it("hides operator navigation from regular members", () => {
+  it("shows the users directory but hides operator navigation from regular members", () => {
     expect(navigationLabelsFor([])).not.toContain("Operations");
-    expect(navigationLabelsFor([])).not.toContain("Users Directory");
+    expect(navigationLabelsFor([])).toContain("Users Directory");
   });
 
   it("shows the operations console to super admins", () => {
@@ -44,8 +44,8 @@ describe("application navigation", () => {
     expect(navigationLabelsFor(["super_admin"])).toContain("Users Directory");
   });
 
-  it("translates the super-admin directory link into Canadian French", () => {
-    const labels = getNavigationGroups(["super_admin"], "owner", "fr-CA")
+  it("translates the member directory link into Canadian French", () => {
+    const labels = getNavigationGroups([], "member", "fr-CA")
       .flat()
       .map((item) => item.label);
     expect(labels).toContain("Répertoire des utilisateurs");
