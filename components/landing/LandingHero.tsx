@@ -1,4 +1,4 @@
-import { ArrowRight, CheckCircle2 } from "lucide-react";
+import { ArrowRight, CheckCircle2, Youtube } from "lucide-react";
 import Link from "next/link";
 
 import { ProductPreview } from "@/components/landing/ProductPreview";
@@ -37,6 +37,21 @@ export function LandingHero({ copy }: { copy: LandingHeroCopy }) {
               className="h-12 bg-white px-7 text-base"
             >
               <Link href="#how-it-works">{copy.secondaryCta}</Link>
+            </Button>
+            <Button
+              asChild
+              size="lg"
+              variant="outline"
+              className="h-12 bg-white px-7 text-base"
+            >
+              <a
+                href="https://www.youtube.com/@OliveinGoodCompany"
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                <Youtube className="size-5" aria-hidden="true" />
+                {copy.youtubeCta}
+              </a>
             </Button>
           </div>
           <div className="mt-6 flex flex-wrap gap-x-5 gap-y-2 text-sm text-slate-600">

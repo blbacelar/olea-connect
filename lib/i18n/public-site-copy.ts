@@ -42,6 +42,7 @@ export type PublicSiteCopy = {
     description: string;
     primaryCta: string;
     secondaryCta: string;
+    youtubeCta: string;
     assurances: string[];
     quote: string;
     quoteLabel: string;
@@ -189,6 +190,7 @@ export const publicSiteCopy: Record<Locale, PublicSiteCopy> = {
         "Create board-ready documents in your own brand, learn from sector experts, manage funding opportunities, and connect with nonprofit leaders who understand the work.",
       primaryCta: "Join Olea Connects™",
       secondaryCta: "See how it works",
+      youtubeCta: "Our YouTube channel",
       assurances: [
         "Join in about 5 minutes",
         "Plans from $800/year",
@@ -535,6 +537,7 @@ export const publicSiteCopy: Record<Locale, PublicSiteCopy> = {
         "Créez des documents prêts pour le conseil dans votre propre marque, apprenez auprès d'experts du secteur, trouvez des occasions de subvention et échangez avec des leaders qui comprennent votre réalité.",
       primaryCta: "Rejoindre Olea Connects™",
       secondaryCta: "Voir le fonctionnement",
+      youtubeCta: "Notre chaîne YouTube",
       assurances: [
         "Inscription en environ 5 minutes",
         "Forfaits à partir de 800 $ CA/an",
