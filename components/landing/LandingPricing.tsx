@@ -9,7 +9,7 @@ import { Card } from "@/components/ui/card";
 import type { Locale } from "@/lib/i18n/locales";
 import type { PublicSiteCopy } from "@/lib/i18n/public-site-copy";
 import { signupMembershipPlans } from "@/lib/plans";
-import { fixedPriceOffers, formatCad, foundingYearPrice } from "@/lib/pricing";
+import { fixedPriceOffers, formatCad } from "@/lib/pricing";
 import { cn } from "@/lib/utils";
 
 type LandingPricingCopy = PublicSiteCopy["pricing"];
@@ -81,9 +81,6 @@ export function LandingPricing({
                     /{copy.perYear}
                   </span>
                 </div>
-                <p className="mt-2 text-sm font-medium text-olea-green">
-                  {copy.foundingPriceLabel} {formatCad(foundingYearPrice(plan.annualPrice), locale)}
-                </p>
                 <p className="mt-5 min-h-12 text-sm leading-6 text-slate-500">
                   {planCopy.summary}
                 </p>

@@ -42,6 +42,19 @@ test.describe("@smoke @critical public entry points", () => {
     ).toHaveAttribute("href", "https://www.youtube.com/@OliveinGoodCompany");
   });
 
+  test("shows regular plan prices without a per-card founding price breakdown", async ({ page }) => {
+    await page.goto("/");
+
+    const plans = page.locator("#plans");
+    await expect(plans.getByRole("heading", { name: "Seedling", exact: true })).toBeVisible();
+    await expect(plans).toContainText("$1,175 CAD");
+    await expect(plans).not.toContainText("Years 1 and 2 with a valid founding code");
+
+    await switchToFrench(page);
+    await expect(plans).not.toContainText("Années 1 et 2 avec un code fondateur valide");
+    await expect(plans).toContainText("Offre membre fondateur");
+  });
+
   test("lets visitors switch the public site to French Canadian", async ({
     page,
   }) => {

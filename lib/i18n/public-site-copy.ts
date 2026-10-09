@@ -107,7 +107,6 @@ export type PublicSiteCopy = {
     description: string;
     foundingLabel: string;
     foundingNotice: string;
-    foundingPriceLabel: string;
     quarterly: string;
     annual: string;
     annualBadge: string;
@@ -335,7 +334,6 @@ export const publicSiteCopy: Record<Locale, PublicSiteCopy> = {
       foundingLabel: "Founding member offer:",
       foundingNotice:
         "Enter your founding-member code during signup to receive 15% off your first two annual payments while the first 50 spots remain available. Prices below show regular rates; your discount is confirmed before payment.",
-      foundingPriceLabel: "Years 1 and 2 with a valid founding code:",
       quarterly: "Quarterly",
       annual: "Annual",
       annualBadge: "Best for renewal planning",
@@ -736,7 +734,6 @@ export const publicSiteCopy: Record<Locale, PublicSiteCopy> = {
       foundingLabel: "Offre membre fondateur :",
       foundingNotice:
         "Entrez votre code de membre fondateur pendant l'inscription pour recevoir 15 % de rabais sur vos deux premiers paiements annuels, tant que l'une des 50 places est disponible. Les tarifs ci-dessous sont les prix réguliers; votre rabais est confirmé avant le paiement.",
-      foundingPriceLabel: "Années 1 et 2 avec un code fondateur valide :",
       quarterly: "Trimestriel",
       annual: "Annuel",
       annualBadge: "Idéal pour planifier le renouvellement",
