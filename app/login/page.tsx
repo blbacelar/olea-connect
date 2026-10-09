@@ -13,15 +13,13 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useRegistration } from "@/hooks/use-registration";
 import { signIn } from "@/lib/auth";
+import {
+  getPostLoginRecoveryFailurePath,
+  getSafeNextPath,
+} from "@/lib/auth/safe-next-path";
 import { getAuthFlowCopy } from "@/lib/i18n/auth-flow-copy";
 import { getPublicSiteCopy } from "@/lib/i18n/public-site-copy";
 import { retryMembershipActivation } from "@/lib/provisioning/client";
-
-const DASHBOARD_PATH = "/dashboard";
-
-function getSafePath(value: string | undefined, fallback = DASHBOARD_PATH) {
-  return value?.startsWith("/") && !value.startsWith("//") ? value : fallback;
-}
 
 export default function LoginPage() {
   const router = useRouter();
@@ -69,14 +67,30 @@ export default function LoginPage() {
             return;
           }
           if (response.ok && result.status === "completed") {
-            router.push(getSafePath(result.nextPath));
+            router.push(getSafeNextPath(result.nextPath));
+            router.refresh();
+            return;
+          }
+          if (!response.ok) {
+            router.push(
+              result.status === "failed"
+                ? "/signup/success?activation=failed"
+                : getPostLoginRecoveryFailurePath(nextPath),
+            );
+            router.refresh();
+            return;
+          }
+          if (result.status === "pending_payment") {
+            router.push("/signup/success?activation=failed");
             router.refresh();
             return;
           }
         } catch {
-          // A recovery check should never block a successful sign-in.
+          router.push(getPostLoginRecoveryFailurePath(nextPath));
+          router.refresh();
+          return;
         }
-        router.push(getSafePath(nextPath));
+        router.push(getSafeNextPath(nextPath));
         router.refresh();
       } catch {
         setError(loginCopy.fallbackError);

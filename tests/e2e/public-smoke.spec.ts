@@ -37,6 +37,9 @@ test.describe("@smoke @critical public entry points", () => {
     await expect(
       page.getByRole("link", { name: "Get started" }),
     ).toHaveAttribute("href", "/signup");
+    await expect(
+      page.getByRole("link", { name: "Our YouTube channel" }),
+    ).toHaveAttribute("href", "https://www.youtube.com/@OliveinGoodCompany");
   });
 
   test("lets visitors switch the public site to French Canadian", async ({
@@ -57,6 +60,9 @@ test.describe("@smoke @critical public entry points", () => {
       "href",
       "/signup",
     );
+    await expect(
+      page.getByRole("link", { name: "Notre chaîne YouTube" }),
+    ).toHaveAttribute("href", "https://www.youtube.com/@OliveinGoodCompany");
 
     await page.reload();
     await expect(page.locator("html")).toHaveAttribute("lang", "fr-CA");
@@ -79,6 +85,8 @@ test.describe("@smoke @critical public entry points", () => {
     expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(390);
 
     await switchToFrench(page);
+    await page.goto("/");
+    expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(390);
     await page.goto("/signup");
     await expect(page.getByTestId("founding-offer-banner")).toContainText("OLEAFOUNDING15");
     expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(390);

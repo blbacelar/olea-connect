@@ -3,7 +3,7 @@ import "server-only";
 import type Stripe from "stripe";
 import type { SupabaseClient } from "@supabase/supabase-js";
 
-import { getStripe } from "@/lib/stripe/server";
+import { getStripe, isLegacyTestCheckoutSession } from "@/lib/stripe/server";
 import { recordFirstPaymentReferralCommission } from "@/lib/referrals/first-payment-commission";
 import { recordStripeSubscription } from "@/lib/stripe/subscription-recording";
 import { syncStripeSubscription } from "@/lib/stripe/subscriptions";
@@ -295,7 +295,11 @@ export async function attemptUserWorkspaceProvisioning(
   if (!data) return null;
 
   const result = await attemptWorkspaceProvisioning(supabase, data.id);
-  if (result.status === "pending_payment" && data.checkout_session_id) {
+  if (
+    result.status === "pending_payment" &&
+    data.checkout_session_id &&
+    !isLegacyTestCheckoutSession(data.checkout_session_id)
+  ) {
     const session = await getStripe().checkout.sessions.retrieve(
       data.checkout_session_id,
     );

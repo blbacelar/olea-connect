@@ -129,6 +129,7 @@ export type AuthFlowCopy = {
         pending: string;
       };
       goToDashboard: string;
+      continueToCheckout: string;
       continueToSignIn: string;
       finalizeError: string;
     };
@@ -375,7 +376,7 @@ export const authFlowCopy: Record<Locale, AuthFlowCopy> = {
           failed:
             "Your payment is safe, but workspace setup needs to be retried.",
           completed: "Your Olea Connects™ workspace is active.",
-          pendingPayment: "Sign in to continue to secure checkout.",
+          pendingPayment: "Continue to secure checkout.",
           received: "Your Olea Connects™ account is waiting for confirmation.",
         },
         messages: {
@@ -384,13 +385,14 @@ export const authFlowCopy: Record<Locale, AuthFlowCopy> = {
           completed:
             "Continue to your dashboard. If you are asked to sign in, use the same email address you used during checkout.",
           pendingPayment:
-            "Your email is confirmed. Sign in with this account and we will continue you to secure checkout.",
+            "Your email is confirmed. Continue to checkout to activate your membership. If prompted, sign in with this account.",
           pendingVerification:
             "We sent a confirmation email from Olea Connects™. Open that email and confirm your address before signing in.",
           pending:
             "We are finalizing your activation. If your dashboard is not ready yet, sign in and retry activation once.",
         },
         goToDashboard: "Go to dashboard",
+        continueToCheckout: "Continue to secure checkout",
         continueToSignIn: "Continue to sign in",
         finalizeError:
           "Workspace activation could not be finalized automatically.",
@@ -655,7 +657,7 @@ export const authFlowCopy: Record<Locale, AuthFlowCopy> = {
             "Votre paiement est sécurisé, mais la configuration de l'espace de travail doit être réessayée.",
           completed: "Votre espace Olea Connects™ est actif.",
           pendingPayment:
-            "Connectez-vous pour continuer vers la caisse sécurisée.",
+            "Continuez vers le paiement sécurisé.",
           received:
             "Votre compte Olea Connects™ est en attente de confirmation.",
         },
@@ -665,13 +667,14 @@ export const authFlowCopy: Record<Locale, AuthFlowCopy> = {
           completed:
             "Continuez vers votre tableau de bord. Si on vous demande de vous connecter, utilisez la même adresse courriel que lors du paiement.",
           pendingPayment:
-            "Votre courriel est confirmé. Connectez-vous avec ce compte et nous vous redirigerons vers la caisse sécurisée.",
+            "Votre courriel est confirmé. Continuez vers le paiement pour activer votre abonnement. Si nécessaire, connectez-vous avec ce compte.",
           pendingVerification:
             "Nous avons envoyé un courriel de confirmation d'Olea Connects™. Ouvrez ce courriel et confirmez votre adresse avant de vous connecter.",
           pending:
             "Nous finalisons votre activation. Si votre tableau de bord n'est pas encore prêt, connectez-vous et réessayez l'activation une fois.",
         },
         goToDashboard: "Aller au tableau de bord",
+        continueToCheckout: "Continuer vers le paiement sécurisé",
         continueToSignIn: "Continuer vers la connexion",
         finalizeError:
           "L'activation de l'espace de travail n'a pas pu être finalisée automatiquement.",

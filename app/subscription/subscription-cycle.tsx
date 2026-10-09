@@ -53,6 +53,10 @@ function BillingScheduleNotice({ billing }: { billing: BillingSummary }) {
 }
 
 function getCurrentPeriodLabel(billing: BillingSummary) {
+  if (billing.billingUnavailable) {
+    return "Billing date unavailable";
+  }
+
   if (!billing.currentPeriodStart || !billing.currentPeriodEnd) {
     return "Pending billing confirmation";
   }

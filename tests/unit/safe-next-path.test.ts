@@ -1,6 +1,9 @@
 import { describe, expect, it } from "vitest";
 
-import { getSafeNextPath } from "@/lib/auth/safe-next-path";
+import {
+  getPostLoginRecoveryFailurePath,
+  getSafeNextPath,
+} from "@/lib/auth/safe-next-path";
 
 describe("getSafeNextPath", () => {
   it("allows same-app absolute paths with query strings", () => {
@@ -22,5 +25,20 @@ describe("getSafeNextPath", () => {
 
   it("uses the first value when a framework gives repeated next params", () => {
     expect(getSafeNextPath(["/dashboard", "//evil.example"])).toBe("/dashboard");
+  });
+});
+
+describe("getPostLoginRecoveryFailurePath", () => {
+  it("keeps established members on their requested page", () => {
+    expect(getPostLoginRecoveryFailurePath("/dashboard")).toBe("/dashboard");
+    expect(getPostLoginRecoveryFailurePath(undefined)).toBe("/dashboard");
+  });
+
+  it("sends activation sign-ins to a retryable state", () => {
+    expect(
+      getPostLoginRecoveryFailurePath(
+        "/signup/success?activation=pending_payment",
+      ),
+    ).toBe("/signup/success?activation=failed");
   });
 });

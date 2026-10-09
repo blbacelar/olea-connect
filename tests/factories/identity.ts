@@ -19,7 +19,10 @@ export function createTestIdentity(testInfo: TestInfo, sequence = 0) {
     .update(testInfo.title)
     .digest("hex")
     .slice(0, 8);
-  const testId = `${(compact(testInfo.title) || "test").slice(0, 23)}-${titleHash}`;
+  const shortTitle = (compact(testInfo.title) || "test")
+    .slice(0, 23)
+    .replace(/-$/, "");
+  const testId = `${shortTitle}-${titleHash}`;
   const marker = `e2e-${runId}-w${testInfo.parallelIndex}-r${testInfo.retry}-n${sequence}-${testId}`;
   const emailHash = createHash("sha256").update(marker).digest("hex").slice(0, 8);
   const emailLocalPart = `${marker.slice(0, 55)}-${emailHash}`;
