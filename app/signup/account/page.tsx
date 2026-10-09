@@ -25,7 +25,7 @@ import { isWellFormedFoundingMemberCode } from "@/lib/founding-member";
 import { useRegistration } from "@/hooks/use-registration";
 import { getAuthFlowCopy } from "@/lib/i18n/auth-flow-copy";
 import { getPublicSiteCopy } from "@/lib/i18n/public-site-copy";
-import { membershipPlans } from "@/lib/plans";
+import { signupMembershipPlans } from "@/lib/plans";
 import {
   ACQUISITION_SOURCES,
   ANNUAL_BUDGET_RANGES,
@@ -49,23 +49,15 @@ export default function SignupAccountPage() {
     const searchParams = new URLSearchParams(window.location.search);
     const referralCode = captureReferralCodeFromUrl();
     const tier = searchParams.get("tier") as MembershipTier | null;
-    const billingCycle = searchParams.get("billing");
     const updates: {
       tier?: MembershipTier;
-      billingCycle?: "quarterly" | "annual";
       referralCode?: string;
     } = {};
 
-    if (tier && membershipPlans.some((plan) => plan.id === tier)) {
+    if (tier && signupMembershipPlans.some((plan) => plan.id === tier)) {
       updates.tier = tier;
     }
-    if (billingCycle === "quarterly" || billingCycle === "monthly") {
-      updates.billingCycle = "quarterly";
-    }
-    if (billingCycle === "annual") {
-      updates.billingCycle = "annual";
-    }
-    if (updates.tier || updates.billingCycle) {
+    if (updates.tier) {
       updateRegistration(updates);
     }
     if (referralCode && !registration.referralCode) {

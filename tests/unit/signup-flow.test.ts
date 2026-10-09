@@ -58,6 +58,8 @@ describe("signup checkout contract", () => {
     ["malformed referral", { ...validPayload, referralCode: "FREE-MONEY" }],
     ["malformed founding code", { ...validPayload, foundingMemberCode: "bad code!" }],
     ["invalid organization type", { ...validPayload, organizationKind: "company" }],
+    ["legacy quarterly checkout", { ...validPayload, billingCycle: "quarterly" }],
+    ["legacy Harvest checkout", { ...validPayload, tier: "harvest" }],
   ])("rejects %s", (_label, payload) => {
     expect(() => parseSignupCheckoutInput(payload)).toThrow(SignupValidationError);
   });

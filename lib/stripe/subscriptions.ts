@@ -58,6 +58,7 @@ function getMembershipItem(subscription: Stripe.Subscription) {
   return (
     subscription.items.data.find((item) => getSubscriptionItemType(item) === "membership") ??
     subscription.items.data.find((item) => getPlanId(item)) ??
+    subscription.items.data.find((item) => item.price.metadata.item_type !== "seat") ??
     subscription.items.data[0]
   );
 }
@@ -190,6 +191,7 @@ async function upsertStripeSubscriptionItem(
   supabase: SupabaseClient,
   localSubscriptionId: string,
   item: Stripe.SubscriptionItem,
+  membershipItemId: string | undefined,
 ) {
   const { data: existingItem, error: itemLookupError } = await supabase
     .from("subscription_items")
@@ -201,7 +203,8 @@ async function upsertStripeSubscriptionItem(
 
   const values = {
     subscription_id: localSubscriptionId,
-    item_type: getSubscriptionItemType(item),
+    item_type:
+      item.id === membershipItemId ? "membership" : getSubscriptionItemType(item),
     provider_item_id: item.id,
     quantity: getPersistableQuantity(item),
     unit_amount_cents: item.price.unit_amount ?? 0,
@@ -231,9 +234,10 @@ export async function syncStripeSubscription(
   );
   const stripeItemIds = subscription.items.data.map((item) => item.id);
   await deactivateStaleStripeItems(supabase, localSubscription.id, stripeItemIds);
+  const membershipItemId = getMembershipItem(subscription)?.id;
 
   for (const item of subscription.items.data) {
-    await upsertStripeSubscriptionItem(supabase, localSubscription.id, item);
+    await upsertStripeSubscriptionItem(supabase, localSubscription.id, item, membershipItemId);
   }
 
   return localSubscription.id as string;

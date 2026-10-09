@@ -48,8 +48,7 @@ function normalizeStoredRegistration(stored: unknown): RegistrationState {
   if (!isRecord(stored)) return initialState;
 
   const candidate = stored as Partial<RegistrationState>;
-  const billingCycle =
-    candidate.billingCycle === "annual" ? "annual" : "quarterly";
+  const billingCycle = "annual";
   const storedConsents: Record<string, unknown> = isRecord(candidate.consents)
     ? candidate.consents
     : {};
@@ -57,6 +56,7 @@ function normalizeStoredRegistration(stored: unknown): RegistrationState {
   return {
     ...initialState,
     ...candidate,
+    tier: candidate.tier === "harvest" ? initialState.tier : candidate.tier ?? initialState.tier,
     billingCycle,
     consents: {
       terms: storedConsents.terms === true,

@@ -18,7 +18,7 @@ export const membershipPlans: MembershipPlan[] = [
     id: "seedling",
     name: "Seedling",
     quarterlyPrice: 200,
-    annualPrice: 800,
+    annualPrice: 1175,
     seats: "5 seats included",
     audience: "Organizations with under $500k annual budget",
     summary:
@@ -41,7 +41,7 @@ export const membershipPlans: MembershipPlan[] = [
     id: "roots",
     name: "Roots",
     quarterlyPrice: 800,
-    annualPrice: 3200,
+    annualPrice: 3530,
     seats: "10 seats included",
     audience: "Organizations with $500k-$2M annual budget",
     summary:
@@ -63,7 +63,7 @@ export const membershipPlans: MembershipPlan[] = [
     id: "canopy",
     name: "Canopy",
     quarterlyPrice: 1500,
-    annualPrice: 6000,
+    annualPrice: 7060,
     seats: "15 seats included",
     audience: "Organizations with $2M-$5M annual budget",
     summary:
@@ -100,6 +100,10 @@ export const membershipPlans: MembershipPlan[] = [
     ],
   },
 ];
+
+export const signupMembershipPlans = membershipPlans.filter(
+  (plan) => plan.id !== "harvest",
+);
 
 export function getPlan(id: MembershipTier) {
   return membershipPlans.find((plan) => plan.id === id) ?? membershipPlans[1];

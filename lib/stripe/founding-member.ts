@@ -47,7 +47,7 @@ export async function assertFoundingCouponConfiguration(stripe: Stripe) {
     !coupon.valid ||
     coupon.percent_off !== 15 ||
     coupon.duration !== "repeating" ||
-    coupon.duration_in_months !== 12 ||
+    coupon.duration_in_months !== 24 ||
     coupon.max_redemptions !== 50
   ) {
     throw new Error("The Stripe founding-member coupon is misconfigured.");

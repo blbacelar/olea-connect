@@ -388,7 +388,7 @@ issue #56 and must be enforced server-side before this policy is considered
 operational.
 
 Founding-member pricing is display-only until the first-50 eligibility check,
-Stripe discount strategy, and Year 1 expiration are verified in a real Stripe
+Stripe discount strategy, and 24-month expiration are verified in a real Stripe
 test environment. Do not treat a client-side founding price as authorization to
 charge or discount an account.
 

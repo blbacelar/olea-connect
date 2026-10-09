@@ -20,7 +20,7 @@ test.describe("@smoke @critical public entry points", () => {
     await page.goto("/");
 
     const offer = page.getByTestId("founding-offer-banner");
-    await expect(offer).toContainText("15% off Year 1 for the first 50 paid organizations, while spots last.");
+    await expect(offer).toContainText("15% off your first two years for the first 50 paid organizations, while spots last.");
     await expect(offer).toContainText("OLEAFOUNDING15");
     await expect(offer.getByRole("link", { name: "Join now" })).toHaveAttribute("href", "/signup");
 
@@ -46,7 +46,7 @@ test.describe("@smoke @critical public entry points", () => {
 
     await switchToFrench(page);
     await expect(page.getByTestId("founding-offer-banner")).toContainText(
-      "15 % de rabais la première année pour les 50 premiers organismes payants, jusqu'à épuisement des places.",
+      "15 % de rabais pendant les deux premières années pour les 50 premiers organismes payants, jusqu'à épuisement des places.",
     );
     await expect(
       page.getByRole("heading", {
@@ -112,7 +112,7 @@ test.describe("@smoke @critical public entry points", () => {
     await expect(
       page.getByRole("heading", { name: "Choisissez votre forfait" }),
     ).toBeVisible();
-    await expect(page.getByRole("button", { name: /Annuel/ })).toBeVisible();
+    await expect(page.getByRole("button", { name: /Roots.*3\s?530/ })).toBeVisible();
     await expect(page.getByText("10 sièges inclus")).toBeVisible();
     await expect(
       page.getByRole("button", { name: /Continuer avec Roots/ }),
@@ -168,11 +168,7 @@ test.describe("@smoke @critical public entry points", () => {
       "/signup/account?tier=roots&billing=annual",
     );
 
-    await page.getByRole("button", { name: "Quarterly" }).click();
-    await expect(rootsLink).toHaveAttribute(
-      "href",
-      "/signup/account?tier=roots&billing=quarterly",
-    );
+    await expect(page.getByRole("button", { name: "Quarterly" })).toHaveCount(0);
   });
 
   test("exposes login and password recovery", async ({ page }) => {
@@ -267,16 +263,16 @@ test.describe("@smoke @critical public entry points", () => {
     page,
   }) => {
     const documents = [
-      ["terms", "Terms of Service"],
-      ["privacy", "Privacy Policy"],
-      ["data-ownership", "Data Ownership Agreement"],
-      ["confidentiality", "Confidentiality Policy"],
+      ["terms", "Terms of Service", "2026-10-08"],
+      ["privacy", "Privacy Policy", "2026-07-24"],
+      ["data-ownership", "Data Ownership Agreement", "2026-07-24"],
+      ["confidentiality", "Confidentiality Policy", "2026-07-24"],
     ] as const;
 
-    for (const [slug, title] of documents) {
+    for (const [slug, title, version] of documents) {
       await page.goto(`/legal/${slug}`);
       await expect(page.getByRole("heading", { name: title })).toBeVisible();
-      await expect(page.getByText("Version 2026-07-24")).toBeVisible();
+      await expect(page.getByText(`Version ${version}`, { exact: false })).toBeVisible();
       await expect(
         page.getByRole("link", { name: "Return to signup" }),
       ).toHaveAttribute("href", "/signup");

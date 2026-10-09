@@ -140,13 +140,17 @@ export async function getBillingSummary(): Promise<BillingSummary | null> {
   );
   const seatUnitAmountCents = PAID_SEAT_PRICE_CENTS;
   const seatCurrency = PAID_SEAT_CURRENCY;
+  const membershipItem = activeItems.find(
+    (item) => item.item_type === "membership" && item.active,
+  );
   // The legacy DB column is named monthly_price_cents, but current plans bill
   // quarterly or annually. Until the storage column is renamed, month means
   // the quarterly upfront catalog price.
   const amountCents =
-    subscription.billing_interval === "year"
+    membershipItem?.unit_amount_cents ??
+    (subscription.billing_interval === "year"
       ? (plan?.annual_price_cents ?? 0)
-      : (plan?.monthly_price_cents ?? 0);
+      : (plan?.monthly_price_cents ?? 0));
   const [
     {
       count: activeMemberCount,

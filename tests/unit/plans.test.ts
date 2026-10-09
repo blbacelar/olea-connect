@@ -1,15 +1,19 @@
 import { describe, expect, it } from "vitest";
 
-import { getPlan, membershipPlans } from "@/lib/plans";
+import { getPlan, membershipPlans, signupMembershipPlans } from "@/lib/plans";
 
 describe("membership plans", () => {
-  it("keeps every supported tier unique and priced annually at four quarters", () => {
+  it("keeps legacy tiers while offering the approved annual signup prices", () => {
     expect(new Set(membershipPlans.map(({ id }) => id)).size).toBe(4);
-
-    for (const plan of membershipPlans) {
-      expect(plan.annualPrice).toBe(plan.quarterlyPrice * 4);
-      expect(plan.features.length).toBeGreaterThan(0);
-    }
+    expect(signupMembershipPlans.map(({ id, annualPrice }) => [id, annualPrice])).toEqual([
+      ["seedling", 1175],
+      ["roots", 3530],
+      ["canopy", 7060],
+    ]);
+    expect(membershipPlans.map(({ quarterlyPrice }) => quarterlyPrice)).toEqual([
+      200, 800, 1500, 2400,
+    ]);
+    expect(getPlan("harvest").annualPrice).toBe(9600);
   });
 
   it("matches the 2026 pricing handoff seat limits", () => {

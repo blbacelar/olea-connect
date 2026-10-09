@@ -11,7 +11,7 @@ import { Button } from "@/components/ui/button";
 import { useRegistration } from "@/hooks/use-registration";
 import { getAuthFlowCopy } from "@/lib/i18n/auth-flow-copy";
 import { getPublicSiteCopy } from "@/lib/i18n/public-site-copy";
-import { membershipPlans } from "@/lib/plans";
+import { signupMembershipPlans } from "@/lib/plans";
 import { formatCad } from "@/lib/pricing";
 import type { MembershipTier } from "@/lib/types";
 import { cn } from "@/lib/utils";
@@ -31,24 +31,14 @@ export default function SignupPlanPage() {
     const tier = new URLSearchParams(window.location.search).get(
       "tier",
     ) as MembershipTier | null;
-    const billingCycle = new URLSearchParams(window.location.search).get(
-      "billing",
-    );
     const updates: {
       tier?: MembershipTier;
-      billingCycle?: "quarterly" | "annual";
       referralCode?: string;
     } = {};
-    if (tier && membershipPlans.some((plan) => plan.id === tier)) {
+    if (tier && signupMembershipPlans.some((plan) => plan.id === tier)) {
       updates.tier = tier;
     }
-    if (billingCycle === "quarterly" || billingCycle === "monthly") {
-      updates.billingCycle = "quarterly";
-    }
-    if (billingCycle === "annual") {
-      updates.billingCycle = "annual";
-    }
-    if (updates.tier || updates.billingCycle) {
+    if (updates.tier) {
       updateRegistration(updates);
     }
     if (referralCode && !registration.referralCode) {
@@ -68,40 +58,19 @@ export default function SignupPlanPage() {
           {authCopy.signup.step(1, 3)} · {signupCopy.description}
         </p>
 
-        <div className="mx-auto mt-7 flex w-fit rounded-lg border bg-white p-1">
-          {(["quarterly", "annual"] as const).map((cycle) => (
-            <Button
-              type="button"
-              variant="ghost"
-              key={cycle}
-              onClick={() => updateRegistration({ billingCycle: cycle })}
-              className={cn(
-                "h-10 rounded-md px-4 text-sm font-semibold",
-                registration.billingCycle === cycle
-                  ? "bg-olea-green text-white"
-                  : "text-slate-500",
-              )}
-            >
-              {cycle === "annual" ? signupCopy.annual : signupCopy.quarterly}
-              {cycle === "annual" ? ` · ${signupCopy.bestValue}` : ""}
-            </Button>
-          ))}
-        </div>
-
-        <div className="mt-8 grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-          {membershipPlans.map((plan) => {
+        <div className="mt-8 grid gap-4 md:grid-cols-3">
+          {signupMembershipPlans.map((plan) => {
             const selected = registration.tier === plan.id;
             const localizedPlan = publicCopy.pricing.plans[plan.id];
-            const price =
-              registration.billingCycle === "annual"
-                ? plan.annualPrice
-                : plan.quarterlyPrice;
             return (
-              <button
+              <Button
+                type="button"
+                variant="outline"
                 key={plan.id}
+                aria-pressed={selected}
                 onClick={() => updateRegistration({ tier: plan.id })}
                 className={cn(
-                  "relative flex min-h-[330px] flex-col rounded-[14px] border bg-white p-6 text-left shadow-soft transition hover:-translate-y-0.5 hover:border-olea-green",
+                  "relative flex h-auto min-h-[330px] w-full flex-col items-stretch whitespace-normal rounded-[14px] border bg-white p-6 text-left shadow-soft transition hover:-translate-y-0.5 hover:border-olea-green",
                   selected && "border-2 border-olea-green bg-olea-light/40",
                 )}
               >
@@ -112,12 +81,9 @@ export default function SignupPlanPage() {
                 ) : null}
                 <p className="text-lg font-bold">{localizedPlan.name}</p>
                 <p className="mt-4 text-3xl font-bold">
-                  {formatCad(price, locale)}
+                  {formatCad(plan.annualPrice, locale)}
                   <span className="text-sm font-normal text-slate-400">
-                    /
-                    {registration.billingCycle === "annual"
-                      ? publicCopy.pricing.perYear
-                      : publicCopy.pricing.perQuarter}
+                    /{publicCopy.pricing.perYear}
                   </span>
                 </p>
                 <p className="mt-1 text-xs font-semibold text-olea-green">
@@ -137,7 +103,7 @@ export default function SignupPlanPage() {
                 <span className="mt-auto pt-6 text-sm font-semibold text-olea-green">
                   {selected ? signupCopy.selected : signupCopy.selectPlan}
                 </span>
-              </button>
+              </Button>
             );
           })}
         </div>

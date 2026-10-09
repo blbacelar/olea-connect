@@ -91,8 +91,8 @@ const signupCheckoutSchema = z
       }
       return normalized;
     }),
-    tier: z.enum(["seedling", "roots", "canopy", "harvest"]),
-    billingCycle: z.enum(["quarterly", "annual"]),
+    tier: z.enum(["seedling", "roots", "canopy"]),
+    billingCycle: z.literal("annual"),
     consents: z
       .object({
         terms: z.literal(true),

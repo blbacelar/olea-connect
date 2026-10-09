@@ -234,11 +234,11 @@ export const authFlowCopy: Record<Locale, AuthFlowCopy> = {
         annual: "Annual",
         bestValue: "best value",
         foundingEligibility:
-          "A valid founding-member code provides 15% off Year 1 while the first 50 spots remain available.",
+          "A valid founding-member code provides 15% off your first two annual payments while the first 50 spots remain available.",
         selected: "Selected",
         selectPlan: "Select plan",
         policyNote:
-          "Prices are shown before tax; GST/PST is calculated at secure checkout.",
+          "Your total is shown at secure checkout before payment. Taxes are not currently collected.",
         continueWith: (planName) => `Continue with ${planName}`,
       },
       account: {
@@ -266,7 +266,7 @@ export const authFlowCopy: Record<Locale, AuthFlowCopy> = {
         foundingMemberCode: "Founding-member code",
         foundingMemberCodePlaceholder: "ENTER-CODE",
         foundingMemberCodeHelp:
-          "Optional. Founding members receive 15% off Year 1 while the first 50 spots remain available.",
+          "Optional. Founding members receive 15% off their first two annual payments while the first 50 spots remain available.",
         foundingMemberCodeInvalid:
           "Use 4-32 letters, numbers, or hyphens.",
         password: "Password *",
@@ -340,13 +340,13 @@ export const authFlowCopy: Record<Locale, AuthFlowCopy> = {
           cycle === "annual" ? "Annual billing" : "Quarterly billing",
         membershipStarts: "Membership starts immediately",
         membershipDescription:
-          "Your selected annual or quarterly billing amount is charged upfront when you activate your membership. GST/PST is calculated from your billing province.",
+          "Your annual membership is charged upfront when you activate it. Review your total before payment; taxes are not currently collected.",
         renewalNotice: "30-day notice before renewal",
         canadianDollars: "Prices in Canadian dollars",
         foundingEligibility:
-          "Enter a valid founding-member code to receive 15% off Year 1. Limited to the first 50 paid organizations.",
+          "Enter a valid founding-member code to receive 15% off your first two annual payments. Limited to the first 50 paid organizations.",
         foundingCodeApplied:
-          "Founding-member code entered. We will validate it securely and apply 15% off Year 1 at checkout if a spot remains.",
+          "Founding-member code entered. We will validate it securely and apply 15% off your first two annual payments if a spot remains.",
         regularPrice: "Regular price",
         canceled:
           "Checkout was canceled. Your account was created, so verify your email and sign in when you are ready to continue.",
@@ -509,11 +509,11 @@ export const authFlowCopy: Record<Locale, AuthFlowCopy> = {
         annual: "Annuel",
         bestValue: "meilleure valeur",
         foundingEligibility:
-          "Un code de membre fondateur valide donne 15 % de rabais la première année, tant que l'une des 50 places est disponible.",
+          "Un code de membre fondateur valide donne 15 % de rabais sur vos deux premiers paiements annuels, tant que l'une des 50 places est disponible.",
         selected: "Sélectionné",
         selectPlan: "Choisir le forfait",
         policyNote:
-          "Les prix sont indiqués avant taxes; la TPS/TVP est calculée à la caisse sécurisée.",
+          "Le montant total est affiché à la caisse sécurisée avant le paiement. Les taxes ne sont pas perçues actuellement.",
         continueWith: (planName) => `Continuer avec ${planName}`,
       },
       account: {
@@ -542,7 +542,7 @@ export const authFlowCopy: Record<Locale, AuthFlowCopy> = {
         foundingMemberCode: "Code de membre fondateur",
         foundingMemberCodePlaceholder: "ENTRER-LE-CODE",
         foundingMemberCodeHelp:
-          "Facultatif. Les membres fondateurs reçoivent 15 % de rabais la première année, jusqu'à concurrence des 50 premières places.",
+          "Facultatif. Les membres fondateurs reçoivent 15 % de rabais sur leurs deux premiers paiements annuels, jusqu'à concurrence des 50 premières places.",
         foundingMemberCodeInvalid:
           "Utilisez de 4 à 32 lettres, chiffres ou traits d'union.",
         password: "Mot de passe *",
@@ -618,13 +618,13 @@ export const authFlowCopy: Record<Locale, AuthFlowCopy> = {
             : "Facturation trimestrielle",
         membershipStarts: "L'adhésion commence immédiatement",
         membershipDescription:
-          "Le montant annuel ou trimestriel choisi est facturé à l'avance lorsque vous activez votre adhésion. La TPS/TVP est calculée selon votre province de facturation.",
+          "Votre adhésion annuelle est facturée à l'avance lors de son activation. Vérifiez le montant total avant de payer; les taxes ne sont pas perçues actuellement.",
         renewalNotice: "Préavis de 30 jours avant le renouvellement",
         canadianDollars: "Prix en dollars canadiens",
         foundingEligibility:
-          "Entrez un code de membre fondateur valide pour recevoir 15 % de rabais la première année. Offre limitée aux 50 premiers organismes payants.",
+          "Entrez un code de membre fondateur valide pour recevoir 15 % de rabais sur vos deux premiers paiements annuels. Offre limitée aux 50 premiers organismes payants.",
         foundingCodeApplied:
-          "Code de membre fondateur saisi. Nous le validerons de façon sécurisée et appliquerons le rabais de 15 % à la caisse si une place demeure disponible.",
+          "Code de membre fondateur saisi. Nous le validerons de façon sécurisée et appliquerons le rabais de 15 % à vos deux premiers paiements annuels si une place demeure disponible.",
         regularPrice: "Prix courant",
         canceled:
           "La caisse a été annulée. Votre compte a été créé; vérifiez donc votre courriel et connectez-vous lorsque vous serez prêt à continuer.",

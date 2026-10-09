@@ -14,13 +14,13 @@ describe("server-side founding-member validation", () => {
       "FOUNDING_MEMBER_CODE_SHA256",
       createHash("sha256").update("FOUNDING-TEST-CODE").digest("hex"),
     );
-    vi.stubEnv("STRIPE_FOUNDING_COUPON_ID", "olea_founding_15_year_1");
+    vi.stubEnv("STRIPE_FOUNDING_COUPON_ID", "olea_founding_15_year_2");
     const { validateFoundingMemberCode } = await import(
       "@/lib/stripe/founding-member"
     );
 
     expect(validateFoundingMemberCode(" founding-test-code ")).toBe(
-      "olea_founding_15_year_1",
+      "olea_founding_15_year_2",
     );
     expect(validateFoundingMemberCode("")).toBeNull();
   });
@@ -30,7 +30,7 @@ describe("server-side founding-member validation", () => {
       "FOUNDING_MEMBER_CODE_SHA256",
       createHash("sha256").update("FOUNDING-TEST-CODE").digest("hex"),
     );
-    vi.stubEnv("STRIPE_FOUNDING_COUPON_ID", "olea_founding_15_year_1");
+    vi.stubEnv("STRIPE_FOUNDING_COUPON_ID", "olea_founding_15_year_2");
     const { validateFoundingMemberCode } = await import(
       "@/lib/stripe/founding-member"
     );
@@ -40,7 +40,7 @@ describe("server-side founding-member validation", () => {
     );
   });
 
-  it("accepts only the intended 15% 12-month Stripe coupon with a 50-use cap", async () => {
+  it("accepts only the intended 15% 24-month Stripe coupon with a 50-use cap", async () => {
     vi.stubEnv("STRIPE_FOUNDING_COUPON_ID", "founding_coupon");
     const { assertFoundingCouponConfiguration } = await import(
       "@/lib/stripe/founding-member"
@@ -48,7 +48,7 @@ describe("server-side founding-member validation", () => {
     const retrieve = vi.fn().mockResolvedValue({
       deleted: false,
       duration: "repeating",
-      duration_in_months: 12,
+      duration_in_months: 24,
       id: "founding_coupon",
       max_redemptions: 50,
       percent_off: 15,
@@ -60,6 +60,29 @@ describe("server-side founding-member validation", () => {
         coupons: { retrieve },
       } as never),
     ).resolves.toBe("founding_coupon");
+  });
+
+  it("rejects the old 12-month coupon", async () => {
+    vi.stubEnv("STRIPE_FOUNDING_COUPON_ID", "old_coupon");
+    const { assertFoundingCouponConfiguration } = await import(
+      "@/lib/stripe/founding-member"
+    );
+
+    await expect(
+      assertFoundingCouponConfiguration({
+        coupons: {
+          retrieve: vi.fn().mockResolvedValue({
+            deleted: false,
+            duration: "repeating",
+            duration_in_months: 12,
+            id: "old_coupon",
+            max_redemptions: 50,
+            percent_off: 15,
+            valid: true,
+          }),
+        },
+      } as never),
+    ).rejects.toThrow("Stripe founding-member coupon is misconfigured");
   });
 
   it("rejects a misconfigured Stripe coupon", async () => {

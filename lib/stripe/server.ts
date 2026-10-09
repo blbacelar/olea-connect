@@ -8,13 +8,7 @@ type BillingCycle = RegistrationState["billingCycle"];
 
 let stripeClient: Stripe | undefined;
 
-const membershipTiers: MembershipTier[] = [
-  "seedling",
-  "roots",
-  "canopy",
-  "harvest",
-];
-const billingCycles: BillingCycle[] = ["quarterly", "annual"];
+const signupTiers: MembershipTier[] = ["seedling", "roots", "canopy"];
 
 export function getStripe() {
   const secretKey = process.env.STRIPE_SECRET_KEY;
@@ -63,9 +57,7 @@ export function getWebhookSecret() {
 
 async function getPortalUpdateProducts() {
   const stripe = getStripe();
-  const priceIds = membershipTiers.flatMap((tier) =>
-    billingCycles.map((cycle) => getStripePriceId(tier, cycle)),
-  );
+  const priceIds = signupTiers.map((tier) => getStripePriceId(tier, "annual"));
   const prices = await Promise.all(
     priceIds.map((priceId) => stripe.prices.retrieve(priceId)),
   );

@@ -2,15 +2,14 @@
 
 import { Check } from "lucide-react";
 import Link from "next/link";
-import { useState } from "react";
 
 import { SectionIntro } from "@/components/landing/SectionIntro";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import type { Locale } from "@/lib/i18n/locales";
 import type { PublicSiteCopy } from "@/lib/i18n/public-site-copy";
-import { membershipPlans } from "@/lib/plans";
-import { formatCad } from "@/lib/pricing";
+import { signupMembershipPlans } from "@/lib/plans";
+import { fixedPriceOffers, formatCad, foundingYearPrice } from "@/lib/pricing";
 import { cn } from "@/lib/utils";
 
 type LandingPricingCopy = PublicSiteCopy["pricing"];
@@ -22,15 +21,20 @@ export function LandingPricing({
   copy: LandingPricingCopy;
   locale: Locale;
 }) {
-  const [annual, setAnnual] = useState(true);
   const quoteHref = (service: string) => {
-    const subject = encodeURIComponent(`Olea Connects: ${service} quote request`);
+    const subject = encodeURIComponent(`Olea Connects: ${service}`);
     const body = encodeURIComponent(
       locale === "fr-CA"
         ? "Organisme :\nSoutien souhaité :\nÉchéancier :\n"
         : "Organization:\nSupport needed:\nPreferred timeline:\n",
     );
     return `mailto:hello@olivesocialimpact.com?subject=${subject}&body=${body}`;
+  };
+  const fixedOfferPrice = (offer: keyof typeof fixedPriceOffers) => {
+    const { amount, cadence } = fixedPriceOffers[offer];
+    return cadence === "annual"
+      ? `${formatCad(amount, locale)} / ${copy.perYear}`
+      : `${formatCad(amount, locale)} ${copy.perOneTime}`;
   };
 
   return (
@@ -46,47 +50,9 @@ export function LandingPricing({
           <strong className="text-olea-dark">{copy.foundingLabel}</strong>{" "}
           {copy.foundingNotice}
         </div>
-        <div className="mt-8 flex justify-center">
-          <div className="inline-flex rounded-lg border bg-white p-1 shadow-sm">
-            <Button
-              type="button"
-              aria-pressed={!annual}
-              onClick={() => setAnnual(false)}
-              variant="ghost"
-              size="sm"
-              className={cn(
-                "rounded-md px-4 py-2 text-sm font-semibold transition",
-                !annual
-                  ? "bg-olea-green text-white hover:bg-olea-green hover:text-white"
-                  : "text-slate-500",
-              )}
-            >
-              {copy.quarterly}
-            </Button>
-            <Button
-              type="button"
-              aria-pressed={annual}
-              onClick={() => setAnnual(true)}
-              variant="ghost"
-              size="sm"
-              className={cn(
-                "rounded-md px-4 py-2 text-sm font-semibold transition",
-                annual
-                  ? "bg-olea-green text-white hover:bg-olea-green hover:text-white"
-                  : "text-slate-500",
-              )}
-            >
-              {copy.annual}
-              <span className="ml-2 rounded-full bg-[#B54708] px-2 py-0.5 text-[10px] text-white">
-                {copy.annualBadge}
-              </span>
-            </Button>
-          </div>
-        </div>
-        <div className="mt-10 grid gap-5 md:grid-cols-2 xl:grid-cols-4">
-          {membershipPlans.map((plan) => {
+        <div className="mt-10 grid gap-5 md:grid-cols-3">
+          {signupMembershipPlans.map((plan) => {
             const planCopy = copy.plans[plan.id];
-            const price = annual ? plan.annualPrice : plan.quarterlyPrice;
             return (
               <Card
                 key={plan.id}
@@ -109,12 +75,15 @@ export function LandingPricing({
                 </h3>
                 <div className="mt-5 flex items-end gap-1">
                   <span className="text-4xl font-extrabold tracking-tight">
-                    {formatCad(price, locale)}
+                    {formatCad(plan.annualPrice, locale)}
                   </span>
                   <span className="pb-1 text-sm text-slate-600">
-                    /{annual ? copy.perYear : copy.perQuarter}
+                    /{copy.perYear}
                   </span>
                 </div>
+                <p className="mt-2 text-sm font-medium text-olea-green">
+                  {copy.foundingPriceLabel} {formatCad(foundingYearPrice(plan.annualPrice), locale)}
+                </p>
                 <p className="mt-5 min-h-12 text-sm leading-6 text-slate-500">
                   {planCopy.summary}
                 </p>
@@ -138,9 +107,7 @@ export function LandingPricing({
                   variant={plan.popular ? "default" : "outline"}
                 >
                   <Link
-                    href={`/signup/account?tier=${plan.id}&billing=${
-                      annual ? "annual" : "quarterly"
-                    }`}
+                    href={`/signup/account?tier=${plan.id}&billing=annual`}
                   >
                     {copy.choosePlan} {planCopy.name}
                   </Link>
@@ -170,14 +137,17 @@ export function LandingPricing({
         />
         <div className="mt-10 grid gap-5 lg:grid-cols-3">
           {copy.addOns.map((addOn) => (
-            <Card key={addOn.name} className="flex flex-col p-6 shadow-none">
+            <Card key={addOn.id} className="flex flex-col p-6 shadow-none">
               <h3 className="text-xl font-bold">{addOn.name}</h3>
               <p className="mt-2 flex-1 text-sm leading-6 text-slate-500">
                 {addOn.description}
               </p>
+              <p className="mt-5 font-semibold text-olea-dark">
+                {fixedOfferPrice(addOn.id)}
+              </p>
               <Button asChild variant="outline" className="mt-6">
                 <a href={quoteHref(addOn.name)}>
-                  {copy.requestQuote}
+                  {copy.contactToArrange}
                 </a>
               </Button>
             </Card>
@@ -193,6 +163,31 @@ export function LandingPricing({
               </a>
             </Button>
           </Card>
+        </div>
+      </div>
+
+      <div className="mx-auto mt-16 max-w-7xl">
+        <SectionIntro
+          eyebrow={copy.sponsorshipEyebrow}
+          title={copy.sponsorshipTitle}
+          description={copy.sponsorshipDescription}
+          centered
+        />
+        <div className="mt-10 grid gap-5 md:grid-cols-3">
+          {copy.sponsorshipOffers.map((offer) => (
+            <Card key={offer.id} className="flex flex-col p-6 shadow-none">
+              <h3 className="text-xl font-bold">{offer.name}</h3>
+              <p className="mt-2 flex-1 text-sm leading-6 text-slate-500">
+                {offer.description}
+              </p>
+              <p className="mt-5 font-semibold text-olea-dark">
+                {fixedOfferPrice(offer.id)}
+              </p>
+              <Button asChild variant="outline" className="mt-6">
+                <a href={quoteHref(offer.name)}>{copy.contactToArrange}</a>
+              </Button>
+            </Card>
+          ))}
         </div>
       </div>
 

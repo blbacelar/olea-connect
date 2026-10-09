@@ -19,7 +19,9 @@ test.describe("public pricing package", () => {
     await expect(
       page.getByRole("heading", { name: "Choose the support that fits today." }),
     ).toBeVisible();
-    await expect(page.getByText("$800 CAD").first()).toBeVisible();
+    await expect(page.getByText("$1,175 CAD").first()).toBeVisible();
+    await expect(page.getByText("$3,530 CAD").first()).toBeVisible();
+    await expect(page.getByText("$7,060 CAD").first()).toBeVisible();
     await expect(
       page.getByText("5 seats included", { exact: true }),
     ).toBeVisible();
@@ -27,7 +29,14 @@ test.describe("public pricing package", () => {
       page.getByText("$15 CAD one-time per seat", { exact: true }),
     ).toBeVisible();
     await expect(page.getByText("Optional support")).toBeVisible();
-    await expect(page.getByText("Impact Coaching")).toBeVisible();
+    await expect(page.getByText("KPI Dashboard", { exact: true }).first()).toBeVisible();
+    await expect(page.getByText("$1,195 CAD").first()).toBeVisible();
+    await expect(page.getByText("$1,495 CAD").first()).toBeVisible();
+    await expect(page.getByText("$99 CAD").first()).toBeVisible();
+    await expect(page.getByText("$500 CAD").first()).toBeVisible();
+    await expect(page.getByText("$1,200 CAD").first()).toBeVisible();
+    await expect(page.getByText("$1,000 CAD").first()).toBeVisible();
+    await expect(page.getByText("$3,000 CAD").first()).toBeVisible();
     await expect(page.getByText("$7,776 CAD")).toHaveCount(0);
     await expect(page.getByText("$162 CAD/hour")).toHaveCount(0);
     await expect(page.getByText("$100 CAD/hour")).toHaveCount(0);
@@ -55,17 +64,15 @@ test.describe("public pricing package", () => {
     ).toHaveAttribute("href", "/signup/account?tier=seedling&billing=annual");
   });
 
-  test("switches membership pricing and signup links to quarterly billing", async ({
+  test("offers only annual billing for new memberships", async ({
     page,
   }) => {
     await page.goto("/");
-
-    await page.getByRole("button", { name: "Quarterly" }).click();
-
-    await expect(page.getByText("$200 CAD").first()).toBeVisible();
+    await expect(page.getByRole("button", { name: "Quarterly" })).toHaveCount(0);
+    await expect(page.getByRole("link", { name: "Choose Harvest" })).toHaveCount(0);
     await expect(
       page.getByRole("link", { name: "Choose Seedling" }),
-    ).toHaveAttribute("href", "/signup/account?tier=seedling&billing=quarterly");
+    ).toHaveAttribute("href", "/signup/account?tier=seedling&billing=annual");
   });
 
   test("does not show hourly rates in French optional support", async ({
@@ -74,7 +81,7 @@ test.describe("public pricing package", () => {
     await page.goto("/");
     await switchToFrench(page);
 
-    await expect(page.getByText("Coaching d'impact")).toBeVisible();
+    await expect(page.getByText("Tableau de bord KPI", { exact: true }).first()).toBeVisible();
     await expect(page.getByText("1\u00A0944\u00A0$ CA")).toHaveCount(0);
     await expect(page.getByText("162 $ CA/heure")).toHaveCount(0);
     await expect(page.getByText("100 $ CA/heure")).toHaveCount(0);

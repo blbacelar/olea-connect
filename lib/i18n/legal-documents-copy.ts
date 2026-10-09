@@ -69,7 +69,7 @@ const frenchLegalDocuments: Record<LegalDocumentKey, LegalDocumentCopy> = {
       {
         heading: "3. Facturation et annulation",
         paragraphs: [
-          "Les frais d'adhésion sont facturés à l'avance selon la cadence de facturation choisie. Les taxes applicables sont calculées au paiement. Les changements d'abonnement, les renouvellements et les frais de sièges sont affichés avant confirmation lorsque cela s'applique.",
+          "Les frais d'adhésion sont facturés à l'avance selon la cadence de facturation choisie. Le montant total à payer, y compris toute taxe facturée, est affiché à la caisse avant le paiement. Les changements d'abonnement, les renouvellements et les frais de sièges sont affichés avant confirmation lorsque cela s'applique.",
           "Vous pouvez annuler en tout temps. Sauf indication contraire dans une entente écrite, l'annulation prend effet à la fin de la période payée en cours et ne supprime pas les obligations déjà engagées.",
         ],
       },

@@ -148,6 +148,10 @@ describe("provisioning retry route", () => {
     );
 
     expect(response.status).toBe(200);
+    expect(routeMocks.createSession.mock.calls[0][0]).toHaveProperty(
+      "allow_promotion_codes",
+      true,
+    );
     expect(routeMocks.createSession).toHaveBeenCalledWith(
       expect.objectContaining({
         success_url:
@@ -221,11 +225,13 @@ describe("provisioning retry route", () => {
     );
     expect(routeMocks.createSession).toHaveBeenCalledWith(
       expect.objectContaining({
-        allow_promotion_codes: false,
         discounts: [{ coupon: "olea_founding_15_year_1" }],
         expires_at: expect.any(Number),
       }),
       expect.anything(),
+    );
+    expect(routeMocks.createSession.mock.calls[0][0]).not.toHaveProperty(
+      "allow_promotion_codes",
     );
   });
 

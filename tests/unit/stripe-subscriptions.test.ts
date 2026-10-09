@@ -347,6 +347,36 @@ describe("Stripe subscription synchronization", () => {
     });
   });
 
+  it("retains the membership amount for a legacy price without metadata", async () => {
+    const { syncStripeSubscription } = await import("@/lib/stripe/subscriptions");
+    const { client, subscriptionItemMutations } = makeSupabaseMock(null);
+    const legacyItem = makeSubscriptionItem({
+      id: "si_legacy_membership",
+      itemType: "membership",
+      quantity: 1,
+    });
+    const { price, ...rest } = legacyItem;
+
+    await syncStripeSubscription(
+      client as unknown as SupabaseClient,
+      makeSubscription({
+        metadata: { plan_id: "roots" },
+        items: [{ ...rest, price: { ...price, metadata: {} } }],
+        pauseCollection: null,
+      }),
+    );
+
+    expect(subscriptionItemMutations).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          item_type: "membership",
+          provider_item_id: "si_legacy_membership",
+          unit_amount_cents: 80000,
+        }),
+      ]),
+    );
+  });
+
   it("keeps zero-quantity seat items DB-safe and inactive", async () => {
     const { syncStripeSubscription } = await import("@/lib/stripe/subscriptions");
     const { client, subscriptionItemMutations } = makeSupabaseMock(null);

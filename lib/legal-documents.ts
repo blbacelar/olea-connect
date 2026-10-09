@@ -1,7 +1,7 @@
 export const LEGAL_DOCUMENTS = {
   terms: {
     title: "Terms of Service",
-    version: "2026-07-24",
+    version: "2026-10-08",
     href: "/legal/terms",
     summary:
       "These terms describe membership access, billing, renewals, cancellations, and acceptable use of Olea Connects™.",
@@ -23,7 +23,7 @@ export const LEGAL_DOCUMENTS = {
       {
         heading: "3. Billing and cancellation",
         paragraphs: [
-          "Membership fees are billed in advance on the selected billing cadence. Applicable taxes are calculated at checkout. Subscription changes, renewals, and seat charges are shown before confirmation where applicable.",
+          "Membership fees are billed in advance on the selected billing cadence. The total due, including any taxes charged, is shown at checkout before payment. Subscription changes, renewals, and seat charges are shown before confirmation where applicable.",
           "You may cancel at any time. Unless a written agreement says otherwise, cancellation takes effect at the end of the current paid period and does not remove obligations already incurred.",
         ],
       },

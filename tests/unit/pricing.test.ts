@@ -4,11 +4,14 @@ import { publicSiteCopy } from "@/lib/i18n/public-site-copy";
 import { formatCad, pricingPolicies } from "@/lib/pricing";
 
 describe("pricing package", () => {
-  it("offers custom-quoted support without unapproved public package prices", () => {
+  it("lists approved fixed-price offers while keeping custom support quote-only", () => {
     const addOns = publicSiteCopy["en-CA"].pricing.addOns;
     expect(addOns.map(({ name }) => name)).toEqual([
-      "Impact Coaching",
-      "Admin Support",
+      "KPI Dashboard",
+      "Board Governance Training",
+      "Accreditation Preparation",
+      "Impact Accelerator: Individual",
+      "Impact Accelerator: Team",
     ]);
     expect(addOns.every(({ description }) => description.length > 0)).toBe(true);
     expect(publicSiteCopy["en-CA"].pricing.requestQuote).toMatch(/quote/i);

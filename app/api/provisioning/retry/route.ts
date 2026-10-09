@@ -160,10 +160,9 @@ async function createPendingPaymentCheckout({
         },
       ],
       billing_address_collection: "required",
-      allow_promotion_codes: !request.founding_discount_identifier,
       ...(request.founding_discount_identifier
         ? { discounts: [{ coupon: request.founding_discount_identifier }] }
-        : {}),
+        : { allow_promotion_codes: true }),
       metadata,
       subscription_data: { metadata },
       success_url: `${origin}/signup/success?session_id={CHECKOUT_SESSION_ID}`,

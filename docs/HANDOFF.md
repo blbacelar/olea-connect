@@ -35,7 +35,7 @@ $3,200/$800 for Roots, $6,000/$1,500 for Canopy, and $9,600/$2,400 for Harvest
 additional seats are $15 CAD one-time per seat.
 
 The pricing page intentionally distinguishes public display from billing
-authorization. Founding-member rates are shown as a first-50, Year 1-only
+authorization. Founding-member rates are shown as a first-50, first-two-years
 offer, but the server must verify eligibility and apply the Stripe discount
 before charging. Referral capture, first-referral-wins, self-referral checks,
 and post-payment reward crediting are specified in issue #56 and are not

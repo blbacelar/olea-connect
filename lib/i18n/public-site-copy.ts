@@ -106,6 +106,7 @@ export type PublicSiteCopy = {
     description: string;
     foundingLabel: string;
     foundingNotice: string;
+    foundingPriceLabel: string;
     quarterly: string;
     annual: string;
     annualBadge: string;
@@ -119,6 +120,7 @@ export type PublicSiteCopy = {
     retreatTitle: string;
     retreatDescription: string;
     requestQuote: string;
+    contactToArrange: string;
     referralsEyebrow: string;
     referralsTitle: string;
     referralsDescription: string;
@@ -126,9 +128,19 @@ export type PublicSiteCopy = {
     plans: Record<MembershipTier, LocalizedPlanCopy>;
     policies: string[];
     addOns: Array<{
+      id: "kpiDashboard" | "boardTraining" | "accreditationPrep" | "acceleratorIndividual" | "acceleratorTeam";
       name: string;
       description: string;
     }>;
+    sponsorshipTitle: string;
+    sponsorshipEyebrow: string;
+    sponsorshipDescription: string;
+    sponsorshipOffers: Array<{
+      id: "sponsorSeedlingBoard" | "sponsorRootsBoard" | "sponsorAcceleratorTeam";
+      name: string;
+      description: string;
+    }>;
+    perOneTime: string;
   };
   faq: {
     eyebrow: string;
@@ -177,7 +189,7 @@ export const publicSiteCopy: Record<Locale, PublicSiteCopy> = {
       getStarted: "Get started",
     },
     foundingBanner: {
-      message: "15% off Year 1 for the first 50 paid organizations, while spots last.",
+      message: "15% off your first two years for the first 50 paid organizations, while spots last.",
       codeLabel: "Use code",
       signup: "Join now",
     },
@@ -191,8 +203,8 @@ export const publicSiteCopy: Record<Locale, PublicSiteCopy> = {
       secondaryCta: "See how it works",
       assurances: [
         "Join in about 5 minutes",
-        "Plans from $800/year",
-        "Quarterly billing available",
+        "Plans from $1,175 CAD/year",
+        "Annual billing",
       ],
       quote:
         "Whatever stage your organization is at, there is a place for you here.",
@@ -317,10 +329,11 @@ export const publicSiteCopy: Record<Locale, PublicSiteCopy> = {
       eyebrow: "Membership",
       title: "Choose the support that fits today.",
       description:
-        "Founding members with a valid code receive 15% off Year 1, limited to the first 50 paid organizations. Annual and quarterly memberships are paid upfront.",
+        "Choose an annual membership, paid upfront. Founding members with a valid code receive 15% off their first two annual payments, limited to the first 50 paid organizations.",
       foundingLabel: "Founding member offer:",
       foundingNotice:
-        "Enter your founding-member code during signup to receive 15% off Year 1 while the first 50 spots remain available. Prices below show regular rates; your discount is confirmed before payment.",
+        "Enter your founding-member code during signup to receive 15% off your first two annual payments while the first 50 spots remain available. Prices below show regular rates; your discount is confirmed before payment.",
+      foundingPriceLabel: "Years 1 and 2 with a valid founding code:",
       quarterly: "Quarterly",
       annual: "Annual",
       annualBadge: "Best for renewal planning",
@@ -331,15 +344,16 @@ export const publicSiteCopy: Record<Locale, PublicSiteCopy> = {
       optionalSupportEyebrow: "Optional support",
       optionalSupportTitle: "Add capacity when your team needs it.",
       optionalSupportDescription:
-        "Custom support is available to every tier. Canopy and Harvest members receive 10% off coaching and admin support quotes.",
+        "Annual add-ons and one-time Accelerator places are priced below. Coaching, admin support, and facilitation remain available by quote.",
       retreatTitle: "Board Retreat Facilitation",
       retreatDescription:
         "Professional facilitation for annual board retreats and strategic planning sessions.",
       requestQuote: "Contact us for a quote",
+      contactToArrange: "Contact us to arrange",
       referralsEyebrow: "Circle of generosity",
       referralsTitle: "Your referrals help another nonprofit access support.",
       referralsDescription:
-        "Approved referrers can earn 10% of a referred organization's first successful quarterly or annual membership payment, up to $500. Renewals and self-referrals are not eligible.",
+        "Approved referrers can earn 10% of a referred organization's first successful membership payment, up to $500. Renewals and self-referrals are not eligible.",
       referralsCta: "Explore the referral program",
       plans: {
         seedling: {
@@ -405,22 +419,61 @@ export const publicSiteCopy: Record<Locale, PublicSiteCopy> = {
       },
       policies: [
         "$15 CAD one-time per seat",
-        "Prices are shown before tax; GST/PST is calculated at checkout by province.",
+        "Your total is shown at secure checkout before payment. Taxes are not currently collected.",
         "No free trial",
         "30 days' notice before renewal; membership fees are non-refundable.",
       ],
       addOns: [
         {
-          name: "Impact Coaching",
+          id: "kpiDashboard",
+          name: "KPI Dashboard",
           description:
-            "One-to-one support for KPI metrics, funder reporting, and impact strategy. Tell us what you need for a tailored quote.",
+            "Track quarterly results and prepare board-ready impact reporting.",
         },
         {
-          name: "Admin Support",
+          id: "boardTraining",
+          name: "Board Governance Training",
           description:
-            "Practical help with board operations, meeting preparation, and governance administration. We quote based on your team's needs.",
+            "Structured training to strengthen board governance.",
+        },
+        {
+          id: "accreditationPrep",
+          name: "Accreditation Preparation",
+          description: "Organize documents and track accreditation readiness.",
+        },
+        {
+          id: "acceleratorIndividual",
+          name: "Impact Accelerator: Individual",
+          description: "One place in an Impact Accelerator cohort.",
+        },
+        {
+          id: "acceleratorTeam",
+          name: "Impact Accelerator: Team",
+          description: "A team place for up to three participants.",
         },
       ],
+      sponsorshipTitle: "Sponsor nonprofit capacity",
+      sponsorshipEyebrow: "Sponsorship",
+      sponsorshipDescription:
+        "Fund a board or Accelerator team. These are one-time sponsorships; contact us to arrange the sponsorship.",
+      sponsorshipOffers: [
+        {
+          id: "sponsorSeedlingBoard",
+          name: "Sponsor a Seedling board",
+          description: "Support one Seedling board for a year.",
+        },
+        {
+          id: "sponsorRootsBoard",
+          name: "Sponsor a Roots board",
+          description: "Support one Roots board for a year.",
+        },
+        {
+          id: "sponsorAcceleratorTeam",
+          name: "Sponsor an Accelerator team",
+          description: "Fund a team of up to three participants.",
+        },
+      ],
+      perOneTime: "one-time",
     },
     faq: {
       eyebrow: "Frequently asked questions",
@@ -436,22 +489,22 @@ export const publicSiteCopy: Record<Locale, PublicSiteCopy> = {
         {
           question: "How does billing work?",
           answer:
-            "Memberships are billed annually or quarterly, paid upfront in Canadian dollars, and renew on your signup anniversary. Prices are shown before tax; GST/PST is calculated during checkout by province.",
+            "New memberships are billed annually, paid upfront in Canadian dollars, and renew on your signup anniversary. Your total is shown at checkout before payment; taxes are not currently collected. Existing quarterly memberships continue on their current terms.",
         },
         {
           question: "Is there a free trial?",
           answer:
-            "No. Olea Connects™ does not offer a free trial. Founding members with a valid code can receive 15% off Year 1 while the first 50 spots remain available.",
+            "No. Olea Connects™ does not offer a free trial. Founding members with a valid code can receive 15% off their first two annual payments while the first 50 spots remain available.",
         },
         {
           question: "What is the founding-member offer?",
           answer:
-            "Enter the founding-member code supplied by Olea during signup. The first 50 paid organizations with a valid code receive 15% off their first year. After Year 1, the membership renews at the regular tier price.",
+            "Enter the founding-member code supplied by Olea during signup. The first 50 paid organizations with a valid code receive 15% off their first two annual payments. From Year 3, the membership renews at the regular tier price.",
         },
         {
           question: "How many seats are included?",
           answer:
-            "Seedling includes 5 seats, Roots includes 10, Canopy includes 15, and Harvest includes 20. Additional seats are $15 CAD one-time per seat on any tier.",
+            "Seedling includes 5 seats, Roots includes 10, and Canopy includes 15. Existing Harvest memberships include 20. Additional seats are $15 CAD one-time per seat on any tier.",
         },
         {
           question: "Can we upgrade or downgrade?",
@@ -466,7 +519,7 @@ export const publicSiteCopy: Record<Locale, PublicSiteCopy> = {
         {
           question: "How do referrals work?",
           answer:
-            "Approved referrers receive a unique link. Eligible referrals can earn 10% of the referred organization's first successful quarterly or annual membership payment, up to $500. Renewals, self-referrals, and duplicate credits are not eligible.",
+            "Approved referrers receive a unique link. Eligible referrals can earn 10% of the referred organization's first successful membership payment, up to $500. Renewals, self-referrals, and duplicate credits are not eligible.",
         },
         {
           question: "Are coaching and admin support included?",
@@ -491,7 +544,7 @@ export const publicSiteCopy: Record<Locale, PublicSiteCopy> = {
       description:
         "Start with the plan that fits now. Your tools, brand profile, history, and community connections can grow with you.",
       cta: "Join Olea Connects™",
-      pricingNote: "Memberships start at $800 CAD/year or $200 CAD/quarter.",
+      pricingNote: "Memberships start at $1,175 CAD/year. Review your total before payment.",
     },
     footer: {
       description:
@@ -523,7 +576,7 @@ export const publicSiteCopy: Record<Locale, PublicSiteCopy> = {
       getStarted: "Commencer",
     },
     foundingBanner: {
-      message: "15 % de rabais la première année pour les 50 premiers organismes payants, jusqu'à épuisement des places.",
+      message: "15 % de rabais pendant les deux premières années pour les 50 premiers organismes payants, jusqu'à épuisement des places.",
       codeLabel: "Code",
       signup: "S'inscrire",
     },
@@ -537,8 +590,8 @@ export const publicSiteCopy: Record<Locale, PublicSiteCopy> = {
       secondaryCta: "Voir le fonctionnement",
       assurances: [
         "Inscription en environ 5 minutes",
-        "Forfaits à partir de 800 $ CA/an",
-        "Facturation trimestrielle offerte",
+        "Forfaits à partir de 1 175 $ CA/an",
+        "Facturation annuelle",
       ],
       quote:
         "Peu importe l'étape où se trouve votre organisme, il y a une place pour vous ici.",
@@ -676,10 +729,11 @@ export const publicSiteCopy: Record<Locale, PublicSiteCopy> = {
       eyebrow: "Adhésion",
       title: "Choisissez le soutien qui convient aujourd'hui.",
       description:
-        "Les membres fondateurs qui possèdent un code valide reçoivent 15 % de rabais sur la première année, jusqu'à concurrence des 50 premiers organismes payants. Les adhésions annuelles et trimestrielles sont payées à l'avance.",
+        "Choisissez une adhésion annuelle payée à l'avance. Les membres fondateurs qui possèdent un code valide reçoivent 15 % de rabais sur leurs deux premiers paiements annuels, jusqu'à concurrence des 50 premiers organismes payants.",
       foundingLabel: "Offre membre fondateur :",
       foundingNotice:
-        "Entrez votre code de membre fondateur pendant l'inscription pour recevoir 15 % de rabais sur la première année, tant que l'une des 50 places est disponible. Les tarifs ci-dessous sont les prix réguliers; votre rabais est confirmé avant le paiement.",
+        "Entrez votre code de membre fondateur pendant l'inscription pour recevoir 15 % de rabais sur vos deux premiers paiements annuels, tant que l'une des 50 places est disponible. Les tarifs ci-dessous sont les prix réguliers; votre rabais est confirmé avant le paiement.",
+      foundingPriceLabel: "Années 1 et 2 avec un code fondateur valide :",
       quarterly: "Trimestriel",
       annual: "Annuel",
       annualBadge: "Idéal pour planifier le renouvellement",
@@ -691,16 +745,17 @@ export const publicSiteCopy: Record<Locale, PublicSiteCopy> = {
       optionalSupportTitle:
         "Ajoutez de la capacité quand votre équipe en a besoin.",
       optionalSupportDescription:
-        "Le soutien personnalisé est offert avec chaque forfait. Les membres Canopy et Harvest reçoivent 10 % de rabais sur les devis de coaching et de soutien administratif.",
+        "Les modules complémentaires annuels et les places uniques à l'Accélérateur sont indiqués ci-dessous. Le coaching, le soutien administratif et l'animation restent offerts sur devis.",
       retreatTitle: "Animation de retraite du conseil",
       retreatDescription:
         "Animation professionnelle pour les retraites annuelles du conseil et les séances de planification stratégique.",
       requestQuote: "Contactez-nous pour obtenir un devis",
+      contactToArrange: "Contactez-nous pour organiser l'achat",
       referralsEyebrow: "Cercle de générosité",
       referralsTitle:
         "Vos références aident un autre organisme à accéder au soutien.",
       referralsDescription:
-        "Les personnes approuvées peuvent recevoir 10 % du premier paiement d'adhésion trimestriel ou annuel réussi d'un organisme référé, jusqu'à 500 $. Les renouvellements et les auto-références sont exclus.",
+        "Les personnes approuvées peuvent recevoir 10 % du premier paiement d'adhésion réussi d'un organisme référé, jusqu'à 500 $. Les renouvellements et les auto-références sont exclus.",
       referralsCta: "Découvrir le programme de référencement",
       plans: {
         seedling: {
@@ -766,22 +821,61 @@ export const publicSiteCopy: Record<Locale, PublicSiteCopy> = {
       },
       policies: [
         "15 $ CA par siège supplémentaire, paiement unique",
-        "Les prix sont indiqués avant taxes; la TPS/TVP est calculée à la caisse selon la province.",
+        "Le montant total est affiché à la caisse sécurisée avant le paiement. Les taxes ne sont pas perçues actuellement.",
         "Aucun essai gratuit",
         "Préavis de 30 jours avant le renouvellement; les frais d'adhésion ne sont pas remboursables.",
       ],
       addOns: [
         {
-          name: "Coaching d'impact",
+          id: "kpiDashboard",
+          name: "Tableau de bord KPI",
           description:
-            "Soutien individuel pour les indicateurs KPI, les rapports aux bailleurs de fonds et la stratégie d'impact. Décrivez-nous vos besoins pour obtenir un devis adapté.",
+            "Suivez les résultats trimestriels et préparez des rapports d'impact pour le conseil.",
         },
         {
-          name: "Soutien administratif",
+          id: "boardTraining",
+          name: "Formation en gouvernance du conseil",
           description:
-            "Aide pratique pour les opérations du conseil, la préparation des réunions et la gouvernance. Le devis dépend des besoins de votre équipe.",
+            "Une formation structurée pour renforcer la gouvernance du conseil.",
+        },
+        {
+          id: "accreditationPrep",
+          name: "Préparation à l'accréditation",
+          description: "Organisez les documents et suivez l'état de préparation à l'accréditation.",
+        },
+        {
+          id: "acceleratorIndividual",
+          name: "Accélérateur d'impact : individuel",
+          description: "Une place dans une cohorte de l'Accélérateur d'impact.",
+        },
+        {
+          id: "acceleratorTeam",
+          name: "Accélérateur d'impact : équipe",
+          description: "Une place pour une équipe d'au plus trois personnes.",
         },
       ],
+      sponsorshipTitle: "Soutenir les organismes sans but lucratif",
+      sponsorshipEyebrow: "Commandites",
+      sponsorshipDescription:
+        "Soutenez un conseil ou une équipe de l'Accélérateur. Ces commandites sont des paiements uniques; contactez-nous pour organiser votre soutien.",
+      sponsorshipOffers: [
+        {
+          id: "sponsorSeedlingBoard",
+          name: "Soutenir un conseil Seedling",
+          description: "Soutenez un conseil Seedling pendant un an.",
+        },
+        {
+          id: "sponsorRootsBoard",
+          name: "Soutenir un conseil Roots",
+          description: "Soutenez un conseil Roots pendant un an.",
+        },
+        {
+          id: "sponsorAcceleratorTeam",
+          name: "Soutenir une équipe de l'Accélérateur",
+          description: "Financez une équipe d'au plus trois personnes.",
+        },
+      ],
+      perOneTime: "paiement unique",
     },
     faq: {
       eyebrow: "Questions fréquentes",
@@ -797,22 +891,22 @@ export const publicSiteCopy: Record<Locale, PublicSiteCopy> = {
         {
           question: "Comment fonctionne la facturation?",
           answer:
-            "Les adhésions sont facturées annuellement ou trimestriellement, payées à l'avance en dollars canadiens, et se renouvellent à la date anniversaire de l'inscription. Les prix sont affichés avant taxes; la TPS/TVP est calculée à la caisse selon la province.",
+            "Les nouvelles adhésions sont facturées annuellement, payées à l'avance en dollars canadiens, et se renouvellent à la date anniversaire de l'inscription. Le montant total est affiché à la caisse avant le paiement; les taxes ne sont pas perçues actuellement. Les adhésions trimestrielles existantes conservent leurs modalités.",
         },
         {
           question: "Y a-t-il un essai gratuit?",
           answer:
-            "Non. Olea Connects™ n'offre pas d'essai gratuit. Les membres fondateurs qui possèdent un code valide peuvent recevoir 15 % de rabais sur la première année, tant que l'une des 50 places est disponible.",
+            "Non. Olea Connects™ n'offre pas d'essai gratuit. Les membres fondateurs qui possèdent un code valide peuvent recevoir 15 % de rabais sur leurs deux premiers paiements annuels, tant que l'une des 50 places est disponible.",
         },
         {
           question: "Qu'est-ce que l'offre membre fondateur?",
           answer:
-            "Entrez pendant l'inscription le code de membre fondateur fourni par Olea. Les 50 premiers organismes payants qui possèdent un code valide reçoivent 15 % de rabais sur leur première année. Après l'année 1, l'adhésion se renouvelle au prix régulier du forfait.",
+            "Entrez pendant l'inscription le code de membre fondateur fourni par Olea. Les 50 premiers organismes payants qui possèdent un code valide reçoivent 15 % de rabais sur leurs deux premiers paiements annuels. À partir de la troisième année, l'adhésion se renouvelle au prix régulier du forfait.",
         },
         {
           question: "Combien de sièges sont inclus?",
           answer:
-            "Seedling inclut 5 sièges, Roots en inclut 10, Canopy en inclut 15 et Harvest en inclut 20. Les sièges supplémentaires coûtent 15 $ CA par siège, en paiement unique, pour tous les forfaits.",
+            "Seedling inclut 5 sièges, Roots en inclut 10 et Canopy en inclut 15. Les adhésions Harvest existantes incluent 20 sièges. Les sièges supplémentaires coûtent 15 $ CA par siège, en paiement unique, pour tous les forfaits.",
         },
         {
           question: "Pouvons-nous changer de forfait?",
@@ -827,7 +921,7 @@ export const publicSiteCopy: Record<Locale, PublicSiteCopy> = {
         {
           question: "Comment fonctionnent les références?",
           answer:
-            "Les personnes approuvées reçoivent un lien unique. Une référence admissible peut rapporter 10 % du premier paiement d'adhésion trimestriel ou annuel réussi de l'organisme référé, jusqu'à 500 $. Les renouvellements, les auto-références et les crédits en double sont exclus.",
+            "Les personnes approuvées reçoivent un lien unique. Une référence admissible peut rapporter 10 % du premier paiement d'adhésion réussi de l'organisme référé, jusqu'à 500 $. Les renouvellements, les auto-références et les crédits en double sont exclus.",
         },
         {
           question: "Le coaching et le soutien administratif sont-ils inclus?",
@@ -853,7 +947,7 @@ export const publicSiteCopy: Record<Locale, PublicSiteCopy> = {
         "Commencez avec le forfait qui convient maintenant. Vos outils, votre profil de marque, votre historique et vos liens communautaires peuvent grandir avec vous.",
       cta: "Rejoindre Olea Connects™",
       pricingNote:
-        "Les adhésions commencent à 800 $ CA/an ou 200 $ CA/trimestre.",
+        "Les adhésions commencent à 1 175 $ CA/an. Vérifiez le montant total avant de payer.",
     },
     footer: {
       description:
