@@ -53,6 +53,7 @@ test.describe("public pricing package", () => {
     await expect(page.getByRole("link", { name: "Explore the referral program" }))
       .toHaveAttribute("href", "/referrals");
     await expect(page.getByText("No free trial")).toBeVisible();
+    await expect(page.locator("#plans")).not.toContainText("for your whole board");
     await expect(page.locator("#plans")).not.toContainText("Cancel before renewal");
     await expect(
       page.locator('#plans a[href^="/signup/account?tier=seedling&billing=annual"]'),
@@ -86,6 +87,7 @@ test.describe("public pricing package", () => {
       .toHaveAttribute("href", /mailto:hello@olivesocialimpact.com\?subject=/);
     await expect(page.getByText(/15 % de ses bénéfices à des organismes sans but lucratif/).first())
       .toBeVisible();
+    await expect(page.locator("#plans")).not.toContainText("pour tout votre conseil");
     await expect(page.locator("#plans")).not.toContainText("Annulez avant le renouvellement");
   });
 
