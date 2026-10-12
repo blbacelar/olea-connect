@@ -126,7 +126,7 @@ export function MeetingDocumentsDialog({
         </fieldset>
         {error ? <p role="alert" className="text-sm font-medium text-red-700">{error}</p> : null}
         {saveState === "error" ? <p role="alert" className="text-sm font-medium text-red-700">The calendar could not save this document. Keep this dialog open and try again.</p> : null}
-        <DialogFooter className="gap-2 sm:gap-0">
+        <DialogFooter className="sm:flex-wrap">
           <Button type="button" variant="outline" onClick={onClose}>Close</Button>
           <Button type="button" variant="outline" disabled={dirty || saveState !== "saved" || !templateInstanceId || isExporting || !getMeetingDocuments(data).some((item) => item.meetingId === meeting.id && item.kind === kind)} onClick={() => void exportPdf()}>
             {isExporting ? <LoaderCircle className="size-4 animate-spin" /> : <Download className="size-4" />} Export PDF

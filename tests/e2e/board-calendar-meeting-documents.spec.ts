@@ -16,6 +16,20 @@ test.describe("@critical Board Calendar meeting documents", () => {
     const dialog = page.getByRole("dialog", { name: "Meeting documents: Governance Review" });
     await expect(dialog).toBeVisible();
 
+    const footerButtons = ["Close", "Export PDF", "Save draft", "Approve for package"];
+    const footerBounds = await Promise.all(footerButtons.map(async (name) =>
+      dialog.getByRole("button", { name, exact: true }).last().boundingBox(),
+    ));
+    for (let index = 1; index < footerBounds.length; index += 1) {
+      const previous = footerBounds[index - 1];
+      const current = footerBounds[index];
+      expect(previous).not.toBeNull();
+      expect(current).not.toBeNull();
+      const horizontalGap = Math.max(current!.x - previous!.x - previous!.width, previous!.x - current!.x - current!.width);
+      const verticalGap = Math.max(current!.y - previous!.y - previous!.height, previous!.y - current!.y - current!.height);
+      expect(Math.max(horizontalGap, verticalGap)).toBeGreaterThanOrEqual(7);
+    }
+
     await dialog.getByRole("button", { name: "Approve for package" }).click();
     await expect(dialog.getByRole("alert")).toContainText("Add consent or regular agenda items");
     await dialog.getByLabel("Consent agenda", { exact: true }).fill("Approve prior minutes and receive the finance report.");
