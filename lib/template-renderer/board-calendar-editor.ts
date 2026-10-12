@@ -270,11 +270,20 @@ export function buildGeneratedStaffTasks(
 export function syncBoardCalendarGeneratedTasks(
   data: TemplateFormData,
 ): TemplateFormData {
+  const deletedGeneratedKeys = new Set(
+    Array.isArray(data.deleted_generated_task_keys)
+      ? data.deleted_generated_task_keys.filter(
+          (key): key is string => typeof key === "string",
+        )
+      : [],
+  );
   const manualTasks = getRows(data, "tasks").filter(
     (task) => !getString(task, "generated_key"),
   );
   const generatedTasks: Array<Record<string, unknown>> =
-    buildGeneratedStaffTasks(data).map((task) => ({ ...task }));
+    buildGeneratedStaffTasks(data)
+      .filter((task) => !deletedGeneratedKeys.has(task.generated_key))
+      .map((task) => ({ ...task }));
 
   return {
     ...data,

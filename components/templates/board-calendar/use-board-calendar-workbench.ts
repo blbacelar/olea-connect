@@ -118,16 +118,36 @@ export function useBoardCalendarWorkbench({
   function deleteCalendarEntry(eventId: string) {
     onDataChange((currentData) => {
       const identity = getBoardCalendarEntryIdentity(eventId);
+      const syncedData = identity?.type === "staff_task"
+        ? syncBoardCalendarGeneratedTasks(currentData)
+        : currentData;
       const meetingRow = identity?.type === "meeting" && Array.isArray(currentData.meetings)
         ? currentData.meetings[identity.index]
         : null;
       const meetingId = meetingRow && typeof meetingRow === "object" && "id" in meetingRow && typeof meetingRow.id === "string"
         ? meetingRow.id
         : eventId;
-      const mutation = deleteBoardCalendarEntry(currentData, eventId);
+      const deletedTask = identity?.type === "staff_task" && Array.isArray(syncedData.tasks)
+        ? syncedData.tasks[identity.index]
+        : null;
+      const generatedKey = deletedTask && typeof deletedTask === "object" && "generated_key" in deletedTask && typeof deletedTask.generated_key === "string"
+        ? deletedTask.generated_key
+        : "";
+      const mutation = deleteBoardCalendarEntry(syncedData, eventId);
       if (!mutation) return currentData;
 
-      const nextData = setValue(currentData, mutation.path, mutation.value);
+      const nextData = setValue(syncedData, mutation.path, mutation.value);
+      if (generatedKey) {
+        const deletedKeys = Array.isArray(nextData.deleted_generated_task_keys)
+          ? nextData.deleted_generated_task_keys.filter(
+              (key): key is string => typeof key === "string",
+            )
+          : [];
+        nextData.deleted_generated_task_keys = Array.from(new Set([
+          ...deletedKeys,
+          generatedKey,
+        ]));
+      }
       if (identity?.type === "meeting" && Array.isArray(nextData.meeting_documents)) {
         nextData.meeting_documents = nextData.meeting_documents.filter((row) =>
           row && typeof row === "object" && "meetingId" in row && row.meetingId !== meetingId,

@@ -266,6 +266,32 @@ describe("board calendar editor helpers", () => {
     ]);
   });
 
+  it("keeps a deleted generated task out of the calendar after recalculation", () => {
+    const data: TemplateFormData = {
+      meetings: [{
+        date: "2026-06-17",
+        type: "Board Meeting",
+        committee: "Q2 Board Meeting",
+      }],
+      operational_task_rules: [
+        { label: "Send agenda", days_before: 7, applies_to: "Board Meeting" },
+        { label: "Draft minutes", days_after: 1, applies_to: "Board Meeting" },
+      ],
+      tasks: [{ task: "Manual follow-up", due_date: "2026-06-20" }],
+      deleted_generated_task_keys: [
+        "meeting:2026-06-17:Board Meeting:Q2 Board Meeting:Send agenda:-7:Board Meeting",
+      ],
+    };
+
+    const synced = syncBoardCalendarGeneratedTasks(data);
+    const titles = buildCalendarEvents(synced).map((event) => event.title);
+    expect(titles).not.toContain("Send agenda");
+    expect(titles).toContain("Q2 Board Meeting");
+    expect(titles).toContain("Manual follow-up");
+    expect(titles).toContain("Draft minutes");
+    expect(syncBoardCalendarGeneratedTasks(synced).tasks).toEqual(synced.tasks);
+  });
+
   it("calculates AGM milestone target dates from days before AGM", () => {
     expect(calculateAgmMilestoneDate("2026-06-17", 30)).toBe("2026-05-18");
     expect(calculateAgmMilestoneDate("2026-06-17", -7)).toBe("2026-06-24");

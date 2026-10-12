@@ -57,6 +57,44 @@ test.describe("@critical Board Calendar & Operational Workflow", () => {
     await boardCalendar.calendar.expectSelectedDateText(eventDate);
   });
 
+  test("removes a generated task from the calendar immediately and after reload", async ({ page }) => {
+    const boardCalendar = new BoardCalendarPage(page);
+    const meetingDate = getFutureDateKey(21);
+    const taskDate = getRelativeDateKey(meetingDate, -2);
+    const taskTitle = "Prepare deletion regression packet";
+
+    await boardCalendar.openNewModuleCalendar();
+    await boardCalendar.chooseWorkspaceView("Setup");
+    await boardCalendar.setup.addTaskRule({
+      label: taskTitle,
+      days: "2",
+      timing: "Before",
+      appliesTo: "Board Meeting",
+    });
+    await boardCalendar.calendar.selectDate(meetingDate);
+    await boardCalendar.calendar.addMeeting({
+      title: "Deletion regression meeting",
+      category: "Board Meeting",
+    });
+    await boardCalendar.calendar.selectDate(taskDate);
+    await boardCalendar.calendar.expectSelectedDateText(taskTitle);
+
+    await boardCalendar.calendar.editEntry(new RegExp(`Edit ${taskTitle}`));
+    await boardCalendar.calendar.openDeleteDialog();
+    await boardCalendar.calendar.confirmDelete();
+    await boardCalendar.calendar.expectSelectedDateTextCount(taskTitle, 0);
+    await expect(boardCalendar.calendar.monthGrid.getByText(taskTitle)).toHaveCount(0);
+    await boardCalendar.workflows.expectTaskHidden(taskTitle);
+
+    await boardCalendar.reload();
+    await boardCalendar.calendar.selectDate(taskDate);
+    await boardCalendar.calendar.expectSelectedDateTextCount(taskTitle, 0);
+    await expect(boardCalendar.calendar.monthGrid.getByText(taskTitle)).toHaveCount(0);
+    await boardCalendar.workflows.expectTaskHidden(taskTitle);
+    await boardCalendar.calendar.selectDate(meetingDate);
+    await boardCalendar.calendar.expectSelectedDateText("Deletion regression meeting");
+  });
+
   test("covers calendar CRUD, duplicate scheduling, validation, and persistence", async ({
     page,
     authenticatedMember,
