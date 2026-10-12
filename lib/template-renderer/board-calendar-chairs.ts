@@ -42,6 +42,7 @@ function normalizeChair(
   record: TemplateRecord,
   members: WorkspaceMemberOption[],
   label: string,
+  previousRecord?: TemplateRecord,
 ) {
   const savedLabel = getString(record.chair);
   const memberId = getString(record.chair_user_id);
@@ -56,6 +57,11 @@ function normalizeChair(
 
   const member = findMember(members, memberId, savedLabel);
   if (!member) {
+    if (previousRecord && getString(record.name) === getString(previousRecord.name) &&
+      savedLabel === getString(previousRecord.chair) &&
+      memberId === getString(previousRecord.chair_user_id)) {
+      return record;
+    }
     throw new Error(
       `${label} must be assigned to an active workspace member. Choose a member from the directory.`,
     );
@@ -71,6 +77,7 @@ function normalizeChair(
 function normalizeAdministrator(
   formData: TemplateFormData,
   members: WorkspaceMemberOption[],
+  previousFormData?: TemplateFormData,
 ) {
   const savedName = getString(formData.administrator);
   const savedEmail = getString(formData.administrator_email);
@@ -89,6 +96,15 @@ function normalizeAdministrator(
     : findMember(members, "", savedName) ??
       findMember(members, "", savedEmail);
   if (!member) {
+    if (previousFormData && savedName === getString(previousFormData.administrator) &&
+      savedEmail === getString(previousFormData.administrator_email) &&
+      memberId === getString(previousFormData.administrator_user_id)) {
+      return {
+        administrator: savedName,
+        administrator_email: savedEmail,
+        administrator_user_id: memberId,
+      };
+    }
     throw new Error(
       "Administrator must be assigned to an active workspace member. Choose a member from the directory.",
     );
@@ -108,8 +124,9 @@ function normalizeAdministrator(
 export function normalizeBoardCalendarMemberAssignments(
   formData: TemplateFormData,
   members: WorkspaceMemberOption[],
+  previousFormData?: TemplateFormData,
 ): TemplateFormData {
-  const administrator = normalizeAdministrator(formData, members);
+  const administrator = normalizeAdministrator(formData, members, previousFormData);
   const boardChair = normalizeChair(
     {
       chair: formData.board_chair,
@@ -117,11 +134,23 @@ export function normalizeBoardCalendarMemberAssignments(
     },
     members,
     "Board Chair",
+    previousFormData ? {
+      chair: previousFormData.board_chair,
+      chair_user_id: previousFormData.board_chair_user_id,
+    } : undefined,
   );
+  const previousCommittees = Array.isArray(previousFormData?.committees)
+    ? previousFormData.committees
+    : [];
   const committees = Array.isArray(formData.committees)
     ? formData.committees.map((committee, index) =>
         isRecord(committee)
-          ? normalizeChair(committee, members, `Committee ${index + 1} chair`)
+          ? normalizeChair(
+              committee,
+              members,
+              `Committee ${index + 1} chair`,
+              isRecord(previousCommittees[index]) ? previousCommittees[index] : undefined,
+            )
           : committee,
       )
     : formData.committees;

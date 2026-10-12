@@ -133,4 +133,48 @@ describe("Board Calendar member assignments", () => {
       ),
     ).toThrow(/Board Chair must be assigned to an active workspace member/i);
   });
+
+  it("preserves unchanged legacy assignments while saving unrelated calendar changes", () => {
+    const previous = {
+      administrator: "Former administrator",
+      administrator_email: "former@example.org",
+      board_chair: "Former chair",
+      committees: [
+        { name: "Governance", chair: "Former committee chair", chair_user_id: "inactive-user", notes: "Old note" },
+      ],
+      meetings: [{ title: "Past meeting" }],
+    };
+
+    expect(normalizeBoardCalendarMemberAssignments(
+      {
+        ...previous,
+        committees: [{ ...previous.committees[0], notes: "Updated note" }],
+        meetings: [],
+      },
+      members,
+      previous,
+    )).toMatchObject({
+      administrator: "Former administrator",
+      board_chair: "Former chair",
+      committees: [{ name: "Governance", chair: "Former committee chair", chair_user_id: "inactive-user", notes: "Updated note" }],
+      meetings: [],
+    });
+  });
+
+  it("rejects a new invalid assignment even when other legacy assignments are unchanged", () => {
+    const previous = {
+      committees: [{ name: "Governance", chair: "Former chair" }],
+    };
+
+    expect(() => normalizeBoardCalendarMemberAssignments(
+      { committees: [{ name: "Governance", chair: "External person" }] },
+      members,
+      previous,
+    )).toThrow(/Committee 1 chair must be assigned to an active workspace member/i);
+    expect(() => normalizeBoardCalendarMemberAssignments(
+      { committees: [{ name: "New committee", chair: "Former chair" }] },
+      members,
+      previous,
+    )).toThrow(/Committee 1 chair must be assigned to an active workspace member/i);
+  });
 });

@@ -145,7 +145,9 @@ export function useDynamicTemplateSession({
     if (saveState !== "unsaved") return;
 
     const timer = window.setTimeout(() => {
-      void persist("draft");
+      void persist("draft").catch(() => {
+        // persist records the error in saveState/saveError for the editor to display.
+      });
     }, 800);
 
     return () => window.clearTimeout(timer);

@@ -6,8 +6,9 @@ test.describe("@critical Board Calendar meeting documents", () => {
 
   test("creates, persists, approves, exports, and packages an agenda and minutes", async ({ page, authenticatedMember }) => {
     const boardCalendar = new BoardCalendarPage(page);
+    const meetingDate = getFutureDateKey(14);
     await boardCalendar.openNewModuleCalendar();
-    await boardCalendar.calendar.selectDate(getFutureDateKey(14));
+    await boardCalendar.calendar.selectDate(meetingDate);
     await boardCalendar.calendar.addMeeting({ title: "Governance Review", category: "Board Meeting", time: "13:00" });
     await boardCalendar.waitForSaved();
     await boardCalendar.chooseWorkspaceView("Meetings");
@@ -56,5 +57,62 @@ test.describe("@critical Board Calendar meeting documents", () => {
     await boardCalendar.chooseWorkspaceView("Audit Log");
     await expect(page.getByTestId("board-calendar-audit-log-panel")).toContainText(authenticatedMember.fullName);
     await expect(page.getByTestId("board-calendar-audit-log-panel")).toContainText("Package Opened");
+
+    await boardCalendar.chooseWorkspaceView("Calendar workspace");
+    await boardCalendar.calendar.selectDate(meetingDate);
+    await boardCalendar.calendar.editEntry(/Edit Governance Review/);
+    await boardCalendar.calendar.openDeleteDialog();
+    await boardCalendar.calendar.confirmDelete();
+    await boardCalendar.waitForSaved();
+    await boardCalendar.reload();
+    await boardCalendar.chooseWorkspaceView("Meetings");
+    await expect(page.getByRole("button", { name: "Open documents for Governance Review" })).toHaveCount(0);
+  });
+
+  test("deletes an event despite an unchanged legacy committee chair", async ({ page, testData }) => {
+    const boardCalendar = new BoardCalendarPage(page);
+    const meetingDate = getFutureDateKey(15);
+    await boardCalendar.openNewModuleCalendar();
+    await boardCalendar.calendar.selectDate(meetingDate);
+    await boardCalendar.calendar.addMeeting({ title: "Legacy Chair Review", category: "Board Meeting", time: "14:00" });
+    await boardCalendar.waitForSaved();
+
+    const sessionId = new URL(page.url()).searchParams.get("session");
+    expect(sessionId).toBeTruthy();
+    const { data: instance, error: readError } = await testData.supabase
+      .from("template_instances")
+      .select("form_data")
+      .eq("id", sessionId!)
+      .single();
+    if (readError) throw readError;
+    const committees = [
+      { name: "Finance", chair: "" },
+      { name: "Governance", chair: "" },
+      { name: "Legacy", chair: "Former volunteer" },
+    ];
+    const { error: updateError } = await testData.supabase
+      .from("template_instances")
+      .update({ form_data: { ...instance.form_data, committees } })
+      .eq("id", sessionId!);
+    if (updateError) throw updateError;
+
+    await boardCalendar.reload();
+    await boardCalendar.chooseWorkspaceView("Calendar workspace");
+    await boardCalendar.calendar.selectDate(meetingDate);
+    await boardCalendar.calendar.editEntry(/Edit Legacy Chair Review/);
+    await boardCalendar.calendar.openDeleteDialog();
+    await boardCalendar.calendar.confirmDelete();
+    await boardCalendar.waitForSaved();
+    await boardCalendar.reload();
+    await boardCalendar.chooseWorkspaceView("Calendar workspace");
+    await boardCalendar.calendar.selectDate(meetingDate);
+    await boardCalendar.calendar.expectSelectedDateTextCount("Legacy Chair Review", 0);
+    const { data: saved, error: savedError } = await testData.supabase
+      .from("template_instances")
+      .select("form_data")
+      .eq("id", sessionId!)
+      .single();
+    if (savedError) throw savedError;
+    expect(saved.form_data.committees).toMatchObject(committees);
   });
 });

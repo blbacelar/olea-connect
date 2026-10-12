@@ -146,9 +146,12 @@ export function WorkspaceMemberSelect({
       member.email.toLocaleLowerCase() === normalizedSavedMemberEmail
     );
   });
-  const selectedMemberId = memberId || matchingSavedMember?.id || "unassigned";
+  const activeIdMatch = members.some((member) => member.id === memberId);
+  const selectedMemberId = memberId
+    ? activeIdMatch ? memberId : "unassigned"
+    : matchingSavedMember?.id || "unassigned";
   const hasUnlinkedSavedMember = Boolean(
-    savedMemberName && !memberId && !matchingSavedMember,
+    savedMemberName && selectedMemberId === "unassigned",
   );
 
   return (
@@ -178,7 +181,7 @@ export function WorkspaceMemberSelect({
       {hasUnlinkedSavedMember ? (
         <p className="text-xs leading-5 text-amber-700">
           Previously saved as {savedMemberName}. Select an active workspace
-          member before saving changes.
+          member when updating this assignment.
         </p>
       ) : null}
     </div>

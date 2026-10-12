@@ -54,16 +54,18 @@ export async function saveDynamicTemplateSession(
   }
 
   const supabase = await createClient();
+  let previousFormData: TemplateFormData | undefined;
   if (payload.id) {
     const { data: existingInstance, error: existingError } = await supabase
       .from("template_instances")
-      .select("resource_id")
+      .select("resource_id, form_data")
       .eq("id", payload.id)
       .eq("organization_id", organization.id)
       .single();
     if (existingError || !existingInstance || existingInstance.resource_id !== payload.resourceId) {
       throw new Error("This template session does not belong to the selected resource.");
     }
+    previousFormData = existingInstance.form_data as TemplateFormData;
   }
   const { data: resource, error: resourceError } = await supabase
     .from("resources")
@@ -76,22 +78,14 @@ export async function saveDynamicTemplateSession(
     ? await normalizeBoardCalendarMemberFormData({
         formData: payload.formData,
         organizationId: organization.id,
+        previousFormData,
         supabase,
       })
     : null;
   const formData = calendarData?.formData ?? payload.formData;
   if (isBoardCalendar) {
     const after = validateMeetingDocuments(formData);
-    const { data: previous, error: previousError } = payload.id
-      ? await supabase
-          .from("template_instances")
-          .select("form_data")
-          .eq("id", payload.id)
-          .eq("organization_id", organization.id)
-          .single()
-      : { data: null, error: null };
-    if (previousError) throw previousError;
-    const before = previous ? validateMeetingDocuments(previous.form_data as TemplateFormData) : [];
+    const before = previousFormData ? validateMeetingDocuments(previousFormData) : [];
     assertMeetingDocumentWriteAccess({
       before,
       after,
@@ -157,10 +151,12 @@ export async function saveDynamicTemplateSession(
 async function normalizeBoardCalendarMemberFormData({
   formData,
   organizationId,
+  previousFormData,
   supabase,
 }: {
   formData: TemplateFormData;
   organizationId: string;
+  previousFormData?: TemplateFormData;
   supabase: Awaited<ReturnType<typeof createClient>>;
 }) {
   const { data, error } = await supabase.rpc("get_team_directory", {
@@ -182,7 +178,7 @@ async function normalizeBoardCalendarMemberFormData({
         name: directoryMember.full_name,
       }));
   return {
-    formData: normalizeBoardCalendarMemberAssignments(formData, activeMembers),
+    formData: normalizeBoardCalendarMemberAssignments(formData, activeMembers, previousFormData),
     activeMemberIds: activeMembers.map((member) => member.id),
   };
 }
