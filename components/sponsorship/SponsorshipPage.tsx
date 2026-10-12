@@ -125,15 +125,24 @@ export function SponsorshipPage() {
             </h2>
             <p className="mt-3 text-lg text-[#666]">{copy.ctaBody}</p>
             <div className="mt-8 flex flex-wrap justify-center gap-3">
-              <SponsorshipCta label={copy.exploreTierAria}>
+              <SponsorshipCta
+                label={copy.exploreTierAria}
+                fallbackLabel={copy.scheduleConversation}
+                fallbackAria={copy.scheduleConversationAria}
+              >
                 {copy.exploreTier}
               </SponsorshipCta>
-              <SponsorshipCta
-                variant="outline"
-                label={copy.scheduleConversationAria}
-              >
-                {copy.scheduleConversation}
-              </SponsorshipCta>
+              {sponsorshipCalendlyUrl ? (
+                <SponsorshipCta
+                  variant="outline"
+                  forceEmail
+                  label={copy.scheduleConversationAria}
+                  fallbackLabel={copy.scheduleConversation}
+                  fallbackAria={copy.scheduleConversationAria}
+                >
+                  {copy.scheduleConversation}
+                </SponsorshipCta>
+              ) : null}
             </div>
             {!sponsorshipCalendlyUrl ? (
               <p

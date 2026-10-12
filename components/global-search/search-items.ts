@@ -106,14 +106,6 @@ function buildBaseCommandItems(locale: Locale): CommandItem[] {
     keywords: copy.help.keywords,
   },
   {
-    id: "whats-new",
-    title: copy.whatsNew.title,
-    description: copy.whatsNew.description,
-    href: "/whats-new",
-    type: "resource",
-    keywords: copy.whatsNew.keywords,
-  },
-  {
     id: "board-self-evaluation",
     title: copy.boardSelfEvaluation.title,
     description: copy.boardSelfEvaluation.description,

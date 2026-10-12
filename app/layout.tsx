@@ -40,7 +40,7 @@ export default async function RootLayout({
             </RegistrationProvider>
           </LocaleProvider>
         </SessionProvider>
-        <OleaAnalytics />
+        {process.env.VERCEL_ENV ? <OleaAnalytics /> : null}
       </body>
     </html>
   );

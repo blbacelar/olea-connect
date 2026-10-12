@@ -11,7 +11,6 @@ import {
   Sparkles,
   Users,
 } from "lucide-react";
-import { useRouter } from "next/navigation";
 import { useState } from "react";
 
 import { GrantCalendarPanel } from "@/app/modules/grant-platform/_components/grant-calendar-panel";
@@ -27,6 +26,7 @@ import { VaultPanel } from "@/app/modules/grant-platform/_components/vault-panel
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { MobileSectionSelect } from "@/components/ui/mobile-section-select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import type { GrantPlatformWorkspaceData } from "@/lib/data/grant-platform";
 import { getGrantPlatformUiAccess } from "@/lib/grants/permissions";
@@ -64,19 +64,18 @@ export function GrantPlatformWorkspace({
   data: GrantPlatformWorkspaceData;
   role?: string;
 }) {
-  const router = useRouter();
   const [tab, setTab] = useState<GrantPlatformTab>(resolveTab(activeTab));
-  const { canEditGrants, canEditOrgProfile, canManageTeam, canViewReports } = getGrantPlatformUiAccess(role);
+  const { canDeleteGrants, canEditGrants, canEditOrgProfile, canManageTeam, canViewReports } = getGrantPlatformUiAccess(role);
 
   function changeTab(value: string) {
     const nextTab = resolveTab(value);
     setTab(nextTab);
-    router.replace(`/modules/grant-platform?tab=${nextTab}`, { scroll: false });
+    window.history.replaceState(window.history.state, "", `/modules/grant-platform?tab=${nextTab}`);
   }
 
   return (
     <section className="space-y-6" data-testid="grant-platform-workspace">
-      <header className="overflow-hidden rounded-2xl border border-olea-green/20 bg-gradient-to-br from-olea-green/10 via-white to-olea-light p-6 shadow-soft">
+      <header className="overflow-hidden rounded-2xl border border-olea-green/20 bg-gradient-to-br from-olea-green/10 via-white to-olea-light p-4 shadow-soft md:p-6">
         <div className="flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
           <div className="max-w-3xl">
             <Badge className="border-olea-green/20 bg-white text-olea-green shadow-sm">
@@ -85,7 +84,7 @@ export function GrantPlatformWorkspace({
             <h1 className="mt-3 text-3xl font-semibold text-slate-900">
               Grant platform workspace
             </h1>
-            <p className="mt-3 text-sm leading-7 text-slate-600">{data.summary}</p>
+            <p className="mt-3 hidden text-sm leading-7 text-slate-600 md:block">{data.summary}</p>
             <p className="mt-3 text-sm font-medium text-slate-700">
               Prepared for {data.organizationName}
             </p>
@@ -95,7 +94,13 @@ export function GrantPlatformWorkspace({
 
       <Tabs value={tab} onValueChange={changeTab} className="space-y-6">
         <div className="rounded-xl border bg-white p-3 shadow-soft">
-          <TabsList className="h-auto w-full flex-wrap justify-start gap-1 bg-olea-light/50">
+          <MobileSectionSelect
+            label="Grant Platform section"
+            options={tabOptions}
+            value={tab}
+            onValueChange={changeTab}
+          />
+          <TabsList className="hidden h-auto w-full flex-wrap justify-start gap-1 bg-olea-light/50 md:flex">
             {tabOptions.map(({ value, label, icon: Icon }) => (
               <TabsTrigger key={value} value={value} className="gap-2 px-4 py-3">
                 <Icon className="size-4" />
@@ -106,7 +111,7 @@ export function GrantPlatformWorkspace({
         </div>
 
         <TabsContent value="pipeline" className="space-y-5">
-          <GrantPipelineTable canEditGrants={canEditGrants} canViewReports={canViewReports} data={data} onSwitchTab={changeTab} />
+          <GrantPipelineTable canDeleteGrants={canDeleteGrants} canEditGrants={canEditGrants} canViewReports={canViewReports} data={data} onSwitchTab={changeTab} />
         </TabsContent>
 
         <TabsContent value="dashboard" className="space-y-5">

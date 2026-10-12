@@ -68,7 +68,7 @@ export class BoardCalendarBasePage {
     await expect(this.page.getByRole("tab", { name: "Integrations" })).toHaveCount(0);
     await expect(this.page.getByRole("tab", { name: "Settings" })).toBeVisible();
     await expect(
-      this.page.getByRole("button", { name: "Add meeting" }),
+      this.page.getByRole("button", { name: "Add calendar entry" }),
     ).toBeVisible();
     await expect(
       this.page.getByRole("button", { name: /^(Export PDF|Print \/ save PDF)$/ }),
@@ -93,6 +93,16 @@ export class BoardCalendarBasePage {
 
   async chooseWorkspaceView(option: string) {
     const tabName = tabAliases[option] ?? option;
+    const mobileSection = this.page.getByRole("combobox", {
+      name: "Board Calendar section",
+    });
+    if (await mobileSection.isVisible()) {
+      if (await mobileSection.textContent() === tabName) return;
+      await mobileSection.click();
+      await this.page.getByRole("option", { name: tabName, exact: true }).click();
+      await expect(mobileSection).toContainText(tabName);
+      return;
+    }
     const tab = this.page
       .getByRole("tab", {
         name: new RegExp(`^${escapeRegExp(tabName)}(?:\\s+\\d+)?$`),
@@ -118,6 +128,13 @@ export class BoardCalendarBasePage {
 
   async expectWorkspaceViewSelected(option: string) {
     const tabName = tabAliases[option] ?? option;
+    const mobileSection = this.page.getByRole("combobox", {
+      name: "Board Calendar section",
+    });
+    if (await mobileSection.isVisible()) {
+      await expect(mobileSection).toContainText(tabName);
+      return;
+    }
 
     await expect(this.page.getByRole("tab", { name: tabName })).toHaveAttribute(
       "aria-selected",

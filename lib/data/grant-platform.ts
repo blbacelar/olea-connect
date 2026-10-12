@@ -52,6 +52,8 @@ export interface GrantPlatformWorkspaceData {
     summary: string;
     nextMilestone: string;
     funderName: string;
+    notes: string;
+    isPlanningDraft: boolean;
   }>;
   sections: Array<{
     id: string;

@@ -31,6 +31,7 @@ describe("grant platform workspace mapper", () => {
     const applications: GrantPlatformApplicationRow[] = [
       {
         collaboration_note: null,
+        eligibility_snapshot: { source: "module_create" },
         focus_area: "operational_capacity",
         funding_request: "Planning entry for BC Gaming",
         grant_awards: null,
@@ -100,6 +101,8 @@ describe("grant platform workspace mapper", () => {
 
     expect(data.applications[0]).toMatchObject({
       funderName: "Province of British Columbia",
+      isPlanningDraft: true,
+      notes: "Annual intake",
       roundName: "BC Gaming",
     });
     expect(data.organizationSettings).toMatchObject({

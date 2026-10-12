@@ -42,6 +42,7 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
+import { MobileSectionSelect } from "@/components/ui/mobile-section-select";
 import { Label } from "@/components/ui/label";
 import {
   Select,
@@ -129,8 +130,19 @@ export function EdReviewWorkspace({
         onValueChange={(value) => navigate(value as Tab)}
         className="space-y-6"
       >
-        <div className="overflow-x-auto rounded-xl border bg-white p-2 shadow-soft">
-          <TabsList className="h-auto min-w-max gap-1 bg-slate-50">
+        <div className="rounded-xl border bg-white p-2 shadow-soft">
+          <MobileSectionSelect
+            label="ED Review section"
+            options={[
+              { value: "overview", label: "Overview" },
+              { value: "campaigns", label: "Campaigns" },
+              { value: "summary", label: "Board Chair Summary" },
+              { value: "access", label: "Access & audit" },
+            ]}
+            value={tab}
+            onValueChange={(value) => navigate(value as Tab)}
+          />
+          <TabsList className="hidden h-auto min-w-max gap-1 bg-slate-50 md:inline-flex">
             <TabsTrigger value="overview" className="min-h-11 gap-2">
               <ClipboardList className="size-4" />
               Overview

@@ -8,7 +8,6 @@ import {
   Gift,
   Handshake,
   Home,
-  Megaphone,
   Palette,
   ShieldCheck,
   Users,
@@ -83,7 +82,6 @@ export const navigationGroups: NavigationItem[][] = [
   ],
   [
     { label: "Help", href: "/help", icon: CircleHelp },
-    { label: "What's new", href: "/whats-new", icon: Megaphone },
   ],
 ];
 

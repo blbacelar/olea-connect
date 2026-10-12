@@ -2,10 +2,12 @@
 
 import { BarChart3, ClipboardList, Settings } from "lucide-react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 
 import { KpiDashboardExportButton } from "@/app/modules/kpi-dashboard/_components/kpi-dashboard-export-button";
 import { resolveKpiDashboardTab } from "@/app/modules/kpi-dashboard/tab-state";
 import { Card, CardContent } from "@/components/ui/card";
+import { MobileSectionSelect } from "@/components/ui/mobile-section-select";
 import { Tabs, TabsContent } from "@/components/ui/tabs";
 import type { KpiDashboardData } from "@/lib/data/kpi-dashboard";
 import { cn } from "@/lib/utils";
@@ -87,31 +89,37 @@ function KpiDashboardHero({ data }: { data: KpiDashboardData }) {
 }
 
 function KpiTabNavigation({ safeTab }: { safeTab: string }) {
+  const router = useRouter();
+
   return (
-    <nav
-      aria-label="KPI dashboard sections"
-      className="scrollbar-hide overflow-x-auto rounded-xl border bg-white p-2 shadow-soft"
-      data-testid="kpi-dashboard-tabs"
-    >
-      <div className="flex h-auto min-w-max justify-start gap-1 rounded-lg bg-olea-light/70 p-1">
-        {tabOptions.map((tab) => (
-          <Link
-            aria-current={safeTab === tab.value ? "page" : undefined}
-            className={cn(
-              "inline-flex items-center justify-center whitespace-nowrap rounded-md px-4 py-2 text-sm font-semibold transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
-              safeTab === tab.value
-                ? "bg-white text-olea-green shadow-sm"
-                : "text-muted-foreground hover:bg-white/60",
-            )}
-            href={`/modules/kpi-dashboard?tab=${tab.value}`}
-            key={tab.value}
-          >
-            <TabIcon value={tab.value} />
-            {tab.label}
-          </Link>
-        ))}
-      </div>
-    </nav>
+    <div className="rounded-xl border bg-white p-2 shadow-soft" data-testid="kpi-dashboard-tabs">
+      <MobileSectionSelect
+        label="KPI Dashboard section"
+        options={tabOptions}
+        value={safeTab}
+        onValueChange={(value) => router.push(`/modules/kpi-dashboard?tab=${value}`)}
+      />
+      <nav aria-label="KPI dashboard sections" className="hidden overflow-x-auto md:block">
+        <div className="flex h-auto min-w-max justify-start gap-1 rounded-lg bg-olea-light/70 p-1">
+          {tabOptions.map((tab) => (
+            <Link
+              aria-current={safeTab === tab.value ? "page" : undefined}
+              className={cn(
+                "inline-flex items-center justify-center whitespace-nowrap rounded-md px-4 py-2 text-sm font-semibold transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
+                safeTab === tab.value
+                  ? "bg-white text-olea-green shadow-sm"
+                  : "text-muted-foreground hover:bg-white/60",
+              )}
+              href={`/modules/kpi-dashboard?tab=${tab.value}`}
+              key={tab.value}
+            >
+              <TabIcon value={tab.value} />
+              {tab.label}
+            </Link>
+          ))}
+        </div>
+      </nav>
+    </div>
   );
 }
 

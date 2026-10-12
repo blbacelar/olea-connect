@@ -104,11 +104,11 @@ export class SignupPage {
     await this.page.getByRole("button", { name: "Back to plan" }).click();
   }
 
-  async expectLandingPlansVisible() {
-    await expect(this.page).toHaveURL("/#plans");
+  async expectSignupPlansVisible() {
+    await expect(this.page).toHaveURL(/\/signup\?tier=/);
     await expect(
       this.page.getByRole("heading", {
-        name: "Choose the support that fits today.",
+        name: "Choose your plan",
       }),
     ).toBeVisible();
   }

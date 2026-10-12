@@ -53,15 +53,15 @@ export class BoardCalendarCalendarPage extends BoardCalendarBasePage {
 
   async openEntryForm() {
     await this.chooseWorkspaceView("Calendar workspace");
-    await this.page.getByRole("button", { name: "Add meeting" }).click();
+    await this.page.getByRole("button", { name: "Add calendar entry" }).click();
     await expect(this.entryForm).toBeVisible();
-    await expect(this.page.getByRole("dialog", { name: "Add Entry" })).toBeVisible();
+    await expect(this.page.getByRole("dialog", { name: "Add calendar entry" })).toBeVisible();
   }
 
   async expectEntryModalTopVisible() {
     await this.ensureEntryFormOpen();
-    await expect(this.page.getByRole("dialog", { name: "Add Entry" })).toBeInViewport();
-    await expect(this.page.getByRole("heading", { name: "Add Entry" })).toBeInViewport();
+    await expect(this.page.getByRole("dialog", { name: "Add calendar entry" })).toBeInViewport();
+    await expect(this.page.getByRole("heading", { name: "Add calendar entry" })).toBeInViewport();
     await expect(this.field("Entry date")).toBeInViewport();
   }
 
@@ -194,7 +194,7 @@ export class BoardCalendarCalendarPage extends BoardCalendarBasePage {
 
   async editEntry(entryAccessibleName: RegExp | string) {
     await this.page.getByRole("button", { name: entryAccessibleName }).first().click();
-    await expect(this.page.getByRole("dialog", { name: "Edit entry" })).toBeVisible();
+    await expect(this.page.getByRole("dialog", { name: "Edit calendar entry" })).toBeVisible();
   }
 
   async updateEntry() {

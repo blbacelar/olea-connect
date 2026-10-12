@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useMemo, useState } from "react";
 import { useFormState, useFormStatus } from "react-dom";
 import {
@@ -795,6 +796,9 @@ export function ConsultingWorkspace({
             Upgrade to Harvest when you are ready for included advisory support,
             purchased consulting hours, and auditable request history.
           </p>
+          <Button asChild className="mt-5">
+            <Link href="/subscription">View membership options</Link>
+          </Button>
         </section>
       )}
     </div>

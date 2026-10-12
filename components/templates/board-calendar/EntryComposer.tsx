@@ -65,7 +65,7 @@ export function CalendarEntryComposer(props: CalendarEntryComposerProps) {
               </div>
               <div>
                 <DialogTitle className="text-base">
-                  {props.editingEventId ? "Edit entry" : "Add Entry"}
+                  {props.editingEventId ? "Edit calendar entry" : "Add calendar entry"}
                 </DialogTitle>
                 <DialogDescription>
                   {props.editingEventId

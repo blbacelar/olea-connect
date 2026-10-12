@@ -32,5 +32,7 @@ describe("grant platform permissions", () => {
     expect(getGrantPlatformActionAccess("partner").canCreateRounds).toBe(false);
     expect(getGrantPlatformActionAccess("partner").canManageWorkflow).toBe(true);
     expect(getGrantPlatformActionAccess("viewer").canManageWorkflow).toBe(false);
+    expect(getGrantPlatformActionAccess("admin").canDeleteGrants).toBe(true);
+    expect(getGrantPlatformActionAccess("grant_manager").canDeleteGrants).toBe(false);
   });
 });

@@ -6,6 +6,7 @@ import { useState } from "react";
 import { AddGrantDialog } from "@/app/modules/grant-platform/_components/add-grant-dialog";
 import { ApplicationWorkflowDialog } from "@/app/modules/grant-platform/_components/application-workflow-dialog";
 import { RequestWriterDialog } from "@/app/modules/grant-platform/_components/request-writer-dialog";
+import { GrantRowActions } from "@/app/modules/grant-platform/_components/grant-row-actions";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -28,6 +29,7 @@ import type { GrantPlatformWorkspaceData } from "@/lib/data/grant-platform";
 import { filterGrantApplications, isGrantApplicationPastDue } from "@/lib/grants/pipeline";
 
 interface GrantPipelineTableProps {
+  canDeleteGrants: boolean;
   canEditGrants: boolean;
   canViewReports: boolean;
   data: GrantPlatformWorkspaceData;
@@ -35,6 +37,7 @@ interface GrantPipelineTableProps {
 }
 
 export function GrantPipelineTable({
+  canDeleteGrants,
   canEditGrants,
   canViewReports,
   data,
@@ -97,7 +100,7 @@ export function GrantPipelineTable({
       </div>
 
       <div className="overflow-x-auto rounded-xl border border-slate-200 bg-white shadow-soft">
-        <Table className="min-w-[800px]">
+        <Table className="min-w-[900px]">
           <TableHeader>
             <TableRow>
               <TableHead>Grant</TableHead>
@@ -106,6 +109,7 @@ export function GrantPipelineTable({
               <TableHead>Requested</TableHead>
               <TableHead>Deadline</TableHead>
               <TableHead>Next step</TableHead>
+              {canEditGrants ? <TableHead>Actions</TableHead> : null}
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -123,11 +127,12 @@ export function GrantPipelineTable({
                   {isGrantApplicationPastDue(application) ? <span className="block text-xs font-semibold text-red-700">Past due</span> : null}
                 </TableCell>
                 <TableCell className="min-w-52 text-slate-600">{application.nextMilestone}</TableCell>
+                {canEditGrants ? <TableCell>{application.isPlanningDraft ? <GrantRowActions application={application} canDelete={canDeleteGrants} /> : null}</TableCell> : null}
               </TableRow>
             ))}
             {!filteredApplications.length ? (
               <TableRow>
-                <TableCell colSpan={6} className="py-10 text-center text-slate-600">
+                <TableCell colSpan={canEditGrants ? 7 : 6} className="py-10 text-center text-slate-600">
                   {data.applications.length
                     ? "No grants match your filters."
                     : "No saved grants yet. Add a grant to start the pipeline."}

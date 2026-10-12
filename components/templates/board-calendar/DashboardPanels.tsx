@@ -123,7 +123,7 @@ export function MeetingsTablePanel({
         </div>
       ) : (
         <p className="mt-5 rounded-lg border border-dashed p-4 text-sm text-slate-500">
-          No meetings yet. Use Add meeting to create the first meeting or event.
+          No meetings yet. Use Add calendar entry to create the first meeting or event.
         </p>
       )}
     </section>

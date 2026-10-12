@@ -69,11 +69,11 @@ export function AddGrantDialog() {
           <div className="grid gap-4 md:grid-cols-2">
             <div className="space-y-2 md:col-span-2">
               <Label htmlFor="grant-name">Grant name</Label>
-              <Input id="grant-name" name="name" placeholder="e.g. Youth Leadership Fund 2026" required />
+              <Input id="grant-name" maxLength={180} name="name" placeholder="e.g. Youth Leadership Fund 2027" required />
             </div>
             <div className="space-y-2 md:col-span-2">
               <Label htmlFor="funder-name">Funder</Label>
-              <Input id="funder-name" name="funderName" placeholder="e.g. Province of BC" />
+              <Input id="funder-name" maxLength={180} name="funderName" placeholder="e.g. Province of BC" />
             </div>
             <div className="space-y-2">
               <Label htmlFor="amount-requested">Amount requested (CAD)</Label>
@@ -91,7 +91,7 @@ export function AddGrantDialog() {
             </div>
             <div className="space-y-2 md:col-span-2">
               <Label htmlFor="notes">Notes</Label>
-              <Textarea id="notes" name="notes" placeholder="Any additional notes..." rows={3} />
+              <Textarea id="notes" maxLength={2000} name="notes" placeholder="Any additional notes..." rows={3} />
             </div>
           </div>
           {message ? <p className={message.includes("success") ? "text-sm text-emerald-700" : "text-sm text-red-700"}>{message}</p> : null}

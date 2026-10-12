@@ -1,9 +1,8 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { Plus } from "lucide-react";
-import { useEffect, useState, type ReactNode } from "react";
-import { useFormState } from "react-dom";
+import { Loader2, Plus } from "lucide-react";
+import { useState, type FormEvent, type ReactNode } from "react";
 
 import {
   createKpiTrackerEntryDialog,
@@ -18,7 +17,6 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
-import { SubmitButton } from "@/components/ui/submit-button";
 
 const initialState: KpiDialogActionState = {
   message: "",
@@ -33,21 +31,34 @@ export function AddQuarterResultDialog({
   quarter: 1 | 2 | 3 | 4;
 }) {
   const [open, setOpen] = useState(false);
-  const [state, formAction] = useFormState(
-    createKpiTrackerEntryDialog,
-    initialState,
-  );
+  const [state, setState] = useState<KpiDialogActionState>(initialState);
+  const [pending, setPending] = useState(false);
   const router = useRouter();
 
-  useEffect(() => {
-    if (state.status !== "success") return;
-
-    setOpen(false);
-    router.refresh();
-  }, [router, state.status]);
+  async function handleSubmit(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    const formData = new FormData(event.currentTarget);
+    setPending(true);
+    setState(initialState);
+    try {
+      const result = await createKpiTrackerEntryDialog(initialState, formData);
+      setState(result);
+      if (result.status === "success") {
+        setOpen(false);
+        router.refresh();
+      }
+    } catch {
+      setState({ message: "The KPI could not be added. Try again.", status: "error" });
+    } finally {
+      setPending(false);
+    }
+  }
 
   return (
-    <Dialog open={open} onOpenChange={setOpen}>
+    <Dialog open={open} onOpenChange={(nextOpen) => {
+      setOpen(nextOpen);
+      if (nextOpen) setState(initialState);
+    }}>
       <DialogTrigger asChild>
         <Button>
           <Plus className="h-4 w-4" />
@@ -65,14 +76,16 @@ export function AddQuarterResultDialog({
             definition values, or edit the existing KPI row to change them.
           </DialogDescription>
         </DialogHeader>
-        <form action={formAction} className="space-y-5">
+        <form onSubmit={handleSubmit} className="space-y-5">
           {children}
           <div aria-live="polite" className="text-sm">
             {state.status === "error" && (
               <p className="text-red-600">{state.message}</p>
             )}
           </div>
-          <SubmitButton pendingText="Adding KPI...">Add KPI</SubmitButton>
+          <Button disabled={pending} type="submit">
+            {pending ? <><Loader2 aria-hidden="true" className="size-4 animate-spin" />Adding KPI...</> : "Add KPI"}
+          </Button>
         </form>
       </DialogContent>
     </Dialog>

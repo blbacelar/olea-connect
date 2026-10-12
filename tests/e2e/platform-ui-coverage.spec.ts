@@ -21,25 +21,24 @@ test.describe("@smoke @critical platform UI coverage gate", () => {
     await app.expectSidebarCollapsed();
     await expect(organizationName).toHaveCount(0);
 
-    const templatesLink = sidebar.getByRole("link", { name: "Templates" });
-    await expect(templatesLink).toBeVisible();
-    await templatesLink.focus();
-    await expect(page.getByTestId("sidebar-tooltip-templates")).toBeVisible();
-    await templatesLink.click();
-    await expect(page).toHaveURL(/\/templates$/);
+    const boardCalendarLink = sidebar.getByRole("link", { name: "Board Calendar" });
+    await expect(boardCalendarLink).toBeVisible();
+    await boardCalendarLink.focus();
+    await boardCalendarLink.click();
+    await expect(page).toHaveURL(/\/modules\/board-calendar$/);
     await app.expectSidebarCollapsed();
-    await expect(templatesLink).toHaveAttribute("aria-label", "Templates");
-    await expect(templatesLink).toHaveAttribute("aria-current", "page");
+    await expect(boardCalendarLink).toHaveAttribute("aria-label", "Board Calendar");
+    await expect(boardCalendarLink).toHaveAttribute("aria-current", "page");
 
     await page.reload();
     await app.expectSidebarCollapsed();
-    await expect(templatesLink).toHaveAttribute("aria-current", "page");
+    await expect(boardCalendarLink).toHaveAttribute("aria-current", "page");
 
     await page.getByRole("button", { name: "Expand sidebar" }).focus();
     await page.keyboard.press("Enter");
     await app.expectSidebarExpanded();
-    await expect(sidebar).toContainText("Templates");
-    await expect(templatesLink).toHaveAttribute("aria-current", "page");
+    await expect(sidebar).toContainText("Board Calendar");
+    await expect(boardCalendarLink).toHaveAttribute("aria-current", "page");
     await expect(organizationName).toBeVisible();
 
     await page.setViewportSize({ width: 390, height: 844 });
@@ -83,15 +82,16 @@ test.describe("@smoke @critical platform UI coverage gate", () => {
     await app.expectText("Your membership is active");
     await app.expectNoServerError();
 
-    await app.expectPageHeading("/grants", /Olea Gives|Grants/i);
+    await app.expectPageHeading("/grants", "Olea's Circle of Generosity");
     await app.expectNoServerError();
 
     await app.expectPageHeading(
       "/modules/grant-platform?tab=calendar",
       "Grant platform workspace",
     );
-    await app.expectText("Grant deadlines");
-    await app.expectText("B.C. Community Gaming Grant - Human and Social Services");
+    await expect(page.getByRole("heading", { name: "Grant deadlines" })).toBeVisible();
+    await expect(page.getByRole("link", { name: "B.C. program dates" })).toHaveAttribute("href", /gov\.bc\.ca/);
+    await expect(page.getByText("B.C. Community Gaming Grant - Human and Social Services")).toHaveCount(0);
     await page.getByRole("tab", { name: "Funders" }).click();
     await expect(
       page.getByRole("heading", { name: "Funder relationships" }),
@@ -114,7 +114,7 @@ test.describe("@smoke @critical platform UI coverage gate", () => {
     await expect(page.getByText("Choose from active workspace members only.")).toBeVisible();
     await app.expectNoServerError();
 
-    await app.expectPageHeading("/sponsors", "Sponsors & Olea Gives");
+    await app.expectPageHeading("/sponsors", "Sponsors & Olea's Circle of Generosity");
     await app.expectSectionHeading("Approved sponsor profiles");
     await app.expectNoServerError();
 
@@ -385,9 +385,7 @@ test.describe("@smoke @critical platform UI coverage gate", () => {
         ),
       )
       .toBe(true);
-    await expect(page.getByTestId("kpi-dashboard-tabs")).toHaveClass(
-      /scrollbar-hide/,
-    );
+    await expect(page.getByTestId("kpi-dashboard-tabs")).toBeVisible();
     await page.getByRole("link", { name: "Settings" }).click();
     await expect(
       page.getByRole("heading", { name: "Quarter settings" }),
@@ -550,7 +548,7 @@ test.describe("@smoke @critical platform UI coverage gate", () => {
     await app.expectNoServerError();
 
     await app.expectPageHeading("/help", "Help");
-    await app.expectText("Guides, answers, and a real person");
+    await app.expectText("Common questions");
     await app.expectNoServerError();
 
     await app.expectPageHeading("/whats-new", "What's new");
@@ -570,13 +568,13 @@ test.describe("@smoke @critical platform UI coverage gate", () => {
 
     await page.goto("/sponsors");
     await expect(
-      page.getByRole("heading", { name: "Sponsors & Olea Gives", level: 1 }),
+      page.getByRole("heading", { name: "Sponsors & Olea's Circle of Generosity", level: 1 }),
     ).toBeVisible();
 
     const financeAdministration = page.getByText("Finance administration", {
       exact: true,
     });
-    const memberDirectory = page.getByText("Member directory", { exact: true });
+    const memberDirectory = page.getByText("Sponsor directory", { exact: true });
 
     await expect(financeAdministration).toBeVisible();
     await expect(memberDirectory).toBeVisible();

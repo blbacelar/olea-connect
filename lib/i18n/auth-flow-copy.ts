@@ -58,6 +58,8 @@ export type AuthFlowCopy = {
       passwordHelp: string;
       continueToPayment: string;
       backToPlan: string;
+      selectedPlan: string;
+      changePlan: string;
       organizationKinds: OptionCopy<typeof ORGANIZATION_KINDS>;
       boardSizes: OptionCopy<typeof BOARD_SIZE_RANGES>;
       annualBudgets: OptionCopy<typeof ANNUAL_BUDGET_RANGES>;
@@ -275,6 +277,8 @@ export const authFlowCopy: Record<Locale, AuthFlowCopy> = {
         passwordHelp: "Use at least 8 characters.",
         continueToPayment: "Continue to payment",
         backToPlan: "Back to plan",
+        selectedPlan: "Selected plan",
+        changePlan: "Change plan",
         organizationKinds: {
           nonprofit: "Nonprofit",
           registered_charity: "Registered charity",
@@ -553,6 +557,8 @@ export const authFlowCopy: Record<Locale, AuthFlowCopy> = {
         passwordHelp: "Utilisez au moins 8 caractères.",
         continueToPayment: "Continuer au paiement",
         backToPlan: "Retour au forfait",
+        selectedPlan: "Forfait choisi",
+        changePlan: "Changer de forfait",
         organizationKinds: {
           nonprofit: "Organisme sans but lucratif",
           registered_charity: "Organisme de bienfaisance enregistré",

@@ -115,6 +115,8 @@ function mapApplication(application: GrantPlatformApplicationRow) {
     deadlineAt: round?.closes_at ?? null,
     focusArea: application.focus_area,
     funderName: parseFunderName(round?.public_notes) ?? "Unassigned funder",
+    isPlanningDraft: application.status === "draft" && application.eligibility_snapshot?.source === "module_create",
+    notes: parseGrantNotes(round?.public_notes),
     fundingRequest: application.funding_request,
     id: application.id,
     nextMilestone: nextMilestoneMap[application.status] ?? "Track the current milestone",
@@ -289,6 +291,12 @@ function parseFunderName(value: string | null | undefined) {
   if (!value) return null;
   const match = /^Funder:\s*(.+)$/im.exec(value);
   return match?.[1]?.trim() || null;
+}
+
+function parseGrantNotes(value: string | null | undefined) {
+  if (!value) return "";
+  const match = /^Notes:\s*([\s\S]*)$/im.exec(value);
+  return match?.[1]?.trim() ?? "";
 }
 
 function buildWorkflowState(applications: GrantPlatformWorkspaceData["applications"]) {

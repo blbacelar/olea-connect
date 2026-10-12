@@ -8,7 +8,10 @@ import {
   Printer,
   ShieldCheck,
   Users,
-} from "lucide-react";import { Card, CardContent } from "@/components/ui/card";
+} from "lucide-react";
+
+import { Card, CardContent } from "@/components/ui/card";
+import { MobileSectionSelect } from "@/components/ui/mobile-section-select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import type {
   RecruitmentData,
@@ -79,8 +82,14 @@ export function BoardRecruitmentWorkspace({
         onValueChange={(value) => navigate(value as RecruitmentTab)}
         className="space-y-6"
       >
-        <div className="overflow-x-auto rounded-xl border bg-white p-2 shadow-soft">
-          <TabsList className="h-auto min-w-max gap-1 bg-slate-50">
+        <div className="rounded-xl border bg-white p-2 shadow-soft">
+          <MobileSectionSelect
+            label="Board Recruitment section"
+            options={tabs}
+            value={tab}
+            onValueChange={(value) => navigate(value as RecruitmentTab)}
+          />
+          <TabsList className="hidden h-auto min-w-max gap-1 bg-slate-50 md:inline-flex">
             {tabs.map(({ value, label, icon: Icon }) => (
               <TabsTrigger key={value} value={value} className="min-h-11 gap-2">
                 <Icon className="size-4" />

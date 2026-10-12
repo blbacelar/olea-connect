@@ -53,12 +53,12 @@ export function PublicHeader({
   return (
     <header className="sticky top-0 z-50 border-b bg-white/95 backdrop-blur">
       {showFoundingOffer ? <FoundingOfferBanner showSignupLink={!minimal} /> : null}
-      <div className="mx-auto flex h-[68px] max-w-7xl items-center px-4 md:px-8">
+      <div className="mx-auto flex min-h-[68px] max-w-7xl flex-wrap items-center gap-y-2 px-4 py-2 sm:flex-nowrap md:px-8">
         <Logo
           href="/"
           ariaLabel={copy.logo.ariaLabel}
           tagline={copy.logo.tagline}
-          hideTaglineOnMobile={showFoundingOffer}
+          hideTaglineOnMobile
         />
         <div className="flex-1" />
         {minimal ? (
@@ -82,10 +82,10 @@ export function PublicHeader({
               <Link href="/referrals">{copy.nav.referrals}</Link>
               <Link href="/login">{copy.nav.login}</Link>
             </nav>
-            <div className="mr-3">
+            <div className="mr-0 sm:mr-3">
               <LocaleSelector locale={locale} labels={copy.localeSelector} />
             </div>
-            <Button asChild className={showFoundingOffer ? "hidden sm:inline-flex" : undefined}>
+            <Button asChild className={showFoundingOffer ? "hidden sm:inline-flex" : "w-full sm:w-auto"}>
               <Link href="/signup">{copy.nav.getStarted}</Link>
             </Button>
           </>

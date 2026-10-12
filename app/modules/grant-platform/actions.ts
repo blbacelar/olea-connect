@@ -1,6 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { z } from "zod";
 
 import {
   saveGrantApplication,
@@ -18,6 +19,7 @@ import {
   getFundingSources,
   getMutationFormData,
   getText,
+  parseGrantCreationForm,
   upsertGrantFunderInteraction,
   upsertGrantPartner,
   validateOrganizationSettingsInput,
@@ -100,6 +102,61 @@ export async function createGrantPlatformGrant(formData: FormData) {
   revalidatePath("/grants");
 
   return { message: result.message, success: true };
+}
+
+export async function updateGrantPlatformGrant(formData: FormData) {
+  const { member, organization } = await requireMemberContext();
+  const { canCreateRounds } = getGrantPlatformActionAccess(member.role);
+  if (!canCreateRounds) {
+    return { message: "You do not have permission to edit grants.", success: false };
+  }
+
+  const applicationId = getText(formData, "applicationId");
+  const parsed = parseGrantCreationForm(formData);
+  if (!parsed.ok) return { message: parsed.message, success: false };
+  if (!z.uuid().safeParse(applicationId).success) {
+    return { message: "Choose a grant to edit.", success: false };
+  }
+
+  const admin = createAdminClient();
+  const { error } = await admin.rpc("update_grant_planning_draft", {
+    amount_cents: parsed.requestedAmountCents,
+    deadline_date: parsed.deadline,
+    funder_name: parsed.funderName,
+    grant_name: parsed.name,
+    grant_notes: parsed.notes,
+    target_application_id: applicationId,
+    target_organization_id: organization.id,
+  });
+  if (error) return { message: "This draft could not be updated. Refresh and try again.", success: false };
+
+  revalidatePath("/modules/grant-platform");
+  revalidatePath("/grants");
+  return { message: "Grant updated.", success: true };
+}
+
+export async function deleteGrantPlatformGrant(formData: FormData) {
+  const { member, organization } = await requireMemberContext();
+  const { canDeleteGrants } = getGrantPlatformActionAccess(member.role);
+  if (!canDeleteGrants) {
+    return { message: "Only admins can delete grant drafts.", success: false };
+  }
+
+  const applicationId = getText(formData, "applicationId");
+  if (!z.uuid().safeParse(applicationId).success) {
+    return { message: "Choose a grant to delete.", success: false };
+  }
+
+  const admin = createAdminClient();
+  const { error } = await admin.rpc("delete_grant_planning_draft", {
+    target_application_id: applicationId,
+    target_organization_id: organization.id,
+  });
+  if (error) return { message: "This draft could not be deleted. Refresh and try again.", success: false };
+
+  revalidatePath("/modules/grant-platform");
+  revalidatePath("/grants");
+  return { message: "Grant deleted.", success: true };
 }
 
 export async function saveGrantPlatformOrganizationSettings(

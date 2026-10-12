@@ -266,17 +266,20 @@ test.describe("@smoke @critical public entry points", () => {
       page.getByRole("link", { name: "sponsorship@olivesocialimpact.com" }),
     ).toHaveAttribute("href", "mailto:sponsorship@olivesocialimpact.com");
     const bookingCtas = page.getByTestId("sponsorship-booking-cta");
-    await expect(bookingCtas).toHaveCount(7);
+    await expect(bookingCtas).toHaveCount(
+      process.env.NEXT_PUBLIC_SPONSORSHIP_CALENDLY_URL?.trim() ? 7 : 6,
+    );
     const bookingHrefs = await bookingCtas.evaluateAll((links) =>
       Array.from(new Set(links.map((link) => link.getAttribute("href")))),
     );
-    expect(bookingHrefs).toHaveLength(1);
     const configuredCalendlyUrl =
       process.env.NEXT_PUBLIC_SPONSORSHIP_CALENDLY_URL?.trim();
     if (configuredCalendlyUrl) {
-      expect(bookingHrefs[0]).toBe(new URL(configuredCalendlyUrl).toString());
+      expect(bookingHrefs).toContain(new URL(configuredCalendlyUrl).toString());
+      expect(bookingHrefs).toContain("mailto:sponsorship@olivesocialimpact.com");
     } else {
-      expect(bookingHrefs[0]).toBe("mailto:sponsorship@olivesocialimpact.com");
+      expect(bookingHrefs).toEqual(["mailto:sponsorship@olivesocialimpact.com"]);
+      await expect(bookingCtas.first()).toContainText("Email");
     }
     await expect(page).not.toHaveURL(/login|dashboard/);
   });

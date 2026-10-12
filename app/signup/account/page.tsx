@@ -25,7 +25,8 @@ import { isWellFormedFoundingMemberCode } from "@/lib/founding-member";
 import { useRegistration } from "@/hooks/use-registration";
 import { getAuthFlowCopy } from "@/lib/i18n/auth-flow-copy";
 import { getPublicSiteCopy } from "@/lib/i18n/public-site-copy";
-import { signupMembershipPlans } from "@/lib/plans";
+import { getPlan, signupMembershipPlans } from "@/lib/plans";
+import { formatCad } from "@/lib/pricing";
 import {
   ACQUISITION_SOURCES,
   ANNUAL_BUDGET_RANGES,
@@ -42,6 +43,8 @@ export default function SignupAccountPage() {
   const authCopy = getAuthFlowCopy(locale);
   const publicCopy = getPublicSiteCopy(locale);
   const accountCopy = authCopy.signup.account;
+  const selectedPlan = getPlan(registration.tier);
+  const backToPlan = () => router.push(`/signup?tier=${registration.tier}`);
 
   useEffect(() => {
     if (!hydrated) return;
@@ -94,6 +97,27 @@ export default function SignupAccountPage() {
       topBanner={<FoundingOfferBanner showSignupLink={false} />}
     >
       <StepIndicator current={2} />
+      <div className="mt-5 flex flex-wrap items-center justify-between gap-3 rounded-lg border border-olea-green/20 bg-olea-light/40 p-4">
+        <div>
+          <p className="text-xs font-semibold uppercase tracking-wide text-slate-600">
+            {accountCopy.selectedPlan}
+          </p>
+          <p className="mt-1 font-semibold text-slate-900">
+            {publicCopy.pricing.plans[registration.tier].name} · {formatCad(
+              registration.billingCycle === "quarterly"
+                ? selectedPlan.quarterlyPrice
+                : selectedPlan.annualPrice,
+              locale,
+            )}/{registration.billingCycle === "quarterly"
+              ? publicCopy.pricing.perQuarter
+              : publicCopy.pricing.perYear}
+          </p>
+        </div>
+        <Button type="button" variant="outline" onClick={backToPlan}>
+          <ArrowLeft className="size-4" />
+          {accountCopy.changePlan}
+        </Button>
+      </div>
       <div className="mt-7 space-y-5">
         <div className="space-y-2">
           <Label htmlFor="organization">{accountCopy.organizationName}</Label>
@@ -309,7 +333,7 @@ export default function SignupAccountPage() {
         <Button
           type="button"
           variant="ghost"
-          onClick={() => router.push("/#plans")}
+          onClick={backToPlan}
           className="w-full text-sm font-medium text-slate-500"
         >
           <ArrowLeft className="size-4" />

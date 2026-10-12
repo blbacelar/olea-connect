@@ -87,6 +87,8 @@ export function SponsorshipTierCard({
       <SponsorshipCta
         className="mt-6 w-full bg-[#3d4920] text-white hover:bg-[#556b2f]"
         label={copy.tierAria(tier.name)}
+        fallbackLabel={copy.scheduleConversation}
+        fallbackAria={`${copy.scheduleConversationAria}: ${tier.name}`}
       >
         {tier.featured ? copy.featuredCta : copy.defaultCta}
       </SponsorshipCta>

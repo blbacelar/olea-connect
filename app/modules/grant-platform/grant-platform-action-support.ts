@@ -216,17 +216,15 @@ function normalizeGrantNotes(input: ReturnType<typeof parseGrantCreationForm> & 
   return input.notes || getFallbackFundingRequest(input.name);
 }
 
-function getRequestedAmountCents(formData: FormData) {
-  const raw = Number(getText(formData, "requestedAmount"));
-  return Number.isFinite(raw) ? Math.round(raw * 100) : 0;
-}
-
-function parseGrantCreationForm(formData: FormData) {
+export function parseGrantCreationForm(formData: FormData) {
   const deadline = getText(formData, "deadline");
   const name = getText(formData, "name");
-  const requestedAmountCents =
-    getCurrencyTextCents(getText(formData, "requestedAmount")) ??
-    getRequestedAmountCents(formData);
+  const funderName = getText(formData, "funderName");
+  const notes = getText(formData, "notes");
+  const amount = getText(formData, "requestedAmount");
+  const requestedAmountCents = /^\d+(?:\.\d{1,2})?$/.test(amount)
+    ? getCurrencyTextCents(amount) ?? 0
+    : 0;
 
   if (!name || !deadline || requestedAmountCents <= 0) {
     return {
@@ -235,12 +233,26 @@ function parseGrantCreationForm(formData: FormData) {
     } as const;
   }
 
+  if (name.length > 180 || funderName.length > 180 || notes.length > 2000 || requestedAmountCents > 2_147_483_647) {
+    return { ok: false, message: "Check the grant name, funder, notes, and amount limits." } as const;
+  }
+
+  try {
+    parseIsoDate(deadline, "Application deadline");
+  } catch {
+    return { ok: false, message: "Choose a valid application deadline." } as const;
+  }
+
+  if (deadline < new Date().toISOString().slice(0, 10)) {
+    return { ok: false, message: "The application deadline cannot be in the past." } as const;
+  }
+
   return {
     ok: true,
     deadline,
-    funderName: getText(formData, "funderName"),
+    funderName,
     name,
-    notes: getText(formData, "notes"),
+    notes,
     requestedAmountCents,
   } as const;
 }

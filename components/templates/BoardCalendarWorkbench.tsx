@@ -4,6 +4,7 @@ import { useState } from "react";
 import { Download, FileText, LoaderCircle, Plus } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
+import { MobileSectionSelect } from "@/components/ui/mobile-section-select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import type {
   FieldPath,
@@ -76,7 +77,7 @@ export function BoardCalendarWorkbench({
             onClick={workbench.openMeetingComposer}
           >
             <Plus className="size-4" />
-            Add meeting
+            Add calendar entry
           </Button>
           <Button
             type="button"
@@ -120,7 +121,13 @@ export function BoardCalendarWorkbench({
         }
       >
         <div className="rounded-xl border bg-white px-3 py-3 shadow-sm sm:px-5">
-          <div className="overflow-x-auto pb-1">
+          <MobileSectionSelect
+            label="Board Calendar section"
+            options={moduleTabs}
+            value={workbench.activeTab}
+            onValueChange={(value) => workbench.setActiveTab(value as BoardCalendarModuleTab)}
+          />
+          <div className="hidden overflow-x-auto pb-1 md:block">
             <TabsList className="h-auto min-w-max justify-start gap-1 bg-olea-light/70 p-1">
               {moduleTabs.map((tab) => {
                 const Icon = tab.icon;

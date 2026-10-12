@@ -36,7 +36,7 @@ test.describe("@smoke @critical membership signup", () => {
     await signup.expectPaymentStep({
       billingPeriod: "/year",
       planHeading: "Seedling",
-      price: "$800",
+      price: "$1,180",
     });
   });
 
@@ -92,13 +92,13 @@ test.describe("@smoke @critical membership signup", () => {
     await signup.expectPhone("(604) 555-0100");
   });
 
-  test("returns from account creation to landing-page plans", async ({
+  test("returns from account creation to the signup plan chooser", async ({
     page,
   }) => {
     const signup = new SignupPage(page);
     await signup.openAccount();
 
     await signup.goBackToPlans();
-    await signup.expectLandingPlansVisible();
+    await signup.expectSignupPlansVisible();
   });
 });

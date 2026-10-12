@@ -41,7 +41,7 @@ export default async function ReferralProgramPage({
           <ReferralInvalidNotice isFrench={locale === "fr-CA"} />
         ) : null}
         <section className="mx-auto grid max-w-7xl gap-10 px-4 py-16 md:grid-cols-[1.05fr_0.95fr] md:px-8 lg:py-20">
-          <div>
+          <div className="min-w-0">
             <p className="text-sm font-bold uppercase tracking-[0.22em] text-olea-green">
               {copy.heroEyebrow}
             </p>
@@ -52,12 +52,12 @@ export default async function ReferralProgramPage({
               {copy.heroBody}
             </p>
             <div className="mt-8 flex flex-wrap gap-3">
-              <Button asChild size="lg">
+              <Button asChild size="lg" className="w-full whitespace-normal sm:w-auto">
                 <a href="#apply">
                   {copy.signUp} <ArrowRight className="size-4" />
                 </a>
               </Button>
-              <Button asChild size="lg" variant="outline" className="bg-white">
+              <Button asChild size="lg" variant="outline" className="w-full whitespace-normal bg-white sm:w-auto">
                 <Link href="/referrals/dashboard">{copy.dashboard}</Link>
               </Button>
             </div>
@@ -84,7 +84,7 @@ export default async function ReferralProgramPage({
             </div>
           </div>
 
-          <div id="apply">
+          <div id="apply" className="min-w-0">
             {settings.programEnabled ? (
               <ReferralApplicationForm copy={copy.form} />
             ) : (

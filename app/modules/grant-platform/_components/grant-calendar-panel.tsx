@@ -1,62 +1,20 @@
 "use client";
 
-import { CalendarClock, CalendarDays } from "lucide-react";
+import { CalendarClock, CalendarDays, ExternalLink } from "lucide-react";
 
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import type { GrantPlatformWorkspaceData } from "@/lib/data/grant-platform";
 
 type CalendarItem = {
+  id: string;
   deadline: string;
   funder: string;
   grantName: string;
   opensAt: string | null;
-  source: "workspace" | "bc-gaming";
   status: string;
 };
-
-const bcGamingGrantDates: CalendarItem[] = [
-  {
-    deadline: "2026-04-30",
-    funder: "Province of British Columbia",
-    grantName: "B.C. Community Gaming Grant - Arts and Culture",
-    opensAt: "2026-02-01",
-    source: "bc-gaming",
-    status: "Annual intake",
-  },
-  {
-    deadline: "2026-05-31",
-    funder: "Province of British Columbia",
-    grantName: "B.C. Community Gaming Grant - Sport",
-    opensAt: "2026-03-01",
-    source: "bc-gaming",
-    status: "Annual intake",
-  },
-  {
-    deadline: "2026-06-30",
-    funder: "Province of British Columbia",
-    grantName: "B.C. Community Gaming Grant - PAC and DPAC",
-    opensAt: "2026-04-01",
-    source: "bc-gaming",
-    status: "Annual intake",
-  },
-  {
-    deadline: "2026-08-31",
-    funder: "Province of British Columbia",
-    grantName: "B.C. Community Gaming Grant - Public Safety and Environment",
-    opensAt: "2026-07-01",
-    source: "bc-gaming",
-    status: "Annual intake",
-  },
-  {
-    deadline: "2026-11-30",
-    funder: "Province of British Columbia",
-    grantName: "B.C. Community Gaming Grant - Human and Social Services",
-    opensAt: "2026-08-01",
-    source: "bc-gaming",
-    status: "Annual intake",
-  },
-];
 
 function formatDate(value: string | null) {
   if (!value) return "Date not set";
@@ -78,22 +36,21 @@ function daysUntil(value: string) {
 }
 
 function statusClass(item: CalendarItem) {
-  if (item.source === "bc-gaming") return "bg-emerald-100 text-emerald-800";
   if (item.status === "open") return "bg-blue-100 text-blue-800";
   if (item.status === "closed") return "bg-slate-100 text-slate-700";
   return "bg-amber-100 text-amber-800";
 }
 
 function workspaceItems(data: GrantPlatformWorkspaceData): CalendarItem[] {
-  return data.rounds
-    .filter((round) => round.closesAt)
-    .map((round) => ({
-      deadline: round.closesAt?.slice(0, 10) ?? "",
-      funder: round.programName,
-      grantName: round.name,
-      opensAt: round.opensAt?.slice(0, 10) ?? null,
-      source: "workspace" as const,
-      status: round.status,
+  return data.applications
+    .filter((application) => application.deadlineAt)
+    .map((application) => ({
+      id: application.id,
+      deadline: application.deadlineAt?.slice(0, 10) ?? "",
+      funder: application.funderName,
+      grantName: application.roundName,
+      opensAt: null,
+      status: application.status,
     }));
 }
 
@@ -102,7 +59,7 @@ export function GrantCalendarPanel({
 }: {
   data: GrantPlatformWorkspaceData;
 }) {
-  const items = [...workspaceItems(data), ...bcGamingGrantDates].sort((left, right) =>
+  const items = workspaceItems(data).sort((left, right) =>
     left.deadline.localeCompare(right.deadline),
   );
 
@@ -111,6 +68,15 @@ export function GrantCalendarPanel({
       <div className="flex items-center gap-2">
         <CalendarDays className="size-6 text-navy-blue" />
         <h2 className="text-2xl font-bold text-navy-blue">Grant deadlines</h2>
+      </div>
+
+      <div className="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-slate-200 bg-white p-4 text-sm text-slate-600">
+        <p>External B.C. grant intake dates are not synced here. Check the current official schedule before planning an application.</p>
+        <Button asChild type="button" variant="outline">
+          <a href="https://www2.gov.bc.ca/gov/content/sports-culture/gambling-fundraising/gaming-grants/community-gaming-grants" rel="noopener noreferrer" target="_blank">
+            B.C. program dates <ExternalLink className="ml-2 size-4" />
+          </a>
+        </Button>
       </div>
 
       <Card className="shadow-soft">
@@ -123,7 +89,7 @@ export function GrantCalendarPanel({
         <CardContent className="space-y-3">
           {items.map((item) => (
             <div
-              key={`${item.source}-${item.grantName}-${item.deadline}`}
+              key={item.id}
               className="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-slate-200 bg-slate-50/60 p-4 transition-colors hover:bg-slate-100/60"
             >
               <div className="space-y-1">
@@ -149,6 +115,9 @@ export function GrantCalendarPanel({
               </div>
             </div>
           ))}
+          {!items.length ? (
+            <p className="text-sm text-slate-600">No deadlines saved yet. Add a grant in Pipeline to track it here.</p>
+          ) : null}
         </CardContent>
       </Card>
     </div>

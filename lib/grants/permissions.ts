@@ -90,6 +90,7 @@ export function getGrantPlatformActionAccess(role: string | null | undefined) {
 
   return {
     canCreateRounds: canAccessGrantPlatform(normalizedRole, "editGrants"),
+    canDeleteGrants: canAccessGrantPlatform(normalizedRole, "deleteGrants"),
     canManageWorkflow: canAccessGrantPlatform(normalizedRole, "editTeamNotes"),
   };
 }
@@ -99,6 +100,7 @@ export function getGrantPlatformUiAccess(role: string | null | undefined) {
 
   return {
     canEditGrants: canAccessGrantPlatform(normalizedRole, "editGrants"),
+    canDeleteGrants: canAccessGrantPlatform(normalizedRole, "deleteGrants"),
     canEditOrgProfile: canAccessGrantPlatform(normalizedRole, "editOrgProfile"),
     canEditTeamNotes: canAccessGrantPlatform(normalizedRole, "editTeamNotes"),
     canManageTeam: canAccessGrantPlatform(normalizedRole, "manageTeam"),

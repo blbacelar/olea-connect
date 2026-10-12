@@ -1,23 +1,34 @@
 import { describe, expect, it, vi } from "vitest";
 
-import { validateOrganizationSettingsInput } from "@/app/modules/grant-platform/grant-platform-action-support";
+import { parseGrantCreationForm, validateOrganizationSettingsInput } from "@/app/modules/grant-platform/grant-platform-action-support";
 
 vi.mock("server-only", () => ({}));
 
 describe("grant platform action helpers", () => {
-  it("returns a validation message when required create inputs are missing", async () => {
+  it("returns a validation message when required create inputs are missing", () => {
     const formData = new FormData();
     formData.set("name", "");
     formData.set("requestedAmount", "0");
     formData.set("deadline", "");
 
-    const result = {
-      message: "Please provide a grant name, deadline, and a positive amount.",
-      success: false,
-    };
-
-    expect(result.success).toBe(false);
+    const result = parseGrantCreationForm(formData);
+    expect(result.ok).toBe(false);
     expect(result.message).toContain("grant name");
+  });
+
+  it("rejects malformed amounts and dates before persistence", () => {
+    const formData = new FormData();
+    formData.set("name", "Community Grant");
+    formData.set("deadline", "2027-05-20");
+    formData.set("requestedAmount", "1,000abc");
+    expect(parseGrantCreationForm(formData).ok).toBe(false);
+    formData.set("requestedAmount", "1000.25");
+    formData.set("deadline", "2027-02-30");
+    expect(parseGrantCreationForm(formData)).toMatchObject({ ok: false, message: "Choose a valid application deadline." });
+    formData.set("deadline", "2020-01-01");
+    expect(parseGrantCreationForm(formData)).toMatchObject({ ok: false, message: "The application deadline cannot be in the past." });
+    formData.set("deadline", "2027-05-20");
+    expect(parseGrantCreationForm(formData)).toMatchObject({ ok: true, requestedAmountCents: 100025 });
   });
 
   it("validates and normalizes grant organization profile fields", () => {

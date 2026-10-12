@@ -10,6 +10,9 @@ type SponsorshipCtaProps = {
   children: React.ReactNode;
   className?: string;
   label?: string;
+  fallbackLabel?: string;
+  fallbackAria?: string;
+  forceEmail?: boolean;
   variant?: "primary" | "outline";
 };
 
@@ -17,10 +20,13 @@ export function SponsorshipCta({
   children,
   className,
   label,
+  fallbackLabel,
+  fallbackAria,
+  forceEmail = false,
   variant = "primary",
 }: SponsorshipCtaProps) {
-  const href = sponsorshipCalendlyUrl || `mailto:${sponsorshipContactEmail}`;
-  const opensCalendly = Boolean(sponsorshipCalendlyUrl);
+  const opensCalendly = Boolean(sponsorshipCalendlyUrl) && !forceEmail;
+  const href = opensCalendly ? sponsorshipCalendlyUrl : `mailto:${sponsorshipContactEmail}`;
 
   return (
     <Button
@@ -32,7 +38,7 @@ export function SponsorshipCta({
         href={href}
         target={opensCalendly ? "_blank" : undefined}
         rel={opensCalendly ? "noreferrer" : undefined}
-        aria-label={label}
+        aria-label={opensCalendly ? label : fallbackAria ?? fallbackLabel}
         data-testid="sponsorship-booking-cta"
       >
         {opensCalendly ? (
@@ -40,7 +46,7 @@ export function SponsorshipCta({
         ) : (
           <Mail className="size-4" aria-hidden="true" />
         )}
-        {children}
+        {opensCalendly ? children : fallbackLabel ?? children}
         {opensCalendly ? (
           <ArrowUpRight className="size-4" aria-hidden="true" />
         ) : null}

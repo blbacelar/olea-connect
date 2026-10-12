@@ -23,6 +23,8 @@ const application: GrantPlatformWorkspaceData["applications"][number] = {
   summary: "Draft package in progress",
   nextMilestone: "Gather evidence and finalize the narrative",
   funderName: "Community Foundation",
+  notes: "",
+  isPlanningDraft: true,
 };
 
 const data = {

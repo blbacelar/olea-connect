@@ -98,7 +98,7 @@ export function LocaleSelector({
         data-testid="locale-selector"
         aria-label={currentLabels.ariaLabel}
         aria-busy={isPending}
-        className="h-10 w-[122px] gap-2 bg-white text-xs font-semibold text-slate-700"
+        className="h-10 w-[108px] gap-1 bg-white text-xs font-semibold text-slate-700 sm:w-[122px] sm:gap-2"
       >
         <Languages className="size-4 text-olea-green" />
         <SelectValue />

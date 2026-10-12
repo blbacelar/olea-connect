@@ -87,7 +87,7 @@ export function DashboardTab({
             ))
           ) : (
             <p className="rounded-lg bg-slate-50 px-4 py-3 text-sm text-slate-500">
-              No upcoming items yet. Use Add meeting to start the calendar.
+              No upcoming items yet. Use Add calendar entry to start the calendar.
             </p>
           )}
         </div>

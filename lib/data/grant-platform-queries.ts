@@ -22,6 +22,7 @@ export type GrantPlatformRoundRow = {
 
 export type GrantPlatformApplicationRow = {
   collaboration_note: string | null;
+  eligibility_snapshot: { source?: string } | null;
   focus_area: string;
   funding_request: string;
   grant_awards: { status: string } | Array<{ status: string }> | null;
@@ -164,7 +165,7 @@ function fetchGrantPlatformRows(
       .order("opens_at", { ascending: true }),
     supabase
       .from("grant_applications")
-      .select("id, round_id, status, focus_area, funding_request, requested_amount_cents, submitted_at, collaboration_note, updated_at, grant_rounds(name, closes_at, public_notes), grant_awards(status)")
+      .select("id, round_id, status, focus_area, funding_request, requested_amount_cents, submitted_at, collaboration_note, eligibility_snapshot, updated_at, grant_rounds(name, closes_at, public_notes), grant_awards(status)")
       .eq("organization_id", organizationId)
       .order("updated_at", { ascending: false }),
     supabase

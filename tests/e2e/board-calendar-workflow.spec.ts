@@ -361,6 +361,9 @@ test.describe("@critical Board Calendar & Operational Workflow", () => {
       );
       await boardCalendar.calendar.expectSelectedDateText("9:00 AM");
       await boardCalendar.calendar.expectSelectedDateText("Hybrid");
+      await boardCalendar.meetings.expectMeetingVisible("Board Budget Review Updated");
+      await expect(page.getByText("Board Budget Review", { exact: true })).toHaveCount(0);
+      await boardCalendar.chooseWorkspaceView("Calendar workspace");
     });
 
     await test.step("order same-day meetings by time, keeping duplicate time entries", async () => {
@@ -411,6 +414,9 @@ test.describe("@critical Board Calendar & Operational Workflow", () => {
       await boardCalendar.chooseWorkspaceView("Calendar workspace");
       await boardCalendar.calendar.selectDate(eventDate);
       await boardCalendar.expectTextVisible("Board Budget Review Updated");
+      await boardCalendar.meetings.expectMeetingVisible("Board Budget Review Updated");
+      await expect(page.getByText("Board Budget Review", { exact: true })).toHaveCount(0);
+      await boardCalendar.chooseWorkspaceView("Calendar workspace");
 
       await boardCalendar.calendar.selectDate(annualNoteDate);
       await boardCalendar.expectTextVisible("Grant filing deadline");

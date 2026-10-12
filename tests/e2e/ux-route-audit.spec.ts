@@ -199,7 +199,7 @@ authenticatedTest("modal close returns to previous module tab", async ({ page, a
   authenticatedTest.setTimeout(120_000);
   void authenticatedMember;
   const cases = [
-    { route: "/modules/board-calendar", trigger: "Add meeting" },
+    { route: "/modules/board-calendar", trigger: "Add calendar entry" },
     { route: "/modules/board-recruitment?tab=terms", trigger: "Add member" },
     { route: "/modules/grant-platform", trigger: "Add Grant" },
   ];
