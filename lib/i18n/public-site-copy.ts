@@ -352,7 +352,7 @@ export const publicSiteCopy: Record<Locale, PublicSiteCopy> = {
       saveTwoYears: "Save {amount} over 2 years",
       foundingRate: "Founding member rate",
       foundingCode: "Use code OLEAFOUNDING15 at checkout.",
-      quarterlyOption: "Or pay quarterly: {amount}. Cancel before the next renewal.",
+      quarterlyOption: "Or pay quarterly: {amount}.",
       monthlyEquivalent: "About {amount} a month for your whole board, billed annually.",
       spotsLimited: "Limited to the first 50 organizations",
       spotsLeft: "{left} of 50 spots left",
@@ -437,7 +437,6 @@ export const publicSiteCopy: Record<Locale, PublicSiteCopy> = {
         "$15 CAD one-time per seat",
         "Your total is shown at secure checkout before payment. Taxes are not currently collected.",
         "No free trial",
-        "Cancel before renewal; membership fees are non-refundable.",
       ],
       addOns: [
         {
@@ -769,7 +768,7 @@ export const publicSiteCopy: Record<Locale, PublicSiteCopy> = {
       saveTwoYears: "Économisez {amount} sur 2 ans",
       foundingRate: "Tarif membre fondateur",
       foundingCode: "Utilisez le code OLEAFOUNDING15 à la caisse.",
-      quarterlyOption: "Ou payez chaque trimestre : {amount}. Annulez avant le prochain renouvellement.",
+      quarterlyOption: "Ou payez chaque trimestre : {amount}.",
       monthlyEquivalent: "Environ {amount} par mois pour tout votre conseil, facturé annuellement.",
       spotsLimited: "Réservé aux 50 premiers organismes",
       spotsLeft: "{left} places restantes sur 50",
@@ -856,7 +855,6 @@ export const publicSiteCopy: Record<Locale, PublicSiteCopy> = {
         "15 $ CA par siège supplémentaire, paiement unique",
         "Le montant total est affiché à la caisse sécurisée avant le paiement. Les taxes ne sont pas perçues actuellement.",
         "Aucun essai gratuit",
-        "Annulez avant le renouvellement; les frais d'adhésion ne sont pas remboursables.",
       ],
       addOns: [
         {

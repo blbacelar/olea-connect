@@ -148,7 +148,7 @@ export function LandingPricing({
             );
           })}
         </div>
-        <div className="mt-7 grid gap-4 text-sm text-slate-600 md:grid-cols-2 xl:grid-cols-4">
+        <div className="mt-7 grid gap-4 text-sm text-slate-600 md:grid-cols-3">
           {copy.policies.map((policy) => (
             <p
               key={policy}

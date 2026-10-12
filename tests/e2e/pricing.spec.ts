@@ -53,12 +53,7 @@ test.describe("public pricing package", () => {
     await expect(page.getByRole("link", { name: "Explore the referral program" }))
       .toHaveAttribute("href", "/referrals");
     await expect(page.getByText("No free trial")).toBeVisible();
-    await expect(
-      page.getByText(
-        "Cancel before renewal; membership fees are non-refundable.",
-        { exact: true },
-      ),
-    ).toBeVisible();
+    await expect(page.locator("#plans")).not.toContainText("Cancel before renewal");
     await expect(
       page.locator('#plans a[href^="/signup/account?tier=seedling&billing=annual"]'),
     ).toHaveAttribute("href", /\/signup\/account\?tier=seedling&billing=annual/);
@@ -70,6 +65,7 @@ test.describe("public pricing package", () => {
     await page.goto("/");
     await expect(page.getByRole("button", { name: "Quarterly" })).toHaveCount(0);
     await expect(page.locator("#plans")).toContainText("Or pay quarterly:");
+    await expect(page.locator("#plans")).not.toContainText("Cancel before the next renewal");
     await expect(page.getByRole("link", { name: "Choose Harvest" })).toHaveCount(0);
     await expect(
       page.locator('#plans a[href^="/signup/account?tier=seedling&billing=annual"]'),
@@ -90,6 +86,7 @@ test.describe("public pricing package", () => {
       .toHaveAttribute("href", /mailto:hello@olivesocialimpact.com\?subject=/);
     await expect(page.getByText(/15 % de ses bénéfices à des organismes sans but lucratif/).first())
       .toBeVisible();
+    await expect(page.locator("#plans")).not.toContainText("Annulez avant le renouvellement");
   });
 
   test("shows the capped commission without legacy milestones in French", async ({ page }) => {
