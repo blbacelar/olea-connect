@@ -126,6 +126,7 @@ export interface WorkspaceMemberOption {
 
 export interface DynamicTemplateEditorData {
   organization: Organization;
+  membershipRole: "owner" | "admin" | "member";
   template: {
     id: string;
     slug: string;

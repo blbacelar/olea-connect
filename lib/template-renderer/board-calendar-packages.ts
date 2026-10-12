@@ -1,5 +1,6 @@
 import { createTemplateRecordId } from "@/lib/template-renderer/create-id";
 import type { TemplateFormData } from "@/lib/template-renderer/types";
+import { getMeetingDocuments, type MeetingDocumentKind } from "./board-calendar-meeting-documents";
 
 type TemplateRecord = Record<string, unknown>;
 
@@ -30,6 +31,7 @@ export interface BoardPackageDocument {
   storagePath: string;
   uploadedAt: string;
   url: string;
+  generatedKind?: MeetingDocumentKind;
 }
 
 export interface BoardPackageMeeting {
@@ -146,9 +148,27 @@ export function buildBoardPackageMeetings(
 
   return getRows(data, "meetings").map((meeting, index) => {
     const id = getMeetingPackageId(meeting, index);
-    const meetingDocuments = documents.filter(
+    const uploadedDocuments = documents.filter(
       (document) => document.meetingId === id,
     );
+    const generatedDocuments: BoardPackageDocument[] = getMeetingDocuments(data)
+      .filter((document) => document.meetingId === id && document.status === "approved")
+      .map((document) => ({
+        category: "Meeting documents",
+        contentType: "application/pdf",
+        confidential: true,
+        fileName: `${document.kind.replace(/_/g, "-")}.pdf`,
+        id: `${id}:${document.kind}`,
+        meetingId: id,
+        name: document.kind === "consent_agenda" ? "Consent agenda" : "Board minutes",
+        size: 0,
+        sizeLabel: "Generated PDF",
+        storagePath: "",
+        uploadedAt: document.updatedAt,
+        url: "",
+        generatedKind: document.kind,
+      }));
+    const meetingDocuments = [...generatedDocuments, ...uploadedDocuments];
 
     return {
       date: getString(meeting, "date"),

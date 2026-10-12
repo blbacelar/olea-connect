@@ -1,4 +1,7 @@
+import { boardCalendarExactTranslations, boardCalendarPhraseTranslations } from "./board-calendar-fr";
+
 const exactTranslations = new Map<string, string>([
+  ...boardCalendarExactTranslations,
   [
     "Community spaces will appear here when they are available.",
     "Les espaces communautaires apparaîtront ici lorsqu'ils seront disponibles.",
@@ -1393,6 +1396,7 @@ const exactTranslations = new Map<string, string>([
 ]);
 
 const phraseTranslations: Array<[RegExp, string]> = [
+  ...boardCalendarPhraseTranslations,
   [/Apply now\s*→?/g, "Soumettre maintenant"],
   [/\bEdit (.+)$/g, "Modifier $1"],
   [/\bAGM held\b/g, "AGA tenue"],

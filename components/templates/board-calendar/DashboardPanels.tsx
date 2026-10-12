@@ -1,4 +1,4 @@
-import { CalendarDays, Pencil } from "lucide-react";
+import { CalendarDays, FileText, Pencil } from "lucide-react";
 
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -37,10 +37,12 @@ export function MeetingsTablePanel({
   meetings,
   upcomingMeetingCount,
   onEditEvent,
+  onOpenDocuments,
 }: {
   meetings: CalendarViewEvent[];
   upcomingMeetingCount: number;
   onEditEvent: (event: CalendarViewEvent) => void;
+  onOpenDocuments: (event: CalendarViewEvent) => void;
 }) {
   return (
     <section
@@ -95,6 +97,16 @@ export function MeetingsTablePanel({
                   value={meeting.leadContact || "No lead contact"}
                 />
                 <div className="lg:text-right">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="icon"
+                    className="mr-2"
+                    aria-label={`Open documents for ${meeting.title}`}
+                    onClick={() => onOpenDocuments(meeting)}
+                  >
+                    <FileText className="size-3.5" />
+                  </Button>
                   <Button
                     type="button"
                     variant="outline"

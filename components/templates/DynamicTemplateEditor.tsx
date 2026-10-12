@@ -299,6 +299,8 @@ export function DynamicTemplateEditor({
             organizationName={session.brandingSnapshot.organizationName}
             sections={session.schemaSnapshot.sections}
             workspaceMembers={data.workspaceMembers}
+            membershipRole={data.membershipRole}
+            saveState={saveState}
             generateExport={generateExport}
             createDownloadUrl={createDownloadUrl}
             onChange={updateValue}

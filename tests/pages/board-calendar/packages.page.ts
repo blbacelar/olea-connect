@@ -57,6 +57,7 @@ export class BoardCalendarPackagesPage extends BoardCalendarBasePage {
 
   async expectDocument(meetingTitle: string, documentName: string) {
     await this.chooseWorkspaceView("Board Packages");
+    await this.openFiles(meetingTitle);
     await expect(this.packageCard(meetingTitle)).toContainText(documentName);
   }
 
@@ -100,9 +101,10 @@ export class BoardCalendarPackagesPage extends BoardCalendarBasePage {
     await this.waitForSaved();
   }
 
-  async deleteDocument(documentName: string) {
+  async deleteDocument(meetingTitle: string, documentName: string) {
     await this.chooseWorkspaceView("Board Packages");
-    await this.panel.getByRole("button", { name: `Delete ${documentName}` }).click();
+    await this.openFiles(meetingTitle);
+    await this.packageCard(meetingTitle).getByRole("button", { name: `Delete ${documentName}` }).click();
     const dialog = this.page.getByRole("dialog", {
       name: "Delete this board document?",
     });
@@ -127,5 +129,10 @@ export class BoardCalendarPackagesPage extends BoardCalendarBasePage {
     return this.panel.locator("section").filter({
       has: this.page.getByRole("heading", { name: meetingTitle, exact: true }),
     });
+  }
+
+  private async openFiles(meetingTitle: string) {
+    const button = this.packageCard(meetingTitle).getByRole("button", { name: "View files" });
+    if (await button.count()) await button.click();
   }
 }

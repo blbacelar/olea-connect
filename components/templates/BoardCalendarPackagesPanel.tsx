@@ -1,10 +1,11 @@
 "use client";
 
-import { useMemo } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 
 import { AlertTriangle, PackageOpen, Plus } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
+import { recordBoardPackageAuditEvent } from "@/app/modules/board-calendar/actions";
 import {
   BoardPackageUploadDialog,
   ConfidentialDownloadDialog,
@@ -23,9 +24,11 @@ import { useBoardPackageUploadController } from "@/components/templates/use-boar
 import {
   buildBoardPackageMeetings,
   getGeneralBoardPackageDocuments,
+  type BoardPackageMeeting,
 } from "@/lib/template-renderer/board-calendar-packages";
-import type { TemplateFormData } from "@/lib/template-renderer/types";
+import type { TemplateFormData, WorkspaceMemberOption } from "@/lib/template-renderer/types";
 import type { BrandProfile } from "@/lib/types";
+import { BoardPackageSendDialog } from "./board-calendar/BoardPackageSendDialog";
 
 export { BoardPackageAuditLogPanel } from "@/components/templates/board-package-lists";
 
@@ -34,6 +37,9 @@ export function BoardPackagesPanel({
   data,
   onDataChange,
   templateInstanceId,
+  canSend,
+  saveState,
+  workspaceMembers,
 }: {
   brand: BrandProfile;
   data: TemplateFormData;
@@ -41,7 +47,13 @@ export function BoardPackagesPanel({
     updater: (currentData: TemplateFormData) => TemplateFormData,
   ) => void;
   templateInstanceId: string;
+  canSend: boolean;
+  saveState: "saved" | "saving" | "unsaved" | "error";
+  workspaceMembers: WorkspaceMemberOption[];
 }) {
+  const [openMeetingIds, setOpenMeetingIds] = useState<string[]>([]);
+  const [sendTarget, setSendTarget] = useState<BoardPackageMeeting | null>(null);
+  const hasOpenedLinkedMeeting = useRef(false);
   const meetings = useMemo(() => buildBoardPackageMeetings(data), [data]);
   const generalDocuments = useMemo(
     () => getGeneralBoardPackageDocuments(data),
@@ -62,6 +74,37 @@ export function BoardPackagesPanel({
     setOperationError: documents.setOperationError,
     templateInstanceId,
   });
+
+  async function toggleMeeting(meeting: BoardPackageMeeting) {
+    if (openMeetingIds.includes(meeting.id)) {
+      setOpenMeetingIds((current) => current.filter((id) => id !== meeting.id));
+      return;
+    }
+    if (templateInstanceId && meeting.documents.length) {
+      const result = await recordBoardPackageAuditEvent({
+        action: "package_opened",
+        meetingId: meeting.id,
+        meetingTitle: meeting.title,
+        templateInstanceId,
+      });
+      if (!result.ok) {
+        documents.setOperationError(result.error);
+        return;
+      }
+    }
+    setOpenMeetingIds((current) => [...current, meeting.id]);
+  }
+
+  useEffect(() => {
+    if (hasOpenedLinkedMeeting.current) return;
+    const meetingId = new URLSearchParams(window.location.search).get("meeting");
+    const meeting = meetings.find((item) => item.id === meetingId);
+    if (!meeting) return;
+    hasOpenedLinkedMeeting.current = true;
+    void toggleMeeting(meeting);
+    // A deep link is handled once when this package panel mounts.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [meetings]);
 
   return (
     <section
@@ -91,6 +134,10 @@ export function BoardPackagesPanel({
                 documents.requestDocumentDownload(document, meeting)
               }
               onDownloadPackage={() => packages.setPackageTarget(meeting)}
+              onSendPackage={canSend && saveState === "saved" && templateInstanceId ? () => setSendTarget(meeting) : undefined}
+              onViewFiles={() => void toggleMeeting(meeting)}
+              isOpen={openMeetingIds.includes(meeting.id)}
+              isReady={saveState === "saved" && Boolean(templateInstanceId)}
             />
           ))
         ) : (
@@ -165,6 +212,7 @@ export function BoardPackagesPanel({
         onConfirm={() => void documents.confirmDelete()}
         onOpenChange={(open) => !open && documents.setDeleteTarget(null)}
       />
+      {sendTarget ? <BoardPackageSendDialog key={sendTarget.id} meeting={sendTarget} members={workspaceMembers} templateInstanceId={templateInstanceId} onClose={() => setSendTarget(null)} /> : null}
     </section>
   );
 }

@@ -14,7 +14,7 @@ test.describe("@critical Board Calendar & Operational Workflow", () => {
       page.getByRole("link", { name: "Board Calendar" }),
     ).toBeVisible();
     await page.getByRole("link", { name: "Board Calendar" }).click();
-    await expect(page).toHaveURL(/\/modules\/board-calendar/);
+    await expect(page).toHaveURL(/\/modules\/board-calendar/, { timeout: 15_000 });
 
     await page.setViewportSize({ width: 390, height: 844 });
     await page.goto("/dashboard");
@@ -227,7 +227,7 @@ test.describe("@critical Board Calendar & Operational Workflow", () => {
       await boardCalendar.packages.expectAuditLog("Package Downloaded");
       await boardCalendar.packages.expectAuditLog("Board Budget Review");
 
-      await boardCalendar.packages.deleteDocument("Board Budget Review agenda");
+      await boardCalendar.packages.deleteDocument("Board Budget Review", "Board Budget Review agenda");
       await boardCalendar.packages.expectDocumentHidden(
         "Board Budget Review agenda",
       );

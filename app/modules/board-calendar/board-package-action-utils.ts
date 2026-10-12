@@ -19,6 +19,7 @@ const allowedAuditActions = new Set<BoardPackageAuditAction>([
   "document_deleted",
   "document_downloaded",
   "package_downloaded",
+  "package_opened",
 ]);
 
 export function getOptionalFormValue(formData: FormData, key: string) {
@@ -77,7 +78,7 @@ export function getBoardPackageActionError(error: unknown) {
     return "Board package storage is not configured for this environment yet.";
   }
 
-  if (/not available|does not belong|another organization|access/i.test(message)) {
+  if (/not available|does not belong|another organization|access|administrator|recipient|add documents/i.test(message)) {
     return message;
   }
 

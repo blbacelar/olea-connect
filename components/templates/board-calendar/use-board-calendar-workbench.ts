@@ -3,6 +3,7 @@ import { useState } from "react";
 import {
   appendBoardCalendarEntry,
   deleteBoardCalendarEntry,
+  getBoardCalendarEntryIdentity,
   syncBoardCalendarGeneratedTasks,
   updateBoardCalendarEntry,
   upsertBoardCalendarCategoryColor,
@@ -116,10 +117,22 @@ export function useBoardCalendarWorkbench({
 
   function deleteCalendarEntry(eventId: string) {
     onDataChange((currentData) => {
+      const identity = getBoardCalendarEntryIdentity(eventId);
+      const meetingRow = identity?.type === "meeting" && Array.isArray(currentData.meetings)
+        ? currentData.meetings[identity.index]
+        : null;
+      const meetingId = meetingRow && typeof meetingRow === "object" && "id" in meetingRow && typeof meetingRow.id === "string"
+        ? meetingRow.id
+        : eventId;
       const mutation = deleteBoardCalendarEntry(currentData, eventId);
       if (!mutation) return currentData;
 
       const nextData = setValue(currentData, mutation.path, mutation.value);
+      if (identity?.type === "meeting" && Array.isArray(nextData.meeting_documents)) {
+        nextData.meeting_documents = nextData.meeting_documents.filter((row) =>
+          row && typeof row === "object" && "meetingId" in row && row.meetingId !== meetingId,
+        );
+      }
       return eventId.startsWith("meeting-")
         ? syncBoardCalendarGeneratedTasks(nextData)
         : nextData;

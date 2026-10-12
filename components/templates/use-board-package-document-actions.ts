@@ -15,6 +15,7 @@ import {
   getBoardPackageDocumentOpenUrl,
   getDocumentMeetingContext,
 } from "./board-package-operations";
+import { downloadMeetingDocumentPdf, fetchMeetingDocumentPdf } from "./board-calendar/meeting-pdf-client";
 
 type DataChangeHandler = (
   updater: (currentData: TemplateFormData) => TemplateFormData,
@@ -43,6 +44,16 @@ export function useBoardPackageDocumentActions({
     setDownloadError("");
 
     try {
+      if (document.generatedKind && meeting) {
+        const pdf = await fetchMeetingDocumentPdf({
+          kind: document.generatedKind,
+          meetingId: meeting.id,
+          templateInstanceId,
+        });
+        downloadMeetingDocumentPdf(pdf.bytes, pdf.fileName);
+        logDownload(document, meeting);
+        return;
+      }
       const documentUrl = await getBoardPackageDocumentOpenUrl({
         document,
         meeting,

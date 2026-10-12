@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import { Download, FileText, LoaderCircle, Plus } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
@@ -14,6 +15,8 @@ import type {
   WorkspaceMemberOption,
 } from "@/lib/template-renderer/types";
 import type { BrandProfile } from "@/lib/types";
+import { buildBoardPackageMeetings } from "@/lib/template-renderer/board-calendar-packages";
+import type { BoardPackageMeeting } from "@/lib/template-renderer/board-calendar-packages";
 
 import {
   BoardPackageAuditLogPanel,
@@ -26,6 +29,7 @@ import {
   StaffTaskListPanel,
 } from "./BoardCalendarWorkflowPanels";
 import { MeetingsTablePanel } from "./board-calendar/DashboardPanels";
+import { MeetingDocumentsDialog } from "./board-calendar/MeetingDocumentsDialog";
 import { CalendarTab, DashboardTab } from "./board-calendar/WorkbenchTabs";
 import { useBoardCalendarWorkbench } from "./board-calendar/use-board-calendar-workbench";
 import {
@@ -39,6 +43,8 @@ export function BoardCalendarWorkbench({
   templateInstanceId,
   organizationName,
   workspaceMembers,
+  membershipRole,
+  saveState,
   generateExport,
   createDownloadUrl,
   onChange,
@@ -52,6 +58,13 @@ export function BoardCalendarWorkbench({
     createDownloadUrl,
     onDataChange,
   });
+  const [documentMeeting, setDocumentMeeting] = useState<BoardPackageMeeting | null>(null);
+
+  function openMeetingDocuments(event: { id: string }) {
+    const index = Number(event.id.match(/^meeting-(\d+)$/)?.[1]);
+    if (!Number.isInteger(index)) return;
+    setDocumentMeeting(buildBoardPackageMeetings(data)[index] ?? null);
+  }
 
   return (
     <div className="space-y-4">
@@ -154,6 +167,7 @@ export function BoardCalendarWorkbench({
               meetings={workbench.meetingEvents}
               upcomingMeetingCount={workbench.upcomingMeetingEvents.length}
               onEditEvent={workbench.editCalendarEntry}
+              onOpenDocuments={openMeetingDocuments}
             />
           </TabsContent>
           <SecondaryTabs
@@ -161,11 +175,26 @@ export function BoardCalendarWorkbench({
             data={data}
             templateInstanceId={templateInstanceId}
             workspaceMembers={workspaceMembers}
+            membershipRole={membershipRole}
+            saveState={saveState}
             onChange={onChange}
             onDataChange={onDataChange}
           />
         </div>
       </Tabs>
+      {documentMeeting ? (
+        <MeetingDocumentsDialog
+          key={documentMeeting.id}
+          canApprove={membershipRole !== "member"}
+          data={data}
+          meeting={documentMeeting}
+          members={workspaceMembers}
+          onClose={() => setDocumentMeeting(null)}
+          onDataChange={onDataChange}
+          saveState={saveState}
+          templateInstanceId={templateInstanceId}
+        />
+      ) : null}
     </div>
   );
 }
@@ -175,6 +204,8 @@ function SecondaryTabs({
   data,
   templateInstanceId,
   workspaceMembers,
+  membershipRole,
+  saveState,
   onChange,
   onDataChange,
 }: Pick<
@@ -183,6 +214,8 @@ function SecondaryTabs({
   | "data"
   | "templateInstanceId"
   | "workspaceMembers"
+  | "membershipRole"
+  | "saveState"
   | "onChange"
   | "onDataChange"
 >) {
@@ -197,6 +230,9 @@ function SecondaryTabs({
           data={data}
           onDataChange={onDataChange}
           templateInstanceId={templateInstanceId ?? ""}
+          workspaceMembers={workspaceMembers}
+          canSend={membershipRole !== "member"}
+          saveState={saveState}
         />
       </TabsContent>
       <TabsContent value="directory" className="mt-0">
@@ -207,7 +243,7 @@ function SecondaryTabs({
         />
       </TabsContent>
       <TabsContent value="audit_log" className="mt-0">
-        <BoardPackageAuditLogPanel data={data} />
+        <BoardPackageAuditLogPanel data={data} templateInstanceId={templateInstanceId ?? ""} />
       </TabsContent>
       <TabsContent value="settings" className="mt-0 space-y-5">
         <BoardCalendarSetupPanel
@@ -230,6 +266,8 @@ interface BoardCalendarWorkbenchProps {
   organizationName: string;
   sections: TemplateSection[];
   workspaceMembers: WorkspaceMemberOption[];
+  membershipRole: "owner" | "admin" | "member";
+  saveState: "saved" | "saving" | "unsaved" | "error";
   generateExport: (input: {
     templateInstanceId: string;
     format: TemplateExportFormat;

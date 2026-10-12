@@ -1,5 +1,7 @@
 "use server";
 
+import { buildBoardPackageMeetings } from "@/lib/template-renderer/board-calendar-packages";
+import type { TemplateFormData } from "@/lib/template-renderer/types";
 import {
   BOARD_PACKAGE_DOCUMENTS_BUCKET,
   buildBoardPackageStoragePath,
@@ -8,6 +10,7 @@ import {
 import { requireMemberContext } from "@/lib/data/member-context";
 import { createAdminClient } from "@/utils/supabase/admin";
 import { createClient } from "@/utils/supabase/server";
+import { assertTemplateInstanceAccess, writeBoardPackageAuditLog } from "./board-calendar-action-support";
 import {
   assertBoardPackageAuditAction,
   formatFileSize,
@@ -32,7 +35,9 @@ export type BoardPackageActionResult<Data = undefined> =
 export type BoardPackageAuditAction =
   | "document_downloaded"
   | "document_deleted"
-  | "package_downloaded";
+  | "package_downloaded"
+  | "package_opened"
+  | "package_sent";
 
 export interface BoardPackageAuditPayload {
   action: BoardPackageAuditAction;
@@ -41,6 +46,9 @@ export interface BoardPackageAuditPayload {
   meetingId?: string;
   meetingTitle?: string;
   templateInstanceId: string;
+  recipientUserId?: string;
+  recipientEmail?: string;
+  deliveryKey?: string;
 }
 
 export async function uploadBoardPackageDocument(
@@ -218,6 +226,18 @@ export async function recordBoardPackageAuditEvent(
     const { member, organization } = await requireMemberContext();
     assertBoardPackageAuditAction(payload.action);
     await assertTemplateInstanceAccess(payload.templateInstanceId, organization.id);
+    if (payload.action === "package_opened") {
+      const { data: instance, error } = await (await createClient())
+        .from("template_instances")
+        .select("form_data")
+        .eq("id", payload.templateInstanceId)
+        .eq("organization_id", organization.id)
+        .single();
+      if (error || !instance || !buildBoardPackageMeetings(instance.form_data as TemplateFormData)
+        .some((meeting) => meeting.id === payload.meetingId && meeting.documents.length)) {
+        throw new Error("This board package is not available.");
+      }
+    }
 
     await writeBoardPackageAuditLog({
       ...payload,
@@ -232,58 +252,4 @@ export async function recordBoardPackageAuditEvent(
       ok: false,
     };
   }
-}
-
-async function assertTemplateInstanceAccess(
-  templateInstanceId: string,
-  organizationId: string,
-) {
-  const supabase = await createClient();
-  const { error } = await supabase
-    .from("template_instances")
-    .select("id")
-    .eq("id", templateInstanceId)
-    .eq("organization_id", organizationId)
-    .single();
-
-  if (error) {
-    throw new Error("This board calendar is not available to your workspace.");
-  }
-}
-
-async function writeBoardPackageAuditLog({
-  action,
-  documentId,
-  documentName,
-  meetingId,
-  meetingTitle,
-  memberId,
-  organizationId,
-  templateInstanceId,
-}: BoardPackageAuditPayload & {
-  memberId: string;
-  organizationId: string;
-}) {
-  const entityType =
-    action === "package_downloaded"
-      ? "board_package"
-      : "board_package_document";
-  const entityId = documentId || meetingId || templateInstanceId;
-  const { error } = await createAdminClient().from("audit_logs").insert({
-    action: `board_package.${action}`,
-    actor_user_id: memberId,
-    changes: null,
-    entity_id: entityId,
-    entity_type: entityType,
-    metadata: {
-      document_id: documentId ?? null,
-      document_name: documentName ?? null,
-      meeting_id: meetingId ?? null,
-      meeting_title: meetingTitle ?? null,
-      template_instance_id: templateInstanceId,
-    },
-    organization_id: organizationId,
-  });
-
-  if (error) throw error;
 }

@@ -17,6 +17,11 @@ export function useBoardCalendarActiveTab() {
   const hasMountedActiveTabPersistence = useRef(false);
 
   useEffect(() => {
+    const linkedTab = new URLSearchParams(window.location.search).get("tab");
+    if (linkedTab && isBoardCalendarModuleTab(linkedTab)) {
+      setActiveTab(linkedTab);
+      return;
+    }
     const storedTab = window.sessionStorage.getItem(
       getBoardCalendarActiveTabStorageKey(),
     );

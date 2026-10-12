@@ -16,6 +16,11 @@ import {
   isBoardCalendarSchema,
 } from "@/lib/template-renderer/board-calendar-report-html";
 import { normalizeBoardCalendarMemberAssignments } from "@/lib/template-renderer/board-calendar-chairs";
+import {
+  assertMeetingDocumentWriteAccess,
+  assertMeetingDocumentMembers,
+  validateMeetingDocuments,
+} from "@/lib/template-renderer/board-calendar-meeting-documents";
 import { renderHtmlToPdfBuffer } from "@/lib/template-renderer/html-pdf-export";
 import { renderTemplatePdfBuffer } from "@/lib/template-renderer/pdf-export";
 import { validateTemplateData } from "@/lib/template-renderer/validation";
@@ -49,13 +54,51 @@ export async function saveDynamicTemplateSession(
   }
 
   const supabase = await createClient();
-  const formData = isBoardCalendarSchema(payload.schemaSnapshot)
+  if (payload.id) {
+    const { data: existingInstance, error: existingError } = await supabase
+      .from("template_instances")
+      .select("resource_id")
+      .eq("id", payload.id)
+      .eq("organization_id", organization.id)
+      .single();
+    if (existingError || !existingInstance || existingInstance.resource_id !== payload.resourceId) {
+      throw new Error("This template session does not belong to the selected resource.");
+    }
+  }
+  const { data: resource, error: resourceError } = await supabase
+    .from("resources")
+    .select("slug")
+    .eq("id", payload.resourceId)
+    .single();
+  if (resourceError || !resource) throw new Error("This template resource is unavailable.");
+  const isBoardCalendar = resource.slug === "board-calendar-operational-workflow";
+  const calendarData = isBoardCalendar
     ? await normalizeBoardCalendarMemberFormData({
         formData: payload.formData,
         organizationId: organization.id,
         supabase,
       })
-    : payload.formData;
+    : null;
+  const formData = calendarData?.formData ?? payload.formData;
+  if (isBoardCalendar) {
+    const after = validateMeetingDocuments(formData);
+    const { data: previous, error: previousError } = payload.id
+      ? await supabase
+          .from("template_instances")
+          .select("form_data")
+          .eq("id", payload.id)
+          .eq("organization_id", organization.id)
+          .single()
+      : { data: null, error: null };
+    if (previousError) throw previousError;
+    const before = previous ? validateMeetingDocuments(previous.form_data as TemplateFormData) : [];
+    assertMeetingDocumentWriteAccess({
+      before,
+      after,
+      canApprove: member.membershipRole !== "member",
+    });
+    assertMeetingDocumentMembers({ before, after, activeMemberIds: calendarData?.activeMemberIds ?? [] });
+  }
   const validationErrors = validateTemplateData(payload.schemaSnapshot, formData);
 
   if (payload.status === "completed" && validationErrors.length > 0) {
@@ -126,9 +169,7 @@ async function normalizeBoardCalendarMemberFormData({
 
   if (error) throw error;
 
-  return normalizeBoardCalendarMemberAssignments(
-    formData,
-    ((data ?? []) as Array<{
+  const activeMembers = ((data ?? []) as Array<{
       user_id: string;
       email: string;
       full_name: string;
@@ -139,8 +180,11 @@ async function normalizeBoardCalendarMemberFormData({
         id: directoryMember.user_id,
         email: directoryMember.email,
         name: directoryMember.full_name,
-      })),
-  );
+      }));
+  return {
+    formData: normalizeBoardCalendarMemberAssignments(formData, activeMembers),
+    activeMemberIds: activeMembers.map((member) => member.id),
+  };
 }
 
 export async function generateTemplateExport({

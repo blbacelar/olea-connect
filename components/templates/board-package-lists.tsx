@@ -1,5 +1,7 @@
-import { Download, FileText, FolderArchive, LinkIcon, PackageOpen, Plus, Trash2 } from "lucide-react";
-import { useMemo } from "react";
+import { Download, Eye, FileText, FolderArchive, LinkIcon, PackageOpen, Plus, Send, Trash2 } from "lucide-react";
+import { useEffect, useMemo, useState } from "react";
+
+import { getBoardPackageAuditEvents } from "@/app/modules/board-calendar/board-package-distribution-actions";
 
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -21,10 +23,25 @@ import { cn } from "@/lib/utils";
 
 export function BoardPackageAuditLogPanel({
   data,
+  templateInstanceId,
 }: {
   data: TemplateFormData;
+  templateInstanceId: string;
 }) {
-  const logs = useMemo(() => getBoardPackageAccessLogs(data), [data]);
+  const localLogs = useMemo(() => getBoardPackageAccessLogs(data), [data]);
+  const [remoteLogs, setRemoteLogs] = useState<Awaited<ReturnType<typeof getBoardPackageAuditEvents>> | null>(null);
+  const [loadError, setLoadError] = useState("");
+  useEffect(() => {
+    if (!templateInstanceId) return;
+    let active = true;
+    getBoardPackageAuditEvents(templateInstanceId).then((events) => {
+      if (active) setRemoteLogs(events);
+    }).catch(() => {
+      if (active) setLoadError("Could not load the package audit log.");
+    });
+    return () => { active = false; };
+  }, [templateInstanceId]);
+  const logs = remoteLogs ?? localLogs;
 
   return (
     <section
@@ -34,16 +51,19 @@ export function BoardPackageAuditLogPanel({
       <div>
         <h3 className="text-xl font-semibold text-slate-950">Audit log</h3>
         <p className="mt-1 text-sm leading-6 text-slate-500">
-          Tracks board package downloads and document changes for governance
+          Tracks who opened, received, and downloaded board packages and documents for governance
           review.
         </p>
       </div>
+      {loadError ? <p role="alert" className="mt-3 text-sm text-red-700">{loadError}</p> : null}
       {logs.length ? (
-        <div className="mt-5 overflow-hidden rounded-xl border">
-          <Table>
+        <div className="mt-5 overflow-x-auto rounded-xl border">
+          <Table className="min-w-[720px]">
             <TableHeader>
               <TableRow>
                 <TableHead>Action</TableHead>
+                <TableHead>Person</TableHead>
+                <TableHead>Recipient</TableHead>
                 <TableHead>Document</TableHead>
                 <TableHead>Meeting</TableHead>
                 <TableHead>Timestamp</TableHead>
@@ -55,6 +75,8 @@ export function BoardPackageAuditLogPanel({
                   <TableCell className="font-semibold text-slate-900">
                     {formatAction(log.action)}
                   </TableCell>
+                  <TableCell>{"actor" in log ? log.actor : "Not recorded"}</TableCell>
+                  <TableCell>{"recipientEmail" in log ? log.recipientEmail || "—" : "—"}</TableCell>
                   <TableCell>{log.documentName || "—"}</TableCell>
                   <TableCell>{log.meetingTitle || "General documents"}</TableCell>
                   <TableCell>{formatDateTime(log.createdAt)}</TableCell>
@@ -81,12 +103,20 @@ export function BoardPackageMeetingCard({
   onDeleteDocument,
   onDownloadDocument,
   onDownloadPackage,
+  onSendPackage,
+  onViewFiles,
+  isOpen,
+  isReady,
 }: {
   meeting: BoardPackageMeeting;
   onAddFile: () => void;
   onDeleteDocument: (document: BoardPackageDocument) => void;
   onDownloadDocument: (document: BoardPackageDocument) => void;
   onDownloadPackage: () => void;
+  onSendPackage?: () => void;
+  onViewFiles: () => void;
+  isOpen: boolean;
+  isReady: boolean;
 }) {
   return (
     <section className="rounded-xl border bg-white p-5 shadow-sm">
@@ -106,27 +136,31 @@ export function BoardPackageMeetingCard({
           </p>
         </div>
         <div className="flex flex-wrap gap-2">
+          {onSendPackage ? <Button type="button" variant="outline" onClick={onSendPackage} disabled={!meeting.documents.length}><Send className="mr-2 size-4" />Send package</Button> : null}
           <Button type="button" variant="outline" onClick={onAddFile}>
             <Plus className="mr-2 size-4" />
             Add file
           </Button>
+          <Button type="button" variant="outline" onClick={onViewFiles} aria-expanded={isOpen} disabled={!isReady}>
+            <Eye className="mr-2 size-4" />{isOpen ? "Hide files" : "View files"}
+          </Button>
           <Button
             type="button"
             onClick={onDownloadPackage}
-            disabled={!meeting.documents.length}
+            disabled={!meeting.documents.length || !isReady}
           >
             <Download className="mr-2 size-4" />
             Download package
           </Button>
         </div>
       </div>
-      <DocumentList
+      {isOpen ? <DocumentList
         documents={meeting.documents}
         emptyLabel="No files attached to this package yet."
         meeting={meeting}
         onDeleteDocument={onDeleteDocument}
         onDownloadDocument={onDownloadDocument}
-      />
+      /> : null}
     </section>
   );
 }
@@ -243,7 +277,7 @@ function DocumentRow({
               {[
                 formatDateTime(document.uploadedAt),
                 document.sizeLabel,
-                document.storagePath ? "Private file" : "External link",
+                document.generatedKind ? "Generated PDF" : document.storagePath ? "Private file" : "External link",
               ]
                 .filter(Boolean)
                 .join(" · ")}
@@ -273,21 +307,23 @@ function DocumentRow({
             aria-label={`Open ${document.name}`}
             onClick={() => onDownloadDocument(document)}
           >
-            {document.storagePath ? (
+            {document.storagePath || document.generatedKind ? (
               <Download className="size-4" />
             ) : (
               <LinkIcon className="size-4" />
             )}
           </Button>
-          <Button
-            type="button"
-            variant="outline"
-            size="icon"
-            aria-label={`Delete ${document.name}`}
-            onClick={() => onDeleteDocument(document)}
-          >
-            <Trash2 className="size-4" />
-          </Button>
+          {!document.generatedKind ? (
+            <Button
+              type="button"
+              variant="outline"
+              size="icon"
+              aria-label={`Delete ${document.name}`}
+              onClick={() => onDeleteDocument(document)}
+            >
+              <Trash2 className="size-4" />
+            </Button>
+          ) : null}
         </div>
       </TableCell>
     </TableRow>
@@ -295,7 +331,7 @@ function DocumentRow({
 }
 
 function formatAction(action: string) {
-  return action
+  return action.replace(/^board_package\./, "")
     .split("_")
     .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
     .join(" ");

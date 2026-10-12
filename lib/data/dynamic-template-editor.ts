@@ -243,6 +243,7 @@ export async function getDynamicTemplateEditorData(
 
   return {
     organization,
+    membershipRole: member.membershipRole,
     template: {
       id: resource.id,
       slug: resource.slug,

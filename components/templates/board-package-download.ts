@@ -9,6 +9,7 @@ import type { BrandProfile } from "@/lib/types";
 
 import { buildPackageIndexCss } from "./board-package-index-css";
 import { escapeHtml, slugify } from "./export-html-utils";
+import { fetchMeetingDocumentPdf } from "./board-calendar/meeting-pdf-client";
 
 type IncludedPackageFile = {
   document: BoardPackageDocument;
@@ -83,6 +84,16 @@ async function resolvePackageFile({
   packageDocument: BoardPackageDocument;
   templateInstanceId: string;
 }): Promise<IncludedPackageFile> {
+  if (packageDocument.generatedKind) {
+    const pdf = await fetchMeetingDocumentPdf({
+      kind: packageDocument.generatedKind,
+      meetingId: meeting.id,
+      templateInstanceId,
+    });
+    const filePath = getPackageDocumentPath(packageDocument);
+    documentsFolder?.file(filePath, pdf.bytes);
+    return { document: packageDocument, path: `documents/${filePath}`, status: "included" };
+  }
   if (!packageDocument.storagePath) {
     return {
       document: packageDocument,
