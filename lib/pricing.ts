@@ -1,8 +1,13 @@
 import type { Locale } from "@/lib/i18n/locales";
 
 export const fixedPriceOffers = {
-  kpiDashboard: { amount: 1195, cadence: "annual" },
+  ceoReview: { amount: 895, cadence: "annual" },
+  boardEvaluation: { amount: 795, cadence: "annual" },
+  boardRecruitment: { amount: 595, cadence: "annual" },
+  kpiDashboard: { amount: 995, cadence: "annual" },
   boardTraining: { amount: 1495, cadence: "annual" },
+  smallBoardTraining: { amount: 795, cadence: "annual" },
+  strategicPlanning: { amount: 1195, cadence: "annual" },
   accreditationPrep: { amount: 99, cadence: "annual" },
   acceleratorIndividual: { amount: 500, cadence: "one-time" },
   acceleratorTeam: { amount: 1200, cadence: "one-time" },
@@ -11,17 +16,13 @@ export const fixedPriceOffers = {
   sponsorAcceleratorTeam: { amount: 1200, cadence: "one-time" },
 } as const;
 
-export function foundingYearPrice(annualPrice: number) {
-  return Math.round(annualPrice * 100 * 0.85) / 100;
-}
-
 export const pricingPolicies = {
   extraSeat: "$15 CAD one-time per seat",
   trial: "No free trial",
   foundingMember:
-    "Founding members with a valid code receive 15% off their first two annual payments, limited to the first 50 paid organizations.",
+    "Founding members with a valid code pay fixed founding rates for two years, limited to the first 50 paid organizations.",
   taxes: "Your total is shown at secure checkout before payment. Taxes are not currently collected.",
-  cancellation: "30 days' notice before renewal; membership fees are non-refundable.",
+  cancellation: "Cancel before renewal; membership fees are non-refundable.",
 } as const;
 
 export function formatCad(value: number, locale: Locale = "en-CA") {

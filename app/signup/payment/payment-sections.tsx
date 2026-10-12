@@ -13,6 +13,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { getAuthFlowCopy } from "@/lib/i18n/auth-flow-copy";
+import { getFoundingPrice, isSignupTier } from "@/lib/founding-pricing";
 import { getPublicSiteCopy } from "@/lib/i18n/public-site-copy";
 import { LEGAL_DOCUMENTS, type LegalDocumentKey } from "@/lib/legal-documents";
 import { getPlan } from "@/lib/plans";
@@ -62,6 +63,23 @@ export function PaymentCheckoutPanel({
       <h2 className="text-lg font-semibold">{copy.secureCheckout}</h2>
       <div className="mt-6 space-y-5">
         <SecurityPanel copy={copy} />
+        <div className="space-y-2">
+          <Label htmlFor="billingCycle">{copy.billing}</Label>
+          <Select
+            value={registration.billingCycle}
+            onValueChange={(billingCycle) =>
+              onUpdateRegistration({ billingCycle: billingCycle as RegistrationState["billingCycle"] })
+            }
+          >
+            <SelectTrigger id="billingCycle" className="h-11 w-full bg-white">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="annual">{copy.billingCycle.annual}</SelectItem>
+              <SelectItem value="quarterly">{copy.billingCycle.quarterly}</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
         <ProvinceSelect
           copy={copy}
           province={registration.province}
@@ -253,6 +271,9 @@ export function PaymentOrderSummary({
       ? plan.annualPrice
       : plan.quarterlyPrice;
   const foundingCodeEntered = Boolean(registration.foundingMemberCode);
+  const foundingPrice = isSignupTier(plan.id)
+    ? getFoundingPrice(plan.id, registration.billingCycle).founding
+    : null;
   const billingPeriod =
     registration.billingCycle === "annual"
       ? publicCopy.pricing.perYear
@@ -273,6 +294,11 @@ export function PaymentOrderSummary({
           /{billingPeriod}
         </span>
       </p>
+      {foundingCodeEntered && foundingPrice !== null ? (
+        <p className="mt-2 text-sm font-semibold text-olea-green">
+          {copy.foundingEstimate}: {formatCad(foundingPrice, locale)} /{billingPeriod}
+        </p>
+      ) : null}
       <p className="mt-1 text-xs font-semibold leading-5 text-olea-green">
         {foundingCodeEntered
           ? copy.foundingCodeApplied

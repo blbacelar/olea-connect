@@ -1,4 +1,5 @@
 import type { MembershipTier } from "@/lib/types";
+import { foundingPricing } from "@/lib/founding-pricing";
 
 export interface MembershipPlan {
   id: MembershipTier;
@@ -17,8 +18,8 @@ export const membershipPlans: MembershipPlan[] = [
   {
     id: "seedling",
     name: "Seedling",
-    quarterlyPrice: 200,
-    annualPrice: 1175,
+    quarterlyPrice: foundingPricing.seedling.quarterly.standard,
+    annualPrice: foundingPricing.seedling.annual.standard,
     seats: "5 seats included",
     audience: "Organizations with under $500k annual budget",
     summary:
@@ -40,8 +41,8 @@ export const membershipPlans: MembershipPlan[] = [
   {
     id: "roots",
     name: "Roots",
-    quarterlyPrice: 800,
-    annualPrice: 3530,
+    quarterlyPrice: foundingPricing.roots.quarterly.standard,
+    annualPrice: foundingPricing.roots.annual.standard,
     seats: "10 seats included",
     audience: "Organizations with $500k-$2M annual budget",
     summary:
@@ -50,11 +51,10 @@ export const membershipPlans: MembershipPlan[] = [
       "Everything in Seedling",
       "Board recruitment toolkit and skills matrix",
       "KPI and impact dashboard",
-      "Quarterly Impact Accelerator Cohorts",
+      "Board evaluation system",
       "Priority email support within 48 hours",
     ],
     notIncluded: [
-      "Board evaluation system",
       "ED/CEO 360 review",
       "Strategic planning module",
     ],
@@ -62,23 +62,20 @@ export const membershipPlans: MembershipPlan[] = [
   {
     id: "canopy",
     name: "Canopy",
-    quarterlyPrice: 1500,
-    annualPrice: 7060,
+    quarterlyPrice: foundingPricing.canopy.quarterly.standard,
+    annualPrice: foundingPricing.canopy.annual.standard,
     seats: "15 seats included",
     audience: "Organizations with $2M-$5M annual budget",
     summary:
       "Complete governance systems, executive review, and strategy tools.",
     features: [
       "Everything in Roots",
-      "Board evaluation system",
       "ED/CEO 360 review",
       "Strategic planning module",
       "Board training modules",
       "Community leadership opportunities",
-      "10% off coaching and admin add-ons",
       "Priority phone and email support",
     ],
-    popular: true,
   },
   {
     id: "harvest",

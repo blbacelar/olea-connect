@@ -9,18 +9,17 @@ describe("server-side founding-member validation", () => {
     vi.unstubAllEnvs();
   });
 
-  it("maps the secret code hash to the configured Stripe coupon", async () => {
+  it("validates the secret code independently of the package-specific coupon", async () => {
     vi.stubEnv(
       "FOUNDING_MEMBER_CODE_SHA256",
       createHash("sha256").update("FOUNDING-TEST-CODE").digest("hex"),
     );
-    vi.stubEnv("STRIPE_FOUNDING_COUPON_ID", "olea_founding_15_year_2");
     const { validateFoundingMemberCode } = await import(
       "@/lib/stripe/founding-member"
     );
 
     expect(validateFoundingMemberCode(" founding-test-code ")).toBe(
-      "olea_founding_15_year_2",
+      "FOUNDING-TEST-CODE",
     );
     expect(validateFoundingMemberCode("")).toBeNull();
   });
@@ -30,7 +29,6 @@ describe("server-side founding-member validation", () => {
       "FOUNDING_MEMBER_CODE_SHA256",
       createHash("sha256").update("FOUNDING-TEST-CODE").digest("hex"),
     );
-    vi.stubEnv("STRIPE_FOUNDING_COUPON_ID", "olea_founding_15_year_2");
     const { validateFoundingMemberCode } = await import(
       "@/lib/stripe/founding-member"
     );
@@ -40,8 +38,8 @@ describe("server-side founding-member validation", () => {
     );
   });
 
-  it("accepts only the intended 15% 24-month Stripe coupon with a 50-use cap", async () => {
-    vi.stubEnv("STRIPE_FOUNDING_COUPON_ID", "founding_coupon");
+  it("accepts only the exact package-specific fixed discount for 24 months", async () => {
+    vi.stubEnv("STRIPE_FOUNDING_COUPON_SEEDLING_ANNUAL", "founding_coupon");
     const { assertFoundingCouponConfiguration } = await import(
       "@/lib/stripe/founding-member"
     );
@@ -50,20 +48,66 @@ describe("server-side founding-member validation", () => {
       duration: "repeating",
       duration_in_months: 24,
       id: "founding_coupon",
-      max_redemptions: 50,
-      percent_off: 15,
+      amount_off: 18000,
+      currency: "cad",
+      applies_to: { products: ["seedling_product"] },
       valid: true,
     });
 
     await expect(
       assertFoundingCouponConfiguration({
         coupons: { retrieve },
-      } as never),
+      } as never, "seedling", "annual", { product: "seedling_product" } as never),
     ).resolves.toBe("founding_coupon");
   });
 
+  it("accepts a valid coupon when Stripe omits applies_to from its API response", async () => {
+    vi.stubEnv("STRIPE_FOUNDING_COUPON_SEEDLING_ANNUAL", "founding_coupon");
+    const { assertFoundingCouponConfiguration } = await import(
+      "@/lib/stripe/founding-member"
+    );
+
+    await expect(
+      assertFoundingCouponConfiguration({
+        coupons: {
+          retrieve: vi.fn().mockResolvedValue({
+            deleted: false,
+            duration: "repeating",
+            duration_in_months: 24,
+            amount_off: 18000,
+            currency: "cad",
+            valid: true,
+          }),
+        },
+      } as never, "seedling", "annual", { product: "seedling_product" } as never),
+    ).resolves.toBe("founding_coupon");
+  });
+
+  it("rejects a coupon explicitly restricted to another product", async () => {
+    vi.stubEnv("STRIPE_FOUNDING_COUPON_SEEDLING_ANNUAL", "wrong_product");
+    const { assertFoundingCouponConfiguration } = await import(
+      "@/lib/stripe/founding-member"
+    );
+
+    await expect(
+      assertFoundingCouponConfiguration({
+        coupons: {
+          retrieve: vi.fn().mockResolvedValue({
+            deleted: false,
+            duration: "repeating",
+            duration_in_months: 24,
+            amount_off: 18000,
+            currency: "cad",
+            applies_to: { products: ["other_product"] },
+            valid: true,
+          }),
+        },
+      } as never, "seedling", "annual", { product: "seedling_product" } as never),
+    ).rejects.toThrow("Stripe founding-member coupon is misconfigured");
+  });
+
   it("rejects the old 12-month coupon", async () => {
-    vi.stubEnv("STRIPE_FOUNDING_COUPON_ID", "old_coupon");
+    vi.stubEnv("STRIPE_FOUNDING_COUPON_SEEDLING_ANNUAL", "old_coupon");
     const { assertFoundingCouponConfiguration } = await import(
       "@/lib/stripe/founding-member"
     );
@@ -76,17 +120,18 @@ describe("server-side founding-member validation", () => {
             duration: "repeating",
             duration_in_months: 12,
             id: "old_coupon",
-            max_redemptions: 50,
-            percent_off: 15,
+            amount_off: 18000,
+            currency: "cad",
+            applies_to: { products: ["seedling_product"] },
             valid: true,
           }),
         },
-      } as never),
+      } as never, "seedling", "annual", { product: "seedling_product" } as never),
     ).rejects.toThrow("Stripe founding-member coupon is misconfigured");
   });
 
   it("rejects a misconfigured Stripe coupon", async () => {
-    vi.stubEnv("STRIPE_FOUNDING_COUPON_ID", "wrong_coupon");
+    vi.stubEnv("STRIPE_FOUNDING_COUPON_SEEDLING_ANNUAL", "wrong_coupon");
     const { assertFoundingCouponConfiguration } = await import(
       "@/lib/stripe/founding-member"
     );
@@ -98,12 +143,13 @@ describe("server-side founding-member validation", () => {
             deleted: false,
             duration: "forever",
             id: "wrong_coupon",
-            max_redemptions: null,
-            percent_off: 20,
+            amount_off: 10000,
+            currency: "cad",
+            applies_to: { products: ["seedling_product"] },
             valid: true,
           }),
         },
-      } as never),
+      } as never, "seedling", "annual", { product: "seedling_product" } as never),
     ).rejects.toThrow("Stripe founding-member coupon is misconfigured");
   });
 });

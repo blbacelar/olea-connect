@@ -11,6 +11,7 @@ const routeMocks = vi.hoisted(() => ({
   getStripePriceId: vi.fn(),
   recoverCheckoutSessionProvisioning: vi.fn(),
   reserveFoundingMember: vi.fn(),
+  assertCheckoutPriceConfiguration: vi.fn(),
   assertFoundingCouponConfiguration: vi.fn(),
   retrieveSession: vi.fn(),
 }));
@@ -24,6 +25,7 @@ vi.mock("@/lib/stripe/registration", () => ({
   reserveFoundingMember: routeMocks.reserveFoundingMember,
 }));
 vi.mock("@/lib/stripe/founding-member", () => ({
+  assertCheckoutPriceConfiguration: routeMocks.assertCheckoutPriceConfiguration,
   assertFoundingCouponConfiguration:
     routeMocks.assertFoundingCouponConfiguration,
 }));
@@ -121,6 +123,9 @@ describe("provisioning retry route", () => {
     });
     routeMocks.getSiteUrl.mockReturnValue("https://staging.oleaconnects.com");
     routeMocks.getStripePriceId.mockReturnValue("price_roots_annual");
+    routeMocks.assertCheckoutPriceConfiguration.mockResolvedValue({
+      id: "price_roots_annual",
+    });
     routeMocks.createSession.mockResolvedValue({
       id: "cs_new",
       status: "open",
@@ -128,10 +133,10 @@ describe("provisioning retry route", () => {
     });
     routeMocks.attachCheckoutSession.mockResolvedValue(undefined);
     routeMocks.assertFoundingCouponConfiguration.mockResolvedValue(
-      "olea_founding_15_year_1",
+      "olea_founding_2026_roots_annual",
     );
     routeMocks.reserveFoundingMember.mockResolvedValue({
-      foundingDiscountIdentifier: "olea_founding_15_year_1",
+      foundingDiscountIdentifier: "olea_founding_2026_roots_annual",
       foundingMemberEligible: true,
       referralCode: null,
       requestId: pendingRequest.id,
@@ -149,15 +154,14 @@ describe("provisioning retry route", () => {
     );
 
     expect(response.status).toBe(200);
-    expect(routeMocks.createSession.mock.calls[0][0]).toHaveProperty(
+    expect(routeMocks.createSession.mock.calls[0][0]).not.toHaveProperty(
       "allow_promotion_codes",
-      true,
     );
     expect(routeMocks.createSession).toHaveBeenCalledWith(
       expect.objectContaining({
         success_url:
           "https://staging.oleaconnects.com/signup/success?session_id={CHECKOUT_SESSION_ID}",
-        allow_promotion_codes: true,
+        line_items: [{ price: "price_roots_annual", quantity: 1 }],
       }),
       {
         idempotencyKey: `signup-checkout:${pendingRequest.id}:initial`,
@@ -222,12 +226,12 @@ describe("provisioning retry route", () => {
     expect(routeMocks.reserveFoundingMember).toHaveBeenCalledWith(
       expect.anything(),
       foundingRequest.id,
-      "olea_founding_15_year_1",
+      "olea_founding_2026_roots_annual",
       null,
     );
     expect(routeMocks.createSession).toHaveBeenCalledWith(
       expect.objectContaining({
-        discounts: [{ coupon: "olea_founding_15_year_1" }],
+        discounts: [{ coupon: "olea_founding_2026_roots_annual" }],
         expires_at: expect.any(Number),
       }),
       expect.anything(),

@@ -2,6 +2,7 @@
 
 import { Check } from "lucide-react";
 import Link from "next/link";
+import { useEffect, useState } from "react";
 
 import { SectionIntro } from "@/components/landing/SectionIntro";
 import { Button } from "@/components/ui/button";
@@ -9,6 +10,7 @@ import { Card } from "@/components/ui/card";
 import type { Locale } from "@/lib/i18n/locales";
 import type { PublicSiteCopy } from "@/lib/i18n/public-site-copy";
 import { signupMembershipPlans } from "@/lib/plans";
+import { getFoundingPrice, getFoundingSavings, isSignupTier } from "@/lib/founding-pricing";
 import { fixedPriceOffers, formatCad } from "@/lib/pricing";
 import { cn } from "@/lib/utils";
 
@@ -17,10 +19,26 @@ type LandingPricingCopy = PublicSiteCopy["pricing"];
 export function LandingPricing({
   copy,
   locale,
+  initialSpots,
 }: {
   copy: LandingPricingCopy;
   locale: Locale;
+  initialSpots: { left: number; showCount: boolean; foundingAvailable: boolean } | null;
 }) {
+  const [spots, setSpots] = useState(initialSpots);
+
+  useEffect(() => {
+    fetch("/api/pricing/founding-spots", { cache: "no-store" })
+      .then((response) => response.ok ? response.json() : null)
+      .then((value) => {
+        if (value && typeof value.left === "number" && typeof value.foundingAvailable === "boolean") {
+          setSpots(value);
+        }
+      })
+      .catch(() => {});
+  }, []);
+
+  const foundingAvailable = spots?.foundingAvailable === true;
   const quoteHref = (service: string) => {
     const subject = encodeURIComponent(`Olea Connects: ${service}`);
     const body = encodeURIComponent(
@@ -46,25 +64,31 @@ export function LandingPricing({
           description={copy.description}
           centered
         />
-        <div className="mx-auto mt-6 max-w-3xl rounded-2xl border border-olea-green/20 bg-white p-4 text-center text-sm leading-6 text-slate-600 shadow-sm">
-          <strong className="text-olea-dark">{copy.foundingLabel}</strong>{" "}
-          {copy.foundingNotice}
-        </div>
+        {foundingAvailable ? (
+          <div className="mx-auto mt-6 max-w-3xl rounded-2xl border border-olea-green/20 bg-white p-4 text-center text-sm leading-6 text-slate-600 shadow-sm">
+            <strong className="text-olea-dark">{copy.foundingLabel}</strong>{" "}
+            {spots?.showCount ? copy.spotsLeft.replace("{left}", String(spots.left)) : copy.spotsLimited}. {copy.foundingNotice}
+          </div>
+        ) : null}
         <div className="mt-10 grid gap-5 md:grid-cols-3">
           {signupMembershipPlans.map((plan) => {
             const planCopy = copy.plans[plan.id];
+            if (!isSignupTier(plan.id)) return null;
+            const annual = getFoundingPrice(plan.id, "annual");
+            const quarterly = getFoundingPrice(plan.id, "quarterly");
+            const featured = plan.id === "roots";
             return (
               <Card
                 key={plan.id}
                 className={cn(
                   "relative flex flex-col p-6 shadow-none",
-                  plan.popular &&
+                  featured &&
                     "border-2 border-olea-green shadow-[0_16px_45px_rgba(74,124,89,0.13)]",
                 )}
               >
-                {plan.popular ? (
+                {featured ? (
                   <span className="absolute -top-3 left-1/2 -translate-x-1/2 whitespace-nowrap rounded-full bg-[#B54708] px-3 py-1 text-[10px] font-bold uppercase tracking-wider text-white">
-                    {copy.mostPopular}
+                    {copy.recommended}
                   </span>
                 ) : null}
                 <p className="text-sm font-semibold text-slate-500">
@@ -75,12 +99,23 @@ export function LandingPricing({
                 </h3>
                 <div className="mt-5 flex items-end gap-1">
                   <span className="text-4xl font-extrabold tracking-tight">
-                    {formatCad(plan.annualPrice, locale)}
+                    {formatCad(foundingAvailable ? annual.founding : annual.standard, locale)}
                   </span>
                   <span className="pb-1 text-sm text-slate-600">
                     /{copy.perYear}
                   </span>
                 </div>
+                {foundingAvailable ? (
+                  <>
+                    <p className="mt-1 text-sm font-semibold text-olea-green">{copy.foundingRate}</p>
+                    <p className="mt-1 text-sm text-slate-600">{copy.monthlyEquivalent.replace("{amount}", formatCad(annual.founding / 12, locale))}</p>
+                    <p className="mt-3 text-sm text-slate-600">{copy.standardRate} {formatCad(annual.standard, locale)} · {copy.saveTwoYears.replace("{amount}", formatCad(getFoundingSavings(plan.id), locale))}</p>
+                    <p className="mt-1 text-sm font-medium text-slate-700">{copy.foundingCode}</p>
+                  </>
+                ) : null}
+                <p className="mt-3 text-sm text-slate-600">
+                  {copy.quarterlyOption.replace("{amount}", formatCad(foundingAvailable ? quarterly.founding : quarterly.standard, locale))}
+                </p>
                 <p className="mt-5 min-h-12 text-sm leading-6 text-slate-500">
                   {planCopy.summary}
                 </p>
@@ -101,12 +136,12 @@ export function LandingPricing({
                 <Button
                   asChild
                   className="mt-7 w-full"
-                  variant={plan.popular ? "default" : "outline"}
+                  variant={featured ? "default" : "outline"}
                 >
                   <Link
-                    href={`/signup/account?tier=${plan.id}&billing=annual`}
+                    href={`/signup/account?tier=${plan.id}&billing=annual${foundingAvailable ? "&code=OLEAFOUNDING15" : ""}`}
                   >
-                    {copy.choosePlan} {planCopy.name}
+                    {foundingAvailable ? copy.foundingRate : `${copy.choosePlan} ${planCopy.name}`}
                   </Link>
                 </Button>
               </Card>

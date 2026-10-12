@@ -51,6 +51,10 @@ describe("signup checkout contract", () => {
     });
   });
 
+  it("accepts quarterly billing for the new three-month price", () => {
+    expect(parseSignupCheckoutInput({ ...validPayload, billingCycle: "quarterly" }).billingCycle).toBe("quarterly");
+  });
+
   it.each([
     ["unexpected top-level fields", { ...validPayload, isAdmin: true }],
     ["missing policy consent", { ...validPayload, consents: { ...validPayload.consents, privacy: false } }],
@@ -58,7 +62,6 @@ describe("signup checkout contract", () => {
     ["malformed referral", { ...validPayload, referralCode: "FREE-MONEY" }],
     ["malformed founding code", { ...validPayload, foundingMemberCode: "bad code!" }],
     ["invalid organization type", { ...validPayload, organizationKind: "company" }],
-    ["legacy quarterly checkout", { ...validPayload, billingCycle: "quarterly" }],
     ["legacy Harvest checkout", { ...validPayload, tier: "harvest" }],
   ])("rejects %s", (_label, payload) => {
     expect(() => parseSignupCheckoutInput(payload)).toThrow(SignupValidationError);

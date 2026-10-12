@@ -48,7 +48,7 @@ function normalizeStoredRegistration(stored: unknown): RegistrationState {
   if (!isRecord(stored)) return initialState;
 
   const candidate = stored as Partial<RegistrationState>;
-  const billingCycle = "annual";
+  const billingCycle = candidate.billingCycle === "quarterly" ? "quarterly" : "annual";
   const storedConsents: Record<string, unknown> = isRecord(candidate.consents)
     ? candidate.consents
     : {};

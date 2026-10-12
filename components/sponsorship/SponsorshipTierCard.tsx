@@ -13,6 +13,7 @@ import type {
   SponsorshipPageCopy,
 } from "@/lib/i18n/sponsorship-page-copy";
 import { cn } from "@/lib/utils";
+import { formatCad } from "@/lib/pricing";
 
 const tierIcons = {
   builder: ShieldCheck,
@@ -25,9 +26,11 @@ const tierIcons = {
 export function SponsorshipTierCard({
   copy,
   tier,
+  locale,
 }: {
   copy: SponsorshipPageCopy;
   tier: LocalizedSponsorshipTier;
+  locale: "en-CA" | "fr-CA";
 }) {
   const Icon = tierIcons[tier.icon];
 
@@ -52,8 +55,8 @@ export function SponsorshipTierCard({
         <Icon className="size-6" />
       </div>
       <h3 className="text-2xl font-semibold text-[#3d4920]">{tier.name}</h3>
-      <p className="mt-1 text-base font-semibold text-[#8a6500]">
-        {copy.contactForPricing}
+      <p className="mt-1 text-xl font-semibold text-[#8a6500]">
+        {formatCad(tier.priceCad, locale)} / {locale === "fr-CA" ? "an" : "year"}
       </p>
       <p className="mt-1 text-sm italic text-[#666]">{tier.subtitle}</p>
       <p className="mt-3 text-[0.95rem] leading-7 text-[#666]">
@@ -64,17 +67,23 @@ export function SponsorshipTierCard({
           {tier.availability}
         </p>
       ) : null}
-      <ul className="mt-4 space-y-2 text-sm leading-6 text-[#666]">
-        {tier.features.map((feature) => (
-          <li key={feature} className="flex gap-2">
-            <Check
-              className="mt-1 size-4 shrink-0 text-[#9caf88]"
-              aria-hidden="true"
-            />
-            <span>{feature}</span>
-          </li>
-        ))}
-      </ul>
+      {([
+        [copy.impactLabel, tier.impact],
+        [copy.recognitionLabel, tier.recognition],
+        [copy.opportunitiesLabel, tier.opportunities],
+      ] as const).map(([heading, items]) => (
+        <div key={heading} className="mt-4">
+          <h4 className="font-semibold text-[#3d4920]">{heading}</h4>
+          <ul className="mt-2 space-y-2 text-sm leading-6 text-[#666]">
+            {items.map((item) => (
+              <li key={item} className="flex gap-2">
+                <Check className="mt-1 size-4 shrink-0 text-[#9caf88]" aria-hidden="true" />
+                <span>{item}</span>
+              </li>
+            ))}
+          </ul>
+        </div>
+      ))}
       <SponsorshipCta
         className="mt-6 w-full bg-[#3d4920] text-white hover:bg-[#556b2f]"
         label={copy.tierAria(tier.name)}

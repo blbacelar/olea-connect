@@ -92,7 +92,7 @@ const signupCheckoutSchema = z
       return normalized;
     }),
     tier: z.enum(["seedling", "roots", "canopy"]),
-    billingCycle: z.literal("annual"),
+    billingCycle: z.enum(["annual", "quarterly"]),
     consents: z
       .object({
         terms: z.literal(true),

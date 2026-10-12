@@ -9,7 +9,10 @@ export type LocalizedSponsorshipTier = {
   icon: SponsorshipTierIcon;
   subtitle: string;
   description: string;
-  features: string[];
+  priceCad: number;
+  impact: string[];
+  recognition: string[];
+  opportunities: string[];
   featured?: boolean;
   availability?: string;
 };
@@ -35,6 +38,10 @@ export type SponsorshipPageCopy = {
   questionsPrefix: string;
   premiumTier: string;
   contactForPricing: string;
+  impactLabel: string;
+  recognitionLabel: string;
+  opportunitiesLabel: string;
+  priceNote: string;
   featuredCta: string;
   defaultCta: string;
   tierAria: (tierName: string) => string;

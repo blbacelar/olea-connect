@@ -49,15 +49,24 @@ export default function SignupAccountPage() {
     const searchParams = new URLSearchParams(window.location.search);
     const referralCode = captureReferralCodeFromUrl();
     const tier = searchParams.get("tier") as MembershipTier | null;
+    const billing = searchParams.get("billing");
+    const code = searchParams.get("code");
     const updates: {
       tier?: MembershipTier;
-      referralCode?: string;
+      billingCycle?: "annual" | "quarterly";
+      foundingMemberCode?: string;
     } = {};
 
     if (tier && signupMembershipPlans.some((plan) => plan.id === tier)) {
       updates.tier = tier;
     }
-    if (updates.tier) {
+    if (billing === "annual" || billing === "quarterly") {
+      updates.billingCycle = billing;
+    }
+    if (code && isWellFormedFoundingMemberCode(code)) {
+      updates.foundingMemberCode = code.trim().toUpperCase();
+    }
+    if (Object.keys(updates).length > 0) {
       updateRegistration(updates);
     }
     if (referralCode && !registration.referralCode) {

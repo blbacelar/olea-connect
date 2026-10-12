@@ -7,11 +7,14 @@ describe("pricing package", () => {
   it("lists approved fixed-price offers while keeping custom support quote-only", () => {
     const addOns = publicSiteCopy["en-CA"].pricing.addOns;
     expect(addOns.map(({ name }) => name)).toEqual([
-      "KPI Dashboard",
+      "ED/CEO 360 Review",
+      "Board Evaluation System",
+      "Board Recruitment Toolkit and Skills Matrix",
+      "KPI and Impact Dashboard",
       "Board Governance Training",
-      "Accreditation Preparation",
-      "Impact Accelerator: Individual",
-      "Impact Accelerator: Team",
+      "Board Governance Training, small boards",
+      "Strategic Planning Module",
+      "Accreditation Prep",
     ]);
     expect(addOns.every(({ description }) => description.length > 0)).toBe(true);
     expect(publicSiteCopy["en-CA"].pricing.requestQuote).toMatch(/quote/i);

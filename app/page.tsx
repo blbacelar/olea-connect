@@ -8,23 +8,25 @@ import { LandingPricing } from "@/components/landing/LandingPricing";
 import { LandingTrust } from "@/components/landing/LandingTrust";
 import { LandingTransformation } from "@/components/landing/LandingTransformation";
 import { LandingWorkflow } from "@/components/landing/LandingWorkflow";
+import { getFoundingAvailability } from "@/lib/founding-availability";
 import { getPublicSiteCopy } from "@/lib/i18n/public-site-copy";
 import { getRequestLocale } from "@/lib/i18n/server";
 
-export default function HomePage() {
+export default async function HomePage() {
   const locale = getRequestLocale();
   const copy = getPublicSiteCopy(locale);
+  const initialSpots = await getFoundingAvailability().catch(() => null);
 
   return (
     <div className="min-h-screen bg-white">
-      <PublicHeader showFoundingOffer />
+      <PublicHeader showFoundingOffer={initialSpots?.foundingAvailable === true} />
       <main>
         <LandingHero copy={copy.hero} />
         <LandingTransformation copy={copy.transformation} />
         <LandingFeatures copy={copy.features} />
         <LandingTrust copy={copy.trust} />
         <LandingWorkflow copy={copy.workflow} />
-        <LandingPricing copy={copy.pricing} locale={locale} />
+        <LandingPricing copy={copy.pricing} locale={locale} initialSpots={initialSpots} />
         <LandingFaq copy={copy.faq} />
         <FinalCta copy={copy.finalCta} />
       </main>

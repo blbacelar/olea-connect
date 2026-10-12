@@ -146,9 +146,9 @@ describe("localized public referral and sponsorship copy", () => {
     const copy = getSponsorshipPageCopy("fr-CA");
 
     expect(copy.heroTitle).toBe(
-      "Devenez partenaire pour renforcer la résilience des organismes sans but lucratif",
+      "Ensemble, renforçons la résilience des organismes sans but lucratif",
     );
-    expect(copy.contactForPricing).toBe("Contactez-nous pour le prix");
+    expect(copy.tiers[0].priceCad).toBe(2000);
   });
 });
 

@@ -58,7 +58,7 @@ test.describe("@signup @critical approved signup flow", () => {
     await signup.openPayment();
     await expect(page.getByText("$3,530 CAD", { exact: false })).toBeVisible();
     await expect(
-      page.getByText(/We will validate it securely and apply 15% off your first two annual payments/),
+      page.getByText(/We will validate it securely and apply the fixed founding rate for your first 2 years/),
     ).toBeVisible();
   });
 

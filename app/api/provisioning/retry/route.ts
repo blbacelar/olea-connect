@@ -10,8 +10,11 @@ import {
   recoverCheckoutSessionProvisioning,
   reserveFoundingMember,
 } from "@/lib/stripe/registration";
-import { assertFoundingCouponConfiguration } from "@/lib/stripe/founding-member";
-import { getStripe, getStripePriceId, isLegacyTestCheckoutSession } from "@/lib/stripe/server";
+import {
+  assertCheckoutPriceConfiguration,
+  assertFoundingCouponConfiguration,
+} from "@/lib/stripe/founding-member";
+import { getStripe, isLegacyTestCheckoutSession } from "@/lib/stripe/server";
 import type { RegistrationState } from "@/lib/types";
 import { createAdminClient } from "@/utils/supabase/admin";
 import { createClient } from "@/utils/supabase/server";
@@ -131,8 +134,20 @@ async function createPendingPaymentCheckout({
     }
   }
 
+  const billingCycle = getBillingCycle(request.billing_interval);
+  const stripe = getStripe();
+  const price = await assertCheckoutPriceConfiguration(
+    stripe,
+    request.plan_id,
+    billingCycle,
+  );
   if (request.founding_offer_requested) {
-    const couponId = await assertFoundingCouponConfiguration(getStripe());
+    const couponId = await assertFoundingCouponConfiguration(
+      stripe,
+      request.plan_id,
+      billingCycle,
+      price,
+    );
     const reservation = await reserveFoundingMember(
       admin,
       request.id,
@@ -149,23 +164,22 @@ async function createPendingPaymentCheckout({
   }
 
   const origin = getSiteUrl();
-  const billingCycle = getBillingCycle(request.billing_interval);
   const metadata = buildPendingCheckoutMetadata(request);
-  const session = await getStripe().checkout.sessions.create(
+  const session = await stripe.checkout.sessions.create(
     {
       mode: "subscription",
       customer_email: request.email,
       client_reference_id: request.user_id,
       line_items: [
         {
-          price: getStripePriceId(request.plan_id, billingCycle),
+          price: price.id,
           quantity: 1,
         },
       ],
       billing_address_collection: "required",
       ...(request.founding_discount_identifier
         ? { discounts: [{ coupon: request.founding_discount_identifier }] }
-        : { allow_promotion_codes: true }),
+        : {}),
       metadata,
       subscription_data: { metadata },
       success_url: `${origin}/signup/success?session_id={CHECKOUT_SESSION_ID}`,

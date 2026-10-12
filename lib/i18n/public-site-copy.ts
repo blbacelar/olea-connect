@@ -111,6 +111,15 @@ export type PublicSiteCopy = {
     annual: string;
     annualBadge: string;
     mostPopular: string;
+    recommended: string;
+    standardRate: string;
+    saveTwoYears: string;
+    foundingRate: string;
+    foundingCode: string;
+    quarterlyOption: string;
+    monthlyEquivalent: string;
+    spotsLimited: string;
+    spotsLeft: string;
     perYear: string;
     perQuarter: string;
     choosePlan: string;
@@ -128,7 +137,7 @@ export type PublicSiteCopy = {
     plans: Record<MembershipTier, LocalizedPlanCopy>;
     policies: string[];
     addOns: Array<{
-      id: "kpiDashboard" | "boardTraining" | "accreditationPrep" | "acceleratorIndividual" | "acceleratorTeam";
+      id: "ceoReview" | "boardEvaluation" | "boardRecruitment" | "kpiDashboard" | "boardTraining" | "smallBoardTraining" | "strategicPlanning" | "accreditationPrep";
       name: string;
       description: string;
     }>;
@@ -136,7 +145,7 @@ export type PublicSiteCopy = {
     sponsorshipEyebrow: string;
     sponsorshipDescription: string;
     sponsorshipOffers: Array<{
-      id: "sponsorSeedlingBoard" | "sponsorRootsBoard" | "sponsorAcceleratorTeam";
+      id: "sponsorSeedlingBoard" | "sponsorRootsBoard";
       name: string;
       description: string;
     }>;
@@ -189,7 +198,7 @@ export const publicSiteCopy: Record<Locale, PublicSiteCopy> = {
       getStarted: "Get started",
     },
     foundingBanner: {
-      message: "15% off your first two years for the first 50 paid organizations, while spots last.",
+      message: "Founding rates for your first two years with OLEAFOUNDING15, limited to the first 50 paid organizations.",
       codeLabel: "Use code",
       signup: "Join now",
     },
@@ -204,7 +213,7 @@ export const publicSiteCopy: Record<Locale, PublicSiteCopy> = {
       youtubeCta: "Our YouTube channel",
       assurances: [
         "Join in about 5 minutes",
-        "Plans from $1,175 CAD/year",
+        "Plans from $1,000 CAD/year with the founding code",
         "Annual billing",
       ],
       quote:
@@ -330,21 +339,30 @@ export const publicSiteCopy: Record<Locale, PublicSiteCopy> = {
       eyebrow: "Membership",
       title: "Choose the support that fits today.",
       description:
-        "Choose an annual membership, paid upfront. Founding members with a valid code receive 15% off their first two annual payments, limited to the first 50 paid organizations.",
+        "Choose annual or quarterly billing. The first 50 paid organizations using the founding code keep their founding rate for 2 years.",
       foundingLabel: "Founding member offer:",
       foundingNotice:
-        "Enter your founding-member code during signup to receive 15% off your first two annual payments while the first 50 spots remain available. Prices below show regular rates; your discount is confirmed before payment.",
+        "Save up to $2,120 over your first 2 years with code OLEAFOUNDING15. Your exact total is confirmed before payment.",
       quarterly: "Quarterly",
       annual: "Annual",
       annualBadge: "Best for renewal planning",
       mostPopular: "Most popular",
+      recommended: "Recommended",
+      standardRate: "Standard rate",
+      saveTwoYears: "Save {amount} over 2 years",
+      foundingRate: "Founding member rate",
+      foundingCode: "Use code OLEAFOUNDING15 at checkout.",
+      quarterlyOption: "Or pay quarterly: {amount}. Cancel before the next renewal.",
+      monthlyEquivalent: "About {amount} a month for your whole board, billed annually.",
+      spotsLimited: "Limited to the first 50 organizations",
+      spotsLeft: "{left} of 50 spots left",
       perYear: "year",
       perQuarter: "quarter",
       choosePlan: "Choose",
       optionalSupportEyebrow: "Optional support",
       optionalSupportTitle: "Add capacity when your team needs it.",
       optionalSupportDescription:
-        "Annual add-ons and one-time Accelerator places are priced below. Coaching, admin support, and facilitation remain available by quote.",
+        "Add single modules to a smaller package. Board facilitation and 1:1 impact coaching are available by quote. Impact Accelerator is coming soon.",
       retreatTitle: "Board Retreat Facilitation",
       retreatDescription:
         "Professional facilitation for annual board retreats and strategic planning sessions.",
@@ -379,7 +397,7 @@ export const publicSiteCopy: Record<Locale, PublicSiteCopy> = {
             "Everything in Seedling",
             "Board recruitment toolkit and skills matrix",
             "KPI and impact dashboard",
-            "Quarterly Impact Accelerator Cohorts",
+            "Board Evaluation System",
             "Priority email support within 48 hours",
           ],
         },
@@ -391,12 +409,10 @@ export const publicSiteCopy: Record<Locale, PublicSiteCopy> = {
             "Complete governance systems, executive review, and strategy tools.",
           features: [
             "Everything in Roots",
-            "Board evaluation system",
             "ED/CEO 360 review",
             "Strategic planning module",
             "Board training modules",
             "Community leadership opportunities",
-            "10% off coaching and admin add-ons",
             "Priority phone and email support",
           ],
         },
@@ -421,41 +437,56 @@ export const publicSiteCopy: Record<Locale, PublicSiteCopy> = {
         "$15 CAD one-time per seat",
         "Your total is shown at secure checkout before payment. Taxes are not currently collected.",
         "No free trial",
-        "30 days' notice before renewal; membership fees are non-refundable.",
+        "Cancel before renewal; membership fees are non-refundable.",
       ],
       addOns: [
         {
+          id: "ceoReview",
+          name: "ED/CEO 360 Review",
+          description: "Available for Seedling and Roots organizations.",
+        },
+        {
+          id: "boardEvaluation",
+          name: "Board Evaluation System",
+          description: "Available for Seedling organizations; included in Roots and Canopy.",
+        },
+        {
+          id: "boardRecruitment",
+          name: "Board Recruitment Toolkit and Skills Matrix",
+          description: "Available for Seedling organizations; included in Roots and Canopy.",
+        },
+        {
           id: "kpiDashboard",
-          name: "KPI Dashboard",
+          name: "KPI and Impact Dashboard",
           description:
-            "Track quarterly results and prepare board-ready impact reporting.",
+            "Available for Seedling organizations; included in Roots and Canopy.",
         },
         {
           id: "boardTraining",
           name: "Board Governance Training",
           description:
-            "Structured training to strengthen board governance.",
+            "Available for Seedling and Roots organizations.",
+        },
+        {
+          id: "smallBoardTraining",
+          name: "Board Governance Training, small boards",
+          description: "For Seedling boards with up to 9 directors.",
+        },
+        {
+          id: "strategicPlanning",
+          name: "Strategic Planning Module",
+          description: "Available for Seedling and Roots organizations.",
         },
         {
           id: "accreditationPrep",
-          name: "Accreditation Preparation",
+          name: "Accreditation Prep",
           description: "Organize documents and track accreditation readiness.",
-        },
-        {
-          id: "acceleratorIndividual",
-          name: "Impact Accelerator: Individual",
-          description: "One place in an Impact Accelerator cohort.",
-        },
-        {
-          id: "acceleratorTeam",
-          name: "Impact Accelerator: Team",
-          description: "A team place for up to three participants.",
         },
       ],
       sponsorshipTitle: "Sponsor nonprofit capacity",
       sponsorshipEyebrow: "Sponsorship",
       sponsorshipDescription:
-        "Fund a board or Accelerator team. These are one-time sponsorships; contact us to arrange the sponsorship.",
+        "Fund a nonprofit board for a full year, or explore a longer-term partnership.",
       sponsorshipOffers: [
         {
           id: "sponsorSeedlingBoard",
@@ -466,11 +497,6 @@ export const publicSiteCopy: Record<Locale, PublicSiteCopy> = {
           id: "sponsorRootsBoard",
           name: "Sponsor a Roots board",
           description: "Support one Roots board for a year.",
-        },
-        {
-          id: "sponsorAcceleratorTeam",
-          name: "Sponsor an Accelerator team",
-          description: "Fund a team of up to three participants.",
         },
       ],
       perOneTime: "one-time",
@@ -489,17 +515,17 @@ export const publicSiteCopy: Record<Locale, PublicSiteCopy> = {
         {
           question: "How does billing work?",
           answer:
-            "New memberships are billed annually, paid upfront in Canadian dollars, and renew on your signup anniversary. Your total is shown at checkout before payment; taxes are not currently collected. Existing quarterly memberships continue on their current terms.",
+            "Choose annual or quarterly billing, paid upfront in Canadian dollars. Quarterly payments renew every three months. Your total is shown at checkout before payment; taxes are not currently collected. Existing members keep their current terms.",
         },
         {
           question: "Is there a free trial?",
           answer:
-            "No. Olea Connects™ does not offer a free trial. Founding members with a valid code can receive 15% off their first two annual payments while the first 50 spots remain available.",
+            "No. Olea Connects™ does not offer a free trial. Founding rates are available for the first 2 years with OLEAFOUNDING15 while the first 50 paid places remain.",
         },
         {
           question: "What is the founding-member offer?",
           answer:
-            "Enter the founding-member code supplied by Olea during signup. The first 50 paid organizations with a valid code receive 15% off their first two annual payments. From Year 3, the membership renews at the regular tier price.",
+            "Use OLEAFOUNDING15 during signup. The first 50 paid organizations receive the fixed founding rate for 2 years (2 annual or 8 quarterly payments). After that, the standard rate applies.",
         },
         {
           question: "How many seats are included?",
@@ -509,12 +535,12 @@ export const publicSiteCopy: Record<Locale, PublicSiteCopy> = {
         {
           question: "Can we upgrade or downgrade?",
           answer:
-            "Upgrades are available anytime and charge the price difference immediately while keeping the renewal date unchanged. Downgrades happen at renewal and require 30 days' notice.",
+            "Upgrades are available anytime and charge the price difference immediately while keeping the renewal date unchanged. Downgrades happen at renewal.",
         },
         {
           question: "Can we cancel?",
           answer:
-            "Yes. Cancellation requires 30 days' notice before renewal. Membership fees are non-refundable, and cancelled organizations have a 30-day grace period to download their data.",
+            "Cancel before the next renewal to stop future payments. Quarterly memberships run through the quarter paid, and annual memberships run through the year paid. Membership fees are non-refundable.",
         },
         {
           question: "How do referrals work?",
@@ -524,7 +550,7 @@ export const publicSiteCopy: Record<Locale, PublicSiteCopy> = {
         {
           question: "Are coaching and admin support included?",
           answer:
-            "Coaching, admin support, and board retreat facilitation are available by custom quote. Canopy and Harvest members receive 10% off coaching and admin support quotes.",
+            "Board facilitation and 1:1 impact coaching are available by quote. If you need board administration help, tell us what you need.",
         },
         {
           question: "What is Olea's Circle of Generosity?",
@@ -544,7 +570,7 @@ export const publicSiteCopy: Record<Locale, PublicSiteCopy> = {
       description:
         "Start with the plan that fits now. Your tools, brand profile, history, and community connections can grow with you.",
       cta: "Join Olea Connects™",
-      pricingNote: "Memberships start at $1,175 CAD/year. Review your total before payment.",
+      pricingNote: "Founding memberships start at $1,000 CAD/year with OLEAFOUNDING15. Review your total before payment.",
     },
     footer: {
       description:
@@ -576,7 +602,7 @@ export const publicSiteCopy: Record<Locale, PublicSiteCopy> = {
       getStarted: "Commencer",
     },
     foundingBanner: {
-      message: "15 % de rabais pendant les deux premières années pour les 50 premiers organismes payants, jusqu'à épuisement des places.",
+      message: "Tarifs fondateurs pendant vos deux premières années avec OLEAFOUNDING15, pour les 50 premiers organismes payants.",
       codeLabel: "Code",
       signup: "S'inscrire",
     },
@@ -591,7 +617,7 @@ export const publicSiteCopy: Record<Locale, PublicSiteCopy> = {
       youtubeCta: "Notre chaîne YouTube",
       assurances: [
         "Inscription en environ 5 minutes",
-        "Forfaits à partir de 1 175 $ CA/an",
+        "Forfaits à partir de 1 000 $ CA/an avec le code fondateur",
         "Facturation annuelle",
       ],
       quote:
@@ -730,14 +756,23 @@ export const publicSiteCopy: Record<Locale, PublicSiteCopy> = {
       eyebrow: "Adhésion",
       title: "Choisissez le soutien qui convient aujourd'hui.",
       description:
-        "Choisissez une adhésion annuelle payée à l'avance. Les membres fondateurs qui possèdent un code valide reçoivent 15 % de rabais sur leurs deux premiers paiements annuels, jusqu'à concurrence des 50 premiers organismes payants.",
+        "Choisissez une facturation annuelle ou trimestrielle. Les 50 premiers organismes payants utilisant le code fondateur conservent leur tarif fondateur pendant 2 ans.",
       foundingLabel: "Offre membre fondateur :",
       foundingNotice:
-        "Entrez votre code de membre fondateur pendant l'inscription pour recevoir 15 % de rabais sur vos deux premiers paiements annuels, tant que l'une des 50 places est disponible. Les tarifs ci-dessous sont les prix réguliers; votre rabais est confirmé avant le paiement.",
+        "Économisez jusqu'à 2 120 $ sur vos deux premières années avec le code OLEAFOUNDING15. Le montant exact est confirmé avant le paiement.",
       quarterly: "Trimestriel",
       annual: "Annuel",
       annualBadge: "Idéal pour planifier le renouvellement",
       mostPopular: "Le plus populaire",
+      recommended: "Recommandé",
+      standardRate: "Tarif standard",
+      saveTwoYears: "Économisez {amount} sur 2 ans",
+      foundingRate: "Tarif membre fondateur",
+      foundingCode: "Utilisez le code OLEAFOUNDING15 à la caisse.",
+      quarterlyOption: "Ou payez chaque trimestre : {amount}. Annulez avant le prochain renouvellement.",
+      monthlyEquivalent: "Environ {amount} par mois pour tout votre conseil, facturé annuellement.",
+      spotsLimited: "Réservé aux 50 premiers organismes",
+      spotsLeft: "{left} places restantes sur 50",
       perYear: "an",
       perQuarter: "trimestre",
       choosePlan: "Choisir",
@@ -745,7 +780,7 @@ export const publicSiteCopy: Record<Locale, PublicSiteCopy> = {
       optionalSupportTitle:
         "Ajoutez de la capacité quand votre équipe en a besoin.",
       optionalSupportDescription:
-        "Les modules complémentaires annuels et les places uniques à l'Accélérateur sont indiqués ci-dessous. Le coaching, le soutien administratif et l'animation restent offerts sur devis.",
+        "Ajoutez des modules à un forfait plus petit. L'animation du conseil et l'accompagnement individuel en impact sont offerts sur devis. L'Accélérateur d'impact arrive bientôt.",
       retreatTitle: "Animation de retraite du conseil",
       retreatDescription:
         "Animation professionnelle pour les retraites annuelles du conseil et les séances de planification stratégique.",
@@ -781,7 +816,7 @@ export const publicSiteCopy: Record<Locale, PublicSiteCopy> = {
             "Tout ce qui est inclus dans Seedling",
             "Boîte à outils de recrutement du conseil et matrice des compétences",
             "Tableau de bord KPI et impact",
-            "Cohortes trimestrielles Impact Accelerator",
+            "Système d'évaluation du conseil",
             "Soutien prioritaire par courriel sous 48 heures",
           ],
         },
@@ -793,12 +828,10 @@ export const publicSiteCopy: Record<Locale, PublicSiteCopy> = {
             "Systèmes complets de gouvernance, évaluation de la direction et outils de stratégie.",
           features: [
             "Tout ce qui est inclus dans Roots",
-            "Système d'évaluation du conseil",
             "Évaluation 360 ED/CEO",
             "Module de planification stratégique",
             "Modules de formation du conseil",
             "Occasions de leadership communautaire",
-            "10 % de rabais sur le coaching et le soutien administratif",
             "Soutien prioritaire par téléphone et courriel",
           ],
         },
@@ -823,41 +856,56 @@ export const publicSiteCopy: Record<Locale, PublicSiteCopy> = {
         "15 $ CA par siège supplémentaire, paiement unique",
         "Le montant total est affiché à la caisse sécurisée avant le paiement. Les taxes ne sont pas perçues actuellement.",
         "Aucun essai gratuit",
-        "Préavis de 30 jours avant le renouvellement; les frais d'adhésion ne sont pas remboursables.",
+        "Annulez avant le renouvellement; les frais d'adhésion ne sont pas remboursables.",
       ],
       addOns: [
         {
+          id: "ceoReview",
+          name: "Évaluation 360 de la direction générale",
+          description: "Disponible pour les organismes Seedling et Roots.",
+        },
+        {
+          id: "boardEvaluation",
+          name: "Système d'évaluation du conseil",
+          description: "Disponible pour Seedling; inclus dans Roots et Canopy.",
+        },
+        {
+          id: "boardRecruitment",
+          name: "Outils de recrutement du conseil et matrice des compétences",
+          description: "Disponible pour Seedling; inclus dans Roots et Canopy.",
+        },
+        {
           id: "kpiDashboard",
-          name: "Tableau de bord KPI",
+          name: "Tableau de bord KPI et impact",
           description:
-            "Suivez les résultats trimestriels et préparez des rapports d'impact pour le conseil.",
+            "Disponible pour Seedling; inclus dans Roots et Canopy.",
         },
         {
           id: "boardTraining",
           name: "Formation en gouvernance du conseil",
           description:
-            "Une formation structurée pour renforcer la gouvernance du conseil.",
+            "Disponible pour les organismes Seedling et Roots.",
+        },
+        {
+          id: "smallBoardTraining",
+          name: "Formation en gouvernance, petits conseils",
+          description: "Pour les conseils Seedling comptant jusqu'à 9 administrateurs.",
+        },
+        {
+          id: "strategicPlanning",
+          name: "Module de planification stratégique",
+          description: "Disponible pour les organismes Seedling et Roots.",
         },
         {
           id: "accreditationPrep",
           name: "Préparation à l'accréditation",
           description: "Organisez les documents et suivez l'état de préparation à l'accréditation.",
         },
-        {
-          id: "acceleratorIndividual",
-          name: "Accélérateur d'impact : individuel",
-          description: "Une place dans une cohorte de l'Accélérateur d'impact.",
-        },
-        {
-          id: "acceleratorTeam",
-          name: "Accélérateur d'impact : équipe",
-          description: "Une place pour une équipe d'au plus trois personnes.",
-        },
       ],
       sponsorshipTitle: "Soutenir les organismes sans but lucratif",
       sponsorshipEyebrow: "Commandites",
       sponsorshipDescription:
-        "Soutenez un conseil ou une équipe de l'Accélérateur. Ces commandites sont des paiements uniques; contactez-nous pour organiser votre soutien.",
+        "Soutenez un conseil d'administration sans but lucratif pendant un an ou explorez un partenariat durable.",
       sponsorshipOffers: [
         {
           id: "sponsorSeedlingBoard",
@@ -868,11 +916,6 @@ export const publicSiteCopy: Record<Locale, PublicSiteCopy> = {
           id: "sponsorRootsBoard",
           name: "Soutenir un conseil Roots",
           description: "Soutenez un conseil Roots pendant un an.",
-        },
-        {
-          id: "sponsorAcceleratorTeam",
-          name: "Soutenir une équipe de l'Accélérateur",
-          description: "Financez une équipe d'au plus trois personnes.",
         },
       ],
       perOneTime: "paiement unique",
@@ -891,17 +934,17 @@ export const publicSiteCopy: Record<Locale, PublicSiteCopy> = {
         {
           question: "Comment fonctionne la facturation?",
           answer:
-            "Les nouvelles adhésions sont facturées annuellement, payées à l'avance en dollars canadiens, et se renouvellent à la date anniversaire de l'inscription. Le montant total est affiché à la caisse avant le paiement; les taxes ne sont pas perçues actuellement. Les adhésions trimestrielles existantes conservent leurs modalités.",
+            "Choisissez une facturation annuelle ou trimestrielle, payée à l'avance en dollars canadiens. Les paiements trimestriels se renouvellent tous les trois mois. Le montant total est affiché avant le paiement; les taxes ne sont pas perçues actuellement. Les membres actuels conservent leurs modalités.",
         },
         {
           question: "Y a-t-il un essai gratuit?",
           answer:
-            "Non. Olea Connects™ n'offre pas d'essai gratuit. Les membres fondateurs qui possèdent un code valide peuvent recevoir 15 % de rabais sur leurs deux premiers paiements annuels, tant que l'une des 50 places est disponible.",
+            "Non. Olea Connects™ n'offre pas d'essai gratuit. Les tarifs fondateurs s'appliquent pendant les deux premières années avec OLEAFOUNDING15, tant que les 50 premières places payantes restent disponibles.",
         },
         {
           question: "Qu'est-ce que l'offre membre fondateur?",
           answer:
-            "Entrez pendant l'inscription le code de membre fondateur fourni par Olea. Les 50 premiers organismes payants qui possèdent un code valide reçoivent 15 % de rabais sur leurs deux premiers paiements annuels. À partir de la troisième année, l'adhésion se renouvelle au prix régulier du forfait.",
+            "Utilisez OLEAFOUNDING15 pendant l'inscription. Les 50 premiers organismes payants bénéficient du tarif fondateur fixe pendant 2 ans (2 paiements annuels ou 8 paiements trimestriels). Ensuite, le tarif standard s'applique.",
         },
         {
           question: "Combien de sièges sont inclus?",
@@ -911,12 +954,12 @@ export const publicSiteCopy: Record<Locale, PublicSiteCopy> = {
         {
           question: "Pouvons-nous changer de forfait?",
           answer:
-            "Les mises à niveau sont offertes en tout temps et facturent immédiatement la différence de prix, sans changer la date de renouvellement. Les rétrogradations prennent effet au renouvellement et exigent un préavis de 30 jours.",
+            "Les mises à niveau sont offertes en tout temps et facturent immédiatement la différence de prix, sans changer la date de renouvellement. Les rétrogradations prennent effet au renouvellement.",
         },
         {
           question: "Pouvons-nous annuler?",
           answer:
-            "Oui. L'annulation exige un préavis de 30 jours avant le renouvellement. Les frais d'adhésion ne sont pas remboursables, et les organismes annulés disposent d'une période de grâce de 30 jours pour télécharger leurs données.",
+            "Annulez avant le prochain renouvellement pour arrêter les paiements futurs. Les adhésions trimestrielles restent actives jusqu'à la fin du trimestre payé, et les adhésions annuelles jusqu'à la fin de l'année payée. Les frais ne sont pas remboursables.",
         },
         {
           question: "Comment fonctionnent les références?",
@@ -926,7 +969,7 @@ export const publicSiteCopy: Record<Locale, PublicSiteCopy> = {
         {
           question: "Le coaching et le soutien administratif sont-ils inclus?",
           answer:
-            "Le coaching, le soutien administratif et l'animation de retraite du conseil sont offerts sur devis personnalisé. Les membres Canopy et Harvest reçoivent 10 % de rabais sur les devis de coaching et de soutien administratif.",
+            "L'animation du conseil et l'accompagnement individuel en impact sont offerts sur devis. Pour obtenir de l'aide administrative, dites-nous ce dont vous avez besoin.",
         },
         {
           question: "Qu'est-ce que le Cercle de générosité d'Olea?",
@@ -947,7 +990,7 @@ export const publicSiteCopy: Record<Locale, PublicSiteCopy> = {
         "Commencez avec le forfait qui convient maintenant. Vos outils, votre profil de marque, votre historique et vos liens communautaires peuvent grandir avec vous.",
       cta: "Rejoindre Olea Connects™",
       pricingNote:
-        "Les adhésions commencent à 1 175 $ CA/an. Vérifiez le montant total avant de payer.",
+        "Les adhésions fondatrices commencent à 1 000 $ CA/an avec OLEAFOUNDING15. Vérifiez le montant total avant de payer.",
     },
     footer: {
       description:

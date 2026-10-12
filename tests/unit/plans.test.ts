@@ -6,12 +6,12 @@ describe("membership plans", () => {
   it("keeps legacy tiers while offering the approved annual signup prices", () => {
     expect(new Set(membershipPlans.map(({ id }) => id)).size).toBe(4);
     expect(signupMembershipPlans.map(({ id, annualPrice }) => [id, annualPrice])).toEqual([
-      ["seedling", 1175],
+      ["seedling", 1180],
       ["roots", 3530],
       ["canopy", 7060],
     ]);
     expect(membershipPlans.map(({ quarterlyPrice }) => quarterlyPrice)).toEqual([
-      200, 800, 1500, 2400,
+      325, 975, 1950, 2400,
     ]);
     expect(getPlan("harvest").annualPrice).toBe(9600);
   });

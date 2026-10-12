@@ -50,9 +50,10 @@ export function SponsorshipPage() {
             </div>
             <div className="grid items-stretch gap-8 [grid-template-columns:repeat(auto-fit,minmax(min(100%,280px),1fr))]">
               {copy.tiers.map((tier) => (
-                <SponsorshipTierCard key={tier.name} copy={copy} tier={tier} />
+                <SponsorshipTierCard key={tier.name} copy={copy} tier={tier} locale={locale} />
               ))}
             </div>
+            <p className="mt-6 text-sm text-[#666]">{copy.priceNote}</p>
           </section>
 
           <section

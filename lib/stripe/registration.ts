@@ -147,6 +147,8 @@ function getFoundingReservationSnapshot(
 }
 
 function getBillingInterval(billingCycle: BillingCycle) {
+  // The legacy database enum calls non-annual plans "month". Stripe prices
+  // for that enum now recur every three months.
   return billingCycle === "annual" ? "year" : "month";
 }
 

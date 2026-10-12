@@ -20,7 +20,7 @@ test.describe("@smoke @critical public entry points", () => {
     await page.goto("/");
 
     const offer = page.getByTestId("founding-offer-banner");
-    await expect(offer).toContainText("15% off your first two years for the first 50 paid organizations, while spots last.");
+    await expect(offer).toContainText("Founding rates for your first two years with OLEAFOUNDING15, limited to the first 50 paid organizations.");
     await expect(offer).toContainText("OLEAFOUNDING15");
     await expect(offer.getByRole("link", { name: "Join now" })).toHaveAttribute("href", "/signup");
 
@@ -42,12 +42,12 @@ test.describe("@smoke @critical public entry points", () => {
     ).toHaveAttribute("href", "https://www.youtube.com/@OliveinGoodCompany");
   });
 
-  test("shows regular plan prices without a per-card founding price breakdown", async ({ page }) => {
+  test("shows the new standard and founding membership pricing", async ({ page }) => {
     await page.goto("/");
 
     const plans = page.locator("#plans");
     await expect(plans.getByRole("heading", { name: "Seedling", exact: true })).toBeVisible();
-    await expect(plans).toContainText("$1,175 CAD");
+    await expect(plans).toContainText("$1,180 CAD");
     await expect(plans).not.toContainText("Years 1 and 2 with a valid founding code");
 
     await switchToFrench(page);
@@ -62,7 +62,7 @@ test.describe("@smoke @critical public entry points", () => {
 
     await switchToFrench(page);
     await expect(page.getByTestId("founding-offer-banner")).toContainText(
-      "15 % de rabais pendant les deux premières années pour les 50 premiers organismes payants, jusqu'à épuisement des places.",
+      "Tarifs fondateurs pendant vos deux premières années avec OLEAFOUNDING15, pour les 50 premiers organismes payants.",
     );
     await expect(
       page.getByRole("heading", {
@@ -89,7 +89,7 @@ test.describe("@smoke @critical public entry points", () => {
   test("keeps the offer visible while scrolling on mobile without horizontal overflow", async ({ page }) => {
     await page.setViewportSize({ width: 390, height: 844 });
     await page.goto("/");
-    await page.evaluate(() => window.scrollTo(0, 900));
+    await page.locator("#plans").scrollIntoViewIfNeeded();
     await expect.poll(() => page.evaluate(() => window.scrollY)).toBeGreaterThan(0);
     await expect.poll(() =>
       page.getByTestId("founding-offer-banner").evaluate((element) => element.getBoundingClientRect().top),
@@ -170,11 +170,11 @@ test.describe("@smoke @critical public entry points", () => {
     await page.goto("/sponsorship");
     await expect(
       page.getByRole("heading", {
-        name: /renforcer la résilience des organismes/i,
+        name: /Ensemble, renforçons la résilience des organismes/i,
       }),
     ).toBeVisible();
     await expect(
-      page.getByText("Contactez-nous pour le prix").first(),
+      page.getByText(/2\s?000\s?\$ CA/).first(),
     ).toBeVisible();
   });
 
@@ -183,10 +183,10 @@ test.describe("@smoke @critical public entry points", () => {
   }) => {
     await page.goto("/");
 
-    const rootsLink = page.getByRole("link", { name: "Choose Roots" });
+    const rootsLink = page.locator('#plans a[href^="/signup/account?tier=roots&billing=annual"]');
     await expect(rootsLink).toHaveAttribute(
       "href",
-      "/signup/account?tier=roots&billing=annual",
+      /\/signup\/account\?tier=roots&billing=annual/,
     );
 
     await expect(page.getByRole("button", { name: "Quarterly" })).toHaveCount(0);
@@ -224,18 +224,18 @@ test.describe("@smoke @critical public entry points", () => {
     ).toHaveAttribute("href", "/reset-password");
   });
 
-  test("presents the public sponsorship offer without pricing or authentication", async ({
+  test("presents the public sponsorship prices without authentication", async ({
     page,
   }) => {
     await page.goto("/sponsorship");
 
     await expect(
       page.getByRole("heading", {
-        name: "Partner with Us to Strengthen Nonprofit Resilience",
+        name: "Partner with us to strengthen nonprofit resilience",
       }),
     ).toBeVisible();
     await expect(
-      page.getByRole("heading", { name: "Seed Keeper" }),
+      page.getByRole("heading", { name: "Seedkeeper" }),
     ).toBeVisible();
     await expect(
       page.getByRole("heading", { name: "Root Keeper" }),
@@ -251,14 +251,15 @@ test.describe("@smoke @critical public entry points", () => {
         name: "Catalyst",
       }),
     ).toBeVisible();
-    await expect(page.getByText("Contact us for pricing")).toHaveCount(5);
-    await expect(page.getByText(/\$\s?\d/)).toHaveCount(0);
+    for (const amount of ["$2,000", "$8,000", "$14,444", "$33,000", "$44,000"]) {
+      await expect(page.getByText(amount, { exact: false }).first()).toBeVisible();
+    }
     await expect(
-      page.getByRole("heading", { name: "What Every Sponsor Receives" }),
+      page.getByRole("heading", { name: "What every partner receives" }),
     ).toBeVisible();
     await expect(
       page.getByRole("heading", {
-        name: "The Catalyst Difference: Impact Circle",
+        name: "The Impact Circle",
       }),
     ).toBeVisible();
     await expect(

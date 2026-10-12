@@ -19,7 +19,7 @@ test.describe("public pricing package", () => {
     await expect(
       page.getByRole("heading", { name: "Choose the support that fits today." }),
     ).toBeVisible();
-    await expect(page.getByText("$1,175 CAD").first()).toBeVisible();
+    await expect(page.getByText("$1,180 CAD").first()).toBeVisible();
     await expect(page.getByText("$3,530 CAD").first()).toBeVisible();
     await expect(page.getByText("$7,060 CAD").first()).toBeVisible();
     await expect(
@@ -29,12 +29,12 @@ test.describe("public pricing package", () => {
       page.getByText("$15 CAD one-time per seat", { exact: true }),
     ).toBeVisible();
     await expect(page.getByText("Optional support")).toBeVisible();
-    await expect(page.getByText("KPI Dashboard", { exact: true }).first()).toBeVisible();
+    await expect(page.getByRole("heading", { name: "KPI and Impact Dashboard" })).toBeVisible();
+    await expect(page.getByText("$995 CAD").first()).toBeVisible();
     await expect(page.getByText("$1,195 CAD").first()).toBeVisible();
     await expect(page.getByText("$1,495 CAD").first()).toBeVisible();
     await expect(page.getByText("$99 CAD").first()).toBeVisible();
     await expect(page.getByText("$500 CAD").first()).toBeVisible();
-    await expect(page.getByText("$1,200 CAD").first()).toBeVisible();
     await expect(page.getByText("$1,000 CAD").first()).toBeVisible();
     await expect(page.getByText("$3,000 CAD").first()).toBeVisible();
     await expect(page.getByText("$7,776 CAD")).toHaveCount(0);
@@ -55,24 +55,25 @@ test.describe("public pricing package", () => {
     await expect(page.getByText("No free trial")).toBeVisible();
     await expect(
       page.getByText(
-        "30 days' notice before renewal; membership fees are non-refundable.",
+        "Cancel before renewal; membership fees are non-refundable.",
         { exact: true },
       ),
     ).toBeVisible();
     await expect(
-      page.getByRole("link", { name: "Choose Seedling" }),
-    ).toHaveAttribute("href", "/signup/account?tier=seedling&billing=annual");
+      page.locator('#plans a[href^="/signup/account?tier=seedling&billing=annual"]'),
+    ).toHaveAttribute("href", /\/signup\/account\?tier=seedling&billing=annual/);
   });
 
-  test("offers only annual billing for new memberships", async ({
+  test("offers annual and quarterly billing for new memberships", async ({
     page,
   }) => {
     await page.goto("/");
     await expect(page.getByRole("button", { name: "Quarterly" })).toHaveCount(0);
+    await expect(page.locator("#plans")).toContainText("Or pay quarterly:");
     await expect(page.getByRole("link", { name: "Choose Harvest" })).toHaveCount(0);
     await expect(
-      page.getByRole("link", { name: "Choose Seedling" }),
-    ).toHaveAttribute("href", "/signup/account?tier=seedling&billing=annual");
+      page.locator('#plans a[href^="/signup/account?tier=seedling&billing=annual"]'),
+    ).toHaveAttribute("href", /\/signup\/account\?tier=seedling&billing=annual/);
   });
 
   test("does not show hourly rates in French optional support", async ({
@@ -81,7 +82,7 @@ test.describe("public pricing package", () => {
     await page.goto("/");
     await switchToFrench(page);
 
-    await expect(page.getByText("Tableau de bord KPI", { exact: true }).first()).toBeVisible();
+    await expect(page.getByRole("heading", { name: "Tableau de bord KPI et impact" })).toBeVisible();
     await expect(page.getByText("1\u00A0944\u00A0$ CA")).toHaveCount(0);
     await expect(page.getByText("162 $ CA/heure")).toHaveCount(0);
     await expect(page.getByText("100 $ CA/heure")).toHaveCount(0);

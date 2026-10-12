@@ -65,7 +65,10 @@ export function isLegacyTestCheckoutSession(sessionId: string) {
 
 async function getPortalUpdateProducts() {
   const stripe = getStripe();
-  const priceIds = signupTiers.map((tier) => getStripePriceId(tier, "annual"));
+  const priceIds = signupTiers.flatMap((tier) => [
+    getStripePriceId(tier, "annual"),
+    getStripePriceId(tier, "quarterly"),
+  ]);
   const prices = await Promise.all(
     priceIds.map((priceId) => stripe.prices.retrieve(priceId)),
   );
