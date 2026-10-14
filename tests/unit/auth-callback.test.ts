@@ -95,6 +95,21 @@ describe("auth callback", () => {
     );
   });
 
+  it("sends implicit email sessions to the browser without trusting external destinations", async () => {
+    const { GET } = await import("@/app/auth/callback/route");
+
+    const response = await GET(
+      new Request(
+        "https://staging.oleaconnects.com/auth/callback?next=https://evil.example",
+      ),
+    );
+
+    expect(response.headers.get("location")).toBe(
+      "https://staging.oleaconnects.com/auth/complete?next=%2Fdashboard",
+    );
+    expect(exchangeCodeForSession).not.toHaveBeenCalled();
+  });
+
   it("keeps provisioning behavior for normal signup verification callbacks", async () => {
     const { GET } = await import("@/app/auth/callback/route");
     attemptUserWorkspaceProvisioning.mockResolvedValue({ status: "completed" });

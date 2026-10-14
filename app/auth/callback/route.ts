@@ -130,6 +130,17 @@ async function getProvisioningRedirect(
   return NextResponse.redirect(activationUrl);
 }
 
+function getImplicitCallbackUrl(url: URL, requestOrigin: string) {
+  // Supabase's default email template returns an implicit session in the URL
+  // fragment. The server cannot read that fragment, so finish it in the browser.
+  const completeUrl = new URL("/auth/complete", requestOrigin);
+  const requestedNext = url.searchParams.get("next");
+  if (requestedNext) {
+    completeUrl.searchParams.set("next", getSafeNextPath(requestedNext));
+  }
+  return completeUrl;
+}
+
 export async function GET(request: Request) {
   const url = new URL(request.url);
   const requestOrigin = getRequestOrigin(request, url);
@@ -172,6 +183,10 @@ export async function GET(request: Request) {
         NextResponse.redirect(new URL(next, requestOrigin)),
       );
     }
+  }
+
+  if (!code) {
+    return NextResponse.redirect(getImplicitCallbackUrl(url, requestOrigin));
   }
 
   const loginUrl = new URL("/login", requestOrigin);
