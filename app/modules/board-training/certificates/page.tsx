@@ -1,7 +1,7 @@
 import { ArrowLeft } from "lucide-react";
 import Link from "next/link";
-import { redirect } from "next/navigation";
 
+import { BoardTrainingLocked } from "@/app/modules/board-training/_components/board-training-locked";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { getMyTrainingCertificates, hasTrainingAccess } from "@/lib/data/board-training";
@@ -10,9 +10,9 @@ import { getRequestLocale } from "@/lib/i18n/server";
 export const dynamic = "force-dynamic";
 
 export default async function MyTrainingCertificatesPage() {
-  if (!(await hasTrainingAccess())) redirect("/modules/board-training");
-  const certificates = await getMyTrainingCertificates();
   const french = getRequestLocale() === "fr-CA";
+  if (!(await hasTrainingAccess())) return <BoardTrainingLocked language={french ? "fr" : "en"} />;
+  const certificates = await getMyTrainingCertificates();
   return <div className="mx-auto max-w-3xl space-y-6">
     <Button asChild variant="ghost" size="sm"><Link href="/modules/board-training"><ArrowLeft className="mr-2 size-4" />{french ? "Formation du conseil" : "Board training"}</Link></Button>
     <h1 className="text-3xl font-semibold tracking-tight text-teal-900">{french ? "Mes certificats" : "My certificates"}</h1>

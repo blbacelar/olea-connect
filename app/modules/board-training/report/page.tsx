@@ -1,7 +1,7 @@
 import { ArrowLeft } from "lucide-react";
 import Link from "next/link";
-import { redirect } from "next/navigation";
 
+import { BoardTrainingLocked } from "@/app/modules/board-training/_components/board-training-locked";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { getChairGuide } from "@/lib/board-training/content";
@@ -11,9 +11,9 @@ import { getRequestLocale } from "@/lib/i18n/server";
 export const dynamic = "force-dynamic";
 
 export default async function BoardTrainingReportPage() {
-  if (!(await hasTrainingAccess())) redirect("/modules/board-training");
-  const { report, completedCount, topics } = await getTrainingReport();
   const french = getRequestLocale() === "fr-CA";
+  if (!(await hasTrainingAccess())) return <BoardTrainingLocked language={french ? "fr" : "en"} />;
+  const { report, completedCount, topics } = await getTrainingReport();
   const chairSessions = getChairGuide(french ? "fr" : "en").sessions;
   const chairSessionByTopic: Record<string, string> = { l1: "s0", l2: "s3", l3: "s3", l4: "s2", l5: "s2", l6: "s3", l7: "s5", l8: "s4" };
   const rows = report?.topics.map((topic) => ({ ...topic, label: topics.find((item) => item.id === topic.id)?.label ?? topic.id })) ?? [];

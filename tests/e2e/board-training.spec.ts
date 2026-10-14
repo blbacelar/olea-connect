@@ -99,6 +99,7 @@ test.describe("@critical Canopy board training", () => {
   });
 
   test("limits management and reports to the right roles and plan", async ({ browser, baseURL, testData }) => {
+    test.setTimeout(120_000);
     if (!baseURL) throw new Error("Playwright baseURL is required.");
     const owner = await testData.createOrganizationOwner({ activeSubscription: true, planId: "canopy" });
     const member = await testData.createOrganizationMember(owner);
@@ -119,14 +120,20 @@ test.describe("@critical Canopy board training", () => {
       await memberPage.goto("/modules/board-training/chair-guide");
       await expect(memberPage.getByText("This page could not be found.")).toBeVisible();
       const rootsPage = await rootsContext.newPage();
+      const clientErrors: string[] = [];
+      rootsPage.on("console", (message) => {
+        if (message.type() === "error" && message.text().includes("React error #310")) clientErrors.push(message.text());
+      });
       await rootsPage.goto("/dashboard");
       await rootsPage.getByRole("link", { name: "Board Training" }).click();
       await expect(rootsPage.getByTestId("board-training-locked")).toBeVisible();
       await expect(rootsPage.getByRole("link", { name: "View Canopy plan" })).toBeVisible();
       await expect(rootsPage.getByTestId("board-training-home")).toHaveCount(0);
-      await rootsPage.goto("/modules/board-training/essentials");
-      await expect(rootsPage).toHaveURL(/\/modules\/board-training$/);
-      await expect(rootsPage.getByTestId("board-training-locked")).toBeVisible();
+      for (const path of ["essentials", "chair-guide", "certificates", "report"]) {
+        await rootsPage.goto(`/modules/board-training/${path}`);
+        await expect(rootsPage.getByTestId("board-training-locked")).toBeVisible();
+      }
+      expect(clientErrors).toEqual([]);
     } finally {
       await ownerContext.close(); await memberContext.close(); await rootsContext.close();
     }
