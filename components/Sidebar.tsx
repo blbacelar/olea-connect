@@ -33,6 +33,7 @@ export function Sidebar({ collapsed, onCollapsedChange }: SidebarProps) {
     session?.platformRoles,
     session?.member.membershipRole,
     locale,
+    session?.organization.tier,
   );
   const ToggleIcon = collapsed ? PanelLeftOpen : PanelLeftClose;
   const tier = organization?.tier ?? copy.header.member.toLowerCase();

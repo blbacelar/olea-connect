@@ -1,0 +1,160 @@
+{
+  "courseId": "governance-refresher",
+  "locale": "en",
+  "version": "2026.1",
+  "passMarkPercent": 80,
+  "shuffleQuestions": true,
+  "shuffleOptions": true,
+  "questions": [
+    {
+      "id": "rq1",
+      "lesson": "r1",
+      "prompt": "A director realizes, halfway through a discussion, that the contract under consideration involves her brother-in-law’s company. What should she do?",
+      "options": [
+        {
+          "id": "a",
+          "text": "Stay quiet and abstain from the vote"
+        },
+        {
+          "id": "b",
+          "text": "Declare the interest right away, then leave for the rest of the discussion and the vote"
+        },
+        {
+          "id": "c",
+          "text": "Finish the discussion, then declare it before the vote"
+        },
+        {
+          "id": "d",
+          "text": "Nothing; in-laws don’t count as family"
+        }
+      ],
+      "answer": "b",
+      "explanation": "Declare as soon as you become aware of the conflict, even mid-discussion, then abstain and leave. The declaration should be recorded in the minutes."
+    },
+    {
+      "id": "rq2",
+      "lesson": "r3",
+      "prompt": "The ED/CEO mentions that payroll remittances were late last month. Why should the board treat this seriously?",
+      "options": [
+        {
+          "id": "a",
+          "text": "Because it may affect the strategic plan"
+        },
+        {
+          "id": "b",
+          "text": "It isn’t a board matter; payroll is a management responsibility"
+        },
+        {
+          "id": "c",
+          "text": "Because directors can be personally liable for unremitted source deductions"
+        },
+        {
+          "id": "d",
+          "text": "Because it must be reported in the T3010"
+        }
+      ],
+      "answer": "c",
+      "explanation": "Directors can be personally liable for unremitted source deductions. The board should confirm remittances are current and ask what will prevent a repeat."
+    },
+    {
+      "id": "rq3",
+      "lesson": "r3",
+      "prompt": "A director disagrees strongly with a board decision. Which response is appropriate?",
+      "options": [
+        {
+          "id": "a",
+          "text": "Ask for the dissent to be recorded in the minutes and support the decision publicly"
+        },
+        {
+          "id": "b",
+          "text": "Explain the disagreement on social media so the community knows"
+        },
+        {
+          "id": "c",
+          "text": "Tell staff privately that the decision was a mistake"
+        },
+        {
+          "id": "d",
+          "text": "Refuse to implement the decision"
+        }
+      ],
+      "answer": "a",
+      "explanation": "The board speaks with one voice. A director can have dissent recorded, raise it again through proper process later, or resign if they cannot support the decision in good conscience."
+    },
+    {
+      "id": "rq4",
+      "lesson": "r1",
+      "prompt": "Which of these is a governance decision rather than a management one?",
+      "options": [
+        {
+          "id": "a",
+          "text": "Choosing the caterer for the volunteer appreciation event"
+        },
+        {
+          "id": "b",
+          "text": "Scheduling staff vacation"
+        },
+        {
+          "id": "c",
+          "text": "Selecting the office’s accounting software"
+        },
+        {
+          "id": "d",
+          "text": "Setting the organization’s risk tolerance and approving a reserves policy"
+        }
+      ],
+      "answer": "d",
+      "explanation": "Setting risk tolerance and policy is board work. Day-to-day operational choices belong to management."
+    },
+    {
+      "id": "rq5",
+      "lesson": "r2",
+      "prompt": "A staff member receives an email, apparently from a long-time supplier, asking to change the bank account for future payments. What should the board want to know?",
+      "options": [
+        {
+          "id": "a",
+          "text": "Whether the supplier offers a discount for the change"
+        },
+        {
+          "id": "b",
+          "text": "Whether there are controls requiring independent verification of payment-detail changes before money moves"
+        },
+        {
+          "id": "c",
+          "text": "Nothing; this is too operational for the board"
+        },
+        {
+          "id": "d",
+          "text": "Which staff member received the email, so they can be disciplined"
+        }
+      ],
+      "answer": "b",
+      "explanation": "Payment-redirection fraud is common. The board’s role is to make sure controls exist, such as confirming changes by phone using a known number, not to handle the transaction itself."
+    },
+    {
+      "id": "rq6",
+      "lesson": "r1",
+      "prompt": "A director who sits on a funder’s board as well is asked to vote on a funding agreement with that funder. The best approach is to:",
+      "options": [
+        {
+          "id": "a",
+          "text": "Vote, since both organizations want the agreement"
+        },
+        {
+          "id": "b",
+          "text": "Abstain from the vote but stay for the discussion"
+        },
+        {
+          "id": "c",
+          "text": "Declare the dual role, abstain and leave the room for the discussion and vote"
+        },
+        {
+          "id": "d",
+          "text": "Resign from one of the boards before the meeting"
+        }
+      ],
+      "answer": "c",
+      "explanation": "Serving on both boards creates a conflict of duties. Declare, Abstain, Leave applies even when the interests appear aligned."
+    }
+  ]
+}

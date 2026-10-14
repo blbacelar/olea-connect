@@ -1,5 +1,6 @@
 import {
   BarChart3,
+  BookOpen,
   CalendarDays,
   ClipboardList,
   CircleHelp,
@@ -16,7 +17,7 @@ import type { LucideIcon } from "lucide-react";
 
 import { getAppShellCopy } from "@/lib/i18n/app-shell-copy";
 import type { Locale } from "@/lib/i18n/locales";
-import type { OrganizationRole, PlatformRole } from "@/lib/types";
+import type { MembershipTier, OrganizationRole, PlatformRole } from "@/lib/types";
 
 export type NavigationItem = {
   dot?: boolean;
@@ -25,6 +26,7 @@ export type NavigationItem = {
   label: string;
   requiredPlatformRole?: PlatformRole;
   requiredOrganizationRoles?: readonly OrganizationRole[];
+  requiredTier?: "canopy";
 };
 
 export const navigationGroups: NavigationItem[][] = [
@@ -58,6 +60,7 @@ export const navigationGroups: NavigationItem[][] = [
       icon: ClipboardList,
       requiredOrganizationRoles: ["owner", "admin"],
     },
+    { label: "Board Training", href: "/modules/board-training", icon: BookOpen, requiredTier: "canopy" },
     { label: "Community", href: "/community", icon: Users },
     { label: "Sponsors", href: "/sponsors", icon: Handshake },
     { label: "Webinars", href: "/webinars", icon: CalendarDays },
@@ -89,6 +92,7 @@ export function getNavigationGroups(
   platformRoles: readonly PlatformRole[] = [],
   organizationRole?: OrganizationRole,
   locale: Locale = "en-CA",
+  organizationTier?: MembershipTier,
 ) {
   const copy = getAppShellCopy(locale);
   const roleSet = new Set(platformRoles);
@@ -102,7 +106,8 @@ export function getNavigationGroups(
               roleSet.has(item.requiredPlatformRole)) &&
             (!item.requiredOrganizationRoles ||
               (organizationRole !== undefined &&
-                item.requiredOrganizationRoles.includes(organizationRole))),
+                item.requiredOrganizationRoles.includes(organizationRole))) &&
+            (!item.requiredTier || (item.href === "/modules/board-training" ? organizationTier === "canopy" : organizationTier === "canopy" || organizationTier === "harvest")),
         )
         .map((item) => ({
           ...item,

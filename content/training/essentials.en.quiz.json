@@ -1,0 +1,385 @@
+{
+  "courseId": "governance-essentials",
+  "version": "2.0.0",
+  "passMarkPercent": 80,
+  "shuffleQuestions": true,
+  "shuffleOptions": true,
+  "questions": [
+    {
+      "id": "q1",
+      "lesson": "l1",
+      "prompt": "Which of the following is primarily a board (governance) responsibility rather than a management responsibility?",
+      "options": [
+        {
+          "id": "a",
+          "text": "Scheduling program volunteers for the spring event"
+        },
+        {
+          "id": "b",
+          "text": "Approving the annual budget and strategic plan"
+        },
+        {
+          "id": "c",
+          "text": "Choosing which software the office uses for email"
+        },
+        {
+          "id": "d",
+          "text": "Hiring the program coordinator"
+        }
+      ],
+      "answer": "b",
+      "explanation": "The board sets direction and approves the budget and strategic plan. Day-to-day decisions, including hiring staff other than the ED/CEO, belong to management."
+    },
+    {
+      "id": "q2",
+      "lesson": "l8",
+      "prompt": "Your board opens each meeting with a land acknowledgement read from a script. A new director asks what the organization actually does to support reconciliation. What is the most helpful response?",
+      "options": [
+        {
+          "id": "a",
+          "text": "The acknowledgement is enough. It shows respect, and anything more is management’s job"
+        },
+        {
+          "id": "b",
+          "text": "Treat the question as a governance matter: ask what relationships, commitments and actions sit behind the acknowledgement, and consider making it part of strategy and board learning"
+        },
+        {
+          "id": "c",
+          "text": "Stop doing land acknowledgements to avoid seeming insincere"
+        },
+        {
+          "id": "d",
+          "text": "Ask the one Indigenous director to decide what the board should do"
+        }
+      ],
+      "answer": "b",
+      "explanation": "Reconciliation is part of the board’s strategy, accountability and culture. A meaningful acknowledgement is specific and connected to action, and the whole board shares responsibility for learning and relationships."
+    },
+    {
+      "id": "q3",
+      "lesson": "l2",
+      "prompt": "A director was nominated to the board by a major funder. When a decision is in the organization’s best interest but not the funder’s, the director should:",
+      "options": [
+        {
+          "id": "a",
+          "text": "Vote as the funder would want, since that is why they were appointed"
+        },
+        {
+          "id": "b",
+          "text": "Act in the best interests of the organization, and treat the divergence as a potential conflict to declare"
+        },
+        {
+          "id": "c",
+          "text": "Ask the funder for written instructions before voting"
+        },
+        {
+          "id": "d",
+          "text": "Resign immediately"
+        }
+      ],
+      "answer": "b",
+      "explanation": "A director’s duty of loyalty is owed to the organization, regardless of who nominated them. Divergent interests should be declared and managed as a conflict."
+    },
+    {
+      "id": "q4",
+      "lesson": "l2",
+      "prompt": "Which best describes how directors meet the duty of care?",
+      "options": [
+        {
+          "id": "a",
+          "text": "By ensuring every decision produces a good result"
+        },
+        {
+          "id": "b",
+          "text": "By having professional qualifications in finance or law"
+        },
+        {
+          "id": "c",
+          "text": "By deferring to the Chair on difficult matters"
+        },
+        {
+          "id": "d",
+          "text": "By preparing, attending, asking questions and exercising reasonable judgment"
+        }
+      ],
+      "answer": "d",
+      "explanation": "The duty of care is about a diligent, informed process. Courts generally protect informed, good-faith decisions even when outcomes are poor."
+    },
+    {
+      "id": "q5",
+      "lesson": "l3",
+      "prompt": "The board is reviewing bids for a contract. One bidder is owned by a director’s brother. What should the director do?",
+      "options": [
+        {
+          "id": "a",
+          "text": "Declare the interest, abstain from the vote and leave the meeting for the discussion"
+        },
+        {
+          "id": "b",
+          "text": "Stay and vote, but mention the relationship if anyone asks"
+        },
+        {
+          "id": "c",
+          "text": "Stay for the discussion but abstain from voting"
+        },
+        {
+          "id": "d",
+          "text": "Nothing, as long as the brother’s bid is the lowest"
+        }
+      ],
+      "answer": "a",
+      "explanation": "Declare, Abstain, Leave. The declaration and the abstention should be recorded in the minutes."
+    },
+    {
+      "id": "q6",
+      "lesson": "l3",
+      "prompt": "After a vigorous debate, the board approves a decision you voted against. A local reporter asks for your view. You should:",
+      "options": [
+        {
+          "id": "a",
+          "text": "Explain that you disagreed and why"
+        },
+        {
+          "id": "b",
+          "text": "Say “no comment” and post your concerns on social media instead"
+        },
+        {
+          "id": "c",
+          "text": "Support the board’s decision publicly, or refer the reporter to the board’s designated spokesperson"
+        },
+        {
+          "id": "d",
+          "text": "Share the confidential board discussion so the public can judge"
+        }
+      ],
+      "answer": "c",
+      "explanation": "The board speaks with one voice. You can ask for your dissent to be recorded in the minutes, but you should not undermine a board decision in public."
+    },
+    {
+      "id": "q7",
+      "lesson": "l4",
+      "prompt": "Which financial statement shows whether the organization has enough cash coming in to pay its bills as they come due?",
+      "options": [
+        {
+          "id": "a",
+          "text": "Statement of operations"
+        },
+        {
+          "id": "b",
+          "text": "Statement of cash flows"
+        },
+        {
+          "id": "c",
+          "text": "The strategic plan"
+        },
+        {
+          "id": "d",
+          "text": "The annual return filed with the corporate registry"
+        }
+      ],
+      "answer": "b",
+      "explanation": "The statement of cash flows shows where cash came from and went. An organization can report a surplus and still run short of cash."
+    },
+    {
+      "id": "q8",
+      "lesson": "l4",
+      "prompt": "Cash is tight, and the ED/CEO proposes temporarily using a foundation grant restricted to a youth program to cover general payroll. What is the main concern?",
+      "options": [
+        {
+          "id": "a",
+          "text": "There is no concern if the money is repaid within the fiscal year"
+        },
+        {
+          "id": "b",
+          "text": "Payroll is a management issue the board should not discuss"
+        },
+        {
+          "id": "c",
+          "text": "It would affect the organization’s disbursement quota"
+        },
+        {
+          "id": "d",
+          "text": "Restricted funds must be used for their stated purpose. Diverting them can breach the grant agreement and damage trust."
+        }
+      ],
+      "answer": "d",
+      "explanation": "Restricted funds carry obligations to the donor or funder. The board should look at other solutions, such as reserves, a line of credit or a conversation with the funder."
+    },
+    {
+      "id": "q9",
+      "lesson": "l4",
+      "prompt": "Directors in Canada can be personally liable if the organization fails to:",
+      "options": [
+        {
+          "id": "a",
+          "text": "Remit employee source deductions (income tax, CPP, EI) to the CRA"
+        },
+        {
+          "id": "b",
+          "text": "Meet its fundraising targets"
+        },
+        {
+          "id": "c",
+          "text": "Hold a board retreat each year"
+        },
+        {
+          "id": "d",
+          "text": "Achieve the goals in its strategic plan"
+        }
+      ],
+      "answer": "a",
+      "explanation": "Unremitted source deductions (and collected GST/HST) can create personal liability for directors. Ask for confirmation at every meeting that remittances are current."
+    },
+    {
+      "id": "q10",
+      "lesson": "l5",
+      "prompt": "Which statement about nonprofits and registered charities is correct?",
+      "options": [
+        {
+          "id": "a",
+          "text": "All nonprofits can issue official donation receipts"
+        },
+        {
+          "id": "b",
+          "text": "A registered charity may endorse a political candidate who supports its cause"
+        },
+        {
+          "id": "c",
+          "text": "Registered charity is a status granted by the CRA. Not every nonprofit is a registered charity."
+        },
+        {
+          "id": "d",
+          "text": "Registered charities file their annual return only when the CRA requests it"
+        }
+      ],
+      "answer": "c",
+      "explanation": "Only registered charities and other qualified donees can issue official receipts. Charities cannot engage in partisan activity, and they must file the T3010 every year."
+    },
+    {
+      "id": "q11",
+      "lesson": "l5",
+      "prompt": "A registered charity must file its T3010 information return:",
+      "options": [
+        {
+          "id": "a",
+          "text": "Within six months of its fiscal year-end"
+        },
+        {
+          "id": "b",
+          "text": "Within 30 days of its annual general meeting"
+        },
+        {
+          "id": "c",
+          "text": "Every three years"
+        },
+        {
+          "id": "d",
+          "text": "Only if it received government funding"
+        }
+      ],
+      "answer": "a",
+      "explanation": "The T3010 is due within six months of fiscal year-end everywhere in Canada, and late filing can lead to revocation. Provincial and federal corporate filings, such as annual returns, have their own separate deadlines."
+    },
+    {
+      "id": "q12",
+      "lesson": "l6",
+      "prompt": "A staff member approaches you privately to complain about the ED/CEO’s decisions. The best response is to:",
+      "options": [
+        {
+          "id": "a",
+          "text": "Promise to raise it at the next board meeting and keep the staff member’s name confidential"
+        },
+        {
+          "id": "b",
+          "text": "Listen respectfully, avoid taking sides or giving direction, point them to the proper channel, and inform the Chair"
+        },
+        {
+          "id": "c",
+          "text": "Investigate the complaint yourself by interviewing other staff"
+        },
+        {
+          "id": "d",
+          "text": "Instruct the ED/CEO to reverse the decisions"
+        }
+      ],
+      "answer": "b",
+      "explanation": "Individual directors should not go around the ED/CEO. Concerns should move through proper channels, such as HR or whistleblower policies, with the Chair informed."
+    },
+    {
+      "id": "q13",
+      "lesson": "l6",
+      "prompt": "Which is a core board responsibility regarding the Executive Director/CEO?",
+      "options": [
+        {
+          "id": "a",
+          "text": "Approving each staff hire the ED/CEO makes"
+        },
+        {
+          "id": "b",
+          "text": "Reviewing the ED/CEO’s emails to ensure quality"
+        },
+        {
+          "id": "c",
+          "text": "Supervising the ED/CEO’s daily schedule"
+        },
+        {
+          "id": "d",
+          "text": "Conducting a fair, documented annual performance evaluation against agreed goals"
+        }
+      ],
+      "answer": "d",
+      "explanation": "The board hires, sets goals for, evaluates, compensates and plans succession for the ED/CEO, and leaves day-to-day management to them."
+    },
+    {
+      "id": "q14",
+      "lesson": "l7",
+      "prompt": "Between meetings, the Chair and Treasurer agree by phone to approve a large unbudgeted expense beyond the ED/CEO’s authority. Unless authority has been formally delegated to them:",
+      "options": [
+        {
+          "id": "a",
+          "text": "The expense is approved because the two most senior officers agreed"
+        },
+        {
+          "id": "b",
+          "text": "The expense is approved if it is recorded in the next minutes"
+        },
+        {
+          "id": "c",
+          "text": "The board has not approved it. It needs a proper board meeting or a written resolution under the bylaws."
+        },
+        {
+          "id": "d",
+          "text": "The ED/CEO can approve it if the Chair agrees"
+        }
+      ],
+      "answer": "c",
+      "explanation": "Authority rests with the board acting together through proper process. Individual directors, even officers, cannot bind the board unless authority has been formally delegated."
+    },
+    {
+      "id": "q15",
+      "lesson": "l8",
+      "prompt": "What is the board’s role in risk management?",
+      "options": [
+        {
+          "id": "a",
+          "text": "To eliminate all risk to the organization"
+        },
+        {
+          "id": "b",
+          "text": "To decide how much risk is acceptable and ensure major risks are identified, monitored and managed"
+        },
+        {
+          "id": "c",
+          "text": "To leave risk entirely to the auditor"
+        },
+        {
+          "id": "d",
+          "text": "To discuss risk only after something goes wrong"
+        }
+      ],
+      "answer": "b",
+      "explanation": "Boards oversee risk. They set risk tolerance, review a risk register regularly and confirm that safeguards such as D&O insurance are in place."
+    }
+  ],
+  "locale": "en"
+}

@@ -12,6 +12,7 @@ describe("middleware public routes", () => {
 
   it("keeps referral-code redirects public without opening the dashboard", () => {
     expect(isPublicPath("/ref/ABC123")).toBe(true);
+    expect(isPublicPath("/verify/training/OLEA-2026-ABCDEF123456")).toBe(true);
     expect(isPublicPath("/referrals/dashboard")).toBe(false);
   });
 });

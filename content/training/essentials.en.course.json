@@ -1,0 +1,1006 @@
+{
+  "id": "governance-essentials",
+  "locale": "en",
+  "version": "2.0.0",
+  "currentAsOf": "October 2026",
+  "title": "Governance Essentials",
+  "subtitle": "Board onboarding for Canadian nonprofit and charity directors",
+  "provider": "Olea Connects",
+  "tagline": "Stronger Roots, Thriving Together",
+  "estimatedMinutes": 50,
+  "passMarkPercent": 80,
+  "certificateValidMonths": 24,
+  "jurisdictions": [
+    {
+      "id": "bc",
+      "label": "British Columbia",
+      "act": "Societies Act (BC)"
+    },
+    {
+      "id": "ab",
+      "label": "Alberta",
+      "act": "Societies Act (Alberta)"
+    },
+    {
+      "id": "sk",
+      "label": "Saskatchewan",
+      "act": "Non-Profit Corporations Act, 2022"
+    },
+    {
+      "id": "mb",
+      "label": "Manitoba",
+      "act": "The Corporations Act (Manitoba)"
+    },
+    {
+      "id": "on",
+      "label": "Ontario",
+      "act": "Not-for-Profit Corporations Act, 2010 (ONCA)"
+    },
+    {
+      "id": "qc",
+      "label": "Quebec",
+      "act": "Civil Code of Québec and Companies Act, Part III"
+    },
+    {
+      "id": "nb",
+      "label": "New Brunswick",
+      "act": "Companies Act (New Brunswick)"
+    },
+    {
+      "id": "ns",
+      "label": "Nova Scotia",
+      "act": "Societies Act (Nova Scotia)"
+    },
+    {
+      "id": "pe",
+      "label": "Prince Edward Island",
+      "act": "Companies Act, Part II (PEI)"
+    },
+    {
+      "id": "nl",
+      "label": "Newfoundland and Labrador",
+      "act": "Corporations Act (Newfoundland and Labrador)"
+    },
+    {
+      "id": "yt",
+      "label": "Yukon",
+      "act": "Societies Act (Yukon)"
+    },
+    {
+      "id": "nt",
+      "label": "Northwest Territories",
+      "act": "Societies Act (Northwest Territories)"
+    },
+    {
+      "id": "nu",
+      "label": "Nunavut",
+      "act": "Societies Act (Nunavut)"
+    },
+    {
+      "id": "fed",
+      "label": "Federal",
+      "act": "Canada Not-for-profit Corporations Act (CNCA)"
+    },
+    {
+      "id": "other",
+      "label": "Not sure",
+      "act": "Check which Act applies to your organization"
+    }
+  ],
+  "jurisdictionNote": "This course covers Canadian law for nonprofits and registered charities: the CRA’s rules, federal legislation, and the legislation of every province and territory. Where the rules differ, you’ll see the version for your organization’s jurisdiction. It is education, not legal advice. Your organization’s bylaws, policies and professional advisors are the final word.",
+  "welcome": {
+    "heading": "Welcome to the board table",
+    "body": [
+      "Serving on a board is one of the most meaningful ways to strengthen your community. It is also a legal role with real responsibilities. This course gives every director the same foundation, so the whole board can govern with confidence, whatever path brought each person to the table.",
+      "If you have served on boards before, much of this will be familiar. Look for the **Seasoned director’s note** in each lesson; those notes are written for you. You can also take the assessment first and skip ahead if you pass. If this is your first board, welcome. Nothing here assumes prior experience, and every term is explained the first time it appears.",
+      "The course has eight short lessons, a lesson about your own organization, and a 15-question assessment. You need 80% to pass. When you finish, your organization receives a record of completion and you receive a certificate."
+    ],
+    "outcomes": [
+      "Explain the difference between governing and managing, and where the board’s role begins and ends",
+      "Describe your legal duties as a director in your province, and how to meet them in practice",
+      "Recognize, declare and manage a conflict of interest",
+      "Read the core financial reports well enough to ask the right questions",
+      "Understand the key compliance obligations for nonprofits and registered charities",
+      "Hold the Executive Director/CEO accountable while supporting them",
+      "Contribute to well-run meetings and sound decisions",
+      "Oversee risk and strategy, take part in reconciliation, and help build a healthy board culture"
+    ]
+  },
+  "testOut": {
+    "enabled": true,
+    "heading": "Already an experienced director?",
+    "body": "You can take the assessment first. If you pass, you skip the eight lessons and go straight to the lesson about your organization. You have one test-out attempt. If you don’t pass, you’ll complete the lessons and can then retake the assessment as often as you need.",
+    "button": "Take the assessment first"
+  },
+  "lessons": [
+    {
+      "id": "l1",
+      "number": 1,
+      "title": "The Board’s Role: Governing, Not Managing",
+      "minutes": 5,
+      "blocks": [
+        {
+          "type": "text",
+          "body": "Every nonprofit has two jobs running in parallel: **governance**, which decides where the organization is going and holds it to account, and **management**, which gets it there day to day. The board owns the first. Staff, led by the Executive Director or CEO (ED/CEO), own the second."
+        },
+        {
+          "type": "text",
+          "body": "A phrase you will hear often captures the balance: **“noses in, fingers out.”** The board should be curious, informed and willing to ask hard questions (noses in). It should not reach into operations by directing staff, approving routine purchases or redesigning programs (fingers out)."
+        },
+        {
+          "type": "keypoints",
+          "title": "What the board does",
+          "items": [
+            "**Sets direction.** It approves the mission, the strategic plan and the annual budget.",
+            "**Appoints and oversees the ED/CEO.** It hires, supports, evaluates and, when necessary, replaces the organization’s chief executive.",
+            "**Safeguards resources.** It ensures money and assets are used for the organization’s purposes and protected from loss.",
+            "**Sets policy.** It establishes the boundaries within which management operates.",
+            "**Ensures accountability.** It answers to members, funders, regulators and the communities the organization serves, including the First Nations, Inuit and Métis communities connected to its work.",
+            "**Monitors performance and risk.** It checks that results match plans and that major risks are managed."
+          ]
+        },
+        {
+          "type": "callout",
+          "variant": "seasoned",
+          "title": "Seasoned director’s note",
+          "body": "In smaller organizations with few or no staff, directors often wear two hats and do operational work as volunteers. That is normal. The discipline is knowing which hat you are wearing. When you are packing food hampers, you take direction from whoever is coordinating. When you are at the board table, you govern. Problems start when the two blur."
+        },
+        {
+          "type": "scenario",
+          "title": "In practice",
+          "situation": "At the community festival, a director notices the program coordinator handling volunteers in a way the director thinks is inefficient. The director takes the coordinator aside and tells them to change the process.",
+          "question": "What would good governance look like here?",
+          "debrief": "The director has stepped into management. A better path is to raise the observation with the ED/CEO privately, framed as feedback rather than an instruction. If it reflects a pattern, such as volunteer retention problems, it becomes a board-level question about outcomes, not a request to change a process.",
+          "choices": [
+            {
+              "id": "a",
+              "best": false,
+              "text": "Tell the coordinator directly how to fix the process. You saw the problem first-hand.",
+              "outcome": "The coordinator now has two bosses: the ED/CEO and you. Staff stop knowing whose direction to follow, and the ED/CEO hears about it second-hand. Even good advice delivered this way weakens the organization."
+            },
+            {
+              "id": "b",
+              "best": true,
+              "text": "Mention what you saw to the ED/CEO privately, as an observation rather than an instruction.",
+              "outcome": "This respects the line between governing and managing. The ED/CEO can act on it, and if it turns out to be a pattern, such as volunteers not coming back, it becomes a board question about outcomes."
+            },
+            {
+              "id": "c",
+              "best": false,
+              "text": "Put a motion on the next board agenda to change how volunteers are scheduled.",
+              "outcome": "Now the whole board is redesigning an operational process. If the issue matters, ask a governance question instead: how is volunteer retention tracking, and what is management doing about it?"
+            }
+          ]
+        },
+        {
+          "type": "questions",
+          "title": "Questions a good director asks",
+          "items": [
+            "Is this a decision for the board, or one we have delegated to management?",
+            "Do we have a policy that already covers this?",
+            "Are we spending our meeting time on the future or on the past?"
+          ]
+        },
+        {
+          "type": "takeaway",
+          "body": "The board governs through the ED/CEO and through policy, not around them. Your power is collective: it exists when the board acts together, not when an individual director acts alone."
+        }
+      ]
+    },
+    {
+      "id": "l2",
+      "number": 2,
+      "title": "Your Legal Duties as a Director",
+      "minutes": 6,
+      "blocks": [
+        {
+          "type": "text",
+          "body": "When you join a board, you take on **fiduciary duties**. A fiduciary is someone trusted to act in another’s interest. For a director, that “other” is the organization itself, not the person who recruited you, a funder or a group you represent."
+        },
+        {
+          "type": "keypoints",
+          "title": "The duties, in plain language",
+          "items": [
+            "**Duty of loyalty (honesty and good faith).** Act in the best interests of the organization as a whole, and put its interests ahead of your own and anyone else’s.",
+            "**Duty of care.** Bring the care, diligence and skill that a reasonably prudent person would bring in comparable circumstances. In practice, prepare for meetings, attend, ask questions and use your judgment.",
+            "**Duty of compliance.** Act in accordance with the governing Act, the regulations and your organization’s constitution, bylaws and policies."
+          ]
+        },
+        {
+          "type": "jurisdiction",
+          "title": "Where your duties come from",
+          "variants": {
+            "bc": [
+              "Section 53 of the BC ***Societies Act*** requires directors to act honestly and in good faith with a view to the best interests of the society, to exercise the care, diligence and skill of a reasonably prudent individual in comparable circumstances, and to act in accordance with the Act, the regulations and the society’s bylaws.",
+              "Senior managers appointed by the board owe the same duties."
+            ],
+            "ab": [
+              "Alberta’s ***Societies Act*** is brief and does not list director duties. Your duties come from the common law (decisions of the courts) and your bylaws, and they are the same duties of loyalty and care described above.",
+              "Some Alberta nonprofits are incorporated under Part 9 of the *Companies Act* instead. Ask which Act applies to your organization."
+            ],
+            "sk": [
+              "Saskatchewan’s ***Non-Profit Corporations Act, 2022*** came into force on March 12, 2023, replacing the 1995 Act.",
+              "The previous Act required directors and officers to act honestly and in good faith with a view to the best interests of the corporation, and to exercise the care, diligence and skill of a reasonably prudent person in comparable circumstances. Those duties of loyalty and care continue to apply, and the new Act also disqualifies people with certain fraud-related convictions from serving as directors."
+            ],
+            "mb": [
+              "Manitoba nonprofits are incorporated under ***The Corporations Act***, which covers both business and nonprofit corporations. Directors and officers must act honestly and in good faith with a view to the best interests of the corporation, and exercise the care, diligence and skill of a reasonably prudent person in comparable circumstances."
+            ],
+            "on": [
+              "Section 43 of Ontario’s ***Not-for-Profit Corporations Act, 2010*** (ONCA) requires directors and officers to act honestly and in good faith with a view to the best interests of the corporation, and to exercise the care, diligence and skill of a reasonably prudent person in comparable circumstances.",
+              "ONCA came into force in October 2021, and the transition period for existing corporations ended in October 2024. Directors of Ontario charities have additional obligations, covered in Lesson 3."
+            ],
+            "qc": [
+              "Article 322 of the ***Civil Code of Québec*** requires directors to act with prudence and diligence, and with honesty and loyalty in the interest of the legal person.",
+              "Most Quebec nonprofits are incorporated under Part III of the *Companies Act*, which works together with the Civil Code."
+            ],
+            "nb": [
+              "Most New Brunswick nonprofits are incorporated under the ***Companies Act***. It sets out the board’s authority but does not spell out director duties, so your duties come from the common law (decisions of the courts) and your bylaws. They are the same duties of loyalty and care described above."
+            ],
+            "ns": [
+              "Nova Scotia’s ***Societies Act*** is brief and does not list director duties. Your duties come from the common law and your bylaws, and they are the same duties of loyalty and care described above."
+            ],
+            "pe": [
+              "Prince Edward Island nonprofits are still incorporated under ***Part II of the Companies Act***, which does not spell out director duties. Your duties come from the common law and your bylaws, and they are the same duties of loyalty and care described above."
+            ],
+            "nl": [
+              "Newfoundland and Labrador’s ***Corporations Act*** governs nonprofit corporations as well as businesses. Section 203 requires directors and officers to act honestly and in good faith with a view to the best interests of the corporation.",
+              "The same duty of care described above, to act with the care, diligence and skill of a reasonably prudent person, also applies."
+            ],
+            "yt": [
+              "Yukon’s modernized ***Societies Act*** sets out directors’ duties in the Act itself (section 57).",
+              "They follow the same principles of loyalty and care described above. Read section 57 alongside your bylaws."
+            ],
+            "nt": [
+              "Under the Northwest Territories ***Societies Act***, directors must act honestly and in good faith and make decisions in the best interests of the society. The territorial government’s handbook for directors explains these duties in more detail."
+            ],
+            "nu": [
+              "Nunavut’s ***Societies Act*** is brief and does not list director duties. Your duties come from the common law and your bylaws, and they are the same duties of loyalty and care described above."
+            ],
+            "fed": [
+              "Section 148 of the ***Canada Not-for-profit Corporations Act*** (CNCA) requires directors and officers to act honestly and in good faith with a view to the best interests of the corporation, and to exercise the care, diligence and skill of a reasonably prudent person in comparable circumstances.",
+              "Directors must also comply with the Act, the regulations, the articles and the bylaws."
+            ],
+            "other": [
+              "Every province and territory has its own nonprofit legislation, and the wording varies. The core duties are the same across Canada: loyalty, care and compliance.",
+              "Ask your Chair or ED/CEO which Act your organization is incorporated under, and read its section on directors."
+            ]
+          }
+        },
+        {
+          "type": "callout",
+          "variant": "note",
+          "title": "The good news: reasonable decisions are protected",
+          "body": "You are not expected to be perfect. Canadian courts generally defer to board decisions that were **informed, made in good faith and within a range of reasonable options**, even if they turn out badly. Directors can also generally rely in good faith on financial statements presented by management or the auditor, and on advice from qualified professionals. The protection comes from your process: reading the material, asking questions and recording how the decision was made."
+        },
+        {
+          "type": "callout",
+          "variant": "warning",
+          "title": "Representative directors",
+          "body": "If you were nominated by a funder, a partner organization, a chapter or a community group, you bring valuable perspective, but you do not take instructions from them. Your duty at the table is to this organization. When the two interests diverge, that is a conflict (see Lesson 3)."
+        },
+        {
+          "type": "scenario",
+          "title": "In practice",
+          "situation": "A new director skims the board package in the car and votes to approve a major lease without reading the summary of terms. Six months later, the lease becomes a serious financial burden.",
+          "question": "If you were this director, what would have protected you?",
+          "debrief": "Probably not. The duty of care is about process, not outcome. A director who read the material, asked about the lease terms and voted on a reasonable basis would be well protected even if the lease turned out badly. A director who did not prepare has little to stand on.",
+          "choices": [
+            {
+              "id": "a",
+              "best": false,
+              "text": "If you were that director: rely on the finance committee. They have looked at it, so you don’t need to.",
+              "outcome": "You can rely on committees and professionals in good faith, but only if you engage with what they bring you. Not reading the summary at all leaves you exposed if the decision is ever questioned."
+            },
+            {
+              "id": "b",
+              "best": true,
+              "text": "Read the summary of terms, send your questions to the ED/CEO before the meeting, and ask anything still unclear at the table.",
+              "outcome": "That is the duty of care in action. Even if the lease later turns out badly, a director who prepared, asked questions and voted on a reasonable basis is well protected."
+            },
+            {
+              "id": "c",
+              "best": false,
+              "text": "Abstain from the vote because you didn’t have time to read the material.",
+              "outcome": "Abstaining avoids one risk but creates another: the board loses your judgment, and repeated abstaining is itself a failure of care. The better answer is to prepare, or to ask the board to defer the decision if the package came too late for anyone to read it."
+            }
+          ]
+        },
+        {
+          "type": "questions",
+          "title": "Questions a good director asks",
+          "items": [
+            "Do I have enough information to make this decision? If not, what do I need?",
+            "Who benefits from this decision, and is that consistent with our purposes?",
+            "Is this within our bylaws and our authority?"
+          ]
+        },
+        {
+          "type": "takeaway",
+          "body": "Loyalty, care and compliance. Show up prepared, think independently, put the organization first and act within its rules. Good process is your best protection."
+        }
+      ]
+    },
+    {
+      "id": "l3",
+      "number": 3,
+      "title": "Conflicts of Interest and Confidentiality",
+      "minutes": 6,
+      "blocks": [
+        {
+          "type": "text",
+          "body": "A **conflict of interest** exists when a director’s personal interests, or the interests of family, a business or another organization they are connected to, could influence, or appear to influence, a board decision. Conflicts are common, especially in close-knit communities. Having one is not wrongdoing. **Failing to declare it** is."
+        },
+        {
+          "type": "keypoints",
+          "title": "The three steps: Declare, Abstain, Leave",
+          "items": [
+            "**Declare** the nature and extent of the interest as soon as you become aware of it, ideally before the item is discussed.",
+            "**Abstain** from voting, and do not try to influence the decision in any way, including in conversations outside the meeting.",
+            "**Leave** the room (or the virtual meeting) for the discussion and the vote, unless the board asks you to stay briefly to answer factual questions."
+          ]
+        },
+        {
+          "type": "text",
+          "body": "The minutes should record the declaration and that the director abstained and left. Many organizations also ask directors to sign an annual conflict-of-interest declaration. You’ll complete yours in the lesson about your organization."
+        },
+        {
+          "type": "jurisdiction",
+          "title": "What the law in your jurisdiction says",
+          "variants": {
+            "bc": [
+              "The BC ***Societies Act*** requires a director with a direct or indirect material interest in a contract or transaction to disclose it, abstain from voting, and leave the meeting while the matter is discussed and voted on, unless asked to stay to provide information.",
+              "The society must keep a record of every disclosure."
+            ],
+            "ab": [
+              "Alberta’s *Societies Act* has no conflict-of-interest section, so your **bylaws and conflict-of-interest policy** set the rules, backed by the common law duty of loyalty. Declare, Abstain, Leave is the accepted standard.",
+              "If your organization has no written conflict-of-interest policy, recommend one."
+            ],
+            "sk": [
+              "Saskatchewan’s non-profit legislation has long required a director with an interest in a material contract to disclose its nature and extent, in writing or in the minutes, and not to vote on it except in limited cases. Check how this applies under the 2022 Act with your bylaws and policy.",
+              "Leaving the room for the discussion and vote is strongly recommended."
+            ],
+            "mb": [
+              "Manitoba’s ***Corporations Act*** requires a director with an interest in a material contract or transaction to disclose its nature and extent, in writing or in the minutes, and generally not to vote on it.",
+              "Leaving the room is not required by the Act but is strongly recommended."
+            ],
+            "on": [
+              "Under **ONCA** (section 41), a director with an interest in a material contract or transaction must disclose the nature and extent of the interest, and generally must not attend the part of the meeting where it is discussed or vote on it.",
+              "**Ontario charities have stricter rules.** Under the *Charities Accounting Act*, directors cannot be paid for serving as directors, and any payment to a director or a connected person for other goods or services must meet the conditions in Ontario’s regulations or be approved by a court."
+            ],
+            "qc": [
+              "Article 324 of the ***Civil Code of Québec*** requires directors to avoid conflicts between their personal interest and their duties, and to disclose to the organization any interest that could place them in a conflict. The disclosure is recorded in the minutes.",
+              "Article 323 adds that directors may not use the organization’s property or information for their own benefit without authorization. Bylaws and good practice add abstaining from the discussion and the vote."
+            ],
+            "nb": [
+              "New Brunswick’s *Companies Act* has little to say about conflicts, so your **bylaws and conflict-of-interest policy** set the rules, backed by the common law duty of loyalty. Declare, Abstain, Leave is the accepted standard.",
+              "If your organization has no written policy, recommend one."
+            ],
+            "ns": [
+              "Nova Scotia’s *Societies Act* has no conflict-of-interest section, so your **bylaws and conflict-of-interest policy** set the rules, backed by the common law duty of loyalty. Declare, Abstain, Leave is the accepted standard.",
+              "If your organization has no written policy, recommend one."
+            ],
+            "pe": [
+              "PEI’s *Companies Act* has little to say about conflicts, so your **bylaws and conflict-of-interest policy** set the rules, backed by the common law duty of loyalty. Declare, Abstain, Leave is the accepted standard.",
+              "If your organization has no written policy, recommend one."
+            ],
+            "nl": [
+              "Newfoundland and Labrador’s ***Corporations Act*** (section 198) requires a director with an interest in a contract with the corporation to disclose the nature and extent of that interest.",
+              "Your bylaws and conflict-of-interest policy set out how the director abstains. Declare, Abstain, Leave is the accepted standard."
+            ],
+            "yt": [
+              "Yukon’s ***Societies Act*** requires directors to disclose any interest in a contract or transaction of the society (section 60).",
+              "Your bylaws and conflict-of-interest policy set out how the disclosure is recorded and how the director abstains and leaves the meeting."
+            ],
+            "nt": [
+              "Under the Northwest Territories ***Societies Act***, a director must declare any direct or indirect interest in a contract or proposed contract with the society, and should not vote on it.",
+              "Leaving the room for the discussion is strongly recommended."
+            ],
+            "nu": [
+              "Nunavut’s *Societies Act* is brief on conflicts, so your **bylaws and conflict-of-interest policy** set the rules, backed by the common law duty of loyalty. Declare, Abstain, Leave is the accepted standard.",
+              "If your organization has no written policy, recommend one."
+            ],
+            "fed": [
+              "Under the **CNCA** (section 141), a director must disclose the nature and extent of any interest in a material contract or transaction, in writing or by asking to have it entered in the minutes, and must not vote on it, except in limited cases set out in the Act.",
+              "The Act does not require you to leave the room, but leaving is strongly recommended."
+            ],
+            "other": [
+              "Most provincial and territorial Acts, and almost every set of bylaws, require disclosure and abstention.",
+              "Check your bylaws and conflict-of-interest policy. If your organization doesn’t have a written policy, recommend one."
+            ]
+          }
+        },
+        {
+          "type": "callout",
+          "variant": "note",
+          "title": "Perceived conflicts count too",
+          "body": "Ask yourself: if this appeared in the local paper, would a reasonable person question whether my judgment was independent? If the answer might be yes, declare it. Erring on the side of disclosure costs nothing, and it protects both you and the organization."
+        },
+        {
+          "type": "text",
+          "body": "**Confidentiality.** Board discussions, personnel matters, legal advice and donor information are confidential unless the board decides otherwise. Debate vigorously inside the room. Outside it, the board **speaks with one voice**: once a decision is made, every director supports it publicly, even those who voted against it. A director who cannot support a decision in good conscience may ask for the dissent to be recorded in the minutes or, in serious cases, resign. Speaking against the decision in public is not an option."
+        },
+        {
+          "type": "scenario",
+          "title": "In practice",
+          "situation": "The board is choosing a bookkeeping firm. One of the three bidders employs a director’s spouse, though the spouse would not work on the account.",
+          "question": "What should the director do?",
+          "debrief": "Declare the connection, leave the room, and do not discuss the bids with other directors outside the meeting. The firm can still win the contract on its merits, and a properly managed conflict is exactly what makes that defensible.",
+          "choices": [
+            {
+              "id": "a",
+              "best": false,
+              "text": "Stay and vote. Your spouse wouldn’t work on the account, so there’s no real conflict.",
+              "outcome": "Even an indirect or perceived interest is a conflict. If the firm wins and the connection comes out later, the decision, the firm and your reputation are all open to question."
+            },
+            {
+              "id": "b",
+              "best": true,
+              "text": "Declare the connection, leave the room for the discussion and vote, and don’t discuss the bids with other directors.",
+              "outcome": "Declare, Abstain, Leave, recorded in the minutes. The firm can still win on its merits, and the board can defend the choice to anyone."
+            },
+            {
+              "id": "c",
+              "best": false,
+              "text": "Ask the board to remove your spouse’s firm from the competition.",
+              "outcome": "Well meant, but it over-corrects. The organization might lose the best bid. Conflicts are managed by stepping away from the decision, not by excluding the other party."
+            }
+          ]
+        },
+        {
+          "type": "takeaway",
+          "body": "Declare, Abstain, Leave, and record it in the minutes. Keep board business confidential, and once a decision is made, support it outside the room."
+        }
+      ]
+    },
+    {
+      "id": "l4",
+      "number": 4,
+      "title": "Financial Oversight Fundamentals",
+      "minutes": 7,
+      "blocks": [
+        {
+          "type": "text",
+          "body": "You do not need to be an accountant to be a good director, but every director shares responsibility for the organization’s finances, not only the treasurer. This lesson gives you the essentials. Our separate **Financial Literacy for Directors** course goes deeper."
+        },
+        {
+          "type": "keypoints",
+          "title": "The three statements, in one sentence each",
+          "items": [
+            "**Statement of financial position** (balance sheet): what the organization owns, what it owes and the difference (net assets) at a point in time.",
+            "**Statement of operations** (income statement): the revenue that came in and the expenses that went out over a period. It shows whether there was a surplus or a deficit.",
+            "**Statement of cash flows:** where cash actually came from and went. An organization can show a surplus and still run out of cash."
+          ]
+        },
+        {
+          "type": "text",
+          "body": "At most meetings you will also see **budget versus actual**: the approved budget alongside actual results to date, with variances. Your job is not to check the arithmetic. It is to understand the story, asking what is significantly off plan, why, and what management is doing about it."
+        },
+        {
+          "type": "keypoints",
+          "title": "Concepts every director should know",
+          "items": [
+            "**Restricted funds** are money a donor or funder has given for a specific purpose. Using them for anything else, even temporarily to cover payroll, can breach the gift agreement and damage trust.",
+            "**Reserves** are unrestricted funds set aside for emergencies or opportunities. Many boards adopt a reserves policy with a target, such as three to six months of operating expenses.",
+            "**Audit or review engagement.** An independent accountant examines the year-end statements. An audit gives more assurance than a review. Your Act, your bylaws or your funders may say which you need, and the thresholds differ by province.",
+            "**Internal controls** are safeguards such as two signatures on cheques and bank transfers, separating who approves a payment from who makes it, and monthly bank reconciliations."
+          ]
+        },
+        {
+          "type": "callout",
+          "variant": "warning",
+          "title": "Where directors can be personally liable",
+          "body": "In Canada, directors can be **personally liable** if the organization fails to remit employee source deductions (income tax, CPP and EI; in Quebec, Quebec income tax, QPP and QPIP to Revenu Québec) or collected GST/HST and QST, and in some circumstances for unpaid employee wages. A due-diligence defence exists, but only for directors who took active steps to prevent the failure. Ask at every meeting for confirmation that remittances are current."
+        },
+        {
+          "type": "keypoints",
+          "title": "Red flags that should prompt questions",
+          "items": [
+            "Cash balance trending down for several months in a row",
+            "Financial reports that are late, incomplete or hard to get",
+            "Restricted funds being used for general operations",
+            "Unexplained large variances, or the same explanation every month",
+            "Unremitted payroll deductions or overdue taxes",
+            "One person controlling the whole payment process"
+          ]
+        },
+        {
+          "type": "callout",
+          "variant": "seasoned",
+          "title": "Seasoned director’s note",
+          "body": "For registered charities, the **disbursement quota** requires a minimum annual spend on charitable activities or gifts to qualified donees. It is 3.5% of property not used in charitable activities or administration up to $1 million, and 5% above that. Most operating charities clear it easily, but boards of foundations or charities with significant investments should see it monitored explicitly."
+        },
+        {
+          "type": "takeaway",
+          "body": "You are not expected to do the accounting. You are expected to understand the story, spot the red flags and ask until the answers make sense. Confirm that payroll remittances are current at every meeting."
+        }
+      ]
+    },
+    {
+      "id": "l5",
+      "number": 5,
+      "title": "Compliance: Your Act, Your Charity Status and the CRA",
+      "minutes": 6,
+      "blocks": [
+        {
+          "type": "text",
+          "body": "Compliance is the unglamorous part of governance that keeps everything else possible. The board does not do this work itself, but it must **know the obligations and confirm they are being met**. A simple annual compliance calendar, reviewed by the board, is one of the most effective tools you can have."
+        },
+        {
+          "type": "keypoints",
+          "title": "Know what you are",
+          "items": [
+            "**Nonprofit** describes the purpose: the organization does not distribute profits to members. It is incorporated under a provincial or territorial Act, or federally under the CNCA.",
+            "**Registered charity** is a separate status granted by the Canada Revenue Agency (CRA). Only registered charities, and other qualified donees, can issue official donation receipts for income tax purposes. Not every nonprofit is a charity.",
+            "Many organizations are both, so both sets of rules apply."
+          ]
+        },
+        {
+          "type": "jurisdiction",
+          "title": "Core obligations under your Act",
+          "variants": {
+            "bc": [
+              "At least three directors, at least one of them ordinarily resident in BC. Member-funded societies have different rules.",
+              "A majority of directors must not be paid by the society as employees or contractors.",
+              "Hold an annual general meeting (AGM) and present the financial statements to members.",
+              "File an annual report with the BC Registry within 30 days after the AGM.",
+              "Keep required records: bylaws, the register of directors and members, minutes and financial records."
+            ],
+            "ab": [
+              "File an annual return with **Alberta Corporate Registry** every year, by the last day of the month after the society’s anniversary month. It lists the directors and officers and includes the financial statement presented at the last AGM.",
+              "Hold an annual general meeting as your bylaws require.",
+              "Keep minutes, registers of members and directors, and financial records."
+            ],
+            "sk": [
+              "File an annual return with Saskatchewan’s Corporate Registry each year. It includes the financial statements for the last fiscal year, with any audit or review report, and confirms the directors, officers and registered office.",
+              "Audit or review: a charitable corporation with revenue over $500,000 needs an audit. Below that, members may approve a review instead, and below $100,000 they may waive both. Membership corporations have more flexibility.",
+              "Hold an annual meeting and present the financial statements to members.",
+              "Existing corporations should confirm their bylaws were updated for the 2022 Act."
+            ],
+            "mb": [
+              "File an annual return with the **Manitoba Companies Office** by the last day of the corporation’s anniversary month. It confirms the directors, officers and registered office.",
+              "A Manitoba nonprofit corporation needs at least three directors.",
+              "Hold an annual meeting of members and present the financial statements.",
+              "Keep the bylaws, minutes, and registers of members and directors at the registered office."
+            ],
+            "on": [
+              "At least three directors. In a public benefit corporation, which includes every charity, no more than one-third of directors may be employees of the corporation or its affiliates.",
+              "Hold an annual meeting of members and present the financial statements and the public accountant’s report.",
+              "File an annual return through the **Ontario Business Registry** within six months of fiscal year-end.",
+              "Audit or review: a public benefit corporation with annual revenue over $500,000 needs an audit. Between $100,000 and $500,000, members may approve a review engagement instead. At $100,000 or less, members may waive both, by extraordinary resolution.",
+              "Keep required records: articles, bylaws, minutes, and registers of members, directors and officers."
+            ],
+            "qc": [
+              "Have a board of directors as set out in your letters patent and bylaws.",
+              "File the annual updating declaration with the **Registraire des entreprises du Québec (REQ)** every year, and file an updating declaration within 30 days of changes such as a new director or a new address.",
+              "Hold an AGM, and present the annual report and financial statements to members.",
+              "Keep the letters patent, bylaws, minutes and register of directors at the head office in Quebec.",
+              "Registered charities with activities in Quebec also file an information return with **Revenu Québec** (form TP-985.22) within six months of fiscal year-end, in addition to the CRA’s T3010."
+            ],
+            "nb": [
+              "Have a board of at least three directors.",
+              "File an annual return with the **Corporate Registry of Service New Brunswick** every year. If it isn’t filed, the organization can lose its corporate status.",
+              "Hold an annual meeting of members and present the financial statements.",
+              "Keep the bylaws, minutes and registers of members and directors."
+            ],
+            "ns": [
+              "File your financial statements (a balance sheet and a statement of income and expenses) with the **Registry of Joint Stock Companies** within 14 days after the annual general meeting.",
+              "File the annual return and pay the annual registration fee to keep the society registered.",
+              "Report changes to directors, officers or their addresses within 14 days.",
+              "Keep minutes of all member and director meetings at the registered office."
+            ],
+            "pe": [
+              "Have a board of at least three directors.",
+              "Renew the corporation every year through PEI’s online corporate registry renewal service, and keep the list of directors current.",
+              "Hold an annual meeting of members and present the financial statements.",
+              "Keep the bylaws, minutes and registers of members and directors. Watch for new nonprofit legislation, which may change these rules."
+            ],
+            "nl": [
+              "File the annual return with the **Registry of Companies** (Service NL) on or before the first day of the anniversary month of registration. Missing it puts the organization out of good standing, which can affect grants and is the first step toward losing incorporated status.",
+              "File a notice of change whenever directors change.",
+              "Hold an annual meeting of members and present the financial statements."
+            ],
+            "yt": [
+              "File an annual report with the **Yukon Corporate Online Registry (YCOR)** within 30 days after the annual general meeting, and no later than five months after fiscal year-end, whichever comes first.",
+              "An unfiled annual report is the most common reason a society goes into default, and a society in default can be struck from the registry.",
+              "Hold an annual general meeting and present the financial statements. Disclose any remuneration paid to directors."
+            ],
+            "nt": [
+              "File a notice of directors and a financial statement with the **Corporate Registries** within 14 days after the annual general meeting.",
+              "A charitable society that falls behind on its filings can lose its charitable status.",
+              "Hold an annual general meeting as your bylaws require, and keep minutes and a register of members."
+            ],
+            "nu": [
+              "Within 14 days after the annual general meeting, file with **Legal Registries**: the financial statements (signed by an auditor or two directors) and a notice of directors.",
+              "File notices of any change to the registered office or bylaws.",
+              "A society must be current on every filing since incorporation to be in good standing."
+            ],
+            "fed": [
+              "At least one director, or three for a soliciting corporation (most charities that fundraise from the public), and at least two of those must not be officers or employees.",
+              "Hold an annual meeting within 15 months of the last one and no later than six months after fiscal year-end.",
+              "File an annual return with **Corporations Canada** within 60 days after the anniversary of incorporation. Corporations that stop filing can be dissolved.",
+              "Audit or review requirements depend on whether the corporation is soliciting and on its revenue.",
+              "Keep required records: articles, bylaws, minutes, and registers of members, directors and officers."
+            ],
+            "other": [
+              "Each province and territory sets its own filing rules. Usually these include an annual return or report to the corporate registry and an annual meeting of members.",
+              "Ask for your organization’s compliance calendar, and check that it covers both your Act and the CRA."
+            ]
+          }
+        },
+        {
+          "type": "keypoints",
+          "title": "Core obligations for registered charities (CRA, everywhere in Canada)",
+          "items": [
+            "File the **T3010 Registered Charity Information Return** within six months of the fiscal year-end. Late filing can lead to revocation of charitable status.",
+            "Issue official receipts correctly, and only for genuine gifts.",
+            "Devote resources to charitable purposes and meet the disbursement quota.",
+            "Public policy dialogue and advocacy connected to your purposes are allowed. **Partisan political activity is not:** no supporting or opposing any political party or candidate.",
+            "Keep adequate books and records in Canada."
+          ]
+        },
+        {
+          "type": "scenario",
+          "title": "In practice",
+          "situation": "During an election campaign, the ED/CEO proposes posting on the charity’s social media to encourage supporters to vote for a candidate who has promised to fund the sector.",
+          "question": "How should the board respond?",
+          "debrief": "A registered charity cannot endorse or oppose candidates or parties. It can publish non-partisan information, such as asking all candidates the same questions about the sector and sharing their answers, or advocating for a policy. The board should redirect the idea into a compliant form.",
+          "choices": [
+            {
+              "id": "a",
+              "best": false,
+              "text": "Approve the post. The candidate’s promise directly helps the people you serve.",
+              "outcome": "A registered charity may not support or oppose any candidate or party, whatever the reason. A partisan post puts charitable status at risk."
+            },
+            {
+              "id": "b",
+              "best": true,
+              "text": "Redirect it: send every candidate the same questions about the sector and publish all the answers, or advocate for the policy itself.",
+              "outcome": "Non-partisan public policy dialogue connected to your purposes is allowed. The organization gets its message out and stays fully compliant."
+            },
+            {
+              "id": "c",
+              "best": false,
+              "text": "Tell the ED/CEO the charity should stay out of elections entirely and say nothing.",
+              "outcome": "Safe, but it gives up something charities are allowed to do. Advocacy on policy issues related to your mission is permitted, and the people you serve may be counting on it."
+            }
+          ]
+        },
+        {
+          "type": "takeaway",
+          "body": "Know which Act you are incorporated under and whether you are a registered charity. Keep a compliance calendar, and ask for confirmation that the annual meeting, the annual filings, the T3010 and remittances are on track."
+        }
+      ]
+    },
+    {
+      "id": "l6",
+      "number": 6,
+      "title": "The Board and the Executive Director/CEO",
+      "minutes": 4,
+      "blocks": [
+        {
+          "type": "text",
+          "body": "In most staffed nonprofits, the board has **one employee: the Executive Director or CEO** (ED/CEO). Everyone else reports to the ED/CEO. This is the single most important relationship in governance, and it works best as a partnership between people with different roles."
+        },
+        {
+          "type": "keypoints",
+          "title": "The board’s responsibilities to the ED/CEO",
+          "items": [
+            "**Hire well.** Run a deliberate search based on what the organization needs next.",
+            "**Set clear expectations.** Agree on annual goals linked to the strategic plan.",
+            "**Delegate through policy.** Say what must be achieved and what limits apply, such as spending authority and risk tolerance, then let the ED/CEO decide how.",
+            "**Evaluate annually.** Use a fair, documented process with input from the full board.",
+            "**Set compensation** that is reasonable and defensible.",
+            "**Plan for succession.** Have an emergency succession plan in place in case the ED/CEO leaves suddenly."
+          ]
+        },
+        {
+          "type": "callout",
+          "variant": "warning",
+          "title": "Avoid going around the ED/CEO",
+          "body": "Directors should not give instructions to staff or encourage staff to bring complaints directly to the board, except through a formal channel such as a whistleblower policy. Doing so undermines the ED/CEO and confuses accountability. If you hear concerns, route them to the Chair."
+        },
+        {
+          "type": "callout",
+          "variant": "seasoned",
+          "title": "Seasoned director’s note",
+          "body": "The Chair–ED/CEO relationship sets the tone for the whole organization. Regular one-on-ones, no surprises in either direction, and a shared understanding of what goes to the board help a great deal. Hold a short **in-camera session** (board only, without staff) at the end of each meeting. When it is routine, it does not signal a problem, and it gives directors a safe space to raise concerns early."
+        },
+        {
+          "type": "takeaway",
+          "body": "The board directs the ED/CEO, and the ED/CEO directs the staff. Support your ED/CEO, hold them accountable against agreed goals, and never govern around them."
+        }
+      ]
+    },
+    {
+      "id": "l7",
+      "number": 7,
+      "title": "Effective Meetings and Sound Decisions",
+      "minutes": 4,
+      "blocks": [
+        {
+          "type": "text",
+          "body": "The board exists as a decision-making body only when it meets properly. Individual directors have no authority on their own. That makes meetings the place where your duties are fulfilled, and where they are recorded."
+        },
+        {
+          "type": "keypoints",
+          "title": "Your role before, during and after",
+          "items": [
+            "**Before:** read the package. Note your questions. Send any requests for information to the Chair or ED/CEO in advance so answers are ready.",
+            "**During:** focus on the agenda, ask questions, listen to understand, and say what you think. Silence is often taken as agreement.",
+            "**After:** follow through on action items, keep discussions confidential, and support the board’s decisions."
+          ]
+        },
+        {
+          "type": "keypoints",
+          "title": "The mechanics worth knowing",
+          "items": [
+            "**Quorum** is the minimum number of directors who must be present for decisions to be valid, as set by your bylaws.",
+            "**Motions** are formal proposals. They are made, seconded, discussed and voted on.",
+            "**Consent agenda** bundles routine items, such as prior minutes and committee reports, into a single vote so more time goes to strategy. Any director can ask to pull an item for discussion.",
+            "**Minutes** record decisions, key reasons and conflict declarations, not a word-for-word transcript. Once approved, they are the legal record of what the board did.",
+            "**Recorded dissent:** if you disagree with a significant decision, you can ask that your vote against be recorded.",
+            "**Committees** advise the board and do not make decisions on its behalf unless the board has formally delegated that authority."
+          ]
+        },
+        {
+          "type": "scenario",
+          "title": "In practice",
+          "situation": "Between meetings, the Chair and Treasurer agree by phone to approve a $40,000 unbudgeted expense that is beyond the ED/CEO’s spending authority.",
+          "question": "Has the board approved the expense?",
+          "debrief": "No. Two directors are not the board. Unless your bylaws or a board resolution delegates that authority to them, the board must decide, either at a properly called meeting or by a written resolution circulated to every director and approved as your bylaws and your Act require. Urgent decisions still need a proper process.",
+          "choices": [
+            {
+              "id": "a",
+              "best": false,
+              "text": "Treat it as approved. The Chair and Treasurer are the board’s two most senior officers.",
+              "outcome": "Two directors are not the board. Unless authority was formally delegated, the expense is unauthorized, and the directors who approved it may have to answer for it."
+            },
+            {
+              "id": "b",
+              "best": true,
+              "text": "Call a short special meeting, or circulate a written resolution to every director as your bylaws require.",
+              "outcome": "Urgent decisions can be made quickly and still properly. The decision is valid, recorded, and every director had a say."
+            },
+            {
+              "id": "c",
+              "best": false,
+              "text": "Let the ED/CEO spend it now, and have the board ratify it at the next meeting.",
+              "outcome": "Ratifying after the fact puts the board in a corner: it can only accept or undo a done deal. It also signals that spending limits are optional. Use it only in a true emergency, and fix the process afterwards."
+            }
+          ]
+        },
+        {
+          "type": "takeaway",
+          "body": "Prepare, participate and follow through. Decisions are made by the board as a whole, through proper process, and recorded in the minutes."
+        }
+      ]
+    },
+    {
+      "id": "l8",
+      "number": 8,
+      "title": "Strategy, Risk, Reconciliation and Board Culture",
+      "minutes": 7,
+      "blocks": [
+        {
+          "type": "text",
+          "body": "Great boards spend most of their time looking forward. They set direction, anticipate risks, build trust with the communities they serve and keep improving themselves. This lesson brings the pieces together."
+        },
+        {
+          "type": "keypoints",
+          "title": "Strategy and risk",
+          "items": [
+            "**The strategic plan** sets out three to five priorities for the next few years. The board approves it, management builds the operational plan, and the board monitors progress with a short dashboard.",
+            "**Risk oversight:** the board does not eliminate risk. It decides how much risk is acceptable and checks that major risks are identified and managed. A simple risk register, reviewed once or twice a year, covers the most important ones: financial, people, reputational, legal and compliance, technology and cyber, and safety.",
+            "**Directors’ and officers’ (D&O) insurance:** confirm the organization has it and understand broadly what it covers. Ask about indemnification provisions in the bylaws."
+          ]
+        },
+        {
+          "type": "text",
+          "body": "**Reconciliation is governance work.** The Truth and Reconciliation Commission of Canada issued 94 Calls to Action in 2015. Call to Action 92 is addressed to the corporate sector, and many nonprofits have adopted it as a standard for themselves: build respectful relationships with Indigenous peoples, ensure equitable access to opportunities, and educate leadership on Indigenous history and rights. For a board, that is a matter of strategy, accountability and culture, not a one-time statement."
+        },
+        {
+          "type": "keypoints",
+          "title": "What reconciliation can look like at the board table",
+          "items": [
+            "**Know where you are.** Learn whose traditional territory your organization operates on, and about the First Nations, Inuit and Métis communities in your area.",
+            "**Make acknowledgements meaningful.** If you open meetings with a land acknowledgement, make it specific and connect it to what the organization is doing. A scripted line read without reflection can do more harm than good.",
+            "**Ask who is missing.** Are the Indigenous people your organization serves reflected in its governance, programs and decisions?",
+            "**Build relationships before you need them.** Engagement that starts when a decision is already made is consultation in name only.",
+            "**Keep learning.** Make Indigenous history, rights and cultural safety part of the board’s ongoing education. Free and low-cost courses are widely available."
+          ]
+        },
+        {
+          "type": "scenario",
+          "title": "In practice",
+          "situation": "The board is refreshing its strategic plan. Three weeks before the vote, a director suggests sending the draft to a local First Nation and an Indigenous friendship centre for comment.",
+          "question": "What would a good approach look like?",
+          "debrief": "The instinct is right, but the timing turns it into a formality. A better approach is to reach out early, ask how they would like to be involved, offer honoraria for people’s time and knowledge, and be willing to adjust the timeline. If that isn’t possible this time, be honest about it and start building the relationship for the next cycle.",
+          "choices": [
+            {
+              "id": "a",
+              "best": false,
+              "text": "Send the draft as suggested. Some input is better than none.",
+              "outcome": "Asking for comments on a near-final plan, on a three-week deadline, can feel extractive. It signals that the decisions are already made, and it can damage trust you’ll need later."
+            },
+            {
+              "id": "b",
+              "best": true,
+              "text": "Reach out now to ask how they would like to be involved, offer honoraria, and be ready to adjust the timeline or be honest about its limits.",
+              "outcome": "This treats Indigenous partners as relationships, not reviewers. Even if this plan can’t change much, the board starts something real for the next cycle."
+            },
+            {
+              "id": "c",
+              "best": false,
+              "text": "Skip it this time, since there isn’t enough time to do it properly.",
+              "outcome": "Understandable, but silence is a choice too. If there isn’t time now, say so honestly and commit to starting the relationship well before the next planning cycle."
+            }
+          ]
+        },
+        {
+          "type": "keypoints",
+          "title": "Board culture",
+          "items": [
+            "**Constructive challenge:** respectful disagreement produces better decisions than polite silence.",
+            "**Diverse perspectives:** boards that reflect their communities, and draw on lived experience, make better decisions. Our DEI course explores this further.",
+            "**Annual board self-evaluation:** a short survey on how the board is performing, followed by action.",
+            "**Succession and recruitment:** a skills matrix shows what the board needs next, so recruitment is deliberate rather than “who do we know?”",
+            "**Ongoing learning:** governance, finance, cyber security, DEI and reconciliation are not one-time topics."
+          ]
+        },
+        {
+          "type": "keypoints",
+          "title": "Your first 90 days",
+          "items": [
+            "Read the constitution or purposes, the bylaws, the strategic plan, the last year of minutes, the most recent financial statements and the key policies. The next lesson brings these together for you.",
+            "Meet the Chair and the ED/CEO one-on-one.",
+            "Sign your conflict-of-interest declaration and code of conduct.",
+            "Confirm D&O insurance coverage.",
+            "Attend a program or event to see the mission in action.",
+            "Ask a seasoned director to be your informal mentor for your first year."
+          ]
+        },
+        {
+          "type": "takeaway",
+          "body": "Look forward, manage risk deliberately, build trust with the communities you serve, and invest in the board itself. A strong board is built on purpose."
+        }
+      ]
+    }
+  ],
+  "orgLesson": {
+    "id": "org",
+    "title": "Our Organization",
+    "minutes": 10,
+    "intro": "This lesson is prepared by your organization. Review each document, then complete your conflict-of-interest declaration and your code of conduct acknowledgement. Both are recorded with your organization.",
+    "readingTip": "You don’t need to memorize these documents. As you read, look for four things: our purposes, how decisions are made, what we are trying to achieve, and our financial position.",
+    "documentsHeading": "Documents to review",
+    "noDocuments": "Your organization hasn’t added any documents yet. Ask your Chair or ED/CEO for the bylaws, strategic plan, latest financial statements and key policies.",
+    "documentKinds": {
+      "bylaws": "Constitution and bylaws",
+      "strategic_plan": "Strategic plan",
+      "financials": "Latest financial statements",
+      "code_of_conduct": "Code of conduct",
+      "coi_policy": "Conflict-of-interest policy",
+      "minutes": "Recent board minutes",
+      "other": "Other document"
+    },
+    "reviewedLabel": "I have reviewed the documents my organization provided.",
+    "coi": {
+      "heading": "Conflict-of-interest declaration",
+      "intro": "List any interests that could conflict, or appear to conflict, with your duties to this organization. Include employment, business interests, other boards you serve on, family members who work for or do business with the organization, and funders you are connected to.",
+      "noneLabel": "I have no interests to declare at this time.",
+      "listLabel": "I have the following interests to declare:",
+      "placeholder": "For example: I am a director of the Westside Community Foundation, which funds our youth program.",
+      "commitment": "I will update this declaration if my circumstances change, and declare any conflict at the meeting where it arises."
+    },
+    "conduct": {
+      "heading": "Code of conduct",
+      "statement": "I have read the organization’s code of conduct and agree to follow it.",
+      "missing": "Your organization hasn’t added a code of conduct. You can continue, and your administrator can add one later."
+    },
+    "signatureLabel": "Type your full name to sign",
+    "button": "Sign and continue"
+  },
+  "attestation": {
+    "heading": "Director acknowledgement",
+    "statements": [
+      "I have completed the Governance Essentials course.",
+      "I understand my duties of loyalty, care and compliance as a director.",
+      "I will declare conflicts of interest and keep board matters confidential.",
+      "I understand this course is educational and does not replace my organization’s bylaws, policies or legal advice."
+    ]
+  },
+  "closing": {
+    "heading": "Thank you for serving",
+    "body": "Good governance is not about perfection. It is about showing up prepared, asking good questions, and putting the organization and the community it serves first. Thank you for the time and care you bring to the board table."
+  },
+  "media": {
+    "welcomeVideo": {
+      "url": null,
+      "title": "A welcome from Rosalyn Walls",
+      "pending": "Welcome video coming soon"
+    },
+    "lessonAudio": {}
+  },
+  "reflection": {
+    "before": {
+      "heading": "Where are you starting?",
+      "intro": "Before you begin, rate how confident you feel today in each area. There are no right answers. Your organization only ever sees combined, anonymous results, and you’ll see your own growth at the end.",
+      "button": "Save and begin"
+    },
+    "after": {
+      "heading": "How confident do you feel now?",
+      "intro": "Rate the same areas again. Comparing the two shows you, and your board, where the learning landed."
+    },
+    "scale": [
+      "Not yet",
+      "A little",
+      "Somewhat",
+      "Confident",
+      "Very confident"
+    ],
+    "growth": "Your growth",
+    "topics": [
+      {
+        "id": "l1",
+        "label": "Knowing what the board decides and what management decides"
+      },
+      {
+        "id": "l2",
+        "label": "Understanding my legal duties as a director"
+      },
+      {
+        "id": "l3",
+        "label": "Recognizing and handling a conflict of interest"
+      },
+      {
+        "id": "l4",
+        "label": "Reading financial reports and spotting red flags"
+      },
+      {
+        "id": "l5",
+        "label": "Knowing our compliance obligations"
+      },
+      {
+        "id": "l6",
+        "label": "Supporting and overseeing the ED/CEO"
+      },
+      {
+        "id": "l7",
+        "label": "Contributing to effective meetings and decisions"
+      },
+      {
+        "id": "l8",
+        "label": "Overseeing strategy, risk and reconciliation"
+      }
+    ]
+  },
+  "actionPlan": {
+    "heading": "Your action plan",
+    "intro": "Learning sticks when it turns into action. Choose up to three things you’ll do in the next 90 days, or write your own. We’ll include them with your certificate, and the annual refresher will ask how they went.",
+    "suggestions": [
+      "Read our bylaws and strategic plan before my next board meeting.",
+      "Prepare questions for every board package and send them ahead of the meeting.",
+      "Ask at each meeting for confirmation that payroll remittances are current.",
+      "Update my conflict-of-interest declaration whenever my situation changes.",
+      "Ask for a one-page compliance calendar for the board.",
+      "Meet one-on-one with our Chair or ED/CEO within 60 days.",
+      "Learn whose traditional territory our organization is on, and about the Nations in our area.",
+      "Ask that the board review its risk register this year.",
+      "Suggest a short in-camera session at the end of each board meeting.",
+      "Visit one of our programs or events to see the mission in action."
+    ],
+    "customLabel": "Or write your own",
+    "customPlaceholder": "For example: Join the finance committee and learn our budget process.",
+    "max": 3,
+    "button": "Save my action plan",
+    "previous": {
+      "heading": "Last time, you committed to",
+      "intro": "How did it go? Be honest. This is for you, and your organization only sees combined results.",
+      "statuses": {
+        "done": "Done",
+        "partly": "Partly",
+        "not_yet": "Not yet"
+      }
+    }
+  }
+}
