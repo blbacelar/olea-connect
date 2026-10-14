@@ -107,7 +107,7 @@ export function getNavigationGroups(
             (!item.requiredOrganizationRoles ||
               (organizationRole !== undefined &&
                 item.requiredOrganizationRoles.includes(organizationRole))) &&
-            (!item.requiredTier || (item.href === "/modules/board-training" ? organizationTier === "canopy" : organizationTier === "canopy" || organizationTier === "harvest")),
+            (!item.requiredTier || item.href === "/modules/board-training" || organizationTier === "canopy" || organizationTier === "harvest"),
         )
         .map((item) => ({
           ...item,

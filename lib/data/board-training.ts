@@ -23,19 +23,28 @@ type EnrollmentRow = {
   organization_signed_at: string | null; acknowledged_at: string | null;
 };
 
-export async function requireTrainingContext() {
-  const session = await requireMemberContext();
-  const admin = createAdminClient();
+async function hasActiveCanopySubscription(admin: ReturnType<typeof createAdminClient>, organizationId: string) {
   const { data: subscription, error } = await admin
     .from("subscriptions")
     .select("plan_id, status")
-    .eq("organization_id", session.organization.id)
+    .eq("organization_id", organizationId)
     .in("status", ["active", "trialing"])
     .order("created_at", { ascending: false })
     .limit(1)
     .maybeSingle();
   if (error) throw error;
-  if (!subscription || subscription.plan_id !== "canopy") {
+  return subscription?.plan_id === "canopy";
+}
+
+export async function hasTrainingAccess() {
+  const session = await requireMemberContext();
+  return hasActiveCanopySubscription(createAdminClient(), session.organization.id);
+}
+
+export async function requireTrainingContext() {
+  const session = await requireMemberContext();
+  const admin = createAdminClient();
+  if (!(await hasActiveCanopySubscription(admin, session.organization.id))) {
     notFound();
   }
   return { ...session, admin, isManager: ["owner", "admin"].includes(session.member.membershipRole) };

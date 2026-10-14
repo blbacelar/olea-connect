@@ -24,6 +24,11 @@ describe("application navigation", () => {
     expect(navigationLabelsFor([])).toContain("Grant Platform");
   });
 
+  it("shows the Board Training entry for lower tiers in both languages", () => {
+    expect(getNavigationGroups([], "member", "en-CA", "seedling").flat().map((item) => item.label)).toContain("Board Training");
+    expect(getNavigationGroups([], "member", "fr-CA", "roots").flat().map((item) => item.label)).toContain("Formation du conseil");
+  });
+
   it("hides Board Recruitment from regular organization members", () => {
     expect(navigationLabelsFor([], "member")).not.toContain(
       "Board Recruitment",

@@ -120,9 +120,13 @@ test.describe("@critical Canopy board training", () => {
       await expect(memberPage.getByText("This page could not be found.")).toBeVisible();
       const rootsPage = await rootsContext.newPage();
       await rootsPage.goto("/dashboard");
-      await expect(rootsPage.getByRole("link", { name: "Board training" })).toHaveCount(0);
-      await rootsPage.goto("/modules/board-training");
-      await expect(rootsPage.getByText("This page could not be found.")).toBeVisible();
+      await rootsPage.getByRole("link", { name: "Board Training" }).click();
+      await expect(rootsPage.getByTestId("board-training-locked")).toBeVisible();
+      await expect(rootsPage.getByRole("link", { name: "View Canopy plan" })).toBeVisible();
+      await expect(rootsPage.getByTestId("board-training-home")).toHaveCount(0);
+      await rootsPage.goto("/modules/board-training/essentials");
+      await expect(rootsPage).toHaveURL(/\/modules\/board-training$/);
+      await expect(rootsPage.getByTestId("board-training-locked")).toBeVisible();
     } finally {
       await ownerContext.close(); await memberContext.close(); await rootsContext.close();
     }

@@ -1,14 +1,16 @@
 import { ArrowLeft } from "lucide-react";
 import Link from "next/link";
+import { redirect } from "next/navigation";
 
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { getMyTrainingCertificates } from "@/lib/data/board-training";
+import { getMyTrainingCertificates, hasTrainingAccess } from "@/lib/data/board-training";
 import { getRequestLocale } from "@/lib/i18n/server";
 
 export const dynamic = "force-dynamic";
 
 export default async function MyTrainingCertificatesPage() {
+  if (!(await hasTrainingAccess())) redirect("/modules/board-training");
   const certificates = await getMyTrainingCertificates();
   const french = getRequestLocale() === "fr-CA";
   return <div className="mx-auto max-w-3xl space-y-6">

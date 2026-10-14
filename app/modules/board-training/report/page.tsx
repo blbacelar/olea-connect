@@ -1,15 +1,17 @@
 import { ArrowLeft } from "lucide-react";
 import Link from "next/link";
+import { redirect } from "next/navigation";
 
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { getChairGuide } from "@/lib/board-training/content";
-import { getTrainingReport } from "@/lib/data/board-training";
+import { getTrainingReport, hasTrainingAccess } from "@/lib/data/board-training";
 import { getRequestLocale } from "@/lib/i18n/server";
 
 export const dynamic = "force-dynamic";
 
 export default async function BoardTrainingReportPage() {
+  if (!(await hasTrainingAccess())) redirect("/modules/board-training");
   const { report, completedCount, topics } = await getTrainingReport();
   const french = getRequestLocale() === "fr-CA";
   const chairSessions = getChairGuide(french ? "fr" : "en").sessions;
