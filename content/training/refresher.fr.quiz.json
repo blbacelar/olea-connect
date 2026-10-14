@@ -1,0 +1,160 @@
+{
+  "courseId": "governance-refresher",
+  "locale": "fr",
+  "version": "2026.1",
+  "passMarkPercent": 80,
+  "shuffleQuestions": true,
+  "shuffleOptions": true,
+  "questions": [
+    {
+      "id": "rq1",
+      "lesson": "r1",
+      "prompt": "En pleine discussion, une administratrice se rend compte que le contrat à l’étude concerne l’entreprise de son beau-frère. Que devrait-elle faire?",
+      "options": [
+        {
+          "id": "a",
+          "text": "Garder le silence et s’abstenir de voter"
+        },
+        {
+          "id": "b",
+          "text": "Déclarer l’intérêt immédiatement, puis quitter la salle pour le reste de la discussion et le vote"
+        },
+        {
+          "id": "c",
+          "text": "Terminer la discussion, puis le déclarer avant le vote"
+        },
+        {
+          "id": "d",
+          "text": "Rien; la belle-famille ne compte pas"
+        }
+      ],
+      "answer": "b",
+      "explanation": "Déclarez le conflit dès que vous en prenez conscience, même en pleine discussion, puis abstenez-vous et sortez. La déclaration doit être consignée au procès-verbal."
+    },
+    {
+      "id": "rq2",
+      "lesson": "r3",
+      "prompt": "La DG mentionne que les versements des retenues sur la paie étaient en retard le mois dernier. Pourquoi le conseil devrait-il prendre la chose au sérieux?",
+      "options": [
+        {
+          "id": "a",
+          "text": "Parce que cela pourrait toucher le plan stratégique"
+        },
+        {
+          "id": "b",
+          "text": "Ce n’est pas l’affaire du conseil; la paie relève de la direction"
+        },
+        {
+          "id": "c",
+          "text": "Parce que les administrateurs peuvent être personnellement responsables des retenues à la source non versées"
+        },
+        {
+          "id": "d",
+          "text": "Parce que cela doit être déclaré dans la T3010"
+        }
+      ],
+      "answer": "c",
+      "explanation": "Les administrateurs peuvent être personnellement responsables des retenues à la source non versées. Le conseil doit confirmer que les versements sont à jour et demander ce qui empêchera que cela se reproduise."
+    },
+    {
+      "id": "rq3",
+      "lesson": "r3",
+      "prompt": "Un administrateur est en profond désaccord avec une décision du conseil. Quelle réaction est appropriée?",
+      "options": [
+        {
+          "id": "a",
+          "text": "Demander que sa dissidence soit consignée au procès-verbal et appuyer la décision publiquement"
+        },
+        {
+          "id": "b",
+          "text": "Expliquer son désaccord sur les réseaux sociaux pour informer la communauté"
+        },
+        {
+          "id": "c",
+          "text": "Dire en privé au personnel que la décision était une erreur"
+        },
+        {
+          "id": "d",
+          "text": "Refuser de mettre la décision en œuvre"
+        }
+      ],
+      "answer": "a",
+      "explanation": "Le conseil parle d’une seule voix. Un administrateur peut faire consigner sa dissidence, soulever de nouveau la question plus tard selon le processus prévu, ou démissionner s’il ne peut appuyer la décision en toute conscience."
+    },
+    {
+      "id": "rq4",
+      "lesson": "r1",
+      "prompt": "Laquelle de ces décisions relève de la gouvernance plutôt que de la gestion?",
+      "options": [
+        {
+          "id": "a",
+          "text": "Choisir le traiteur pour la soirée de reconnaissance des bénévoles"
+        },
+        {
+          "id": "b",
+          "text": "Planifier les vacances du personnel"
+        },
+        {
+          "id": "c",
+          "text": "Choisir le logiciel comptable du bureau"
+        },
+        {
+          "id": "d",
+          "text": "Fixer la tolérance au risque de l’organisme et approuver une politique de réserves"
+        }
+      ],
+      "answer": "d",
+      "explanation": "Fixer la tolérance au risque et adopter des politiques relève du conseil. Les choix opérationnels courants relèvent de la direction."
+    },
+    {
+      "id": "rq5",
+      "lesson": "r2",
+      "prompt": "Une employée reçoit un courriel, apparemment d’un fournisseur de longue date, demandant de changer le compte bancaire pour les prochains paiements. Que devrait vouloir savoir le conseil?",
+      "options": [
+        {
+          "id": "a",
+          "text": "Si le fournisseur offre un rabais pour ce changement"
+        },
+        {
+          "id": "b",
+          "text": "S’il existe des contrôles exigeant une vérification indépendante des changements de coordonnées de paiement avant tout virement"
+        },
+        {
+          "id": "c",
+          "text": "Rien; c’est trop opérationnel pour le conseil"
+        },
+        {
+          "id": "d",
+          "text": "Quelle employée a reçu le courriel, pour qu’elle soit sanctionnée"
+        }
+      ],
+      "answer": "b",
+      "explanation": "La fraude par réacheminement de paiement est courante. Le rôle du conseil est de s’assurer que des contrôles existent, par exemple confirmer tout changement par téléphone à un numéro connu, et non de traiter la transaction lui-même."
+    },
+    {
+      "id": "rq6",
+      "lesson": "r1",
+      "prompt": "Un administrateur qui siège aussi au conseil d’un bailleur de fonds doit voter sur une entente de financement avec ce bailleur. La meilleure approche est de :",
+      "options": [
+        {
+          "id": "a",
+          "text": "Voter, puisque les deux organismes souhaitent l’entente"
+        },
+        {
+          "id": "b",
+          "text": "S’abstenir de voter, mais rester pour la discussion"
+        },
+        {
+          "id": "c",
+          "text": "Déclarer son double rôle, s’abstenir et quitter la salle pendant la discussion et le vote"
+        },
+        {
+          "id": "d",
+          "text": "Démissionner de l’un des deux conseils avant la réunion"
+        }
+      ],
+      "answer": "c",
+      "explanation": "Siéger aux deux conseils crée un conflit de devoirs. Déclarer, S’abstenir, Sortir s’applique même lorsque les intérêts semblent alignés."
+    }
+  ]
+}

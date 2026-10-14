@@ -1,0 +1,1006 @@
+{
+  "id": "governance-essentials",
+  "locale": "fr",
+  "version": "2.0.0",
+  "currentAsOf": "octobre 2026",
+  "title": "L’essentiel de la gouvernance",
+  "subtitle": "Intégration des administrateurs d’OBNL et d’organismes de bienfaisance au Canada",
+  "provider": "Olea Connects",
+  "tagline": "Des racines plus fortes, pour s’épanouir ensemble",
+  "estimatedMinutes": 50,
+  "passMarkPercent": 80,
+  "certificateValidMonths": 24,
+  "jurisdictions": [
+    {
+      "id": "bc",
+      "label": "Colombie-Britannique",
+      "act": "Societies Act (C.-B.)"
+    },
+    {
+      "id": "ab",
+      "label": "Alberta",
+      "act": "Societies Act (Alberta)"
+    },
+    {
+      "id": "sk",
+      "label": "Saskatchewan",
+      "act": "Non-Profit Corporations Act, 2022"
+    },
+    {
+      "id": "mb",
+      "label": "Manitoba",
+      "act": "Loi sur les corporations (Manitoba)"
+    },
+    {
+      "id": "on",
+      "label": "Ontario",
+      "act": "Loi de 2010 sur les organisations sans but lucratif (LOSBL)"
+    },
+    {
+      "id": "qc",
+      "label": "Québec",
+      "act": "Code civil du Québec et Loi sur les compagnies, partie III"
+    },
+    {
+      "id": "nb",
+      "label": "Nouveau-Brunswick",
+      "act": "Loi sur les compagnies (Nouveau-Brunswick)"
+    },
+    {
+      "id": "ns",
+      "label": "Nouvelle-Écosse",
+      "act": "Societies Act (Nouvelle-Écosse)"
+    },
+    {
+      "id": "pe",
+      "label": "Île-du-Prince-Édouard",
+      "act": "Companies Act, partie II (Î.-P.-É.)"
+    },
+    {
+      "id": "nl",
+      "label": "Terre-Neuve-et-Labrador",
+      "act": "Corporations Act (Terre-Neuve-et-Labrador)"
+    },
+    {
+      "id": "yt",
+      "label": "Yukon",
+      "act": "Loi sur les sociétés (Yukon)"
+    },
+    {
+      "id": "nt",
+      "label": "Territoires du Nord-Ouest",
+      "act": "Loi sur les sociétés (Territoires du Nord-Ouest)"
+    },
+    {
+      "id": "nu",
+      "label": "Nunavut",
+      "act": "Loi sur les sociétés (Nunavut)"
+    },
+    {
+      "id": "fed",
+      "label": "Fédéral",
+      "act": "Loi canadienne sur les organisations à but non lucratif (LCOBNL)"
+    },
+    {
+      "id": "other",
+      "label": "Je ne sais pas",
+      "act": "Vérifiez quelle loi s’applique à votre organisme"
+    }
+  ],
+  "jurisdictionNote": "Cette formation porte sur le droit canadien applicable aux organismes à but non lucratif et aux organismes de bienfaisance enregistrés : les règles de l’ARC, la loi fédérale et les lois de chaque province et territoire. Lorsque les règles diffèrent, vous voyez la version qui s’applique à votre organisme. Il s’agit de formation, et non d’un avis juridique. Les règlements administratifs et les politiques de votre organisme, ainsi que ses conseillers professionnels, ont le dernier mot.",
+  "welcome": {
+    "heading": "Bienvenue au conseil",
+    "body": [
+      "Siéger à un conseil d’administration est l’une des façons les plus significatives de renforcer sa communauté. C’est aussi un rôle juridique qui comporte de réelles responsabilités. Cette formation donne à chaque membre du conseil les mêmes bases, pour que tout le conseil puisse gouverner avec assurance, quel que soit le parcours de chacun.",
+      "Si vous avez déjà siégé à des conseils, une bonne partie du contenu vous sera familière. Repérez la **note de l’administrateur chevronné** dans chaque leçon : elle est écrite pour vous. Vous pouvez aussi faire l’évaluation d’abord et passer directement à la suite si vous la réussissez. Si c’est votre premier conseil, bienvenue. Aucune expérience préalable n’est requise, et chaque terme est expliqué la première fois qu’il apparaît.",
+      "La formation comprend huit courtes leçons, une leçon sur votre propre organisme et une évaluation de 15 questions. La note de passage est de 80 %. À la fin, votre organisme reçoit une attestation de réussite et vous recevez un certificat."
+    ],
+    "outcomes": [
+      "Distinguer gouverner et gérer, et savoir où commence et s’arrête le rôle du conseil",
+      "Décrire vos obligations juridiques d’administrateur dans votre province et la façon de les respecter",
+      "Reconnaître, déclarer et gérer un conflit d’intérêts",
+      "Lire les principaux rapports financiers assez bien pour poser les bonnes questions",
+      "Comprendre les principales obligations de conformité des OBNL et des organismes de bienfaisance enregistrés",
+      "Soutenir la direction générale tout en lui demandant des comptes",
+      "Contribuer à des réunions efficaces et à des décisions éclairées",
+      "Encadrer le risque et la stratégie, participer à la réconciliation et bâtir une saine culture de conseil"
+    ]
+  },
+  "testOut": {
+    "enabled": true,
+    "heading": "Vous avez déjà de l’expérience au conseil?",
+    "body": "Vous pouvez faire l’évaluation d’abord. Si vous la réussissez, vous passez les huit leçons et allez directement à la leçon sur votre organisme. Vous avez droit à une seule tentative. Si vous ne la réussissez pas, vous suivrez les leçons et pourrez ensuite reprendre l’évaluation autant de fois que nécessaire.",
+    "button": "Faire l’évaluation d’abord"
+  },
+  "lessons": [
+    {
+      "id": "l1",
+      "number": 1,
+      "title": "Le rôle du conseil : gouverner, et non gérer",
+      "minutes": 5,
+      "blocks": [
+        {
+          "type": "text",
+          "body": "Tout OBNL mène deux tâches en parallèle : la **gouvernance**, qui décide de l’orientation de l’organisme et lui demande des comptes, et la **gestion**, qui l’y mène au quotidien. Le conseil est responsable de la première. Le personnel, dirigé par la directrice générale ou le directeur général (DG), parfois appelé présidente-directrice générale ou président-directeur général (PDG), est responsable de la seconde."
+        },
+        {
+          "type": "text",
+          "body": "Une expression résume bien cet équilibre : **« le nez dedans, les doigts dehors »**. Le conseil doit être curieux, informé et prêt à poser des questions difficiles (le nez dedans). Il ne doit pas intervenir dans les opérations en dirigeant le personnel, en approuvant des achats courants ou en réorganisant les programmes (les doigts dehors)."
+        },
+        {
+          "type": "keypoints",
+          "title": "Ce que fait le conseil",
+          "items": [
+            "**Il fixe l’orientation.** Il approuve la mission, le plan stratégique et le budget annuel.",
+            "**Il nomme et encadre la DG.** Il embauche, soutient, évalue et, au besoin, remplace la personne à la tête de l’organisme.",
+            "**Il protège les ressources.** Il veille à ce que l’argent et les biens servent la mission de l’organisme et soient protégés contre les pertes.",
+            "**Il établit les politiques.** Il fixe les limites à l’intérieur desquelles la direction agit.",
+            "**Il assure la reddition de comptes.** Il répond aux membres, aux bailleurs de fonds, aux organismes de réglementation et aux communautés servies, y compris les communautés des Premières Nations, inuites et métisses liées à son travail.",
+            "**Il suit le rendement et les risques.** Il vérifie que les résultats correspondent aux plans et que les risques importants sont gérés."
+          ]
+        },
+        {
+          "type": "callout",
+          "variant": "seasoned",
+          "title": "Note de l’administrateur chevronné",
+          "body": "Dans les petits organismes qui ont peu ou pas de personnel, les membres du conseil portent souvent deux chapeaux et font du travail opérationnel comme bénévoles. C’est normal. La discipline consiste à savoir quel chapeau on porte. Quand vous préparez des paniers alimentaires, vous suivez les consignes de la personne qui coordonne. Quand vous êtes à la table du conseil, vous gouvernez. Les problèmes commencent quand les deux se confondent."
+        },
+        {
+          "type": "scenario",
+          "title": "En pratique",
+          "situation": "Au festival communautaire, un administrateur trouve que la coordonnatrice des programmes gère les bénévoles de façon inefficace. Il la prend à part et lui dit de changer sa façon de faire.",
+          "question": "À quoi ressemblerait une bonne gouvernance ici?",
+          "debrief": "L’administrateur a empiété sur la gestion. Mieux vaut faire part de l’observation à la DG en privé, comme une rétroaction plutôt qu’une directive. Si elle révèle une tendance, comme des difficultés à retenir les bénévoles, elle devient une question de conseil sur les résultats, et non une demande de changer un processus.",
+          "choices": [
+            {
+              "id": "a",
+              "best": false,
+              "text": "Dire directement à la coordonnatrice comment corriger le processus. Vous avez vu le problème de vos yeux.",
+              "outcome": "La coordonnatrice a maintenant deux patrons : la DG et vous. Le personnel ne sait plus à qui obéir, et la DG l’apprend indirectement. Même un bon conseil donné ainsi affaiblit l’organisme."
+            },
+            {
+              "id": "b",
+              "best": true,
+              "text": "Faire part de ce que vous avez vu à la DG en privé, comme une observation plutôt qu’une directive.",
+              "outcome": "Vous respectez la frontière entre gouverner et gérer. La DG peut agir, et s’il s’agit d’une tendance, comme des bénévoles qui ne reviennent pas, cela devient une question de conseil sur les résultats."
+            },
+            {
+              "id": "c",
+              "best": false,
+              "text": "Inscrire à l’ordre du jour de la prochaine réunion une proposition pour changer l’horaire des bénévoles.",
+              "outcome": "Tout le conseil se met alors à réorganiser un processus opérationnel. Si l’enjeu est important, posez plutôt une question de gouvernance : comment évolue la rétention des bénévoles, et que fait la direction à ce sujet?"
+            }
+          ]
+        },
+        {
+          "type": "questions",
+          "title": "Les questions d’un bon administrateur",
+          "items": [
+            "Cette décision revient-elle au conseil, ou l’avons-nous déléguée à la direction?",
+            "Avons-nous déjà une politique qui couvre cette question?",
+            "Consacrons-nous notre temps de réunion à l’avenir ou au passé?"
+          ]
+        },
+        {
+          "type": "takeaway",
+          "body": "Le conseil gouverne par l’entremise de la DG et des politiques, et non en les contournant. Votre pouvoir est collectif : il existe quand le conseil agit ensemble, pas quand un membre agit seul."
+        }
+      ]
+    },
+    {
+      "id": "l2",
+      "number": 2,
+      "title": "Vos obligations juridiques d’administrateur",
+      "minutes": 6,
+      "blocks": [
+        {
+          "type": "text",
+          "body": "En vous joignant à un conseil, vous assumez des **obligations fiduciaires**. Un fiduciaire est une personne à qui l’on confie le soin d’agir dans l’intérêt d’autrui. Pour un administrateur, cet « autrui » est l’organisme lui-même, et non la personne qui vous a recruté, un bailleur de fonds ou un groupe que vous représentez."
+        },
+        {
+          "type": "keypoints",
+          "title": "Les obligations, en termes simples",
+          "items": [
+            "**Devoir de loyauté (honnêteté et bonne foi).** Agir dans l’intérêt de l’organisme dans son ensemble, et faire passer ses intérêts avant les vôtres et ceux de toute autre personne.",
+            "**Devoir de prudence et de diligence.** Faire preuve du soin, de la diligence et de la compétence d’une personne raisonnablement prudente dans des circonstances comparables. Concrètement : vous préparer, assister aux réunions, poser des questions et exercer votre jugement.",
+            "**Devoir de conformité.** Agir conformément à la loi applicable, à ses règlements et à l’acte constitutif, aux règlements administratifs et aux politiques de votre organisme."
+          ]
+        },
+        {
+          "type": "jurisdiction",
+          "title": "D’où viennent vos obligations",
+          "variants": {
+            "bc": [
+              "L’article 53 de la ***Societies Act*** de la Colombie-Britannique exige des administrateurs qu’ils agissent avec honnêteté et de bonne foi dans l’intérêt de la société, qu’ils fassent preuve du soin, de la diligence et de la compétence d’une personne raisonnablement prudente dans des circonstances comparables, et qu’ils respectent la Loi, ses règlements et les règlements administratifs de la société.",
+              "Les cadres supérieurs nommés par le conseil ont les mêmes obligations."
+            ],
+            "ab": [
+              "La ***Societies Act*** de l’Alberta est brève et n’énumère pas les obligations des administrateurs. Vos obligations découlent de la common law (les décisions des tribunaux) et de vos règlements administratifs. Ce sont les mêmes devoirs de loyauté et de prudence décrits ci-dessus.",
+              "Certains OBNL albertains sont plutôt constitués en vertu de la partie 9 de la *Companies Act*. Demandez quelle loi s’applique à votre organisme."
+            ],
+            "sk": [
+              "La ***Non-Profit Corporations Act, 2022*** de la Saskatchewan est entrée en vigueur le 12 mars 2023, en remplacement de la loi de 1995.",
+              "L’ancienne loi exigeait des administrateurs et des dirigeants qu’ils agissent avec intégrité et de bonne foi dans l’intérêt de l’organisation, et qu’ils fassent preuve du soin, de la diligence et de la compétence d’une personne raisonnablement prudente dans des circonstances comparables. Ces devoirs de loyauté et de prudence continuent de s’appliquer, et la nouvelle loi interdit aussi d’administrer une organisation aux personnes déclarées coupables de certaines infractions liées à la fraude."
+            ],
+            "mb": [
+              "Les OBNL manitobains sont constitués en vertu de la ***Loi sur les corporations***, qui s’applique aux entreprises comme aux organisations sans but lucratif. Les administrateurs et les dirigeants doivent agir avec intégrité et de bonne foi dans l’intérêt de la corporation, et faire preuve du soin, de la diligence et de la compétence d’une personne raisonnablement prudente dans des circonstances comparables."
+            ],
+            "on": [
+              "L’article 43 de la ***Loi de 2010 sur les organisations sans but lucratif*** de l’Ontario (LOSBL) exige des administrateurs et des dirigeants qu’ils agissent avec intégrité et de bonne foi dans l’intérêt de l’organisation, et qu’ils fassent preuve du soin, de la diligence et de la compétence d’une personne raisonnablement prudente dans des circonstances comparables.",
+              "La LOSBL est entrée en vigueur en octobre 2021, et la période de transition des organisations existantes a pris fin en octobre 2024. Les administrateurs d’organismes de bienfaisance de l’Ontario ont des obligations supplémentaires, présentées à la leçon 3."
+            ],
+            "qc": [
+              "L’article 322 du ***Code civil du Québec*** exige que l’administrateur agisse avec prudence et diligence, ainsi qu’avec honnêteté et loyauté dans l’intérêt de la personne morale.",
+              "La plupart des OBNL québécois sont constitués en vertu de la partie III de la *Loi sur les compagnies*, qui s’applique de concert avec le Code civil."
+            ],
+            "nb": [
+              "La plupart des OBNL du Nouveau-Brunswick sont constitués en vertu de la ***Loi sur les compagnies***. Elle établit les pouvoirs du conseil, mais ne précise pas les obligations des administrateurs. Celles-ci découlent donc de la common law (les décisions des tribunaux) et de vos règlements administratifs. Ce sont les mêmes devoirs de loyauté et de prudence décrits ci-dessus."
+            ],
+            "ns": [
+              "La ***Societies Act*** de la Nouvelle-Écosse est brève et n’énumère pas les obligations des administrateurs. Elles découlent de la common law et de vos règlements administratifs. Ce sont les mêmes devoirs de loyauté et de prudence décrits ci-dessus."
+            ],
+            "pe": [
+              "Les OBNL de l’Île-du-Prince-Édouard sont toujours constitués en vertu de la ***partie II de la Companies Act***, qui ne précise pas les obligations des administrateurs. Elles découlent de la common law et de vos règlements administratifs. Ce sont les mêmes devoirs de loyauté et de prudence décrits ci-dessus."
+            ],
+            "nl": [
+              "La ***Corporations Act*** de Terre-Neuve-et-Labrador s’applique aux organisations sans but lucratif comme aux entreprises. L’article 203 exige des administrateurs et des dirigeants qu’ils agissent avec intégrité et de bonne foi dans l’intérêt de l’organisation.",
+              "Le devoir de prudence décrit ci-dessus, soit agir avec le soin, la diligence et la compétence d’une personne raisonnablement prudente, s’applique aussi."
+            ],
+            "yt": [
+              "La ***Loi sur les sociétés*** modernisée du Yukon énonce les obligations des administrateurs dans la loi elle-même (article 57).",
+              "Elles reposent sur les mêmes principes de loyauté et de prudence décrits ci-dessus. Lisez l’article 57 avec vos règlements administratifs."
+            ],
+            "nt": [
+              "En vertu de la ***Loi sur les sociétés*** des Territoires du Nord-Ouest, les administrateurs doivent agir avec honnêteté et de bonne foi et prendre leurs décisions dans l’intérêt de la société. Le guide du gouvernement territorial à l’intention des administrateurs explique ces obligations plus en détail."
+            ],
+            "nu": [
+              "La ***Loi sur les sociétés*** du Nunavut est brève et n’énumère pas les obligations des administrateurs. Elles découlent de la common law et de vos règlements administratifs. Ce sont les mêmes devoirs de loyauté et de prudence décrits ci-dessus."
+            ],
+            "fed": [
+              "L’article 148 de la ***Loi canadienne sur les organisations à but non lucratif*** (LCOBNL) exige des administrateurs et des dirigeants qu’ils agissent avec intégrité et de bonne foi au mieux des intérêts de l’organisation, et qu’ils fassent preuve du soin, de la diligence et de la compétence d’une personne prudente et avisée dans des circonstances comparables.",
+              "Ils doivent aussi respecter la Loi, ses règlements, les statuts et les règlements administratifs."
+            ],
+            "other": [
+              "Chaque province et territoire a sa propre loi sur les OBNL, et le libellé varie. Les obligations essentielles sont les mêmes partout au Canada : loyauté, prudence et conformité.",
+              "Demandez à la présidence ou à la DG en vertu de quelle loi votre organisme est constitué, et lisez la section qui porte sur les administrateurs."
+            ]
+          }
+        },
+        {
+          "type": "callout",
+          "variant": "note",
+          "title": "Bonne nouvelle : les décisions raisonnables sont protégées",
+          "body": "On ne s’attend pas à ce que vous soyez parfait. Les tribunaux canadiens respectent généralement les décisions du conseil qui étaient **éclairées, prises de bonne foi et parmi un éventail d’options raisonnables**, même si elles tournent mal. Les administrateurs peuvent aussi généralement se fier de bonne foi aux états financiers présentés par la direction ou l’auditeur, et aux avis de professionnels qualifiés. La protection vient de votre façon de faire : lire la documentation, poser des questions et consigner la manière dont la décision a été prise."
+        },
+        {
+          "type": "callout",
+          "variant": "warning",
+          "title": "Les administrateurs représentants",
+          "body": "Si vous avez été proposé par un bailleur de fonds, un partenaire, une section ou un groupe communautaire, vous apportez un point de vue précieux, mais vous ne recevez pas d’instructions de ce groupe. À la table du conseil, votre devoir est envers cet organisme. Quand les deux intérêts divergent, c’est un conflit (voir la leçon 3)."
+        },
+        {
+          "type": "scenario",
+          "title": "En pratique",
+          "situation": "Une nouvelle administratrice parcourt la documentation du conseil dans sa voiture et vote pour approuver un bail important sans lire le résumé des conditions. Six mois plus tard, le bail devient un lourd fardeau financier.",
+          "question": "À la place de cette administratrice, qu’est-ce qui vous aurait protégé?",
+          "debrief": "Probablement pas. Ce devoir porte sur la façon de faire, et non sur le résultat. Une administratrice qui aurait lu la documentation, posé des questions sur le bail et voté sur une base raisonnable serait bien protégée même si le bail avait mal tourné. Celle qui ne s’est pas préparée a peu d’arguments.",
+          "choices": [
+            {
+              "id": "a",
+              "best": false,
+              "text": "À la place de cette administratrice : se fier au comité des finances. Il a examiné le dossier, inutile de le faire soi-même.",
+              "outcome": "On peut se fier de bonne foi aux comités et aux professionnels, mais seulement si l’on prend connaissance de ce qu’ils présentent. Ne pas lire le résumé du tout vous laisse exposé si la décision est contestée."
+            },
+            {
+              "id": "b",
+              "best": true,
+              "text": "Lire le résumé des conditions, envoyer vos questions à la DG avant la réunion et poser à la table celles qui restent.",
+              "outcome": "C’est le devoir de prudence et de diligence en action. Même si le bail tourne mal plus tard, un administrateur qui s’est préparé, a posé des questions et a voté de façon raisonnable est bien protégé."
+            },
+            {
+              "id": "c",
+              "best": false,
+              "text": "S’abstenir de voter parce que vous n’avez pas eu le temps de lire la documentation.",
+              "outcome": "S’abstenir évite un risque, mais en crée un autre : le conseil perd votre jugement, et s’abstenir à répétition est en soi un manquement au devoir de prudence. Mieux vaut se préparer, ou demander de reporter la décision si la documentation est arrivée trop tard pour tout le monde."
+            }
+          ]
+        },
+        {
+          "type": "questions",
+          "title": "Les questions d’un bon administrateur",
+          "items": [
+            "Ai-je assez d’information pour prendre cette décision? Sinon, de quoi ai-je besoin?",
+            "À qui profite cette décision, et est-ce conforme à notre mission?",
+            "Est-ce que cela respecte nos règlements administratifs et nos pouvoirs?"
+          ]
+        },
+        {
+          "type": "takeaway",
+          "body": "Loyauté, prudence et conformité. Arrivez préparé, pensez de façon indépendante, faites passer l’organisme en premier et respectez ses règles. Une bonne façon de faire est votre meilleure protection."
+        }
+      ]
+    },
+    {
+      "id": "l3",
+      "number": 3,
+      "title": "Conflits d’intérêts et confidentialité",
+      "minutes": 6,
+      "blocks": [
+        {
+          "type": "text",
+          "body": "Il y a **conflit d’intérêts** lorsque les intérêts personnels d’un administrateur, ou ceux de sa famille, d’une entreprise ou d’un autre organisme auxquels il est lié, pourraient influencer, ou sembler influencer, une décision du conseil. Les conflits sont fréquents, surtout dans les petites communautés. En avoir un n’est pas une faute. **Ne pas le déclarer** en est une."
+        },
+        {
+          "type": "keypoints",
+          "title": "Les trois étapes : Déclarer, S’abstenir, Sortir",
+          "items": [
+            "**Déclarez** la nature et l’étendue de l’intérêt dès que vous en prenez conscience, idéalement avant la discussion du point.",
+            "**Abstenez-vous** de voter et n’essayez pas d’influencer la décision de quelque façon que ce soit, y compris lors de conversations en dehors de la réunion.",
+            "**Sortez** de la salle (ou de la réunion virtuelle) pour la discussion et le vote, à moins que le conseil vous demande de rester brièvement pour répondre à des questions factuelles."
+          ]
+        },
+        {
+          "type": "text",
+          "body": "Le procès-verbal doit consigner la déclaration ainsi que l’abstention et la sortie de l’administrateur. Beaucoup d’organismes demandent aussi aux membres du conseil de signer chaque année une déclaration de conflits d’intérêts. Vous remplirez la vôtre dans la leçon sur votre organisme."
+        },
+        {
+          "type": "jurisdiction",
+          "title": "Ce que prévoit la loi chez vous",
+          "variants": {
+            "bc": [
+              "La ***Societies Act*** de la Colombie-Britannique exige que l’administrateur qui a un intérêt important, direct ou indirect, dans un contrat ou une opération le déclare, s’abstienne de voter et quitte la réunion pendant la discussion et le vote, sauf s’il est invité à rester pour fournir de l’information.",
+              "La société doit conserver un registre de toutes les déclarations."
+            ],
+            "ab": [
+              "La *Societies Act* de l’Alberta ne contient aucune disposition sur les conflits d’intérêts. Ce sont donc vos **règlements administratifs et votre politique sur les conflits d’intérêts** qui fixent les règles, appuyés par le devoir de loyauté de la common law. Déclarer, S’abstenir, Sortir est la norme reconnue.",
+              "Si votre organisme n’a pas de politique écrite sur les conflits d’intérêts, recommandez-en une."
+            ],
+            "sk": [
+              "La législation de la Saskatchewan sur les organisations sans but lucratif exige depuis longtemps que l’administrateur qui a un intérêt dans un contrat important en déclare la nature et l’étendue, par écrit ou au procès-verbal, et qu’il ne vote pas sur ce contrat, sauf dans des cas limités. Vérifiez son application en vertu de la loi de 2022 avec vos règlements administratifs et votre politique.",
+              "Il est fortement recommandé de quitter la salle pendant la discussion et le vote."
+            ],
+            "mb": [
+              "La ***Loi sur les corporations*** du Manitoba exige que l’administrateur qui a un intérêt dans un contrat ou une opération importants en déclare la nature et l’étendue, par écrit ou au procès-verbal, et, en général, s’abstienne de voter.",
+              "La Loi n’exige pas de quitter la salle, mais il est fortement recommandé de le faire."
+            ],
+            "on": [
+              "En vertu de la **LOSBL** (article 41), l’administrateur qui a un intérêt dans un contrat ou une opération importants doit déclarer la nature et l’étendue de cet intérêt et, en général, ne doit ni assister à la partie de la réunion où la question est discutée ni voter sur celle-ci.",
+              "**Les organismes de bienfaisance de l’Ontario ont des règles plus strictes.** En vertu de la *Loi sur la comptabilité des œuvres de bienfaisance*, les administrateurs ne peuvent pas être rémunérés pour siéger au conseil, et tout paiement à un administrateur ou à une personne qui lui est liée pour d’autres biens ou services doit respecter les conditions des règlements de l’Ontario ou être approuvé par un tribunal."
+            ],
+            "qc": [
+              "L’article 324 du ***Code civil du Québec*** exige que l’administrateur évite de se placer en situation de conflit entre son intérêt personnel et ses obligations, et qu’il dénonce à la personne morale tout intérêt susceptible de le placer en conflit. La dénonciation est consignée au procès-verbal.",
+              "L’article 323 ajoute que l’administrateur ne peut utiliser à son profit les biens ou l’information de l’organisme sans autorisation. Les règlements administratifs et les bonnes pratiques ajoutent l’abstention de délibérer et de voter."
+            ],
+            "nb": [
+              "La *Loi sur les compagnies* du Nouveau-Brunswick traite peu des conflits. Ce sont donc vos **règlements administratifs et votre politique sur les conflits d’intérêts** qui fixent les règles, appuyés par le devoir de loyauté de la common law. Déclarer, S’abstenir, Sortir est la norme reconnue.",
+              "Si votre organisme n’a pas de politique écrite, recommandez-en une."
+            ],
+            "ns": [
+              "La *Societies Act* de la Nouvelle-Écosse ne contient aucune disposition sur les conflits d’intérêts. Ce sont donc vos **règlements administratifs et votre politique sur les conflits d’intérêts** qui fixent les règles, appuyés par le devoir de loyauté de la common law. Déclarer, S’abstenir, Sortir est la norme reconnue.",
+              "Si votre organisme n’a pas de politique écrite, recommandez-en une."
+            ],
+            "pe": [
+              "La *Companies Act* de l’Île-du-Prince-Édouard traite peu des conflits. Ce sont donc vos **règlements administratifs et votre politique sur les conflits d’intérêts** qui fixent les règles, appuyés par le devoir de loyauté de la common law. Déclarer, S’abstenir, Sortir est la norme reconnue.",
+              "Si votre organisme n’a pas de politique écrite, recommandez-en une."
+            ],
+            "nl": [
+              "La ***Corporations Act*** de Terre-Neuve-et-Labrador (article 198) exige que l’administrateur qui a un intérêt dans un contrat avec l’organisation en déclare la nature et l’étendue.",
+              "Vos règlements administratifs et votre politique sur les conflits d’intérêts précisent comment l’administrateur s’abstient. Déclarer, S’abstenir, Sortir est la norme reconnue."
+            ],
+            "yt": [
+              "La ***Loi sur les sociétés*** du Yukon exige que les administrateurs déclarent tout intérêt dans un contrat ou une opération de la société (article 60).",
+              "Vos règlements administratifs et votre politique sur les conflits d’intérêts précisent comment la déclaration est consignée et comment l’administrateur s’abstient et quitte la réunion."
+            ],
+            "nt": [
+              "En vertu de la ***Loi sur les sociétés*** des Territoires du Nord-Ouest, l’administrateur doit déclarer tout intérêt direct ou indirect dans un contrat conclu ou proposé avec la société, et ne devrait pas voter sur celui-ci.",
+              "Il est fortement recommandé de quitter la salle pendant la discussion."
+            ],
+            "nu": [
+              "La *Loi sur les sociétés* du Nunavut traite peu des conflits. Ce sont donc vos **règlements administratifs et votre politique sur les conflits d’intérêts** qui fixent les règles, appuyés par le devoir de loyauté de la common law. Déclarer, S’abstenir, Sortir est la norme reconnue.",
+              "Si votre organisme n’a pas de politique écrite, recommandez-en une."
+            ],
+            "fed": [
+              "En vertu de la **LCOBNL** (article 141), l’administrateur doit communiquer la nature et l’étendue de tout intérêt dans un contrat ou une opération importants, par écrit ou en demandant de le faire consigner au procès-verbal, et ne doit pas voter sur la question, sauf dans les cas limités prévus par la Loi.",
+              "La Loi n’exige pas de quitter la salle, mais il est fortement recommandé de le faire."
+            ],
+            "other": [
+              "La plupart des lois provinciales et territoriales, et presque tous les règlements administratifs, exigent la déclaration et l’abstention.",
+              "Consultez vos règlements administratifs et votre politique sur les conflits d’intérêts. Si votre organisme n’a pas de politique écrite, recommandez-en une."
+            ]
+          }
+        },
+        {
+          "type": "callout",
+          "variant": "note",
+          "title": "Les conflits apparents comptent aussi",
+          "body": "Demandez-vous : si cela paraissait dans le journal local, une personne raisonnable douterait-elle de l’indépendance de mon jugement? Si la réponse pourrait être oui, déclarez-le. Pécher par excès de transparence ne coûte rien et protège à la fois l’organisme et vous-même."
+        },
+        {
+          "type": "text",
+          "body": "**Confidentialité.** Les délibérations du conseil, les questions de personnel, les avis juridiques et les renseignements sur les donateurs sont confidentiels, sauf décision contraire du conseil. Débattez avec vigueur à l’intérieur de la salle. À l’extérieur, le conseil **parle d’une seule voix** : une fois la décision prise, chaque membre l’appuie publiquement, même s’il a voté contre. Un administrateur qui ne peut pas appuyer une décision en toute conscience peut demander que sa dissidence soit consignée au procès-verbal ou, dans les cas graves, démissionner. Critiquer la décision en public n’est pas une option."
+        },
+        {
+          "type": "scenario",
+          "title": "En pratique",
+          "situation": "Le conseil choisit un cabinet de tenue de livres. L’un des trois soumissionnaires emploie le conjoint d’une administratrice, même si celui-ci ne travaillerait pas sur le dossier.",
+          "question": "Que devrait faire l’administratrice?",
+          "debrief": "Déclarer le lien, quitter la salle et ne pas discuter des soumissions avec les autres membres en dehors de la réunion. Le cabinet peut tout de même obtenir le contrat sur ses mérites, et c’est justement un conflit bien géré qui rend ce choix défendable.",
+          "choices": [
+            {
+              "id": "a",
+              "best": false,
+              "text": "Rester et voter. Votre conjoint ne travaillerait pas sur le dossier, donc il n’y a pas de vrai conflit.",
+              "outcome": "Même un intérêt indirect ou apparent constitue un conflit. Si le cabinet l’emporte et que le lien est révélé plus tard, la décision, le cabinet et votre réputation seront tous remis en question."
+            },
+            {
+              "id": "b",
+              "best": true,
+              "text": "Déclarer le lien, quitter la salle pour la discussion et le vote, et ne pas parler des soumissions avec les autres membres.",
+              "outcome": "Déclarer, S’abstenir, Sortir, et le faire consigner au procès-verbal. Le cabinet peut toujours l’emporter sur ses mérites, et le conseil peut défendre son choix auprès de quiconque."
+            },
+            {
+              "id": "c",
+              "best": false,
+              "text": "Demander au conseil d’exclure le cabinet de votre conjoint de l’appel d’offres.",
+              "outcome": "L’intention est bonne, mais c’est une correction excessive. L’organisme pourrait perdre la meilleure offre. On gère un conflit en se retirant de la décision, et non en excluant l’autre partie."
+            }
+          ]
+        },
+        {
+          "type": "takeaway",
+          "body": "Déclarer, S’abstenir, Sortir, et le faire consigner au procès-verbal. Gardez confidentielles les affaires du conseil et, une fois la décision prise, appuyez-la à l’extérieur de la salle."
+        }
+      ]
+    },
+    {
+      "id": "l4",
+      "number": 4,
+      "title": "Les bases de la surveillance financière",
+      "minutes": 7,
+      "blocks": [
+        {
+          "type": "text",
+          "body": "Il n’est pas nécessaire d’être comptable pour être un bon administrateur, mais chaque membre du conseil partage la responsabilité des finances de l’organisme, pas seulement la trésorière ou le trésorier. Cette leçon présente l’essentiel. Notre formation distincte, **Littératie financière pour les administrateurs**, va plus loin."
+        },
+        {
+          "type": "keypoints",
+          "title": "Les trois états financiers, en une phrase chacun",
+          "items": [
+            "**État de la situation financière** (bilan) : ce que l’organisme possède, ce qu’il doit et la différence (l’actif net) à une date donnée.",
+            "**État des résultats** : les revenus reçus et les dépenses engagées au cours d’une période. Il indique s’il y a un excédent ou un déficit.",
+            "**État des flux de trésorerie** : d’où vient l’argent et où il est allé. Un organisme peut afficher un excédent et quand même manquer de liquidités."
+          ]
+        },
+        {
+          "type": "text",
+          "body": "À la plupart des réunions, vous verrez aussi le **budget comparé aux résultats réels** : le budget approuvé, les résultats à ce jour et les écarts. Votre rôle n’est pas de vérifier les calculs. Il est de comprendre l’histoire : qu’est-ce qui s’écarte nettement du plan, pourquoi, et que fait la direction à ce sujet?"
+        },
+        {
+          "type": "keypoints",
+          "title": "Des notions que tout administrateur devrait connaître",
+          "items": [
+            "**Les fonds affectés** sont des sommes données par un donateur ou un bailleur de fonds pour un usage précis. Les utiliser à d’autres fins, même temporairement pour payer les salaires, peut contrevenir à l’entente de don et miner la confiance.",
+            "**Les réserves** sont des fonds non affectés mis de côté pour les urgences ou les occasions. Beaucoup de conseils adoptent une politique de réserves avec une cible, par exemple trois à six mois de dépenses de fonctionnement.",
+            "**Audit ou mission d’examen.** Un comptable indépendant examine les états financiers de fin d’exercice. L’audit offre un niveau d’assurance plus élevé que la mission d’examen. Votre loi, vos règlements administratifs ou vos bailleurs de fonds peuvent préciser lequel est requis, et les seuils varient selon la province.",
+            "**Les contrôles internes** sont des mesures de protection comme deux signatures sur les chèques et les virements, la séparation entre la personne qui approuve un paiement et celle qui l’effectue, et le rapprochement bancaire mensuel."
+          ]
+        },
+        {
+          "type": "callout",
+          "variant": "warning",
+          "title": "Quand les administrateurs peuvent être personnellement responsables",
+          "body": "Au Canada, les administrateurs peuvent être **personnellement responsables** si l’organisme ne verse pas les retenues à la source de ses employés (impôt, RPC et AE; au Québec, l’impôt du Québec, le RRQ et le RQAP à Revenu Québec) ou la TPS/TVH et la TVQ perçues, et dans certains cas pour les salaires impayés. Une défense de diligence raisonnable existe, mais seulement pour les administrateurs qui ont pris des mesures concrètes pour prévenir le manquement. Demandez à chaque réunion la confirmation que les versements sont à jour."
+        },
+        {
+          "type": "keypoints",
+          "title": "Des signaux d’alarme qui méritent des questions",
+          "items": [
+            "Une encaisse qui diminue plusieurs mois de suite",
+            "Des rapports financiers en retard, incomplets ou difficiles à obtenir",
+            "Des fonds affectés utilisés pour le fonctionnement général",
+            "Des écarts importants inexpliqués, ou la même explication chaque mois",
+            "Des retenues sur la paie non versées ou des impôts en retard",
+            "Une seule personne qui contrôle tout le processus de paiement"
+          ]
+        },
+        {
+          "type": "callout",
+          "variant": "seasoned",
+          "title": "Note de l’administrateur chevronné",
+          "body": "Pour les organismes de bienfaisance enregistrés, le **contingent des versements** exige un minimum annuel de dépenses en activités de bienfaisance ou en dons à des donataires reconnus. Il correspond à 3,5 % des biens non utilisés dans les activités de bienfaisance ou l’administration jusqu’à 1 million de dollars, et à 5 % au-delà. La plupart des organismes de bienfaisance actifs le respectent sans difficulté, mais les conseils de fondations ou d’organismes qui détiennent des placements importants devraient le faire suivre de près."
+        },
+        {
+          "type": "takeaway",
+          "body": "On ne vous demande pas de faire la comptabilité. On vous demande de comprendre l’histoire, de repérer les signaux d’alarme et de poser des questions jusqu’à ce que les réponses aient du sens. Confirmez à chaque réunion que les versements des retenues sont à jour."
+        }
+      ]
+    },
+    {
+      "id": "l5",
+      "number": 5,
+      "title": "Conformité : votre loi, votre statut d’organisme de bienfaisance et l’ARC",
+      "minutes": 6,
+      "blocks": [
+        {
+          "type": "text",
+          "body": "La conformité est la partie peu spectaculaire de la gouvernance qui rend tout le reste possible. Le conseil ne fait pas ce travail lui-même, mais il doit **connaître les obligations et confirmer qu’elles sont respectées**. Un simple calendrier annuel de conformité, revu par le conseil, est l’un des outils les plus efficaces qui soient."
+        },
+        {
+          "type": "keypoints",
+          "title": "Savoir ce que vous êtes",
+          "items": [
+            "**Organisme à but non lucratif (OBNL)** décrit la finalité : l’organisme ne distribue pas de profits à ses membres. Il est constitué en vertu d’une loi provinciale ou territoriale, ou de la LCOBNL au fédéral.",
+            "**Organisme de bienfaisance enregistré** est un statut distinct accordé par l’Agence du revenu du Canada (ARC). Seuls les organismes de bienfaisance enregistrés et les autres donataires reconnus peuvent délivrer des reçus officiels de dons aux fins de l’impôt. Tous les OBNL ne sont pas des organismes de bienfaisance.",
+            "Beaucoup d’organismes sont les deux, et les deux ensembles de règles s’appliquent alors."
+          ]
+        },
+        {
+          "type": "jurisdiction",
+          "title": "Principales obligations selon votre loi",
+          "variants": {
+            "bc": [
+              "Au moins trois administrateurs, dont au moins un réside habituellement en Colombie-Britannique. Les sociétés financées par leurs membres ont des règles différentes.",
+              "La majorité des administrateurs ne doivent pas être rémunérés par la société comme employés ou entrepreneurs.",
+              "Tenir une assemblée générale annuelle (AGA) et présenter les états financiers aux membres.",
+              "Déposer un rapport annuel auprès du BC Registry dans les 30 jours suivant l’AGA.",
+              "Tenir les registres obligatoires : règlements administratifs, registre des administrateurs et des membres, procès-verbaux et registres financiers."
+            ],
+            "ab": [
+              "Déposer chaque année un rapport annuel auprès du **registre des sociétés de l’Alberta (Corporate Registry)**, au plus tard le dernier jour du mois suivant le mois anniversaire de la société. Il indique les administrateurs et les dirigeants et comprend les états financiers présentés à la dernière AGA.",
+              "Tenir une assemblée générale annuelle selon vos règlements administratifs.",
+              "Tenir les procès-verbaux, les registres des membres et des administrateurs, et les registres financiers."
+            ],
+            "sk": [
+              "Déposer chaque année un rapport annuel au registre des sociétés de la Saskatchewan. Il comprend les états financiers du dernier exercice, avec tout rapport d’audit ou d’examen, et confirme les administrateurs, les dirigeants et le siège.",
+              "Audit ou mission d’examen : une organisation de bienfaisance dont les revenus dépassent 500 000 $ doit faire auditer ses états financiers. En deçà, les membres peuvent approuver une mission d’examen, et sous 100 000 $, renoncer aux deux. Les organisations au service de leurs membres ont plus de latitude.",
+              "Tenir une assemblée annuelle et présenter les états financiers aux membres.",
+              "Les organisations existantes devraient confirmer que leurs règlements administratifs ont été mis à jour selon la loi de 2022."
+            ],
+            "mb": [
+              "Déposer un rapport annuel auprès de l’**Office des compagnies du Manitoba** au plus tard le dernier jour du mois anniversaire de la corporation. Il confirme les administrateurs, les dirigeants et le siège social.",
+              "Une corporation sans but lucratif du Manitoba doit compter au moins trois administrateurs.",
+              "Tenir une assemblée annuelle des membres et présenter les états financiers.",
+              "Conserver au siège social les règlements administratifs, les procès-verbaux et les registres des membres et des administrateurs."
+            ],
+            "on": [
+              "Au moins trois administrateurs. Dans une organisation d’intérêt public, ce qui comprend tout organisme de bienfaisance, au plus le tiers des administrateurs peuvent être des employés de l’organisation ou de ses membres du même groupe.",
+              "Tenir une assemblée annuelle des membres et présenter les états financiers et le rapport de l’expert-comptable.",
+              "Déposer un rapport annuel au **Registre des entreprises de l’Ontario** dans les six mois suivant la fin de l’exercice.",
+              "Audit ou mission d’examen : une organisation d’intérêt public dont les revenus annuels dépassent 500 000 $ doit faire auditer ses états financiers. Entre 100 000 $ et 500 000 $, les membres peuvent plutôt approuver une mission d’examen. À 100 000 $ ou moins, ils peuvent renoncer aux deux, par résolution extraordinaire.",
+              "Tenir les registres obligatoires : statuts, règlements administratifs, procès-verbaux et registres des membres, des administrateurs et des dirigeants."
+            ],
+            "qc": [
+              "Avoir un conseil d’administration conforme à vos lettres patentes et à vos règlements administratifs.",
+              "Produire chaque année la déclaration de mise à jour annuelle auprès du **Registraire des entreprises du Québec (REQ)**, et une déclaration de mise à jour courante dans les 30 jours suivant un changement, comme un nouvel administrateur ou une nouvelle adresse.",
+              "Tenir une AGA et présenter le rapport annuel et les états financiers aux membres.",
+              "Conserver les lettres patentes, les règlements administratifs, les procès-verbaux et le registre des administrateurs au siège au Québec.",
+              "Les organismes de bienfaisance enregistrés qui exercent des activités au Québec produisent aussi une déclaration de renseignements auprès de **Revenu Québec** (formulaire TP-985.22) dans les six mois suivant la fin de l’exercice, en plus de la T3010 de l’ARC."
+            ],
+            "nb": [
+              "Avoir un conseil d’au moins trois administrateurs.",
+              "Déposer chaque année un rapport annuel auprès du **Registre corporatif de Service Nouveau-Brunswick**. À défaut, l’organisme peut perdre son statut de personne morale.",
+              "Tenir une assemblée annuelle des membres et présenter les états financiers.",
+              "Tenir les règlements administratifs, les procès-verbaux et les registres des membres et des administrateurs."
+            ],
+            "ns": [
+              "Déposer les états financiers (un bilan et un état des revenus et dépenses) auprès du **Registry of Joint Stock Companies** dans les 14 jours suivant l’assemblée générale annuelle.",
+              "Déposer le rapport annuel et payer les droits d’enregistrement annuels pour maintenir l’enregistrement de la société.",
+              "Signaler dans les 14 jours tout changement d’administrateurs, de dirigeants ou de leurs adresses.",
+              "Conserver au siège les procès-verbaux de toutes les réunions des membres et du conseil."
+            ],
+            "pe": [
+              "Avoir un conseil d’au moins trois administrateurs.",
+              "Renouveler chaque année l’enregistrement au moyen du service de renouvellement en ligne du registre de l’Île-du-Prince-Édouard, et tenir à jour la liste des administrateurs.",
+              "Tenir une assemblée annuelle des membres et présenter les états financiers.",
+              "Tenir les règlements administratifs, les procès-verbaux et les registres des membres et des administrateurs. Surveillez l’arrivée d’une nouvelle loi sur les OBNL, qui pourrait modifier ces règles."
+            ],
+            "nl": [
+              "Déposer le rapport annuel auprès du **Registry of Companies** (Service NL) au plus tard le premier jour du mois anniversaire de l’enregistrement. Un retard fait perdre à l’organisme son statut en règle, ce qui peut nuire à l’obtention de subventions et constitue la première étape vers la perte de la personnalité morale.",
+              "Déposer un avis de changement chaque fois que les administrateurs changent.",
+              "Tenir une assemblée annuelle des membres et présenter les états financiers."
+            ],
+            "yt": [
+              "Déposer un rapport annuel au **registre des sociétés en ligne du Yukon (YCOR)** dans les 30 jours suivant l’assemblée générale annuelle, et au plus tard cinq mois après la fin de l’exercice, selon la première échéance.",
+              "Un rapport annuel non déposé est la raison la plus fréquente pour laquelle une société est en défaut, et une société en défaut peut être radiée du registre.",
+              "Tenir une assemblée générale annuelle et présenter les états financiers. Divulguer toute rémunération versée aux administrateurs."
+            ],
+            "nt": [
+              "Déposer un avis des administrateurs et un état financier auprès du **registre des sociétés** dans les 14 jours suivant l’assemblée générale annuelle.",
+              "Une société de bienfaisance en retard dans ses dépôts peut perdre son statut d’organisme de bienfaisance.",
+              "Tenir une assemblée générale annuelle selon vos règlements administratifs, et tenir les procès-verbaux et un registre des membres."
+            ],
+            "nu": [
+              "Dans les 14 jours suivant l’assemblée générale annuelle, déposer auprès des **Registres juridiques** : les états financiers (signés par un auditeur ou par deux administrateurs) et un avis des administrateurs.",
+              "Déposer un avis de tout changement de siège ou de règlements administratifs.",
+              "Une société doit avoir effectué tous ses dépôts depuis sa constitution pour être en règle."
+            ],
+            "fed": [
+              "Au moins un administrateur, ou trois pour une organisation ayant recours à la sollicitation (la plupart des organismes de bienfaisance qui sollicitent le public), dont au moins deux ne sont ni dirigeants ni employés.",
+              "Tenir une assemblée annuelle dans les 15 mois suivant la précédente et au plus tard six mois après la fin de l’exercice.",
+              "Déposer un rapport annuel auprès de **Corporations Canada** dans les 60 jours suivant l’anniversaire de la constitution. Les organisations qui cessent de le faire peuvent être dissoutes.",
+              "Les exigences d’audit ou de mission d’examen dépendent du recours ou non à la sollicitation et des revenus.",
+              "Tenir les registres obligatoires : statuts, règlements administratifs, procès-verbaux et registres des membres, des administrateurs et des dirigeants."
+            ],
+            "other": [
+              "Chaque province et territoire fixe ses propres règles de dépôt. Il s’agit habituellement d’un rapport annuel au registre des entreprises et d’une assemblée annuelle des membres.",
+              "Demandez le calendrier de conformité de votre organisme et vérifiez qu’il couvre à la fois votre loi et l’ARC."
+            ]
+          }
+        },
+        {
+          "type": "keypoints",
+          "title": "Principales obligations des organismes de bienfaisance enregistrés (ARC, partout au Canada)",
+          "items": [
+            "Produire la **Déclaration de renseignements des organismes de bienfaisance enregistrés (T3010)** dans les six mois suivant la fin de l’exercice. Un retard peut entraîner la révocation de l’enregistrement.",
+            "Délivrer les reçus officiels correctement, et seulement pour de véritables dons.",
+            "Consacrer ses ressources à ses fins de bienfaisance et respecter le contingent des versements.",
+            "Le dialogue sur les politiques publiques et la défense d’intérêts liés à votre mission sont permis. **Les activités politiques partisanes ne le sont pas :** aucun appui ni opposition à un parti politique ou à une candidate ou un candidat.",
+            "Tenir des livres et registres adéquats au Canada."
+          ]
+        },
+        {
+          "type": "scenario",
+          "title": "En pratique",
+          "situation": "Pendant une campagne électorale, la DG propose de publier sur les réseaux sociaux de l’organisme de bienfaisance un message invitant les sympathisants à voter pour un candidat qui a promis de financer le secteur.",
+          "question": "Comment le conseil devrait-il réagir?",
+          "debrief": "Un organisme de bienfaisance enregistré ne peut ni appuyer ni combattre un parti ou une candidature. Il peut diffuser de l’information non partisane, par exemple poser les mêmes questions sur le secteur à toutes les candidatures et publier leurs réponses, ou défendre une politique. Le conseil devrait réorienter l’idée vers une forme conforme.",
+          "choices": [
+            {
+              "id": "a",
+              "best": false,
+              "text": "Approuver la publication. La promesse du candidat aide directement les personnes que vous servez.",
+              "outcome": "Un organisme de bienfaisance enregistré ne peut ni appuyer ni combattre une candidature ou un parti, quelle qu’en soit la raison. Une publication partisane met l’enregistrement en danger."
+            },
+            {
+              "id": "b",
+              "best": true,
+              "text": "La réorienter : poser les mêmes questions sur le secteur à toutes les candidatures et publier toutes les réponses, ou défendre la politique elle-même.",
+              "outcome": "Le dialogue non partisan sur les politiques publiques lié à votre mission est permis. L’organisme fait passer son message tout en restant pleinement conforme."
+            },
+            {
+              "id": "c",
+              "best": false,
+              "text": "Dire à la DG que l’organisme doit rester complètement à l’écart des élections et ne rien dire.",
+              "outcome": "C’est prudent, mais vous renoncez à ce que les organismes de bienfaisance ont le droit de faire. La défense de politiques liées à votre mission est permise, et les personnes que vous servez y comptent peut-être."
+            }
+          ]
+        },
+        {
+          "type": "takeaway",
+          "body": "Sachez en vertu de quelle loi vous êtes constitués et si vous êtes un organisme de bienfaisance enregistré. Tenez un calendrier de conformité et demandez la confirmation que l’assemblée annuelle, les dépôts annuels, la T3010 et les versements des retenues sont sur la bonne voie."
+        }
+      ]
+    },
+    {
+      "id": "l6",
+      "number": 6,
+      "title": "Le conseil et la direction générale (DG ou PDG)",
+      "minutes": 4,
+      "blocks": [
+        {
+          "type": "text",
+          "body": "Dans la plupart des OBNL qui ont du personnel, le conseil n’a **qu’une seule employée ou un seul employé : la directrice générale ou le directeur général** (DG ou PDG). Tout le reste du personnel relève de la DG. C’est la relation la plus importante de la gouvernance, et elle fonctionne mieux comme un partenariat entre des personnes aux rôles différents."
+        },
+        {
+          "type": "keypoints",
+          "title": "Les responsabilités du conseil envers la DG",
+          "items": [
+            "**Bien embaucher.** Mener une recherche réfléchie, fondée sur les besoins futurs de l’organisme.",
+            "**Fixer des attentes claires.** Convenir d’objectifs annuels liés au plan stratégique.",
+            "**Déléguer au moyen de politiques.** Préciser ce qui doit être accompli et les limites à respecter, comme le pouvoir de dépenser et la tolérance au risque, puis laisser la DG décider de la façon de faire.",
+            "**Évaluer chaque année.** Utiliser un processus juste et documenté, avec la participation de tout le conseil.",
+            "**Fixer une rémunération** raisonnable et défendable.",
+            "**Planifier la relève.** Avoir un plan de relève d’urgence au cas où la DG partirait soudainement."
+          ]
+        },
+        {
+          "type": "callout",
+          "variant": "warning",
+          "title": "Évitez de contourner la DG",
+          "body": "Les membres du conseil ne doivent pas donner de directives au personnel ni inviter le personnel à porter ses plaintes directement au conseil, sauf par une voie officielle comme une politique de dénonciation. Cela mine l’autorité de la DG et brouille la reddition de comptes. Si vous entendez des préoccupations, transmettez-les à la présidence."
+        },
+        {
+          "type": "callout",
+          "variant": "seasoned",
+          "title": "Note de l’administrateur chevronné",
+          "body": "La relation entre la présidence et la DG donne le ton à tout l’organisme. Des rencontres individuelles régulières, aucune surprise de part et d’autre et une entente claire sur ce qui est soumis au conseil aident beaucoup. Tenez une courte **séance à huis clos** (conseil seulement, sans le personnel) à la fin de chaque réunion. Quand elle fait partie de la routine, elle ne signale pas de problème et elle offre un espace sûr pour soulever des préoccupations tôt."
+        },
+        {
+          "type": "takeaway",
+          "body": "Le conseil dirige la DG, et la DG dirige le personnel. Soutenez votre DG, demandez-lui des comptes en fonction d’objectifs convenus et ne gouvernez jamais en la contournant."
+        }
+      ]
+    },
+    {
+      "id": "l7",
+      "number": 7,
+      "title": "Des réunions efficaces et des décisions éclairées",
+      "minutes": 4,
+      "blocks": [
+        {
+          "type": "text",
+          "body": "Le conseil n’existe comme instance décisionnelle que lorsqu’il se réunit en bonne et due forme. Individuellement, les administrateurs n’ont aucun pouvoir. C’est donc en réunion que vous remplissez vos obligations, et c’est là qu’elles sont consignées."
+        },
+        {
+          "type": "keypoints",
+          "title": "Votre rôle avant, pendant et après",
+          "items": [
+            "**Avant :** lisez la documentation. Notez vos questions. Envoyez vos demandes d’information à l’avance à la présidence ou à la DG pour que les réponses soient prêtes.",
+            "**Pendant :** restez centré sur l’ordre du jour, posez des questions, écoutez pour comprendre et dites ce que vous pensez. Le silence est souvent interprété comme un accord.",
+            "**Après :** donnez suite aux actions convenues, respectez la confidentialité et appuyez les décisions du conseil."
+          ]
+        },
+        {
+          "type": "keypoints",
+          "title": "Les mécanismes à connaître",
+          "items": [
+            "**Le quorum** est le nombre minimal d’administrateurs présents pour que les décisions soient valides, tel que fixé par vos règlements administratifs.",
+            "**Les propositions** sont des motions formelles. Elles sont présentées, appuyées, débattues et mises aux voix.",
+            "**L’ordre du jour de consentement** regroupe les points courants, comme les procès-verbaux précédents et les rapports de comités, en un seul vote pour consacrer plus de temps à la stratégie. Tout membre peut demander qu’un point en soit retiré pour discussion.",
+            "**Le procès-verbal** consigne les décisions, les principaux motifs et les déclarations de conflits, et non chaque parole prononcée. Une fois adopté, c’est le document officiel de ce que le conseil a fait.",
+            "**La dissidence consignée :** si vous êtes en désaccord avec une décision importante, vous pouvez demander que votre vote contre soit consigné.",
+            "**Les comités** conseillent le conseil et ne décident pas en son nom, sauf s’il leur a officiellement délégué ce pouvoir."
+          ]
+        },
+        {
+          "type": "scenario",
+          "title": "En pratique",
+          "situation": "Entre deux réunions, la présidente et le trésorier conviennent au téléphone d’approuver une dépense non budgétée de 40 000 $ qui dépasse le pouvoir de dépenser de la DG.",
+          "question": "Le conseil a-t-il approuvé la dépense?",
+          "debrief": "Non. Deux administrateurs ne sont pas le conseil. À moins que vos règlements administratifs ou une résolution du conseil leur délèguent ce pouvoir, c’est le conseil qui doit décider, soit lors d’une réunion dûment convoquée, soit par une résolution écrite transmise à tous les administrateurs et adoptée selon les exigences de vos règlements administratifs et de votre loi. Même les décisions urgentes exigent un processus en bonne et due forme.",
+          "choices": [
+            {
+              "id": "a",
+              "best": false,
+              "text": "La considérer comme approuvée. La présidente et le trésorier sont les deux principaux dirigeants du conseil.",
+              "outcome": "Deux administrateurs ne sont pas le conseil. À moins d’une délégation officielle, la dépense n’est pas autorisée, et les administrateurs qui l’ont approuvée pourraient devoir en répondre."
+            },
+            {
+              "id": "b",
+              "best": true,
+              "text": "Convoquer une courte réunion extraordinaire, ou transmettre une résolution écrite à tous les administrateurs selon vos règlements administratifs.",
+              "outcome": "On peut prendre une décision urgente rapidement et en bonne et due forme. La décision est valide, consignée, et chaque membre a pu se prononcer."
+            },
+            {
+              "id": "c",
+              "best": false,
+              "text": "Laisser la DG faire la dépense maintenant et la faire ratifier par le conseil à la prochaine réunion.",
+              "outcome": "La ratification après coup coince le conseil : il ne peut qu’accepter ou défaire un fait accompli. Elle laisse aussi entendre que les limites de dépenses sont facultatives. Réservez-la aux vraies urgences, puis corrigez le processus."
+            }
+          ]
+        },
+        {
+          "type": "takeaway",
+          "body": "Préparez-vous, participez et donnez suite. Les décisions sont prises par le conseil dans son ensemble, selon un processus en bonne et due forme, et consignées au procès-verbal."
+        }
+      ]
+    },
+    {
+      "id": "l8",
+      "number": 8,
+      "title": "Stratégie, risques, réconciliation et culture du conseil",
+      "minutes": 7,
+      "blocks": [
+        {
+          "type": "text",
+          "body": "Les grands conseils consacrent l’essentiel de leur temps à l’avenir. Ils fixent l’orientation, anticipent les risques, bâtissent la confiance avec les communautés qu’ils servent et cherchent sans cesse à s’améliorer. Cette leçon réunit tous ces éléments."
+        },
+        {
+          "type": "keypoints",
+          "title": "Stratégie et risques",
+          "items": [
+            "**Le plan stratégique** énonce trois à cinq priorités pour les prochaines années. Le conseil l’approuve, la direction élabore le plan opérationnel, et le conseil suit les progrès à l’aide d’un court tableau de bord.",
+            "**La surveillance des risques :** le conseil n’élimine pas le risque. Il décide du niveau de risque acceptable et vérifie que les risques importants sont cernés et gérés. Un registre des risques simple, revu une ou deux fois par année, couvre les plus importants : financiers, humains, réputationnels, juridiques et de conformité, technologiques et cybernétiques, et liés à la sécurité.",
+            "**L’assurance responsabilité des administrateurs et dirigeants :** confirmez que l’organisme en a une et comprenez en gros ce qu’elle couvre. Renseignez-vous sur les dispositions d’indemnisation des règlements administratifs."
+          ]
+        },
+        {
+          "type": "text",
+          "body": "**La réconciliation fait partie du travail de gouvernance.** La Commission de vérité et réconciliation du Canada a publié 94 appels à l’action en 2015. L’appel à l’action 92 s’adresse au secteur des entreprises, et de nombreux OBNL l’ont adopté comme norme pour eux-mêmes : établir des relations respectueuses avec les peuples autochtones, assurer un accès équitable aux possibilités et former la direction à l’histoire et aux droits des Autochtones. Pour un conseil, c’est une question de stratégie, de reddition de comptes et de culture, et non une déclaration ponctuelle."
+        },
+        {
+          "type": "keypoints",
+          "title": "À quoi peut ressembler la réconciliation à la table du conseil",
+          "items": [
+            "**Savoir où l’on est.** Apprenez sur quel territoire traditionnel votre organisme exerce ses activités, et renseignez-vous sur les communautés des Premières Nations, inuites et métisses de votre région.",
+            "**Donner du sens aux reconnaissances.** Si vous ouvrez vos réunions par une reconnaissance territoriale, rendez-la précise et liez-la à ce que fait l’organisme. Une phrase toute faite, lue sans réflexion, peut faire plus de mal que de bien.",
+            "**Se demander qui manque.** Les Autochtones que sert votre organisme sont-ils représentés dans sa gouvernance, ses programmes et ses décisions?",
+            "**Bâtir les relations avant d’en avoir besoin.** Une démarche qui commence quand la décision est déjà prise n’est une consultation que de nom.",
+            "**Continuer d’apprendre.** Intégrez l’histoire, les droits et la sécurisation culturelle des Autochtones à la formation continue du conseil. De nombreuses formations gratuites ou peu coûteuses sont offertes."
+          ]
+        },
+        {
+          "type": "scenario",
+          "title": "En pratique",
+          "situation": "Le conseil met à jour son plan stratégique. Trois semaines avant le vote, une administratrice propose d’envoyer l’ébauche à une Première Nation de la région et à un centre d’amitié autochtone pour obtenir leurs commentaires.",
+          "question": "À quoi ressemblerait une bonne approche?",
+          "debrief": "L’intention est bonne, mais le moment choisi en fait une formalité. Mieux vaut communiquer tôt, demander comment les personnes souhaitent participer, offrir des honoraires pour leur temps et leur savoir, et être prêt à modifier l’échéancier. Si ce n’est pas possible cette fois-ci, dites-le franchement et commencez à bâtir la relation pour le prochain cycle.",
+          "choices": [
+            {
+              "id": "a",
+              "best": false,
+              "text": "Envoyer l’ébauche comme proposé. Un peu de rétroaction vaut mieux que rien.",
+              "outcome": "Demander des commentaires sur un plan presque final, avec un délai de trois semaines, peut paraître extractif. Cela laisse entendre que les décisions sont déjà prises et peut nuire à une confiance dont vous aurez besoin plus tard."
+            },
+            {
+              "id": "b",
+              "best": true,
+              "text": "Communiquer dès maintenant pour demander comment ils souhaitent participer, offrir des honoraires et être prêt à modifier l’échéancier ou à reconnaître franchement ses limites.",
+              "outcome": "Vous traitez les partenaires autochtones comme une relation, et non comme des réviseurs. Même si ce plan ne peut pas beaucoup changer, le conseil amorce quelque chose de réel pour le prochain cycle."
+            },
+            {
+              "id": "c",
+              "best": false,
+              "text": "Laisser tomber cette fois-ci, faute de temps pour bien faire les choses.",
+              "outcome": "C’est compréhensible, mais le silence est aussi un choix. Si le temps manque, dites-le franchement et engagez-vous à amorcer la relation bien avant le prochain cycle de planification."
+            }
+          ]
+        },
+        {
+          "type": "keypoints",
+          "title": "La culture du conseil",
+          "items": [
+            "**Le questionnement constructif :** un désaccord respectueux mène à de meilleures décisions qu’un silence poli.",
+            "**La diversité des points de vue :** les conseils qui reflètent leurs communautés et s’appuient sur l’expérience vécue prennent de meilleures décisions. Notre formation sur l’équité, la diversité et l’inclusion approfondit ce thème.",
+            "**L’autoévaluation annuelle du conseil :** un court sondage sur le fonctionnement du conseil, suivi de mesures concrètes.",
+            "**La relève et le recrutement :** une grille de compétences montre ce dont le conseil aura besoin, pour que le recrutement soit réfléchi plutôt que fondé sur « qui connaissons-nous? ».",
+            "**La formation continue :** la gouvernance, les finances, la cybersécurité, l’équité, la diversité et l’inclusion et la réconciliation ne s’apprennent pas une fois pour toutes."
+          ]
+        },
+        {
+          "type": "keypoints",
+          "title": "Vos 90 premiers jours",
+          "items": [
+            "Lisez l’acte constitutif ou la mission, les règlements administratifs, le plan stratégique, les procès-verbaux de la dernière année, les derniers états financiers et les principales politiques. La prochaine leçon les rassemble pour vous.",
+            "Rencontrez individuellement la présidence et la DG.",
+            "Signez votre déclaration de conflits d’intérêts et le code de conduite.",
+            "Confirmez la couverture d’assurance responsabilité des administrateurs et dirigeants.",
+            "Assistez à une activité ou à un programme pour voir la mission en action.",
+            "Demandez à un administrateur expérimenté d’être votre mentor informel pendant votre première année."
+          ]
+        },
+        {
+          "type": "takeaway",
+          "body": "Regardez vers l’avenir, gérez le risque de façon réfléchie, bâtissez la confiance avec les communautés que vous servez et investissez dans le conseil lui-même. Un conseil solide se bâtit délibérément."
+        }
+      ]
+    }
+  ],
+  "orgLesson": {
+    "id": "org",
+    "title": "Notre organisme",
+    "minutes": 10,
+    "intro": "Cette leçon est préparée par votre organisme. Consultez chaque document, puis remplissez votre déclaration de conflits d’intérêts et votre engagement envers le code de conduite. Les deux sont consignés auprès de votre organisme.",
+    "readingTip": "Inutile de mémoriser ces documents. En les lisant, repérez quatre choses : notre mission, la façon dont les décisions sont prises, ce que nous cherchons à accomplir et notre situation financière.",
+    "documentsHeading": "Documents à consulter",
+    "noDocuments": "Votre organisme n’a pas encore ajouté de documents. Demandez à la présidence ou à la DG les règlements administratifs, le plan stratégique, les derniers états financiers et les principales politiques.",
+    "documentKinds": {
+      "bylaws": "Acte constitutif et règlements administratifs",
+      "strategic_plan": "Plan stratégique",
+      "financials": "Derniers états financiers",
+      "code_of_conduct": "Code de conduite",
+      "coi_policy": "Politique sur les conflits d’intérêts",
+      "minutes": "Procès-verbaux récents du conseil",
+      "other": "Autre document"
+    },
+    "reviewedLabel": "J’ai consulté les documents fournis par mon organisme.",
+    "coi": {
+      "heading": "Déclaration de conflits d’intérêts",
+      "intro": "Indiquez tout intérêt qui pourrait entrer en conflit, ou sembler entrer en conflit, avec vos obligations envers cet organisme : emploi, intérêts d’affaires, autres conseils auxquels vous siégez, membres de votre famille qui travaillent pour l’organisme ou font affaire avec lui, et bailleurs de fonds auxquels vous êtes lié.",
+      "noneLabel": "Je n’ai aucun intérêt à déclarer pour le moment.",
+      "listLabel": "Je déclare les intérêts suivants :",
+      "placeholder": "Par exemple : je siège au conseil de la Fondation communautaire de l’Ouest, qui finance notre programme jeunesse.",
+      "commitment": "Je mettrai cette déclaration à jour si ma situation change, et je déclarerai tout conflit à la réunion où il se présente."
+    },
+    "conduct": {
+      "heading": "Code de conduite",
+      "statement": "J’ai lu le code de conduite de l’organisme et je m’engage à le respecter.",
+      "missing": "Votre organisme n’a pas ajouté de code de conduite. Vous pouvez continuer; votre administrateur pourra en ajouter un plus tard."
+    },
+    "signatureLabel": "Tapez votre nom complet pour signer",
+    "button": "Signer et continuer"
+  },
+  "attestation": {
+    "heading": "Attestation de l’administrateur",
+    "statements": [
+      "J’ai terminé la formation L’essentiel de la gouvernance.",
+      "Je comprends mes devoirs de loyauté, de prudence et de conformité en tant qu’administrateur.",
+      "Je déclarerai mes conflits d’intérêts et je respecterai la confidentialité des affaires du conseil.",
+      "Je comprends que cette formation est éducative et qu’elle ne remplace pas les règlements administratifs, les politiques de mon organisme ni un avis juridique."
+    ]
+  },
+  "closing": {
+    "heading": "Merci de votre engagement",
+    "body": "La bonne gouvernance n’est pas une question de perfection. C’est arriver préparé, poser de bonnes questions et faire passer l’organisme et la communauté qu’il sert en premier. Merci du temps et du soin que vous apportez à la table du conseil."
+  },
+  "media": {
+    "welcomeVideo": {
+      "url": null,
+      "title": "Mot de bienvenue de Rosalyn Walls",
+      "pending": "Vidéo de bienvenue à venir"
+    },
+    "lessonAudio": {}
+  },
+  "reflection": {
+    "before": {
+      "heading": "Quel est votre point de départ?",
+      "intro": "Avant de commencer, indiquez à quel point vous vous sentez à l’aise aujourd’hui dans chaque domaine. Il n’y a pas de bonne réponse. Votre organisme ne voit jamais que des résultats combinés et anonymes, et vous verrez votre propre progression à la fin.",
+      "button": "Enregistrer et commencer"
+    },
+    "after": {
+      "heading": "À quel point vous sentez-vous à l’aise maintenant?",
+      "intro": "Évaluez de nouveau les mêmes domaines. La comparaison vous montre, à vous et à votre conseil, où l’apprentissage a porté fruit."
+    },
+    "scale": [
+      "Pas encore",
+      "Un peu",
+      "Assez",
+      "À l’aise",
+      "Très à l’aise"
+    ],
+    "growth": "Votre progression",
+    "topics": [
+      {
+        "id": "l1",
+        "label": "Savoir ce qui relève du conseil et ce qui relève de la direction"
+      },
+      {
+        "id": "l2",
+        "label": "Comprendre mes obligations juridiques d’administrateur"
+      },
+      {
+        "id": "l3",
+        "label": "Reconnaître et gérer un conflit d’intérêts"
+      },
+      {
+        "id": "l4",
+        "label": "Lire les rapports financiers et repérer les signaux d’alarme"
+      },
+      {
+        "id": "l5",
+        "label": "Connaître nos obligations de conformité"
+      },
+      {
+        "id": "l6",
+        "label": "Soutenir et encadrer la DG"
+      },
+      {
+        "id": "l7",
+        "label": "Contribuer à des réunions efficaces et à de bonnes décisions"
+      },
+      {
+        "id": "l8",
+        "label": "Encadrer la stratégie, les risques et la réconciliation"
+      }
+    ]
+  },
+  "actionPlan": {
+    "heading": "Votre plan d’action",
+    "intro": "L’apprentissage s’ancre quand il se traduit en actions. Choisissez jusqu’à trois choses que vous ferez dans les 90 prochains jours, ou écrivez les vôtres. Nous les joindrons à votre certificat, et la mise à jour annuelle vous demandera comment cela s’est passé.",
+    "suggestions": [
+      "Lire nos règlements administratifs et notre plan stratégique avant ma prochaine réunion du conseil.",
+      "Préparer des questions pour chaque documentation du conseil et les envoyer avant la réunion.",
+      "Demander à chaque réunion la confirmation que les versements des retenues sur la paie sont à jour.",
+      "Mettre à jour ma déclaration de conflits d’intérêts chaque fois que ma situation change.",
+      "Demander un calendrier de conformité d’une page pour le conseil.",
+      "Rencontrer individuellement notre présidence ou notre DG d’ici 60 jours.",
+      "Apprendre sur quel territoire traditionnel se trouve notre organisme, et me renseigner sur les Nations de notre région.",
+      "Demander que le conseil revoie son registre des risques cette année.",
+      "Proposer une courte séance à huis clos à la fin de chaque réunion du conseil.",
+      "Visiter un de nos programmes ou une de nos activités pour voir la mission en action."
+    ],
+    "customLabel": "Ou écrivez le vôtre",
+    "customPlaceholder": "Par exemple : me joindre au comité des finances et apprendre notre processus budgétaire.",
+    "max": 3,
+    "button": "Enregistrer mon plan d’action",
+    "previous": {
+      "heading": "La dernière fois, vous vous étiez engagé à",
+      "intro": "Comment cela s’est-il passé? Soyez franc. C’est pour vous, et votre organisme ne voit que des résultats combinés.",
+      "statuses": {
+        "done": "Fait",
+        "partly": "En partie",
+        "not_yet": "Pas encore"
+      }
+    }
+  }
+}

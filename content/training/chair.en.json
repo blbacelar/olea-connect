@@ -1,0 +1,129 @@
+{
+  "id": "chair-discussion-guide",
+  "locale": "en",
+  "version": "1.0.0",
+  "currentAsOf": "October 2026",
+  "audience": "Board Chairs and organization administrators",
+  "title": "The Chair’s Discussion Guide",
+  "subtitle": "Generative conversations for your board",
+  "intro": [
+    "This guide is for Board Chairs. Use it to turn what directors learned in Governance Essentials into better conversations around your own table.",
+    "Most board time goes to two kinds of work. **Fiduciary** work asks whether we are safe, compliant and using resources well. **Strategic** work asks where we should focus. Both matter. A third kind, often called **generative** governance, asks the deeper questions: what problem are we really here to solve, what do we believe, and what are we not seeing? The idea comes from the book *Governance as Leadership* by Richard Chait, William Ryan and Barbara Taylor, and it is where boards add the most value that staff cannot.",
+    "Each session below takes 20 to 45 minutes. Use one at the start of a regular meeting, before the business agenda, or several at a retreat."
+  ],
+  "howTo": {
+    "heading": "How to run a generative discussion",
+    "items": [
+      "**Put it first on the agenda**, not last when people are tired.",
+      "**No motions, no decisions.** Say so at the start. The goal is understanding, not a vote.",
+      "**Frame it as a question,** not a presentation. Share the scenario or prompt in the board package so people arrive having thought about it.",
+      "**Hear every voice.** Go around the table once before open discussion. Ask newer directors first, so they aren’t anchored by veterans.",
+      "**Speak last.** Your view as Chair carries weight; holding it back lets others think freely.",
+      "**Welcome discomfort.** If the conversation gets uncomfortable, it is often getting somewhere useful.",
+      "**Capture and close.** Name the themes you heard, agree on what (if anything) should come back as business, and record it."
+    ]
+  },
+  "sessions": [
+    {
+      "id": "s0",
+      "title": "After Governance Essentials: what did we learn?",
+      "minutes": 20,
+      "when": "At the first meeting after all directors complete the course.",
+      "purpose": "Build a shared standard and surface the questions directors are carrying.",
+      "opener": "Ask each director to name one thing from the course that confirmed how we work, and one thing that made them wonder whether we do it well.",
+      "questions": [
+        "Which scenario felt most like something that could happen here?",
+        "Where do we blur governing and managing?",
+        "Is our conflict-of-interest practice as strong in reality as it is on paper?",
+        "What is one thing we should do differently starting next meeting?"
+      ],
+      "tip": "Expect experienced directors to be the most candid about gaps. Thank them for it."
+    },
+    {
+      "id": "s1",
+      "title": "Who are we really here for?",
+      "minutes": 30,
+      "when": "Before a strategic planning cycle, or once a year.",
+      "purpose": "Reconnect the board with the people the organization serves, beyond the numbers.",
+      "opener": "Invite a program participant, a front-line staff member or a community partner to speak for five minutes about what the organization means to them. Then thank them and let them leave before the board discusses.",
+      "questions": [
+        "What did we hear that our reports never tell us?",
+        "If we disappeared tomorrow, who would notice first, and what would they lose?",
+        "Who should we be serving that we aren’t?",
+        "How would the people we serve describe our board, if they knew who we were?"
+      ],
+      "tip": "Resist the urge to problem-solve. Let the questions sit."
+    },
+    {
+      "id": "s2",
+      "title": "What would make us fail?",
+      "minutes": 30,
+      "when": "When reviewing the risk register or the budget.",
+      "purpose": "Surface risks that formal reports miss, using a “pre-mortem.”",
+      "opener": "Imagine it is three years from now and the organization has closed. Ask each director to write down the most likely reason, then share.",
+      "questions": [
+        "Which of these risks are on our risk register? Which aren’t?",
+        "Where are we relying on one person, one funder or one system?",
+        "What early warning signs would we see, and would they reach the board?",
+        "What would we wish we had done this year?"
+      ],
+      "tip": "Ask directors to write before they speak. It produces more honest and varied answers."
+    },
+    {
+      "id": "s3",
+      "title": "When good people disagree",
+      "minutes": 25,
+      "when": "After a difficult decision, or when tension is building.",
+      "purpose": "Strengthen the board’s ability to disagree well and still speak with one voice.",
+      "opener": "Review the scenario of the director who posted public criticism of a board decision. Ask: what would have had to be different for that director to feel heard?",
+      "questions": [
+        "How do we make room for dissent before a decision, so it doesn’t surface after?",
+        "Do people feel free to disagree with the Chair, or with long-serving directors?",
+        "How do we communicate hard decisions to members and the community?",
+        "What does “speaking with one voice” mean for us in practice?"
+      ],
+      "tip": "If you have had a recent hard decision, acknowledge it directly. Pretending it didn’t happen undermines the session."
+    },
+    {
+      "id": "s4",
+      "title": "Reconciliation in practice",
+      "minutes": 45,
+      "when": "Once a year, ideally with an Indigenous facilitator or partner invited and compensated for their time.",
+      "purpose": "Move from statements to commitments the board can be accountable for.",
+      "opener": "Read your current land acknowledgement aloud, if you have one. Ask: what does it commit us to?",
+      "questions": [
+        "Whose territory are we on, and what do we know about the Nations and communities here?",
+        "Which First Nations, Inuit or Métis people, organizations or communities are connected to our work? Do we have real relationships with them?",
+        "What would it look like for our governance, not just our programs, to reflect reconciliation?",
+        "What is one commitment we could make this year, and how would we know we kept it?"
+      ],
+      "tip": "Don’t ask Indigenous directors to speak for all Indigenous peoples or to carry the board’s learning. Make it shared work."
+    },
+    {
+      "id": "s5",
+      "title": "The board we want to be",
+      "minutes": 30,
+      "when": "After the annual board self-evaluation.",
+      "purpose": "Turn evaluation results into a shared picture of the board’s culture and next steps.",
+      "opener": "Share the top three strengths and top three gaps from the self-evaluation, without names.",
+      "questions": [
+        "What surprised us?",
+        "What skills, experiences or perspectives will we need in the next three years that we don’t have now?",
+        "What is one habit we want to start, and one we want to stop?",
+        "How will we hold ourselves to it?"
+      ],
+      "tip": "Close by agreeing on no more than two changes. Boards that try to fix everything fix nothing."
+    }
+  ],
+  "capture": {
+    "heading": "Capture template",
+    "intro": "Record the outcome of each discussion in the minutes, or as a short note to the board.",
+    "fields": [
+      "Session and date",
+      "What we heard (themes, not names)",
+      "What we agree on",
+      "Questions that remain open",
+      "What comes back as business, who leads it, and by when"
+    ]
+  }
+}

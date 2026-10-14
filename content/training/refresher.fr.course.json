@@ -1,0 +1,243 @@
+{
+  "id": "governance-refresher",
+  "locale": "fr",
+  "version": "2026.1",
+  "currentAsOf": "octobre 2026",
+  "kind": "refresher",
+  "prerequisite": "governance-essentials",
+  "title": "Mise à jour en gouvernance 2026",
+  "subtitle": "Le rendez-vous annuel des administrateurs qui ont terminé L’essentiel de la gouvernance",
+  "provider": "Olea Connects",
+  "tagline": "Des racines plus fortes, pour s’épanouir ensemble",
+  "estimatedMinutes": 12,
+  "passMarkPercent": 80,
+  "certificateValidMonths": 12,
+  "jurisdictionNote": "Il s’agit de formation, et non d’un avis juridique. Les règlements administratifs et les politiques de votre organisme, ainsi que ses conseillers professionnels, ont le dernier mot.",
+  "welcome": {
+    "heading": "Bon retour",
+    "body": [
+      "Vous avez déjà terminé L’essentiel de la gouvernance. Cette courte mise à jour garde vos connaissances à jour et renouvelle votre attestation auprès de votre organisme. Elle dure environ 12 minutes : un rappel de deux minutes, les nouveautés de l’année, trois mises en situation, une vérification de six questions et votre déclaration annuelle de conflits d’intérêts."
+    ],
+    "outcomes": [
+      "Vous rappeler les obligations essentielles et la règle Déclarer, S’abstenir, Sortir",
+      "Les appliquer à trois nouvelles mises en situation",
+      "Renouveler votre déclaration de conflits d’intérêts pour l’année"
+    ]
+  },
+  "testOut": {
+    "enabled": false
+  },
+  "lessons": [
+    {
+      "id": "r1",
+      "number": 1,
+      "title": "L’essentiel en deux minutes",
+      "minutes": 2,
+      "blocks": [
+        {
+          "type": "keypoints",
+          "title": "Ce qui n’a pas changé",
+          "items": [
+            "**Gouverner, et non gérer.** Le conseil fixe l’orientation, les politiques et la reddition de comptes; la DG dirige l’organisme.",
+            "**Loyauté, prudence et conformité.** Agissez dans l’intérêt de l’organisme, préparez-vous et posez des questions, et respectez votre loi et vos règlements administratifs.",
+            "**Déclarer, S’abstenir, Sortir** chaque fois qu’un conflit se présente, et le faire consigner au procès-verbal.",
+            "**Demandez où en sont les versements des retenues** à chaque réunion. Des retenues à la source non versées peuvent engager la responsabilité personnelle des administrateurs.",
+            "**Parlez d’une seule voix** une fois que le conseil a décidé."
+          ]
+        },
+        {
+          "type": "takeaway",
+          "body": "Une bonne façon de faire vous protège : lisez la documentation, posez des questions et assurez-vous que les décisions sont consignées correctement."
+        }
+      ]
+    },
+    {
+      "id": "r2",
+      "number": 2,
+      "title": "Les nouveautés de l’année",
+      "minutes": 3,
+      "blocks": [
+        {
+          "type": "text",
+          "body": "Chaque année, Olea Connects met à jour cette leçon avec les changements qui touchent les conseils d’OBNL et d’organismes de bienfaisance partout au Canada, comme de nouvelles directives de l’ARC, des modifications législatives et de nouveaux risques. Votre organisme peut aussi ajouter ses propres mises à jour."
+        },
+        {
+          "type": "updates",
+          "title": "Mises à jour 2026",
+          "editorNote": "Équipe éditoriale d’Olea Connects : remplacez ces éléments chaque année avant de publier la nouvelle édition.",
+          "items": [
+            "**Revoyez votre calendrier de dépôts.** Confirmez les dates de votre T3010, de votre rapport annuel en vertu de votre loi et de votre assemblée annuelle. Dans plusieurs administrations, des rapports annuels manquants peuvent entraîner la dissolution.",
+            "**Le cyberrisque concerne le conseil.** Les fausses demandes de paiement et les courriels d’usurpation d’identité visant les OBNL continuent d’augmenter. Demandez à la direction quels contrôles encadrent la modification des coordonnées de paiement et l’approbation des virements.",
+            "**L’IA dans votre organisme.** Le personnel et les bénévoles utilisent des outils d’IA. Demandez si l’organisme a des lignes directrices sur l’information qui peut y être saisie, surtout les renseignements sur les donateurs et la clientèle."
+          ]
+        },
+        {
+          "type": "takeaway",
+          "body": "Demandez une mise à jour de cinq minutes sur la conformité et les risques à votre prochaine réunion, en utilisant ces éléments comme liste de vérification."
+        }
+      ]
+    },
+    {
+      "id": "r3",
+      "number": 3,
+      "title": "Trois mises en situation",
+      "minutes": 4,
+      "blocks": [
+        {
+          "type": "scenario",
+          "title": "Mise en situation 1",
+          "situation": "Le cabinet-conseil d’un administrateur offre de refaire le site Web de l’organisme à la moitié du prix du marché. Tout le monde autour de la table trouve l’offre généreuse.",
+          "question": "Que devrait-il se passer?",
+          "debrief": "C’est peut-être une bonne affaire, et un conflit bien géré la rend défendable. L’administrateur déclare son intérêt et quitte la salle; le conseil compare l’offre à au moins une autre soumission et décide sur le fond. Pour un organisme de bienfaisance, vérifiez si les règles de votre province limitent les paiements aux administrateurs (celles de l’Ontario sont particulièrement strictes).",
+          "choices": [
+            {
+              "id": "a",
+              "best": false,
+              "text": "Accepter l’offre. La moitié du prix, c’est trop beau pour refuser, et tout le monde est d’accord.",
+              "outcome": "Le consensus autour de la table n’efface pas le conflit. Sans déclaration ni comparaison, une bonne affaire peut ressembler à une faveur."
+            },
+            {
+              "id": "b",
+              "best": true,
+              "text": "L’administrateur déclare son intérêt et sort; le conseil compare au moins une autre soumission et décide sur le fond.",
+              "outcome": "L’organisme peut quand même obtenir un excellent prix, avec une décision défendable. Pour un organisme de bienfaisance, vérifiez d’abord les règles de votre province sur la rémunération des administrateurs."
+            },
+            {
+              "id": "c",
+              "best": false,
+              "text": "Refuser d’emblée. Les administrateurs ne devraient jamais faire affaire avec l’organisme.",
+              "outcome": "Certains organismes en font leur politique, mais ce n’est pas la norme juridique partout. Avec une déclaration en bonne et due forme, une abstention et une comparaison équitable, ce peut être la meilleure option."
+            }
+          ]
+        },
+        {
+          "type": "scenario",
+          "title": "Mise en situation 2",
+          "situation": "Le rapport financier montre un bel excédent, mais la DG mentionne au passage que les versements des retenues sur la paie ont été « un peu en retard » le mois dernier à cause d’un décalage de trésorerie.",
+          "question": "Que devrait faire le conseil?",
+          "debrief": "En faire une priorité. Demandez la confirmation que les versements sont maintenant à jour, la cause du retard et les mesures pour éviter que cela se reproduise. Demandez une prévision de trésorerie. Un excédent sur papier ne garantit pas que les liquidités sont disponibles au bon moment, et les administrateurs peuvent être personnellement responsables des retenues non versées.",
+          "choices": [
+            {
+              "id": "a",
+              "best": false,
+              "text": "Passer à autre chose. Il y a un excédent, et le retard était minime.",
+              "outcome": "Un excédent sur papier ne garantit pas que l’argent est là au moment de la paie, et les versements en retard entraînent des pénalités et la responsabilité personnelle des administrateurs."
+            },
+            {
+              "id": "b",
+              "best": true,
+              "text": "Demander la confirmation que les versements sont à jour, la cause du retard et une prévision de trésorerie.",
+              "outcome": "Le conseil traite le risque pour ce qu’il est, sans faire de microgestion. Ajouter une confirmation des versements au rapport financier de chaque réunion règle le problème."
+            },
+            {
+              "id": "c",
+              "best": false,
+              "text": "Confier la paie au trésorier jusqu’à nouvel ordre.",
+              "outcome": "Cela entraîne un administrateur dans les opérations et brouille la reddition de comptes. Le rôle du conseil est d’exiger des contrôles et des rapports fiables, et non de gérer la paie."
+            }
+          ]
+        },
+        {
+          "type": "scenario",
+          "title": "Mise en situation 3",
+          "situation": "Après un vote tendu, une administratrice qui s’est opposée à la fermeture d’un programme écrit sur les réseaux sociaux que le conseil « a ignoré la communauté ».",
+          "question": "Comment le conseil devrait-il réagir?",
+          "debrief": "La présidence devrait parler à l’administratrice en privé, sans tarder. Un membre du conseil peut demander que sa dissidence soit consignée au procès-verbal, mais il doit appuyer publiquement la décision du conseil ou démissionner. Le conseil voudra peut-être aussi revoir la façon dont la décision a été communiquée à la communauté.",
+          "choices": [
+            {
+              "id": "a",
+              "best": false,
+              "text": "Publier une réponse publique du conseil pour la corriger.",
+              "outcome": "Un échange public aggrave les dommages et étale le désaccord au grand jour. C’est une conversation à avoir d’abord en privé."
+            },
+            {
+              "id": "b",
+              "best": true,
+              "text": "La présidence lui parle en privé, sans tarder, et le conseil revoit la façon dont la décision a été communiquée.",
+              "outcome": "On lui rappelle que la dissidence se consigne au procès-verbal, et non en ligne, et le conseil apprend quelque chose sur la façon d’expliquer ses décisions difficiles."
+            },
+            {
+              "id": "c",
+              "best": false,
+              "text": "Lui demander de démissionner immédiatement.",
+              "outcome": "Cela pourrait devenir nécessaire si la situation se répète, mais c’est brûler une étape. La plupart des membres qui s’expriment publiquement se sentent ignorés. Commencez par une conversation."
+            }
+          ]
+        },
+        {
+          "type": "takeaway",
+          "body": "Les mêmes quelques principes règlent la plupart des problèmes de gouvernance : déclarer les conflits, s’informer des liquidités et des versements, et garder le débat à l’intérieur de la salle du conseil."
+        }
+      ]
+    }
+  ],
+  "orgLesson": {
+    "id": "org",
+    "mode": "declaration-only",
+    "title": "Déclaration annuelle",
+    "minutes": 2,
+    "intro": "Chaque année, les membres du conseil renouvellent leur déclaration de conflits d’intérêts et leur engagement envers le code de conduite. Votre déclaration est consignée auprès de votre organisme.",
+    "coi": {
+      "heading": "Déclaration de conflits d’intérêts",
+      "intro": "Indiquez tout intérêt qui pourrait entrer en conflit, ou sembler entrer en conflit, avec vos obligations envers cet organisme : emploi, intérêts d’affaires, autres conseils auxquels vous siégez, membres de votre famille qui travaillent pour l’organisme ou font affaire avec lui, et bailleurs de fonds auxquels vous êtes lié.",
+      "noneLabel": "Je n’ai aucun intérêt à déclarer pour le moment.",
+      "listLabel": "Je déclare les intérêts suivants :",
+      "placeholder": "Par exemple : je me suis joint cette année au conseil de la Fondation communautaire de l’Ouest.",
+      "commitment": "Je mettrai cette déclaration à jour si ma situation change, et je déclarerai tout conflit à la réunion où il se présente."
+    },
+    "conduct": {
+      "heading": "Code de conduite",
+      "statement": "J’ai relu le code de conduite de l’organisme et je m’engage toujours à le respecter.",
+      "missing": "Votre organisme n’a pas ajouté de code de conduite. Vous pouvez continuer; votre administrateur pourra en ajouter un plus tard."
+    },
+    "signatureLabel": "Tapez votre nom complet pour signer",
+    "button": "Signer et continuer"
+  },
+  "attestation": {
+    "heading": "Attestation annuelle",
+    "statements": [
+      "J’ai terminé la Mise à jour en gouvernance.",
+      "Ma déclaration de conflits d’intérêts est à jour.",
+      "Je comprends que cette formation est éducative et qu’elle ne remplace pas les règlements administratifs, les politiques de mon organisme ni un avis juridique."
+    ]
+  },
+  "closing": {
+    "heading": "Vous êtes à jour pour une autre année",
+    "body": "Merci de garder vos connaissances à jour. Votre organisme a une trace de votre mise à jour et de votre déclaration renouvelée."
+  },
+  "media": {
+    "welcomeVideo": {
+      "url": null
+    },
+    "lessonAudio": {}
+  },
+  "actionPlan": {
+    "heading": "Votre plan d’action",
+    "intro": "L’apprentissage s’ancre quand il se traduit en actions. Choisissez jusqu’à trois choses que vous ferez dans les 90 prochains jours, ou écrivez les vôtres. Nous les joindrons à votre certificat, et la mise à jour annuelle vous demandera comment cela s’est passé.",
+    "suggestions": [
+      "Lire nos règlements administratifs et notre plan stratégique avant ma prochaine réunion du conseil.",
+      "Préparer des questions pour chaque documentation du conseil et les envoyer avant la réunion.",
+      "Demander à chaque réunion la confirmation que les versements des retenues sur la paie sont à jour.",
+      "Mettre à jour ma déclaration de conflits d’intérêts chaque fois que ma situation change.",
+      "Demander un calendrier de conformité d’une page pour le conseil.",
+      "Rencontrer individuellement notre présidence ou notre DG d’ici 60 jours.",
+      "Apprendre sur quel territoire traditionnel se trouve notre organisme, et me renseigner sur les Nations de notre région.",
+      "Demander que le conseil revoie son registre des risques cette année.",
+      "Proposer une courte séance à huis clos à la fin de chaque réunion du conseil.",
+      "Visiter un de nos programmes ou une de nos activités pour voir la mission en action."
+    ],
+    "customLabel": "Ou écrivez le vôtre",
+    "customPlaceholder": "Par exemple : me joindre au comité des finances et apprendre notre processus budgétaire.",
+    "max": 3,
+    "button": "Enregistrer mon plan d’action",
+    "previous": {
+      "heading": "La dernière fois, vous vous étiez engagé à",
+      "intro": "Comment cela s’est-il passé? Soyez franc. C’est pour vous, et votre organisme ne voit que des résultats combinés.",
+      "statuses": {
+        "done": "Fait",
+        "partly": "En partie",
+        "not_yet": "Pas encore"
+      }
+    }
+  }
+}

@@ -28,6 +28,7 @@ export function Header() {
     session?.platformRoles,
     session?.member.membershipRole,
     locale,
+    session?.organization.tier,
   );
   const { resetRegistration } = useRegistration();
   const [notificationCloseRequest, setNotificationCloseRequest] = useState(0);

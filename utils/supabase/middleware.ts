@@ -36,6 +36,7 @@ const publicPathPrefixes = [
   "/signup",
   "/api",
   "/legal",
+  "/verify/training",
   "/modules/board-recruitment/survey",
   "/team/invitations/accept",
 ];
