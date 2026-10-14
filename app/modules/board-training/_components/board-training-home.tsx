@@ -179,7 +179,7 @@ export function BoardTrainingHome({ data, language }: { data: HomeData; language
                     <p className="min-h-12 text-sm text-slate-600">{courseId === "essentials" ? t.essentialsDescription : t.refresherDescription}</p>
                     {certificate && <Badge variant="secondary">{t.completed}</Badge>}
                     {locked && <p className="text-sm text-slate-500">{t.prerequisite}</p>}
-                    {certificate ? (
+                    {(certificate || enrollment) && !locked ? (
                       <Button asChild variant="outline"><Link href={`/modules/board-training/${courseId}`}>{t.continue}</Link></Button>
                     ) : (
                       <Button onClick={() => startCourse(courseId)} disabled={locked || pending}>

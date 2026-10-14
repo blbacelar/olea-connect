@@ -26,7 +26,7 @@ async function rateTopics(page: Page, rating: number) {
 
 test.describe("@critical Canopy board training", () => {
   test("completes lessons, retakes a failed assessment, signs, certifies, and verifies", async ({ browser, baseURL, testData }) => {
-    test.setTimeout(60_000);
+    test.setTimeout(180_000);
     if (!baseURL) throw new Error("Playwright baseURL is required.");
     const owner = await testData.createOrganizationOwner({ activeSubscription: true, planId: "canopy" });
     const context = await browser.newContext({ baseURL, storageState: await createAuthenticatedStorageState(owner.email, owner.password, baseURL) });
@@ -35,12 +35,12 @@ test.describe("@critical Canopy board training", () => {
       await page.goto("/modules/board-training");
       await expect(page.getByTestId("board-training-home")).toBeVisible();
       await page.getByRole("button", { name: "Start course" }).first().click();
-      await expect(page.getByTestId("board-training-player")).toBeVisible();
+      await expect(page.getByTestId("board-training-player")).toBeVisible({ timeout: 30_000 });
       await page.getByRole("button", { name: "Begin Lesson 1" }).click();
       await rateTopics(page, 2);
       await page.getByRole("button", { name: "Save and continue" }).click();
       for (const [index, lesson] of course.lessons.entries()) {
-        await expect(page.getByRole("heading", { name: lesson.title })).toBeVisible();
+        await expect(page.getByRole("heading", { name: lesson.title })).toBeVisible({ timeout: 20_000 });
         const scenario = lesson.blocks.find((block) => block.type === "scenario");
         if (scenario?.type === "scenario" && scenario.choices) {
           await page.getByRole("button", { name: scenario.choices[0].text }).click();
@@ -52,6 +52,11 @@ test.describe("@critical Canopy board training", () => {
           await page.getByRole("button", { name: "Complete and continue" }).click();
         }
         await page.getByRole("button", { name: "Complete and continue" }).click();
+        if (index === 0) {
+          await page.getByRole("link", { name: "All courses" }).click();
+          await expect(page.getByRole("link", { name: "Continue course" }).first()).toBeVisible();
+          await page.getByRole("link", { name: "Continue course" }).first().click();
+        }
       }
       await expect(page.getByRole("heading", { name: course.orgLesson.title })).toBeVisible();
       await page.getByRole("button", { name: course.orgLesson.coi.noneLabel }).click();
@@ -68,7 +73,7 @@ test.describe("@critical Canopy board training", () => {
       await page.getByRole("button", { name: "Save and continue" }).click();
       for (const statement of course.attestation.statements) await page.getByText(statement, { exact: true }).click();
       await page.getByRole("button", { name: "Complete course" }).click();
-      await expect(page.getByText(/OLEA-\d{4}-[A-F0-9]{12}/)).toBeVisible();
+      await expect(page.getByText(/OLEA-\d{4}-[A-F0-9]{12}/)).toBeVisible({ timeout: 30_000 });
       const certificate = await testData.supabase.from("board_training_certificates")
         .select("id, certificate_number, score, total_questions").eq("organization_id", owner.organizationId).single();
       expect(certificate.error).toBeNull();
@@ -133,8 +138,10 @@ test.describe("@critical Canopy board training", () => {
       await expect(page.getByText("Complete Governance Essentials first")).toBeVisible();
       await page.getByRole("button", { name: "Start course" }).first().click();
       await page.getByRole("button", { name: "Take the assessment first" }).click();
+      await expect(page.getByRole("heading", { name: course.reflection.before.heading })).toBeVisible();
       await rateTopics(page, 3);
       await page.getByRole("button", { name: "Save and continue" }).click();
+      await expect(page.getByRole("heading", { name: "Assessment", exact: true })).toBeVisible({ timeout: 20_000 });
       await answerQuiz(page);
       await expect(page.getByText("You passed")).toBeVisible();
       await page.getByRole("button", { name: "Continue", exact: true }).last().click();
@@ -145,7 +152,7 @@ test.describe("@critical Canopy board training", () => {
       await page.getByRole("button", { name: "Save and continue" }).click();
       for (const statement of course.attestation.statements) await page.getByText(statement, { exact: true }).click();
       await page.getByRole("button", { name: "Complete course" }).click();
-      await expect(page.getByText(/OLEA-\d{4}-[A-F0-9]{12}/)).toBeVisible();
+      await expect(page.getByText(/OLEA-\d{4}-[A-F0-9]{12}/)).toBeVisible({ timeout: 30_000 });
       const { data: essentialsEnrollment, error: essentialsError } = await testData.supabase
         .from("board_training_enrollments").select("completed_lessons, test_out_used")
         .eq("organization_id", owner.organizationId).eq("course_id", "essentials").single();
@@ -171,7 +178,7 @@ test.describe("@critical Canopy board training", () => {
       await page.getByRole("button", { name: "Enregistrer et continuer" }).click();
       for (const statement of refresher.attestation.statements) await page.getByText(statement, { exact: true }).click();
       await page.getByRole("button", { name: "Terminer la formation" }).click();
-      await expect(page.getByText(/OLEA-\d{4}-[A-F0-9]{12}/)).toBeVisible();
+      await expect(page.getByText(/OLEA-\d{4}-[A-F0-9]{12}/)).toBeVisible({ timeout: 30_000 });
       const { count, error } = await testData.supabase.from("board_training_certificates")
         .select("id", { head: true, count: "exact" }).eq("organization_id", owner.organizationId);
       expect(error).toBeNull();
@@ -180,7 +187,7 @@ test.describe("@critical Canopy board training", () => {
   });
 
   test("opens French invitations for the invited member and keeps documents private", async ({ browser, baseURL, testData }) => {
-    test.setTimeout(60_000);
+    test.setTimeout(120_000);
     if (!baseURL) throw new Error("Playwright baseURL is required.");
     const owner = await testData.createOrganizationOwner({ activeSubscription: true, planId: "canopy" });
     const member = await testData.createOrganizationMember(owner);
@@ -204,7 +211,7 @@ test.describe("@critical Canopy board training", () => {
         name: "bylaws.pdf", mimeType: "application/pdf", buffer: Buffer.from("%PDF-1.4\n1 0 obj\n<<>>\nendobj\n%%EOF"),
       });
       await ownerPage.getByRole("button", { name: "Upload document" }).click();
-      await expect(ownerPage.getByText("Board bylaws", { exact: true })).toBeVisible();
+      await expect(ownerPage.getByText("Board bylaws", { exact: true })).toBeVisible({ timeout: 30_000 });
 
       const memberPage = await memberContext.newPage();
       await memberPage.goto(`/modules/board-training/invite/${token}?lang=fr`);

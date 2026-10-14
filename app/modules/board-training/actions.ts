@@ -41,10 +41,10 @@ function validationMessage(error: unknown) {
   return "We could not save this change. Please try again.";
 }
 
-async function run<T>(operation: () => Promise<T>) {
+async function run<T>(operation: () => Promise<T>, revalidate = true) {
   try {
     const value = await operation();
-    refresh();
+    if (revalidate) refresh();
     return { ok: true as const, value };
   } catch (error) {
     return { ok: false as const, error: validationMessage(error) };
@@ -69,21 +69,21 @@ export async function saveTrainingConfidenceAction(input: { enrollmentId: string
   return run(async () => {
     const parsed = z.object({ enrollmentId: uuid, phase: z.enum(["before", "after"]), values: z.record(z.string(), z.number().int().min(1).max(5)) }).parse(input);
     await saveTrainingConfidence(parsed.enrollmentId, parsed.phase, parsed.values);
-  });
+  }, false);
 }
 
 export async function completeTrainingLessonAction(input: { enrollmentId: string; lessonId: string }) {
   return run(async () => {
     const parsed = z.object({ enrollmentId: uuid, lessonId: z.string().regex(/^[lr][1-8]$/) }).parse(input);
     await completeTrainingLesson(parsed.enrollmentId, parsed.lessonId);
-  });
+  }, false);
 }
 
 export async function submitTrainingAssessmentAction(input: { enrollmentId: string; answers: Record<string, string>; testOut: boolean }) {
   return run(async () => {
     const parsed = z.object({ enrollmentId: uuid, answers: z.record(z.string(), z.string().max(10)), testOut: z.boolean() }).parse(input);
     return submitTrainingAssessment(parsed.enrollmentId, parsed.answers, parsed.testOut);
-  });
+  }, false);
 }
 
 export async function signTrainingOrganizationAction(input: {
@@ -95,7 +95,7 @@ export async function signTrainingOrganizationAction(input: {
       reviewed: z.boolean(), conduct: z.boolean(), signature: z.string().trim().min(2).max(160),
     }).parse(input);
     await signTrainingOrganization(parsed);
-  });
+  }, false);
 }
 
 export async function saveTrainingActionPlanAction(input: {
@@ -104,7 +104,7 @@ export async function saveTrainingActionPlanAction(input: {
   return run(async () => {
     const parsed = z.object({ enrollmentId: uuid, plan: z.array(z.string().trim().min(2).max(300)).min(1).max(3), followUp: z.record(z.string(), z.enum(["done", "partly", "not_yet"])) }).parse(input);
     await saveTrainingActionPlan(parsed.enrollmentId, parsed.plan, parsed.followUp);
-  });
+  }, false);
 }
 
 export async function issueTrainingCertificateAction(input: { enrollmentId: string; name: string; acknowledgedStatements: number[] }) {
