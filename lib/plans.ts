@@ -1,8 +1,8 @@
-import type { MembershipTier } from "@/lib/types";
+import type { ActiveMembershipTier, MembershipTier } from "@/lib/types";
 import { foundingPricing } from "@/lib/founding-pricing";
 
 export interface MembershipPlan {
-  id: MembershipTier;
+  id: ActiveMembershipTier;
   name: string;
   quarterlyPrice: number;
   annualPrice: number;
@@ -65,7 +65,7 @@ export const membershipPlans: MembershipPlan[] = [
     quarterlyPrice: foundingPricing.canopy.quarterly.standard,
     annualPrice: foundingPricing.canopy.annual.standard,
     seats: "15 seats included",
-    audience: "Organizations with $2M-$5M annual budget",
+    audience: "Organizations with $2M+ annual budget",
     summary:
       "Complete governance systems, executive review, and strategy tools.",
     features: [
@@ -77,30 +77,9 @@ export const membershipPlans: MembershipPlan[] = [
       "Priority phone and email support",
     ],
   },
-  {
-    id: "harvest",
-    name: "Harvest",
-    quarterlyPrice: 2400,
-    annualPrice: 9600,
-    seats: "20 seats included",
-    audience: "Organizations with $5M+ annual budget",
-    summary:
-      "Enterprise support, facilitation, thought leadership, and introductions.",
-    features: [
-      "Everything in Canopy",
-      "Annual onboarding and board training facilitation",
-      "Board retreat facilitation support",
-      "Thought leader positioning",
-      "Peer networking and board-level introductions",
-      "Olea Connects™ summit speaking slot",
-      "10% off coaching and admin add-ons",
-    ],
-  },
 ];
 
-export const signupMembershipPlans = membershipPlans.filter(
-  (plan) => plan.id !== "harvest",
-);
+export const signupMembershipPlans = membershipPlans;
 
 export function getPlan(id: MembershipTier) {
   return membershipPlans.find((plan) => plan.id === id) ?? membershipPlans[1];

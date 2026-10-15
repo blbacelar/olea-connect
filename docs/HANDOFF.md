@@ -30,9 +30,10 @@ The platform also includes:
 The public pricing source is centralized in `lib/plans.ts` for membership tiers
 and `lib/pricing.ts` for add-ons, referral display rewards, and public billing
 policies. The current membership prices are $800/$200 for Seedling,
-$3,200/$800 for Roots, $6,000/$1,500 for Canopy, and $9,600/$2,400 for Harvest
-(annual/quarterly CAD). Included seats are 5, 10, 15, and 20 respectively;
+$3,200/$800 for Roots, and $6,000/$1,500 for Canopy (annual/quarterly CAD).
+Included seats are 5, 10, and 15 respectively;
 additional seats are $15 CAD one-time per seat.
+Harvest is a retired legacy plan retained only for existing subscriptions.
 
 The pricing page intentionally distinguishes public display from billing
 authorization. Founding-member rates are shown as a first-50, first-two-years
@@ -67,8 +68,8 @@ if the copy is likely to become user-facing product text.
 3. User sets organization name, logo, primary color, secondary color, and footer
    contact details.
 4. Seedling users choose exactly three templates.
-5. Roots, Canopy, and Harvest skip template selection and access the full
-   eligible library.
+5. Roots and Canopy skip template selection and access the full eligible
+   library. Existing Harvest subscriptions retain their historical access.
 
 ### Template Editing and Export
 

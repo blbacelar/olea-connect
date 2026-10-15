@@ -14,6 +14,7 @@ export function TemplateCard({
   variant?: "dashboard" | "library";
 }) {
   const locked = !template.available;
+  const legacyOnly = template.requiredTier === "harvest";
   const href = getResourceHref(template.slug);
   const opensModule = href.startsWith("/modules/");
 
@@ -75,20 +76,22 @@ export function TemplateCard({
           <>
             <span className="inline-flex items-center gap-1 rounded-full bg-slate-200/70 px-2.5 py-1 text-xs font-semibold capitalize text-slate-500">
               <LockKeyhole className="size-3.5" aria-hidden="true" />
-              {template.requiredTier} & above
+              {legacyOnly ? "Unavailable for new plans" : `${template.requiredTier} & above`}
             </span>
-            <Button
-              asChild
-              variant="outline"
-              size="sm"
-              className="border-olea-green text-olea-green hover:bg-olea-light"
-            >
-              <Link
-                href={`/subscription?upgrade=${template.requiredTier}&resource=${template.slug}`}
+            {legacyOnly ? null : (
+              <Button
+                asChild
+                variant="outline"
+                size="sm"
+                className="border-olea-green text-olea-green hover:bg-olea-light"
               >
-                Upgrade{variant === "dashboard" ? " to unlock" : ""}
-              </Link>
-            </Button>
+                <Link
+                  href={`/subscription?upgrade=${template.requiredTier}&resource=${template.slug}`}
+                >
+                  Upgrade{variant === "dashboard" ? " to unlock" : ""}
+                </Link>
+              </Button>
+            )}
           </>
         ) : (
           <>

@@ -10,6 +10,7 @@ import {
 } from "react";
 
 import type { RegistrationState } from "@/lib/types";
+import { isSignupTier } from "@/lib/founding-pricing";
 
 const STORAGE_KEY = "olea-registration";
 const LEGACY_STORAGE_KEY = "olea-registration-demo";
@@ -56,7 +57,9 @@ function normalizeStoredRegistration(stored: unknown): RegistrationState {
   return {
     ...initialState,
     ...candidate,
-    tier: candidate.tier === "harvest" ? initialState.tier : candidate.tier ?? initialState.tier,
+    tier: typeof stored.tier === "string" && isSignupTier(stored.tier)
+      ? stored.tier
+      : initialState.tier,
     billingCycle,
     consents: {
       terms: storedConsents.terms === true,

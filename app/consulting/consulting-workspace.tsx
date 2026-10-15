@@ -789,15 +789,14 @@ export function ConsultingWorkspace({
       ) : (
         <section className="rounded-[14px] border bg-white p-8 shadow-soft">
           <h2 className="text-xl font-bold text-slate-900">
-            Harvest consulting is not included with this membership
+            Consulting requests are unavailable for this membership
           </h2>
           <p className="mt-2 max-w-2xl text-sm leading-6 text-slate-600">
-            Consulting requests are available to active Harvest organizations.
-            Upgrade to Harvest when you are ready for included advisory support,
-            purchased consulting hours, and auditable request history.
+            This workspace is reserved for organizations with an existing
+            advisory agreement. Contact support to discuss consulting services.
           </p>
           <Button asChild className="mt-5">
-            <Link href="/subscription">View membership options</Link>
+            <Link href="/help">Contact support</Link>
           </Button>
         </section>
       )}

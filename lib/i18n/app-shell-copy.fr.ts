@@ -147,8 +147,8 @@ export const appShellCopyFr: AppShellCopy = {
     consulting: {
       title: "Consultation",
       description:
-        "Soumettre des demandes Harvest, suivre les heures et consulter l'activité de soutien.",
-      keywords: ["harvest", "soutien", "consultant", "heures", "demandes"],
+        "Consulter les demandes de conseil existantes, les heures et les activités de soutien.",
+      keywords: ["soutien", "consultant", "heures", "demandes"],
     },
     brandProfile: {
       title: "Profil de marque",

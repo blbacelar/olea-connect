@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import { useRef, useState, useTransition } from "react";
 
 import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
@@ -32,7 +33,6 @@ const planOptions = [
   ["seedling", "Seedling"],
   ["roots", "Roots"],
   ["canopy", "Canopy"],
-  ["harvest", "Harvest"],
 ] as const;
 
 function toLocalDateTimeInput(date: Date) {
@@ -224,7 +224,7 @@ export function WebinarCreateForm() {
                   key={value}
                   className="flex items-center gap-2 rounded-lg border bg-white px-3 py-2 text-sm font-semibold text-slate-700"
                 >
-                  <input
+                  <Checkbox
                     defaultChecked={value !== "seedling"}
                     name="planIds"
                     type="checkbox"

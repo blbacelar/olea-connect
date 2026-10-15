@@ -7,7 +7,7 @@ import { createAdminClient } from "@/utils/supabase/admin";
 
 import { getText, requireEventAdmin } from "./action-support";
 
-const membershipTiers = ["seedling", "roots", "canopy", "harvest"] as const;
+const membershipTiers = ["seedling", "roots", "canopy"] as const;
 const creatableEventStatuses = ["scheduled", "live"] as const;
 const accessModes = ["included", "complimentary", "paid"] as const;
 
@@ -152,10 +152,15 @@ function parsePlanIds(formData: FormData) {
   const selectedPlanIds = formData.getAll("planIds").map((value) => String(value));
   if (!selectedPlanIds.length) throw new Error("Choose at least one membership plan.");
 
-  return selectedPlanIds.map((planId) => {
+  const activePlanIds = selectedPlanIds.map((planId) => {
     assertOneOf(membershipTiers, planId, "Choose supported membership plans.");
     return planId;
   });
+
+  // An existing Harvest membership keeps the same event access as Canopy.
+  return activePlanIds.includes("canopy")
+    ? [...activePlanIds, "harvest" as const]
+    : activePlanIds;
 }
 
 function parseComplimentaryTicketLimit(

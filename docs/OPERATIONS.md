@@ -56,8 +56,6 @@ STRIPE_PRICE_ROOTS_QUARTERLY
 STRIPE_PRICE_ROOTS_ANNUAL
 STRIPE_PRICE_CANOPY_QUARTERLY
 STRIPE_PRICE_CANOPY_ANNUAL
-STRIPE_PRICE_HARVEST_QUARTERLY
-STRIPE_PRICE_HARVEST_ANNUAL
 STRIPE_PRICE_SEAT_ONE_TIME
 ```
 
@@ -368,8 +366,10 @@ The app expects recurring CAD prices for:
 - Seedling quarterly and annual.
 - Roots quarterly and annual.
 - Canopy quarterly and annual.
-- Harvest quarterly and annual.
 - Paid seats are one-time CAD purchases at $15.00 per seat.
+
+Harvest prices are legacy Stripe records for existing subscriptions. Do not
+create new Harvest checkout or upgrade offers.
 
 The public pricing catalog also includes these non-membership services:
 
@@ -378,7 +378,8 @@ The public pricing catalog also includes these non-membership services:
 - Admin Support: $100 CAD/hour; Light $1,200/quarter, Medium $2,400/quarter,
   Deep $3,600/quarter.
 - Board Retreat Facilitation: $1,400 half-day or $2,300 full day.
-- Canopy and Harvest receive 10% off coaching and admin packages.
+- Canopy receives 10% off coaching and admin packages; existing Harvest
+  subscriptions retain their historical benefits.
 
 The public referral program displays the current recognition tiers: one
 successful referral earns a $250 Olea Gives grant and two coaching hours; two

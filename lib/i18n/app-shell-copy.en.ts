@@ -143,8 +143,8 @@ export const appShellCopyEn: AppShellCopy = {
     },
     consulting: {
       title: "Consulting",
-      description: "Submit Harvest requests, track hours, and review support activity.",
-      keywords: ["harvest", "support", "consultant", "hours", "requests"],
+      description: "Review existing advisory requests, hours, and support activity.",
+      keywords: ["support", "consultant", "hours", "requests"],
     },
     brandProfile: {
       title: "Brand Profile",

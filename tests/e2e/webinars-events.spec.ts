@@ -83,6 +83,7 @@ testWithData.describe("@critical webinar and event access", () => {
     await webinars.expectCreateButtonVisible();
     await webinars.expectManageButtonVisible();
     await webinars.openCreateForm();
+    await expect(page.getByText("Harvest", { exact: true })).toHaveCount(0);
     await page.getByLabel("Title").fill(title);
     await page.getByLabel("Summary").fill("A Zoom session created from the app UI.");
     await page
@@ -127,7 +128,7 @@ testWithData.describe("@critical webinar and event access", () => {
     await page.getByLabel("Title").fill(title);
     await page.getByLabel("Summary").fill("A Zoom session missing plan access.");
     await page.getByLabel("Zoom URL").fill("https://zoom.us/j/1234567890");
-    for (const label of ["Seedling", "Roots", "Canopy", "Harvest"]) {
+    for (const label of ["Seedling", "Roots", "Canopy"]) {
       const checkbox = page.getByLabel(label);
       if (await checkbox.isChecked()) await checkbox.uncheck();
     }

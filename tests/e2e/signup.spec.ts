@@ -4,6 +4,14 @@ import { createTestIdentity } from "../factories/identity";
 import { SignupPage } from "../pages/signup.page";
 
 test.describe("@smoke @critical membership signup", () => {
+  test("ignores a retired plan in an old signup link", async ({ page }) => {
+    await page.goto("/signup/account?tier=harvest&billing=annual");
+
+    await expect(page).toHaveURL(/\/signup$/);
+    await expect(page.getByRole("heading", { name: "Choose your plan" })).toBeVisible();
+    await expect(page.locator("body")).not.toContainText("Harvest");
+  });
+
   test("redirects direct payment access back to account details", async ({
     page,
   }) => {

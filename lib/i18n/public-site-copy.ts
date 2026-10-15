@@ -1,4 +1,4 @@
-import type { MembershipTier } from "@/lib/types";
+import type { ActiveMembershipTier } from "@/lib/types";
 import type { Locale } from "@/lib/i18n/locales";
 
 export type LocalizedPlanCopy = {
@@ -134,7 +134,7 @@ export type PublicSiteCopy = {
     referralsTitle: string;
     referralsDescription: string;
     referralsCta: string;
-    plans: Record<MembershipTier, LocalizedPlanCopy>;
+    plans: Record<ActiveMembershipTier, LocalizedPlanCopy>;
     policies: string[];
     addOns: Array<{
       id: "ceoReview" | "boardEvaluation" | "boardRecruitment" | "kpiDashboard" | "boardTraining" | "smallBoardTraining" | "strategicPlanning" | "accreditationPrep";
@@ -404,7 +404,7 @@ export const publicSiteCopy: Record<Locale, PublicSiteCopy> = {
         canopy: {
           name: "Canopy",
           seats: "15 seats included",
-          audience: "Organizations with $2M-$5M annual budget",
+          audience: "Organizations with $2M+ annual budget",
           summary:
             "Complete governance systems, executive review, and strategy tools.",
           features: [
@@ -414,22 +414,6 @@ export const publicSiteCopy: Record<Locale, PublicSiteCopy> = {
             "Board training modules",
             "Community leadership opportunities",
             "Priority phone and email support",
-          ],
-        },
-        harvest: {
-          name: "Harvest",
-          seats: "20 seats included",
-          audience: "Organizations with $5M+ annual budget",
-          summary:
-            "Enterprise support, facilitation, thought leadership, and introductions.",
-          features: [
-            "Everything in Canopy",
-            "Annual onboarding and board training facilitation",
-            "Board retreat facilitation support",
-            "Thought leader positioning",
-            "Peer networking and board-level introductions",
-            "Olea Connects™ summit speaking slot",
-            "10% off coaching and admin add-ons",
           ],
         },
       },
@@ -529,7 +513,7 @@ export const publicSiteCopy: Record<Locale, PublicSiteCopy> = {
         {
           question: "How many seats are included?",
           answer:
-            "Seedling includes 5 seats, Roots includes 10, and Canopy includes 15. Existing Harvest memberships include 20. Additional seats are $15 CAD one-time per seat on any tier.",
+            "Seedling includes 5 seats, Roots includes 10, and Canopy includes 15. Additional seats are $15 CAD one-time per seat on any plan.",
         },
         {
           question: "Can we upgrade or downgrade?",
@@ -822,7 +806,7 @@ export const publicSiteCopy: Record<Locale, PublicSiteCopy> = {
         canopy: {
           name: "Canopy",
           seats: "15 sièges inclus",
-          audience: "Organismes avec un budget annuel de 2 M$ à 5 M$",
+          audience: "Organismes avec un budget annuel de 2 M$ et plus",
           summary:
             "Systèmes complets de gouvernance, évaluation de la direction et outils de stratégie.",
           features: [
@@ -832,22 +816,6 @@ export const publicSiteCopy: Record<Locale, PublicSiteCopy> = {
             "Modules de formation du conseil",
             "Occasions de leadership communautaire",
             "Soutien prioritaire par téléphone et courriel",
-          ],
-        },
-        harvest: {
-          name: "Harvest",
-          seats: "20 sièges inclus",
-          audience: "Organismes avec un budget annuel de plus de 5 M$",
-          summary:
-            "Soutien organisationnel, animation, leadership d'opinion et mises en relation.",
-          features: [
-            "Tout ce qui est inclus dans Canopy",
-            "Intégration annuelle et animation de formation du conseil",
-            "Soutien à l'animation de retraite du conseil",
-            "Positionnement comme leader d'opinion",
-            "Réseautage entre pairs et introductions au niveau du conseil",
-            "Créneau de prise de parole au sommet Olea Connects™",
-            "10 % de rabais sur le coaching et le soutien administratif",
           ],
         },
       },
@@ -947,7 +915,7 @@ export const publicSiteCopy: Record<Locale, PublicSiteCopy> = {
         {
           question: "Combien de sièges sont inclus?",
           answer:
-            "Seedling inclut 5 sièges, Roots en inclut 10 et Canopy en inclut 15. Les adhésions Harvest existantes incluent 20 sièges. Les sièges supplémentaires coûtent 15 $ CA par siège, en paiement unique, pour tous les forfaits.",
+            "Seedling inclut 5 sièges, Roots en inclut 10 et Canopy en inclut 15. Les sièges supplémentaires coûtent 15 $ CA par siège, en paiement unique, pour tous les forfaits.",
         },
         {
           question: "Pouvons-nous changer de forfait?",

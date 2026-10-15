@@ -1,4 +1,6 @@
-export type MembershipTier = "seedling" | "roots" | "canopy" | "harvest";
+export type ActiveMembershipTier = "seedling" | "roots" | "canopy";
+// Retired tiers remain readable for existing subscriptions and entitlements.
+export type MembershipTier = ActiveMembershipTier | "harvest";
 export type Tier = MembershipTier;
 export type OrganizationKind =
   | "nonprofit"
@@ -33,7 +35,7 @@ export type PlatformRole =
   | "grants_admin";
 
 export interface RegistrationState {
-  tier: MembershipTier;
+  tier: ActiveMembershipTier;
   billingCycle: "quarterly" | "annual";
   organizationName: string;
   fullName: string;

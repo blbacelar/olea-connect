@@ -15,6 +15,7 @@ import {
   PlanUpgradeControls,
   SeatManagementControls,
 } from "./billing-actions";
+import { getUpgradeOptions } from "./plan-upgrade-helpers";
 import { BillingCycleSection } from "./subscription-cycle";
 import {
   formatBillingInterval,
@@ -54,7 +55,12 @@ export function SubscriptionDashboard({
       : billing.currentPeriodEnd;
   const currentPlanId = isMembershipTier(billing.planId)
     ? billing.planId
-    : "seedling";
+    : null;
+  const upgradeSuccessMessage = searchParams?.plan === "upgraded"
+    ? getPlanUpgradedMessage(searchParams.tier)
+    : undefined;
+  const showPlanUpgrade = currentPlanId &&
+    (getUpgradeOptions(currentPlanId).length > 0 || upgradeSuccessMessage);
 
   return (
     <div>
@@ -73,24 +79,22 @@ export function SubscriptionDashboard({
         isPaused={isPaused}
         primaryDate={primaryDate}
       />
-      <div className="mb-7">
-        <PlanUpgradeControls
-          billingInterval={billing.billingInterval}
-          canManage={canManage}
-          currentPlanId={currentPlanId}
-          disabled={
-            !billing.customerId ||
-            !billing.subscriptionId ||
-            accessRestricted ||
-            billing.cancelAtPeriodEnd
-          }
-          initialSuccessMessage={
-            searchParams?.plan === "upgraded"
-              ? getPlanUpgradedMessage(searchParams.tier)
-              : undefined
-          }
-        />
-      </div>
+      {showPlanUpgrade && currentPlanId ? (
+        <div className="mb-7">
+          <PlanUpgradeControls
+            billingInterval={billing.billingInterval}
+            canManage={canManage}
+            currentPlanId={currentPlanId}
+            disabled={
+              !billing.customerId ||
+              !billing.subscriptionId ||
+              accessRestricted ||
+              billing.cancelAtPeriodEnd
+            }
+            initialSuccessMessage={upgradeSuccessMessage}
+          />
+        </div>
+      ) : null}
       <div className="mb-7 grid gap-5 xl:grid-cols-[1fr_1fr]">
         <SeatUsageSection
           accessRestricted={accessRestricted}

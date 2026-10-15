@@ -1,6 +1,6 @@
-import type { RegistrationState } from "@/lib/types";
+import type { ActiveMembershipTier, RegistrationState } from "@/lib/types";
 
-type SignupTier = "seedling" | "roots" | "canopy";
+type SignupTier = ActiveMembershipTier;
 type BillingCycle = RegistrationState["billingCycle"];
 
 export const foundingPricing: Record<

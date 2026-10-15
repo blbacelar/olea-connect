@@ -10,7 +10,7 @@ export default async function ConsultingPage() {
     <div>
       <PageHeader
         title="Consulting"
-        description="Submit Harvest consulting requests, track remaining hours, and review support history."
+        description="Review existing advisory requests, remaining hours, and support history."
       />
 
       <ConsultingWorkspace

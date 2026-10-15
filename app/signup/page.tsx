@@ -11,9 +11,10 @@ import { Button } from "@/components/ui/button";
 import { useRegistration } from "@/hooks/use-registration";
 import { getAuthFlowCopy } from "@/lib/i18n/auth-flow-copy";
 import { getPublicSiteCopy } from "@/lib/i18n/public-site-copy";
+import { isSignupTier } from "@/lib/founding-pricing";
 import { signupMembershipPlans } from "@/lib/plans";
 import { formatCad } from "@/lib/pricing";
-import type { MembershipTier } from "@/lib/types";
+import type { ActiveMembershipTier } from "@/lib/types";
 import { cn } from "@/lib/utils";
 import { captureReferralCodeFromUrl } from "@/lib/referral-capture";
 
@@ -30,12 +31,12 @@ export default function SignupPlanPage() {
     const referralCode = captureReferralCodeFromUrl();
     const tier = new URLSearchParams(window.location.search).get(
       "tier",
-    ) as MembershipTier | null;
+    );
     const updates: {
-      tier?: MembershipTier;
+      tier?: ActiveMembershipTier;
       referralCode?: string;
     } = {};
-    if (tier && signupMembershipPlans.some((plan) => plan.id === tier)) {
+    if (tier && isSignupTier(tier)) {
       updates.tier = tier;
     }
     if (updates.tier) {

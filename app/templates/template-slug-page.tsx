@@ -65,7 +65,9 @@ export async function TemplateSlugPage({
               <FileClock className="size-8" />
             </span>
             <div className="mt-6 flex justify-center">
-              {template ? <TierBadge tier={template.requiredTier} /> : null}
+              {template && template.requiredTier !== "harvest" ? (
+                <TierBadge tier={template.requiredTier} />
+              ) : null}
             </div>
             <p className="mt-5 text-xs font-semibold uppercase tracking-[0.08em] text-olea-green">
               Coming soon

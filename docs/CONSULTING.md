@@ -1,4 +1,9 @@
-# Harvest Consulting Workflow
+# Legacy Harvest Consulting Workflow
+
+Harvest is retired from new membership offers. This workspace remains available
+for organizations with an existing Harvest subscription and for staff handling
+their requests. The locked screen directs other members to support instead of
+offering an upgrade.
 
 Harvest members can request advisory support, attach working files, and track how
 their included and purchased consulting hours are consumed during the active
@@ -14,8 +19,8 @@ subscription period.
 4. Members can view their own organization's requests, status updates, scheduled
    calls, attachments, recorded time, and activity history.
 
-Non-Harvest organizations see a locked state explaining that consulting is a
-Harvest benefit. They cannot create requests through the UI or the database API.
+Non-Harvest organizations see a locked state and support contact. They cannot
+create requests through the UI or the database API.
 
 ## Staff Flow
 

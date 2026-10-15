@@ -25,7 +25,8 @@ import { isWellFormedFoundingMemberCode } from "@/lib/founding-member";
 import { useRegistration } from "@/hooks/use-registration";
 import { getAuthFlowCopy } from "@/lib/i18n/auth-flow-copy";
 import { getPublicSiteCopy } from "@/lib/i18n/public-site-copy";
-import { getPlan, signupMembershipPlans } from "@/lib/plans";
+import { getPlan } from "@/lib/plans";
+import { isSignupTier } from "@/lib/founding-pricing";
 import { formatCad } from "@/lib/pricing";
 import {
   ACQUISITION_SOURCES,
@@ -33,7 +34,7 @@ import {
   BOARD_SIZE_RANGES,
   ORGANIZATION_KINDS,
 } from "@/lib/signup-flow";
-import type { MembershipTier } from "@/lib/types";
+import type { ActiveMembershipTier } from "@/lib/types";
 import { emailStringSchema } from "@/lib/validation/schemas";
 
 export default function SignupAccountPage() {
@@ -51,16 +52,23 @@ export default function SignupAccountPage() {
 
     const searchParams = new URLSearchParams(window.location.search);
     const referralCode = captureReferralCodeFromUrl();
-    const tier = searchParams.get("tier") as MembershipTier | null;
+    const tier = searchParams.get("tier");
+    if (tier && !isSignupTier(tier)) {
+      if (referralCode && !registration.referralCode) {
+        updateRegistration({ referralCode });
+      }
+      router.replace("/signup");
+      return;
+    }
     const billing = searchParams.get("billing");
     const code = searchParams.get("code");
     const updates: {
-      tier?: MembershipTier;
+      tier?: ActiveMembershipTier;
       billingCycle?: "annual" | "quarterly";
       foundingMemberCode?: string;
     } = {};
 
-    if (tier && signupMembershipPlans.some((plan) => plan.id === tier)) {
+    if (tier && isSignupTier(tier)) {
       updates.tier = tier;
     }
     if (billing === "annual" || billing === "quarterly") {
@@ -75,7 +83,7 @@ export default function SignupAccountPage() {
     if (referralCode && !registration.referralCode) {
       updateRegistration({ referralCode });
     }
-  }, [hydrated, registration.referralCode, updateRegistration]);
+  }, [hydrated, registration.referralCode, router, updateRegistration]);
 
   const valid =
     registration.organizationName.trim().length >= 2 &&

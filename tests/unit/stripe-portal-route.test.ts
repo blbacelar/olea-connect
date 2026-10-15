@@ -404,6 +404,23 @@ describe("Stripe billing portal route", () => {
     expect(routeMocks.stripeSubscriptionUpdate).not.toHaveBeenCalled();
   });
 
+  it("rejects a direct request to upgrade to retired Harvest", async () => {
+    const { POST } = await import("@/app/api/stripe/portal/route");
+
+    const response = await POST(
+      makeRequest({
+        action: "change_plan",
+        idempotencyKey: "plan_retired12345",
+        targetPlanId: "harvest",
+      }),
+    );
+    const body = (await response.json()) as { error: string };
+
+    expect(response.status).toBe(400);
+    expect(body.error).toContain("valid membership plan");
+    expect(routeMocks.stripeSubscriptionUpdate).not.toHaveBeenCalled();
+  });
+
   it("rejects plan upgrades when cancellation is already scheduled", async () => {
     const { POST } = await import("@/app/api/stripe/portal/route");
     routeMocks.billingSummary.mockResolvedValue(

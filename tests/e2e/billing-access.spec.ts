@@ -1,8 +1,84 @@
 import { expect, test as testWithData } from "../fixtures/test-data.fixture";
+import { createClient } from "@supabase/supabase-js";
 import { SubscriptionPage } from "../pages/subscription.page";
 import { createAuthenticatedPage } from "../support/auth-session";
+import { getTestSupabaseEnvironment } from "../support/test-environment";
 
 testWithData.describe("@critical billing access states", () => {
+  testWithData("keeps retired plans out of the public catalogue", async () => {
+    const { publishableKey, url } = getTestSupabaseEnvironment({
+      requirePublishableKey: true,
+    });
+    const anonymous = createClient(url, publishableKey!);
+    const { data, error } = await anonymous
+      .from("membership_plans")
+      .select("id")
+      .order("sort_order");
+
+    expect(error).toBeNull();
+    expect(data?.map((plan) => plan.id)).toEqual([
+      "seedling",
+      "roots",
+      "canopy",
+    ]);
+  });
+
+  testWithData("does not offer a retired upgrade to Canopy members", async ({
+    browser,
+    testData,
+    baseURL,
+  }) => {
+    if (!baseURL) throw new Error("Playwright baseURL is required.");
+    const member = await testData.createOrganizationOwner({
+      activeSubscription: true,
+      planId: "canopy",
+    });
+    const { context, page } = await createAuthenticatedPage(
+      browser,
+      baseURL,
+      member.email,
+      member.password,
+    );
+
+    try {
+      await page.goto("/subscription");
+      await expect(page.getByRole("heading", { name: "Subscription" })).toBeVisible();
+      await expect(page.getByText("Canopy", { exact: true })).toBeVisible();
+      await expect(page.getByRole("heading", { name: "Upgrade your plan" })).toHaveCount(0);
+      await expect(page.getByText("Harvest", { exact: true })).toHaveCount(0);
+      await page.screenshot({ path: "test-results/retired-tier-canopy-subscription.png" });
+    } finally {
+      await context.close();
+    }
+  });
+
+  testWithData("preserves billing details for an existing Harvest subscription", async ({
+    browser,
+    testData,
+    baseURL,
+  }) => {
+    if (!baseURL) throw new Error("Playwright baseURL is required.");
+    const member = await testData.createOrganizationOwner({
+      activeSubscription: true,
+      planId: "harvest",
+    });
+    const { context, page } = await createAuthenticatedPage(
+      browser,
+      baseURL,
+      member.email,
+      member.password,
+    );
+
+    try {
+      await page.goto("/subscription");
+      await expect(page.getByRole("heading", { name: "Subscription" })).toBeVisible();
+      await expect(page.getByText("Harvest", { exact: true })).toBeVisible();
+      await expect(page.getByRole("heading", { name: "Upgrade your plan" })).toHaveCount(0);
+    } finally {
+      await context.close();
+    }
+  });
+
   testWithData("shows recovery guidance for a past-due membership", async ({
     browser,
     testData,

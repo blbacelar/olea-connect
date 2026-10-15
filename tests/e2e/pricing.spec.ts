@@ -34,7 +34,7 @@ test.describe("public pricing package", () => {
     await expect(page.getByText("$1,195 CAD").first()).toBeVisible();
     await expect(page.getByText("$1,495 CAD").first()).toBeVisible();
     await expect(page.getByText("$99 CAD").first()).toBeVisible();
-    await expect(page.getByText("$500 CAD").first()).toBeVisible();
+    await expect(page.getByText("$500 CAD", { exact: true })).toHaveCount(0);
     await expect(page.getByText("$1,000 CAD").first()).toBeVisible();
     await expect(page.getByText("$3,000 CAD").first()).toBeVisible();
     await expect(page.getByText("$7,776 CAD")).toHaveCount(0);
@@ -53,6 +53,9 @@ test.describe("public pricing package", () => {
     await expect(page.getByRole("link", { name: "Explore the referral program" }))
       .toHaveAttribute("href", "/referrals");
     await expect(page.getByText("No free trial")).toBeVisible();
+    await expect(page.getByText("Organizations with $2M+ annual budget")).toBeVisible();
+    await expect(page.getByText("How many seats are included?")).toBeVisible();
+    await expect(page.locator("body")).not.toContainText("Harvest");
     await expect(page.locator("#plans")).not.toContainText("for your whole board");
     await expect(page.locator("#plans")).not.toContainText("Cancel before renewal");
     await expect(
@@ -89,6 +92,8 @@ test.describe("public pricing package", () => {
       .toBeVisible();
     await expect(page.locator("#plans")).not.toContainText("pour tout votre conseil");
     await expect(page.locator("#plans")).not.toContainText("Annulez avant le renouvellement");
+    await expect(page.getByText("Organismes avec un budget annuel de 2 M$ et plus")).toBeVisible();
+    await expect(page.locator("body")).not.toContainText("Harvest");
   });
 
   test("shows the capped commission without legacy milestones in French", async ({ page }) => {

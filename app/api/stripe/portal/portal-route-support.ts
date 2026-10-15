@@ -6,7 +6,8 @@ import {
   PAID_SEAT_QUANTITY_MIN,
 } from "@/lib/billing/seat-pricing";
 import { logError } from "@/lib/observability/logger";
-import type { MembershipTier } from "@/lib/types";
+import { membershipPlans } from "@/lib/plans";
+import type { ActiveMembershipTier, MembershipTier } from "@/lib/types";
 
 export type BillingAction =
   | "manage"
@@ -50,12 +51,7 @@ const planOrder: Record<MembershipTier, number> = {
   canopy: 2,
   harvest: 3,
 };
-const planIds = new Set<MembershipTier>([
-  "seedling",
-  "roots",
-  "canopy",
-  "harvest",
-]);
+const planIds = new Set<string>(membershipPlans.map((plan) => plan.id));
 const portalActions = new Set<BillingAction>([
   "manage",
   "payment_method",
@@ -104,17 +100,17 @@ export function getIdempotencyKey(value: string | undefined) {
   return normalized;
 }
 
-export function getTargetPlanId(value: MembershipTier | undefined) {
+export function getTargetPlanId(value: MembershipTier | undefined): ActiveMembershipTier {
   if (!value || !planIds.has(value)) {
     throw new BillingActionError("Choose a valid membership plan.", 400);
   }
 
-  return value;
+  return value as ActiveMembershipTier;
 }
 
 export function assertPlanUpgradeAllowed(
   currentPlanId: string,
-  targetPlanId: MembershipTier,
+  targetPlanId: ActiveMembershipTier,
   cancelAtPeriodEnd: boolean,
 ) {
   if (cancelAtPeriodEnd) {
