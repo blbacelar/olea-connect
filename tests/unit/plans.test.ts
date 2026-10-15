@@ -43,7 +43,6 @@ describe("membership plans", () => {
 
   it("returns Roots as the conservative fallback for an unknown tier", () => {
     expect(getPlan("roots").id).toBe("roots");
-    expect(getPlan("harvest").id).toBe("roots");
     expect(getPlan("unknown" as "roots").id).toBe("roots");
   });
 

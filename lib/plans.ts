@@ -1,4 +1,4 @@
-import type { ActiveMembershipTier, MembershipTier } from "@/lib/types";
+import type { ActiveMembershipTier } from "@/lib/types";
 import { foundingPricing } from "@/lib/founding-pricing";
 
 export interface MembershipPlan {
@@ -81,6 +81,6 @@ export const membershipPlans: MembershipPlan[] = [
 
 export const signupMembershipPlans = membershipPlans;
 
-export function getPlan(id: MembershipTier) {
+export function getPlan(id: ActiveMembershipTier) {
   return membershipPlans.find((plan) => plan.id === id) ?? membershipPlans[1];
 }
