@@ -14,7 +14,7 @@ export function BoardTrainingChairGuide({ guide, language, selectedSession }: {
   guide: Guide; language: TrainingLanguage; selectedSession?: string;
 }) {
   const [open, setOpen] = useState(selectedSession ?? guide.sessions[0]?.id);
-  return <div className="mx-auto max-w-4xl space-y-6" data-testid="board-training-chair-guide">
+  return <div className="mx-auto max-w-4xl space-y-6" data-testid="board-training-chair-guide" data-no-translate>
     <div className="flex flex-wrap items-center justify-between gap-2"><Button asChild variant="ghost" size="sm"><Link href="/modules/board-training"><ArrowLeft className="mr-2 size-4" />{language === "fr" ? "Formation du conseil" : "Board training"}</Link></Button><Button asChild variant="outline" size="sm"><Link href={`/modules/board-training/chair-guide?lang=${language === "fr" ? "en" : "fr"}`}>{language === "fr" ? "English" : "Français"}</Link></Button></div>
     <header className="space-y-2"><p className="text-xs font-semibold uppercase tracking-widest text-olea-green">{language === "fr" ? "Pour la présidence et les administrateurs" : "For Chairs and administrators"}</p><h1 className="text-3xl font-semibold tracking-tight text-teal-900">{guide.title}</h1><p className="text-slate-600">{guide.subtitle}</p></header>
     {guide.intro.map((paragraph, index) => <p key={index} className="leading-7 text-slate-700">{paragraph}</p>)}

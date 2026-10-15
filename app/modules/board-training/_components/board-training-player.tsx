@@ -20,6 +20,7 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import type { TrainingLanguage } from "@/lib/board-training/content";
+import { trainingErrorCopy } from "@/lib/board-training/error-copy";
 import type { getTrainingCoursePageData } from "@/lib/data/board-training";
 
 type PageData = NonNullable<Awaited<ReturnType<typeof getTrainingCoursePageData>>>;
@@ -28,7 +29,7 @@ type AssessmentResult = { score: number; total: number; passed: boolean; feedbac
 
 const labels = {
   en: {
-    allCourses: "All courses", welcome: "Welcome", before: "Starting reflection", org: "Our organization", quiz: "Assessment", plan: "Action plan", ack: "Acknowledgement", cert: "Certificate",
+    allCourses: "All courses", courseLanguage: "Course language", welcome: "Welcome", before: "Starting reflection", org: "Our organization", quiz: "Assessment", plan: "Action plan", ack: "Acknowledgement", cert: "Certificate",
     lesson: "Lesson", of: "of", minutes: "min", progress: "Lessons completed", testOutPassed: "Assessment passed without lessons", back: "Back", continue: "Continue", finish: "Complete and continue",
     start: "Begin Lesson 1", testOut: "Take the assessment first", testOutHint: "You get one test-out attempt before starting the lessons.",
     listen: "Listen to this lesson", stop: "Stop listening", jurisdiction: "Showing rules for",
@@ -40,7 +41,7 @@ const labels = {
     fullName: "Full name for your certificate", fullNameHint: "2 to 160 characters; this name will appear on the certificate.", complete: "Complete course", certificate: "Certificate of completion", emailPending: "Your certificate is ready. Email delivery is pending; you can download it now.", download: "Download PDF", verify: "Verify certificate",
   },
   fr: {
-    allCourses: "Toutes les formations", welcome: "Bienvenue", before: "Bilan initial", org: "Notre organisme", quiz: "Évaluation", plan: "Plan d’action", ack: "Attestation", cert: "Certificat",
+    allCourses: "Toutes les formations", courseLanguage: "Langue de la formation", welcome: "Bienvenue", before: "Bilan initial", org: "Notre organisme", quiz: "Évaluation", plan: "Plan d’action", ack: "Attestation", cert: "Certificat",
     lesson: "leçons", of: "sur", minutes: "min", progress: "Leçons terminées", testOutPassed: "Évaluation réussie sans les leçons", back: "Retour", continue: "Continuer", finish: "Terminer et continuer",
     start: "Commencer la leçon 1", testOut: "Passer l’évaluation d’abord", testOutHint: "Vous avez une seule tentative d’exemption avant les leçons.",
     listen: "Écouter cette leçon", stop: "Arrêter l’écoute", jurisdiction: "Règles affichées pour",
@@ -146,7 +147,7 @@ export function BoardTrainingPlayer({ data }: { data: PageData }) {
     startTransition(async () => {
       try {
         const response = await operation();
-        if (!response.ok) { setMessage(response.error); return; }
+        if (!response.ok) { setMessage(trainingErrorCopy(response.error, language)); return; }
         onSuccess(response.value);
         if (refreshPage) router.refresh();
       } catch { setMessage(language === "fr" ? "Impossible d’enregistrer. Réessayez." : "Could not save. Please try again."); }
@@ -197,8 +198,8 @@ export function BoardTrainingPlayer({ data }: { data: PageData }) {
     (id === "plan" && passedLocally && organizationSignedLocally) ||
     (id === "ack" && planSavedLocally) || (id === "cert" && Boolean(data.certificate));
 
-  return <div className="mx-auto max-w-6xl space-y-5" data-testid="board-training-player">
-    <div className="flex flex-wrap items-center justify-between gap-3"><Button asChild size="sm" variant="ghost"><Link href="/modules/board-training"><ArrowLeft className="mr-2 size-4" />{t.allCourses}</Link></Button><Select value={language} onValueChange={(value) => perform(() => saveTrainingLanguageAction({ enrollmentId: enrollment.id, language: value as TrainingLanguage }), () => { router.refresh(); })}><SelectTrigger className="w-36" aria-label="Course language"><SelectValue /></SelectTrigger><SelectContent><SelectItem value="en">English</SelectItem><SelectItem value="fr">Français</SelectItem></SelectContent></Select></div>
+  return <div className="mx-auto max-w-6xl space-y-5" data-testid="board-training-player" data-no-translate>
+    <div className="flex flex-wrap items-center justify-between gap-3"><Button asChild size="sm" variant="ghost"><Link href="/modules/board-training"><ArrowLeft className="mr-2 size-4" />{t.allCourses}</Link></Button><Select value={language} onValueChange={(value) => perform(() => saveTrainingLanguageAction({ enrollmentId: enrollment.id, language: value as TrainingLanguage }), () => { router.refresh(); })}><SelectTrigger className="w-36" aria-label={t.courseLanguage}><SelectValue /></SelectTrigger><SelectContent><SelectItem value="en">English</SelectItem><SelectItem value="fr">Français</SelectItem></SelectContent></Select></div>
     <div className="grid gap-6 lg:grid-cols-[240px_minmax(0,1fr)]">
       <aside className="space-y-3 lg:sticky lg:top-5 lg:self-start"><Card><CardContent className="space-y-3 pt-5"><p className="text-xs font-semibold uppercase tracking-widest text-olea-green">{t.progress}</p><p className="font-semibold text-slate-900">{course.title}</p>{passedLocally && !completedLessons.length ? <p className="text-sm text-emerald-800">{t.testOutPassed}</p> : <><div className="h-2 overflow-hidden rounded-full bg-slate-100"><div className="h-full rounded-full bg-olea-green" style={{ width: `${progress}%` }} /></div><p className="text-xs text-slate-600">{completedLessons.length} {t.of} {course.lessons.length} {t.lesson.toLowerCase()}</p></>}</CardContent></Card>
         <nav aria-label={t.progress} className="flex gap-1 overflow-x-auto pb-2 lg:flex-col">{steps.map((item) => <Button key={item.id} type="button" size="sm" variant={stage === item.id ? "secondary" : "ghost"} disabled={!allowed(item.id)} className="h-auto min-w-max justify-start whitespace-normal text-left lg:w-full" onClick={() => { if (item.id === "quiz" && canTestOut && !lessonsDone) setTestOut(true); setStage(item.id); setMessage(""); }} aria-current={stage === item.id ? "step" : undefined}>{course.lessons.some((part) => part.id === item.id) && completedLessons.includes(item.id) ? <Check className="mr-2 size-4 shrink-0" /> : null}{item.label}</Button>)}</nav>

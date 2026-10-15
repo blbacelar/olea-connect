@@ -9,7 +9,7 @@ export function BoardTrainingLocked({ language }: { language: TrainingLanguage }
   const french = language === "fr";
 
   return (
-    <div className="mx-auto max-w-3xl py-8 sm:py-16" data-testid="board-training-locked">
+    <div className="mx-auto max-w-3xl py-8 sm:py-16" data-testid="board-training-locked" data-no-translate>
       <Card className="border-slate-200 shadow-sm">
         <CardContent className="space-y-5 p-8 sm:p-12">
           <div className="flex size-12 items-center justify-center rounded-xl bg-olea-light text-olea-dark">

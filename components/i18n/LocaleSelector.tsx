@@ -82,7 +82,7 @@ export function LocaleSelector({
       context.setLocale(nextLocale);
       document.documentElement.lang = nextLocale;
 
-      if (isPublicRoute(pathname)) {
+      if (isPublicRoute(pathname) || pathname.startsWith("/modules/board-training")) {
         router.refresh();
       }
     });

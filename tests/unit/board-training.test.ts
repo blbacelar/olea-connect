@@ -12,8 +12,31 @@ import refresherQuizEn from "@/content/training/refresher.en.quiz.json";
 import refresherQuizFr from "@/content/training/refresher.fr.quiz.json";
 import { aggregateTrainingReport, gradeTrainingAssessment, trainingCertificateExpiry } from "@/lib/board-training/domain";
 import { trainingCsvCell } from "@/lib/board-training/csv";
+import { trainingErrorCopy } from "@/lib/board-training/error-copy";
+
+function contentShape(value: unknown): unknown {
+  if (Array.isArray(value)) return value.map(contentShape);
+  if (value && typeof value === "object") {
+    return Object.fromEntries(Object.entries(value).map(([key, item]) => [key, contentShape(item)]));
+  }
+  return typeof value;
+}
 
 describe("board training content", () => {
+  it.each([
+    [essentialsEn, essentialsFr], [essentialsQuizEn, essentialsQuizFr],
+    [refresherEn, refresherFr], [refresherQuizEn, refresherQuizFr], [chairEn, chairFr],
+  ])("keeps every French content field aligned with English", (english, french) => {
+    expect(contentShape(french)).toEqual(contentShape(english));
+  });
+
+  it("shows French validation guidance without exposing English server errors", () => {
+    expect(trainingErrorCopy("Choose a valid PDF document.", "fr")).toBe("Choisissez un document PDF valide.");
+    expect(trainingErrorCopy("Choose 1 to 3 commitments, up to 300 characters each.", "fr")).toContain("1 à 3 engagements");
+    expect(trainingErrorCopy("Unexpected database response", "fr")).toBe("Impossible d’enregistrer. Vérifiez les champs et réessayez.");
+    expect(trainingErrorCopy("Choose a valid PDF document.", "en")).toBe("Choose a valid PDF document.");
+  });
+
   it.each([
     [essentialsEn, essentialsFr, essentialsQuizEn, essentialsQuizFr, 8, 15],
     [refresherEn, refresherFr, refresherQuizEn, refresherQuizFr, 3, 6],

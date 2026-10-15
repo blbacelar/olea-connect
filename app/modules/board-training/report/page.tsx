@@ -13,12 +13,12 @@ export const dynamic = "force-dynamic";
 export default async function BoardTrainingReportPage() {
   const french = getRequestLocale() === "fr-CA";
   if (!(await hasTrainingAccess())) return <BoardTrainingLocked language={french ? "fr" : "en"} />;
-  const { report, completedCount, topics } = await getTrainingReport();
+  const { report, completedCount, topics } = await getTrainingReport(french ? "fr" : "en");
   const chairSessions = getChairGuide(french ? "fr" : "en").sessions;
   const chairSessionByTopic: Record<string, string> = { l1: "s0", l2: "s3", l3: "s3", l4: "s2", l5: "s2", l6: "s3", l7: "s5", l8: "s4" };
   const rows = report?.topics.map((topic) => ({ ...topic, label: topics.find((item) => item.id === topic.id)?.label ?? topic.id })) ?? [];
   const ranked = [...rows].sort((a, b) => ((a.after ?? 0) / 5 * 50 + (a.assessmentPercent ?? 0) / 2) - ((b.after ?? 0) / 5 * 50 + (b.assessmentPercent ?? 0) / 2));
-  return <div className="mx-auto max-w-4xl space-y-6" data-testid="board-training-report">
+  return <div className="mx-auto max-w-4xl space-y-6" data-testid="board-training-report" data-no-translate>
     <Button asChild variant="ghost" size="sm"><Link href="/modules/board-training"><ArrowLeft className="mr-2 size-4" />{french ? "Formation du conseil" : "Board training"}</Link></Button>
     <header><p className="text-xs font-semibold uppercase tracking-widest text-olea-green">Olea Connects</p><h1 className="mt-2 text-3xl font-semibold tracking-tight text-teal-900">{french ? "Rapport de préparation du conseil" : "Board readiness report"}</h1><p className="mt-2 text-slate-600">{french ? "Résultats regroupés et anonymes. Les réponses individuelles ne sont pas affichées." : "Anonymous combined results. Individual answers are never shown."}</p></header>
     {!report ? <Card><CardContent className="py-8"><p>{french ? `Le rapport apparaît après trois membres ayant terminé la formation. À ce jour : ${completedCount}.` : `The report appears after three directors complete the course. So far: ${completedCount}.`}</p></CardContent></Card> : <>

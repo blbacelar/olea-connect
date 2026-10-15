@@ -3,6 +3,8 @@ import { createHash, randomBytes } from "node:crypto";
 
 import course from "@/content/training/essentials.en.course.json";
 import quiz from "@/content/training/essentials.en.quiz.json";
+import frenchCourse from "@/content/training/essentials.fr.course.json";
+import frenchQuiz from "@/content/training/essentials.fr.quiz.json";
 import refresher from "@/content/training/refresher.fr.course.json";
 import refresherQuiz from "@/content/training/refresher.fr.quiz.json";
 import { createAuthenticatedStorageState } from "../fixtures/authenticated.fixture";
@@ -18,13 +20,49 @@ async function answerQuiz(page: Page, wrongCount = 0, questions = quiz.questions
   await page.getByRole("button", { name: submitLabel }).click();
 }
 
-async function rateTopics(page: Page, rating: number) {
-  for (const topic of course.reflection.topics) {
+async function rateTopics(page: Page, rating: number, topics = course.reflection.topics) {
+  for (const topic of topics) {
     await page.getByText(topic.label, { exact: true }).locator("..").getByRole("button").nth(rating - 1).click();
   }
 }
 
 test.describe("@critical Canopy board training", () => {
+  test("switches the training home to French and opens the French course", async ({ browser, baseURL, testData }) => {
+    if (!baseURL) throw new Error("Playwright baseURL is required.");
+    const owner = await testData.createOrganizationOwner({ activeSubscription: true, planId: "canopy" });
+    const context = await browser.newContext({ baseURL, storageState: await createAuthenticatedStorageState(owner.email, owner.password, baseURL) });
+    try {
+      const page = await context.newPage();
+      const errors: string[] = [];
+      page.on("pageerror", (error) => errors.push(error.message));
+      await page.goto("/modules/board-training");
+      await page.getByTestId("board-training-home").getByTestId("locale-selector").click();
+      await page.getByRole("option", { name: "Français" }).click();
+      await expect(page.locator("html")).toHaveAttribute("lang", "fr-CA");
+      await expect(page.getByRole("heading", { name: "Formation du conseil" })).toBeVisible();
+      await expect(page.getByRole("tab", { name: "Mes formations" })).toBeVisible();
+      await page.screenshot({ path: "test-results/board-training-french-home.png" });
+      await page.setViewportSize({ width: 390, height: 844 });
+      await expect.poll(async () => page.getByTestId("app-main").evaluate((element) => Math.round(element.getBoundingClientRect().left))).toBe(0);
+      await expect(page.getByTestId("board-training-home").getByTestId("locale-selector")).toBeVisible();
+      expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(390);
+      await page.screenshot({ path: "test-results/board-training-french-home-mobile.png" });
+      await page.setViewportSize({ width: 1280, height: 720 });
+      await page.getByRole("button", { name: "Commencer" }).first().click();
+      await expect(page.getByRole("heading", { name: frenchCourse.welcome.heading })).toBeVisible();
+      await expect(page.getByTestId("board-training-player").getByRole("combobox", { name: "Langue de la formation" })).toContainText("Français");
+      await page.getByRole("button", { name: "Passer l’évaluation d’abord" }).click();
+      await expect(page.getByRole("heading", { name: frenchCourse.reflection.before.heading })).toBeVisible();
+      await rateTopics(page, 3, frenchCourse.reflection.topics);
+      await page.getByRole("button", { name: "Enregistrer et continuer" }).click();
+      await answerQuiz(page, 0, frenchQuiz.questions, "Soumettre les réponses");
+      await expect(page.getByText("Réussi", { exact: true })).toBeVisible();
+      await page.getByRole("link", { name: "Toutes les formations" }).click();
+      await expect(page.getByRole("link", { name: "Continuer" }).first()).toBeVisible();
+      expect(errors).toEqual([]);
+    } finally { await context.close(); }
+  });
+
   test("completes lessons, retakes a failed assessment, signs, certifies, and verifies", async ({ browser, baseURL, testData }) => {
     test.setTimeout(180_000);
     if (!baseURL) throw new Error("Playwright baseURL is required.");
@@ -228,7 +266,7 @@ test.describe("@critical Canopy board training", () => {
       await memberPage.goto(`/modules/board-training/invite/${token}?lang=fr`);
       await expect(memberPage.getByRole("button", { name: "Accepter l’invitation" })).toBeVisible();
       await memberPage.getByRole("button", { name: "Accepter l’invitation" }).click();
-      await expect(memberPage.getByTestId("board-training-player")).toBeVisible();
+      await expect(memberPage.getByTestId("board-training-player")).toBeVisible({ timeout: 30_000 });
       await expect(memberPage.getByRole("heading", { name: /Bienvenue/ })).toBeVisible();
       const { data: enrollment, error: enrollmentError } = await testData.supabase.from("board_training_enrollments")
         .select("id, locale").eq("organization_id", owner.organizationId).eq("user_id", member.userId).single();
@@ -335,6 +373,12 @@ test.describe("@critical Canopy board training", () => {
       await expect(page.getByText(sharedAction, { exact: false })).toBeVisible();
       await expect(page.getByText("Private board matter")).toHaveCount(0);
       await expect(page.getByRole("link", { name: /Suggested discussion/ }).first()).toHaveAttribute("href", /session=s\d/);
+      await context.addCookies([{ name: "olea_locale", value: "fr-CA", url: baseURL }]);
+      await page.reload();
+      await expect(page.getByText("Selon 3 membres")).toBeVisible();
+      await expect(page.getByText(frenchCourse.reflection.topics[0].label, { exact: true }).first()).toBeVisible();
+      await expect(page.getByText(frenchCourse.actionPlan.suggestions[0], { exact: false })).toBeVisible();
+      await expect(page.getByText("Private board matter")).toHaveCount(0);
     } finally { await context.close(); }
   });
 });

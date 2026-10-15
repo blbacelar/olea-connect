@@ -13,6 +13,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
+import { LocaleSelector } from "@/components/i18n/LocaleSelector";
 import { Dialog, DialogClose, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -21,6 +22,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import type { TrainingCourseId, TrainingLanguage } from "@/lib/board-training/content";
 import { trainingCsvCell } from "@/lib/board-training/csv";
+import { trainingErrorCopy } from "@/lib/board-training/error-copy";
 import type { getTrainingHome } from "@/lib/data/board-training";
 
 type HomeData = Awaited<ReturnType<typeof getTrainingHome>>;
@@ -30,6 +32,10 @@ const copy = {
   en: {
     title: "Board training", intro: "Learn the essentials, keep your knowledge current, and see your progress in one place.",
     courses: "My courses", manage: "Manage training", essentials: "Governance Essentials", refresher: "Annual refresher",
+    interfaceLanguage: "Training language", interfaceLanguageHint: "Choose the language for this page and new courses. You can also change it inside a course.",
+    existingCourseLanguage: "This course is in French. You can change its language inside the course.",
+    courseError: "Could not open the course.", documentPlaceholder: "Board bylaws 2026",
+    csvHeaders: ["Director", "Email", "Course", "Lessons", "Status", "Score", "Certificate", "Renewal"], inProgress: "In progress",
     essentialsDescription: "Eight short lessons, a 15-question assessment, and your organization’s policies.",
     refresherDescription: "A short annual course to renew your governance knowledge and declaration.",
     prerequisite: "Complete Governance Essentials first", start: "Start course", continue: "Continue course", completed: "Completed",
@@ -38,7 +44,7 @@ const copy = {
     adminIntro: "Set the organization’s jurisdiction, invite directors, and keep documents together.",
     settings: "Course settings", jurisdiction: "Organization’s jurisdiction", language: "Default invitation language",
     chairLabel: "Board Chair", noChair: "No Chair selected", notifyChair: "Email the Chair when a director finishes", save: "Save settings",
-    invite: "Invite a director", email: "Director email", emailHint: "Use the email of an active Team member. Add new directors to Team first.",
+    invite: "Invite a director", email: "Director email", emailHint: "Enter a valid email, such as director@example.org, for an active Team member. Add new directors to Team first.",
     course: "Course", dueDate: "Due date (optional)", dueHint: "Choose the date using your browser’s date picker.", send: "Send invitation",
     pending: "Pending invitations", none: "None yet", revoke: "Cancel", resend: "Resend", documents: "Organization documents",
     documentsHint: "Directors can open these private PDFs during the organization lesson. PDF only, up to 5 MB.",
@@ -50,6 +56,10 @@ const copy = {
   fr: {
     title: "Formation du conseil", intro: "Apprenez les fondements, actualisez vos connaissances et suivez votre progression au même endroit.",
     courses: "Mes formations", manage: "Gérer la formation", essentials: "Fondements de la gouvernance", refresher: "Mise à jour annuelle",
+    interfaceLanguage: "Langue de la formation", interfaceLanguageHint: "Choisissez la langue de cette page et des nouvelles formations. Vous pouvez aussi la changer pendant une formation.",
+    existingCourseLanguage: "Cette formation est en anglais. Vous pouvez changer sa langue pendant la formation.",
+    courseError: "Impossible d’ouvrir la formation.", documentPlaceholder: "Règlements administratifs 2026",
+    csvHeaders: ["Membre", "Courriel", "Formation", "Leçons", "Statut", "Résultat", "Certificat", "Renouvellement"], inProgress: "En cours",
     essentialsDescription: "Huit courtes leçons, une évaluation de 15 questions et les politiques de votre organisme.",
     refresherDescription: "Une courte formation annuelle pour renouveler vos connaissances et votre déclaration.",
     prerequisite: "Terminez d’abord les fondements de la gouvernance", start: "Commencer", continue: "Continuer", completed: "Terminé",
@@ -58,7 +68,7 @@ const copy = {
     adminIntro: "Définissez la province ou le territoire, invitez les membres et rassemblez les documents.",
     settings: "Paramètres", jurisdiction: "Compétence de l’organisme", language: "Langue des invitations",
     chairLabel: "Présidence du conseil", noChair: "Aucune présidence sélectionnée", notifyChair: "Avertir la présidence lorsqu’un membre termine", save: "Enregistrer",
-    invite: "Inviter un membre", email: "Courriel du membre", emailHint: "Utilisez le courriel d’un membre actif de l’équipe. Ajoutez les nouveaux membres à l’équipe d’abord.",
+    invite: "Inviter un membre", email: "Courriel du membre", emailHint: "Saisissez une adresse valide, comme membre@example.org, pour un membre actif de l’équipe. Ajoutez d’abord les nouveaux membres à l’équipe.",
     course: "Formation", dueDate: "Date limite (facultative)", dueHint: "Choisissez la date avec le sélecteur de votre navigateur.", send: "Envoyer l’invitation",
     pending: "Invitations en attente", none: "Aucune", revoke: "Annuler", resend: "Renvoyer", documents: "Documents de l’organisme",
     documentsHint: "Les membres peuvent ouvrir ces PDF privés pendant la leçon sur l’organisme. PDF seulement, 5 Mo maximum.",
@@ -99,6 +109,7 @@ export function BoardTrainingHome({ data, language }: { data: HomeData; language
   const [chairUserId, setChairUserId] = useState(data.settings.chair_user_id ?? "none");
   const [notifyChair, setNotifyChair] = useState(data.settings.notify_chair);
   const [email, setEmail] = useState("");
+  const validEmail = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim()) && email.length <= 254;
   const [inviteCourse, setInviteCourse] = useState<TrainingCourseId>("essentials");
   const [inviteLocale, setInviteLocale] = useState<TrainingLanguage>(data.settings.default_locale);
   const [dueDate, setDueDate] = useState("");
@@ -116,7 +127,7 @@ export function BoardTrainingHome({ data, language }: { data: HomeData; language
   }, [message, messageIsError]);
 
   function handleResult(result: ActionResult, success: string) {
-    setMessage(result.ok ? success : result.error);
+    setMessage(result.ok ? success : trainingErrorCopy(result.error, language));
     setMessageIsError(!result.ok);
     if (result.ok) router.refresh();
   }
@@ -125,18 +136,18 @@ export function BoardTrainingHome({ data, language }: { data: HomeData; language
     setMessage("");
     startTransition(async () => {
       try { await startTrainingAction({ courseId, language }); }
-      catch (error) { setMessageIsError(true); setMessage(error instanceof Error ? error.message : "Could not open the course."); }
+      catch (error) { setMessageIsError(true); setMessage(error instanceof Error ? trainingErrorCopy(error.message, language) : t.courseError); }
     });
   }
 
   function exportRoster() {
-    const rows = [["Director", "Email", "Course", "Lessons", "Status", "Score", "Certificate", "Renewal"]];
+    const rows = [t.csvHeaders];
     for (const enrollment of data.roster) {
       const member = data.members.find((person) => person.id === enrollment.user_id);
       const certificate = data.certificates.find((item) => item.user_id === enrollment.user_id && item.course_id === enrollment.course_id);
       rows.push([
-        member?.name ?? "", member?.email ?? "", enrollment.course_id,
-        String(enrollment.completed_lessons.length), certificate ? "Completed" : "In progress",
+        member?.name ?? "", member?.email ?? "", enrollment.course_id === "essentials" ? t.essentials : t.refresher,
+        String(enrollment.completed_lessons.length), certificate ? t.completed : t.inProgress,
         enrollment.score == null ? "" : `${enrollment.score}/${enrollment.total_questions}`,
         certificate?.certificate_number ?? "", certificate?.expires_at ?? "",
       ]);
@@ -144,16 +155,19 @@ export function BoardTrainingHome({ data, language }: { data: HomeData; language
     const csv = rows.map((row) => row.map(trainingCsvCell).join(",")).join("\r\n");
     const href = URL.createObjectURL(new Blob(["\uFEFF", csv], { type: "text/csv;charset=utf-8" }));
     const link = document.createElement("a");
-    link.href = href; link.download = "board-training-roster.csv"; link.click();
+    link.href = href; link.download = language === "fr" ? "registre-formation-conseil.csv" : "board-training-roster.csv"; link.click();
     URL.revokeObjectURL(href);
   }
 
   return (
-    <div className="mx-auto max-w-6xl space-y-7" data-testid="board-training-home">
-      <header className="space-y-2">
-        <p className="text-xs font-semibold uppercase tracking-widest text-olea-green">Olea Connects</p>
-        <h1 className="text-3xl font-semibold tracking-tight text-slate-900">{t.title}</h1>
-        <p className="max-w-2xl text-slate-600">{t.intro}</p>
+    <div className="mx-auto max-w-6xl space-y-7" data-testid="board-training-home" data-no-translate>
+      <header className="flex flex-wrap items-start justify-between gap-4">
+        <div className="space-y-2">
+          <p className="text-xs font-semibold uppercase tracking-widest text-olea-green">Olea Connects</p>
+          <h1 className="text-3xl font-semibold tracking-tight text-slate-900">{t.title}</h1>
+          <p className="max-w-2xl text-slate-600">{t.intro}</p>
+        </div>
+        <div className="space-y-1"><p className="text-xs font-medium text-slate-600">{t.interfaceLanguage}</p><LocaleSelector /><p className="max-w-56 text-xs text-slate-500">{t.interfaceLanguageHint}</p></div>
       </header>
       {message && <p ref={messageRef} role={messageIsError ? "alert" : "status"} tabIndex={-1} className="rounded-lg border bg-white px-4 py-3 text-sm text-slate-700">{message}</p>}
       <Tabs value={data.isManager && searchParams.get("tab") === "manage" ? "manage" : "courses"} onValueChange={(value) => router.replace(`/modules/board-training?tab=${value}`, { scroll: false })} className="space-y-6">
@@ -177,6 +191,7 @@ export function BoardTrainingHome({ data, language }: { data: HomeData; language
                   </CardHeader>
                   <CardContent className="space-y-4">
                     <p className="min-h-12 text-sm text-slate-600">{courseId === "essentials" ? t.essentialsDescription : t.refresherDescription}</p>
+                    {enrollment && enrollment.locale !== language && <p className="text-xs text-slate-500">{t.existingCourseLanguage}</p>}
                     {certificate && <Badge variant="secondary">{t.completed}</Badge>}
                     {locked && <p className="text-sm text-slate-500">{t.prerequisite}</p>}
                     {(certificate || enrollment) && !locked ? (
@@ -218,16 +233,16 @@ export function BoardTrainingHome({ data, language }: { data: HomeData; language
           </CardContent></Card>
           <div className="grid gap-6 xl:grid-cols-2">
             <Card><CardHeader><CardTitle className="flex items-center gap-2 text-lg"><Users className="size-5" />{t.invite}</CardTitle></CardHeader><CardContent className="space-y-4">
-              <div className="space-y-2"><Label htmlFor="training-email">{t.email}</Label><Input id="training-email" type="email" autoComplete="email" value={email} onChange={(event) => setEmail(event.target.value)} placeholder="director@example.org" /><p className="text-xs text-slate-500">{t.emailHint}</p></div>
+              <div className="space-y-2"><Label htmlFor="training-email">{t.email}</Label><Input id="training-email" type="email" autoComplete="email" maxLength={254} value={email} onChange={(event) => setEmail(event.target.value)} placeholder={language === "fr" ? "membre@example.org" : "director@example.org"} /><p className="text-xs text-slate-500">{t.emailHint}</p></div>
               <div className="grid gap-4 sm:grid-cols-2"><div className="space-y-2"><Label>{t.course}</Label><Select value={inviteCourse} onValueChange={(value) => setInviteCourse(value as TrainingCourseId)}><SelectTrigger aria-label={t.course}><SelectValue /></SelectTrigger><SelectContent><SelectItem value="essentials">{t.essentials}</SelectItem><SelectItem value="refresher">{t.refresher}</SelectItem></SelectContent></Select></div><div className="space-y-2"><Label>{t.language}</Label><Select value={inviteLocale} onValueChange={(value) => setInviteLocale(value as TrainingLanguage)}><SelectTrigger aria-label={t.language}><SelectValue /></SelectTrigger><SelectContent><SelectItem value="en">English</SelectItem><SelectItem value="fr">Français</SelectItem></SelectContent></Select></div></div>
               <div className="space-y-2"><Label htmlFor="training-due">{t.dueDate}</Label><Input id="training-due" type="date" value={dueDate} onChange={(event) => setDueDate(event.target.value)} /><p className="text-xs text-slate-500">{t.dueHint}</p></div>
-              <Button disabled={pending || !email.includes("@")} onClick={() => startTransition(async () => { const result = await inviteTrainingMemberAction({ email, courseId: inviteCourse, language: inviteLocale, dueDate: dueDate || null }); handleResult(result, t.sent); if (result.ok) setEmail(""); })}>{t.send}</Button>
-              <div className="border-t pt-4"><h3 className="mb-2 font-semibold">{t.pending}</h3>{data.invitations.filter((item) => item.status === "pending").length ? data.invitations.filter((item) => item.status === "pending").map((invite) => <div key={invite.id} className="flex flex-wrap items-center justify-between gap-2 py-2 text-sm"><span>{invite.email} · {invite.course_id}</span><div className="flex gap-1"><Button size="sm" variant="outline" disabled={pending} onClick={() => startTransition(async () => handleResult(await resendTrainingInvitationAction(invite.id), t.sent))}>{t.resend}</Button><Button size="sm" variant="ghost" disabled={pending} onClick={() => startTransition(async () => handleResult(await revokeTrainingInvitationAction(invite.id), t.saved))}>{t.revoke}</Button></div></div>) : <p className="text-sm text-slate-500">{t.none}</p>}</div>
+              <Button disabled={pending || !validEmail} onClick={() => startTransition(async () => { const result = await inviteTrainingMemberAction({ email, courseId: inviteCourse, language: inviteLocale, dueDate: dueDate || null }); handleResult(result, t.sent); if (result.ok) setEmail(""); })}>{t.send}</Button>
+              <div className="border-t pt-4"><h3 className="mb-2 font-semibold">{t.pending}</h3>{data.invitations.filter((item) => item.status === "pending").length ? data.invitations.filter((item) => item.status === "pending").map((invite) => <div key={invite.id} className="flex flex-wrap items-center justify-between gap-2 py-2 text-sm"><span>{invite.email} · {invite.course_id === "essentials" ? t.essentials : t.refresher}</span><div className="flex gap-1"><Button size="sm" variant="outline" disabled={pending} onClick={() => startTransition(async () => handleResult(await resendTrainingInvitationAction(invite.id), t.sent))}>{t.resend}</Button><Button size="sm" variant="ghost" disabled={pending} onClick={() => startTransition(async () => handleResult(await revokeTrainingInvitationAction(invite.id), t.saved))}>{t.revoke}</Button></div></div>) : <p className="text-sm text-slate-500">{t.none}</p>}</div>
             </CardContent></Card>
             <Card><CardHeader><CardTitle className="flex items-center gap-2 text-lg"><FileUp className="size-5" />{t.documents}</CardTitle></CardHeader><CardContent className="space-y-4">
               <p className="text-sm text-slate-600">{t.documentsHint}</p>
               <div className="space-y-2"><Label>{t.kind}</Label><Select value={documentKind} onValueChange={(value) => setDocumentKind(value as typeof documentKind)}><SelectTrigger aria-label={t.kind}><SelectValue /></SelectTrigger><SelectContent>{documentKinds.map((kind) => <SelectItem key={kind} value={kind}>{documentKindLabels[language][kind]}</SelectItem>)}</SelectContent></Select></div>
-              <div className="space-y-2"><Label htmlFor="training-document-title">{t.documentTitle}</Label><Input id="training-document-title" maxLength={160} minLength={2} value={documentTitle} onChange={(event) => setDocumentTitle(event.target.value)} placeholder="Board bylaws 2026" /></div>
+              <div className="space-y-2"><Label htmlFor="training-document-title">{t.documentTitle}</Label><Input id="training-document-title" maxLength={160} minLength={2} value={documentTitle} onChange={(event) => setDocumentTitle(event.target.value)} placeholder={t.documentPlaceholder} /><p className="text-xs text-slate-500">{language === "fr" ? "De 2 à 160 caractères." : "2 to 160 characters."}</p></div>
               <div className="space-y-2"><Label htmlFor="training-document-file">{t.file}</Label><Input ref={fileInputRef} id="training-document-file" type="file" accept="application/pdf,.pdf" onChange={(event) => setDocumentFile(event.target.files?.[0] ?? null)} /></div>
               <Button disabled={pending || !documentFile || documentTitle.trim().length < 2} onClick={() => startTransition(async () => { if (!documentFile) return; const form = new FormData(); form.set("kind", documentKind); form.set("title", documentTitle); form.set("file", documentFile); const result = await uploadTrainingDocumentAction(form); handleResult(result, t.uploaded); if (result.ok) { setDocumentTitle(""); setDocumentFile(null); if (fileInputRef.current) fileInputRef.current.value = ""; } })}>{t.upload}</Button>
               <div className="border-t pt-3">{data.documents.map((document) => <div key={document.id} className="flex items-center justify-between gap-2 py-2 text-sm"><span>{document.title}</span><Dialog><DialogTrigger asChild><Button size="sm" variant="ghost" disabled={pending}>{t.remove}</Button></DialogTrigger><DialogContent><DialogHeader><DialogTitle>{t.confirmRemove}</DialogTitle><DialogDescription>{t.removeDescription}</DialogDescription></DialogHeader><DialogFooter><DialogClose asChild><Button variant="outline">{t.revoke}</Button></DialogClose><DialogClose asChild><Button onClick={() => startTransition(async () => handleResult(await removeTrainingDocumentAction(document.id), t.saved))}>{t.remove}</Button></DialogClose></DialogFooter></DialogContent></Dialog></div>)}</div>

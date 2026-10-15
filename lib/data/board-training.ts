@@ -569,7 +569,7 @@ export async function verifyTrainingCertificate(number: string) {
   return { ...data, organizationName: organization?.name ?? "Olea Connects", valid: new Date(data.expires_at) >= new Date() };
 }
 
-export async function getTrainingReport() {
+export async function getTrainingReport(language: TrainingLanguage) {
   const context = await requireTrainingContext();
   const settings = await getTrainingSettings(context);
   if (!context.isManager && settings.chair_user_id !== context.member.id) {
@@ -604,7 +604,7 @@ export async function getTrainingReport() {
       followUp: followUpByUser.get(enrollment.user_id) ?? {},
     };
   }));
-  const course = getTrainingCourse("essentials", settings.default_locale);
+  const course = getTrainingCourse("essentials", language);
   const topics = course.reflection?.topics ?? [];
   const englishSuggestions = getTrainingCourse("essentials", "en").actionPlan?.suggestions ?? [];
   const frenchSuggestions = getTrainingCourse("essentials", "fr").actionPlan?.suggestions ?? [];
