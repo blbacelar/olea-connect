@@ -132,6 +132,7 @@ export const referralPageCopyEn: ReferralPageCopy = {
     },
     copyLink: "Copy link",
     copied: "Copied",
+    copyFailed: "Copy failed. Select the link above and copy it manually.",
     statuses: {
       referrer: {
         approved: "Approved",

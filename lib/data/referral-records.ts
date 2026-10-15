@@ -65,6 +65,9 @@ export type ReferralAdminData = {
   referrals: ReferralRecord[];
   referrers: ReferrerRecord[];
   settings: ReferralProgramSettings;
+  trackingCodes: ReferralTrackingCode[];
+  trackedSignups: ReferralTrackedSignup[];
+  trackedSignupCount: number;
 };
 
 export type ReferralDashboardData = {
@@ -72,6 +75,23 @@ export type ReferralDashboardData = {
   referrals: ReferralRecord[];
   referrer: ReferrerRecord | null;
   settings: ReferralProgramSettings;
+};
+
+export type ReferralTrackingCode = {
+  code: string;
+  label: string;
+  active: boolean;
+  createdAt: string;
+};
+
+export type ReferralTrackedSignup = {
+  id: string;
+  code: string;
+  email: string;
+  organizationName: string;
+  status: string;
+  createdAt: string;
+  completedAt: string | null;
 };
 
 export const referralProgramSettingsDefaults: ReferralProgramSettings = {

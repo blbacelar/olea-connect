@@ -39,6 +39,28 @@ const adminReferralSelect = `${referralSelect}, referrers(full_name, email)`;
 const payoutSelect =
   "id, referral_id, milestone, amount_cents, currency, status, due_at, paid_at, notes, evidence_url, source_invoice_id, purchase_amount_cents";
 
+async function getTrackedSignupRows(
+  supabase: ReturnType<typeof createAdminClient>,
+  codes: string[],
+) {
+  if (codes.length === 0) return { rows: [], count: 0 };
+  const [rowsResult, countResult] = await Promise.all([
+    supabase
+      .from("workspace_provisioning_requests")
+      .select("id, referral_code, email, organization_name, status, created_at, completed_at")
+      .in("referral_code", codes)
+      .order("created_at", { ascending: false })
+      .limit(100),
+    supabase
+      .from("workspace_provisioning_requests")
+      .select("id", { count: "exact", head: true })
+      .in("referral_code", codes),
+  ]);
+  if (rowsResult.error) throw rowsResult.error;
+  if (countResult.error) throw countResult.error;
+  return { rows: rowsResult.data ?? [], count: countResult.count ?? 0 };
+}
+
 export const getReferralProgramSettings = cache(async () => {
   const { data, error } = await createAdminClient()
     .from("referral_program_settings")
@@ -61,7 +83,7 @@ export async function requireReferralAdmin() {
 export async function getReferralAdminData(): Promise<ReferralAdminData> {
   await requireReferralAdmin();
   const supabase = createAdminClient();
-  const [settingsResult, referrersResult, referralsResult, payoutsResult] =
+  const [settingsResult, referrersResult, referralsResult, payoutsResult, trackingCodesResult] =
     await Promise.all([
       supabase
         .from("referral_program_settings")
@@ -84,18 +106,45 @@ export async function getReferralAdminData(): Promise<ReferralAdminData> {
         .select(payoutSelect)
         .order("created_at", { ascending: false })
         .limit(100),
+      supabase
+        .from("referral_tracking_codes")
+        .select("code, label, active, created_at")
+        .order("created_at", { ascending: false }),
     ]);
 
   if (settingsResult.error) throw settingsResult.error;
   if (referrersResult.error) throw referrersResult.error;
   if (referralsResult.error) throw referralsResult.error;
   if (payoutsResult.error) throw payoutsResult.error;
+  if (trackingCodesResult.error) throw trackingCodesResult.error;
+
+  const trackingCodes = trackingCodesResult.data ?? [];
+  const trackedSignupResult = await getTrackedSignupRows(
+    supabase,
+    trackingCodes.map((item) => item.code),
+  );
 
   return {
     settings: mapSettings(settingsResult.data),
     referrers: (referrersResult.data ?? []).map(mapReferrer),
     referrals: (referralsResult.data ?? []).map(mapReferral),
     payouts: (payoutsResult.data ?? []).map(mapPayout),
+    trackingCodes: trackingCodes.map((item) => ({
+      code: item.code,
+      label: item.label,
+      active: item.active,
+      createdAt: item.created_at,
+    })),
+    trackedSignupCount: trackedSignupResult.count,
+    trackedSignups: trackedSignupResult.rows.map((item) => ({
+      id: item.id,
+      code: item.referral_code ?? "",
+      email: item.email,
+      organizationName: item.organization_name,
+      status: item.status,
+      createdAt: item.created_at,
+      completedAt: item.completed_at,
+    })),
   };
 }
 

@@ -238,7 +238,7 @@ export default async function ReferralDashboardPage() {
             </div>
             <div className="mt-5">
               <ReferralLinkCopy
-                copy={{ copied: copy.copied, copyLink: copy.copyLink }}
+                copy={{ copied: copy.copied, copyLink: copy.copyLink, copyFailed: copy.copyFailed }}
                 referralUrl={referralUrl}
               />
             </div>

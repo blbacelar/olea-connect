@@ -8,7 +8,7 @@ const referralCookieMaxAge = 60 * 60 * 24 * 30;
 
 export const dynamic = "force-dynamic";
 
-async function isActiveApprovedReferralCode(code: string) {
+async function isActiveShareCode(code: string) {
   const supabase = createAdminClient({ noStore: true });
   const { data, error } = await supabase
     .from("referral_links")
@@ -17,7 +17,16 @@ async function isActiveApprovedReferralCode(code: string) {
     .eq("active", true)
     .maybeSingle();
 
-  if (error || !data) return false;
+  if (error) return false;
+  if (!data) {
+    const trackingCode = await supabase
+      .from("referral_tracking_codes")
+      .select("code")
+      .eq("code", code)
+      .eq("active", true)
+      .maybeSingle();
+    return !trackingCode.error && Boolean(trackingCode.data);
+  }
   const referrer = Array.isArray(data.referrers)
     ? data.referrers[0]
     : data.referrers;
@@ -29,7 +38,7 @@ export async function GET(
   { params }: { params: { code: string } },
 ) {
   const code = normalizeReferralCode(params.code);
-  const validCode = code ? await isActiveApprovedReferralCode(code) : false;
+  const validCode = code ? await isActiveShareCode(code) : false;
   const redirectUrl = new URL(
     validCode
       ? `/signup?ref=${encodeURIComponent(code)}`

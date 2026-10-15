@@ -44,7 +44,14 @@ async function createUniqueReferralCode() {
       .eq("code", code)
       .maybeSingle();
     if (error) throw error;
-    if (!data) return code;
+    if (data) continue;
+    const { data: trackingCode, error: trackingError } = await supabase
+      .from("referral_tracking_codes")
+      .select("code")
+      .eq("code", code)
+      .maybeSingle();
+    if (trackingError) throw trackingError;
+    if (!trackingCode) return code;
   }
   throw new Error("Unable to generate a unique referral code.");
 }

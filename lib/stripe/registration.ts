@@ -62,6 +62,20 @@ type ExistingProvisioningRequest = {
   founding_offer_requested: boolean | null;
 };
 
+async function isActiveTrackingCode(
+  supabase: SupabaseClient,
+  referralCode: string,
+) {
+  const { data, error } = await supabase
+    .from("referral_tracking_codes")
+    .select("code")
+    .eq("code", referralCode)
+    .eq("active", true)
+    .maybeSingle();
+  if (error) throw error;
+  return Boolean(data);
+}
+
 async function validatePartnerReferral(
   supabase: SupabaseClient,
   email: string,
@@ -78,7 +92,8 @@ async function validatePartnerReferral(
   const referrer = Array.isArray(partnerReferral?.referrers)
     ? partnerReferral?.referrers[0]
     : partnerReferral?.referrers;
-  if (!partnerReferral || referrer?.status !== "approved") {
+  if (!partnerReferral && await isActiveTrackingCode(supabase, referralCode)) return;
+  if (referrer?.status !== "approved") {
     throw new SignupValidationError("That referral code is invalid or expired.");
   }
 

@@ -7,6 +7,7 @@ import type { getReferralAdminData } from "@/lib/data/referrals";
 
 import { ReferralAdminTables } from "./referral-admin-tables";
 import { ReferralProgramSettings } from "./referral-program-settings";
+import { ReferralTrackingCodes } from "./referral-tracking-codes";
 
 type ReferralAdminData = Awaited<ReturnType<typeof getReferralAdminData>>;
 type ReferralAction = (formData: FormData) => Promise<void>;
@@ -49,7 +50,9 @@ export function ReferralAdminView({
         pendingCount={pendingCount}
         programEnabled={data.settings.programEnabled}
         referralCount={data.referrals.length}
+        trackedSignupCount={data.trackedSignupCount}
       />
+      <ReferralTrackingCodes data={data} />
       <ReferralProgramSettings
         settings={data.settings}
         saveReferralProgramSettings={saveReferralProgramSettings}
@@ -69,16 +72,19 @@ function ReferralStats({
   pendingCount,
   programEnabled,
   referralCount,
+  trackedSignupCount,
 }: {
   eligiblePayoutCount: number;
   pendingCount: number;
   programEnabled: boolean;
   referralCount: number;
+  trackedSignupCount: number;
 }) {
   return (
-    <div className="grid gap-4 md:grid-cols-4">
+    <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-5">
       <StatCard label="Pending applications" value={pendingCount} />
-      <StatCard label="Referrals" value={referralCount} />
+      <StatCard label="Tracked signups" value={trackedSignupCount} />
+      <StatCard label="Partner referrals" value={referralCount} />
       <StatCard label="Eligible payouts" value={eligiblePayoutCount} />
       <div className="rounded-xl border bg-white p-5 shadow-soft">
         <p className="text-xs font-bold uppercase tracking-[0.18em] text-slate-400">

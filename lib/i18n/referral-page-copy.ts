@@ -94,6 +94,7 @@ export type ReferralPageCopy = {
     };
     copyLink: string;
     copied: string;
+    copyFailed: string;
     statuses: {
       referrer: Record<ReferralReferrerStatus, string>;
       referral: Record<ReferralStatus, string>;

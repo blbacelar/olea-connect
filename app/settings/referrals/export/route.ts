@@ -50,6 +50,18 @@ export async function GET() {
       "",
       "",
     ]),
+    ...data.trackedSignups.map((signup) => [
+      "tracking-only signup",
+      data.trackingCodes.find((code) => code.code === signup.code)?.label ?? "",
+      signup.email,
+      signup.organizationName,
+      signup.code,
+      signup.status,
+      "",
+      "",
+      "",
+      "No automatic commission",
+    ]),
     ...data.payouts.map((payout) => [
       "payout",
       "",
