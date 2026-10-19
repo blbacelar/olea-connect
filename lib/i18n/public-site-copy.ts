@@ -91,6 +91,14 @@ export type PublicSiteCopy = {
       label: string;
     }>;
   };
+  demo: {
+    eyebrow: string;
+    title: string;
+    description: string;
+    videoLabel: string;
+    videoFallback: string;
+    caption: string;
+  };
   workflow: {
     eyebrow: string;
     title: string;
@@ -209,7 +217,7 @@ export const publicSiteCopy: Record<Locale, PublicSiteCopy> = {
       description:
         "Create board-ready documents in your own brand, learn from sector experts, manage funding opportunities, and connect with nonprofit leaders who understand the work.",
       primaryCta: "Join Olea Connects™",
-      secondaryCta: "See how it works",
+      secondaryCta: "Watch the demo",
       youtubeCta: "Our YouTube channel",
       assurances: [
         "Join in about 5 minutes",
@@ -311,6 +319,15 @@ export const publicSiteCopy: Record<Locale, PublicSiteCopy> = {
         { value: "English + French", label: "core governance resources" },
         { value: "WCAG 2.1 AA", label: "accessibility standard" },
       ],
+    },
+    demo: {
+      eyebrow: "Product demo",
+      title: "See the Grant Platform in action.",
+      description:
+        "Follow a realistic grant workflow, from creating an opportunity to tracking funders and reviewing reports.",
+      videoLabel: "Grant Platform demo video",
+      videoFallback: "Your browser does not support this video.",
+      caption: "1 min 25 sec · English on-screen text · Music and interface sounds, no narration.",
     },
     workflow: {
       eyebrow: "How it works",
@@ -596,7 +613,7 @@ export const publicSiteCopy: Record<Locale, PublicSiteCopy> = {
       description:
         "Créez des documents prêts pour le conseil dans votre propre marque, apprenez auprès d'experts du secteur, trouvez des occasions de subvention et échangez avec des leaders qui comprennent votre réalité.",
       primaryCta: "Rejoindre Olea Connects™",
-      secondaryCta: "Voir le fonctionnement",
+      secondaryCta: "Voir la démo",
       youtubeCta: "Notre chaîne YouTube",
       assurances: [
         "Inscription en environ 5 minutes",
@@ -710,6 +727,15 @@ export const publicSiteCopy: Record<Locale, PublicSiteCopy> = {
         },
         { value: "WCAG 2.1 AA", label: "norme d'accessibilité" },
       ],
+    },
+    demo: {
+      eyebrow: "Démo du produit",
+      title: "Découvrez la plateforme de subventions en action.",
+      description:
+        "Suivez un parcours concret, de la création d'une occasion de financement au suivi des bailleurs de fonds et à la consultation des rapports.",
+      videoLabel: "Vidéo de démonstration de la plateforme de subventions",
+      videoFallback: "Votre navigateur ne prend pas en charge cette vidéo.",
+      caption: "1 min 25 s · Texte à l'écran en anglais · Musique et sons d'interface, sans narration.",
     },
     workflow: {
       eyebrow: "Fonctionnement",

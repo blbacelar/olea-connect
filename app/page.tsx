@@ -1,5 +1,6 @@
 import { PublicHeader } from "@/components/auth/PublicHeader";
 import { FinalCta } from "@/components/landing/FinalCta";
+import { LandingDemo } from "@/components/landing/LandingDemo";
 import { LandingFaq } from "@/components/landing/LandingFaq";
 import { LandingFeatures } from "@/components/landing/LandingFeatures";
 import { LandingFooter } from "@/components/landing/LandingFooter";
@@ -25,6 +26,7 @@ export default async function HomePage() {
         <LandingTransformation copy={copy.transformation} />
         <LandingFeatures copy={copy.features} />
         <LandingTrust copy={copy.trust} />
+        <LandingDemo copy={copy.demo} />
         <LandingWorkflow copy={copy.workflow} />
         <LandingPricing copy={copy.pricing} locale={locale} initialSpots={initialSpots} />
         <LandingFaq copy={copy.faq} />

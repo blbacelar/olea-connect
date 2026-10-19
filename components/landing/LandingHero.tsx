@@ -36,7 +36,7 @@ export function LandingHero({ copy }: { copy: LandingHeroCopy }) {
               variant="outline"
               className="h-12 bg-white px-7 text-base"
             >
-              <Link href="#how-it-works">{copy.secondaryCta}</Link>
+              <Link href="#demo">{copy.secondaryCta}</Link>
             </Button>
             <Button
               asChild
