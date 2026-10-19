@@ -11,9 +11,9 @@ export const dynamic = "force-dynamic";
 type SupabaseServerClient = Awaited<ReturnType<typeof createClient>>;
 
 type RouteContext = {
-  params: {
+  params: Promise<{
     eventId: string;
-  };
+  }>;
 };
 
 const joinableEventStatuses = new Set(["scheduled", "live", "rescheduled"]);
@@ -22,7 +22,8 @@ function jsonError(message: string, status: number) {
   return NextResponse.json({ error: message }, { status });
 }
 
-export async function GET(_request: Request, { params }: RouteContext) {
+export async function GET(_request: Request, props: RouteContext) {
+  const params = await props.params;
   if (!z.string().uuid().safeParse(params.eventId).success) {
     return jsonError("This event is not available.", 404);
   }

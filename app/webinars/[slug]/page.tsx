@@ -15,11 +15,12 @@ import {
   formatTicketLabel,
 } from "../webinar-ui";
 
-export default async function WebinarDetailPage({
-  params,
-}: {
-  params: { slug: string };
-}) {
+export default async function WebinarDetailPage(
+  props: {
+    params: Promise<{ slug: string }>;
+  }
+) {
+  const params = await props.params;
   const webinar = await getWebinarBySlug(params.slug);
 
   if (!webinar) notFound();

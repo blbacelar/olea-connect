@@ -274,7 +274,7 @@ interface EntryFormFieldsProps {
   isSelectedDateInPast: boolean;
   selectedColorCategory: string;
   selectedDateKey: string;
-  titleInputRef: RefObject<HTMLInputElement>;
+  titleInputRef: RefObject<HTMLInputElement | null>;
   todayKey: string;
   onCategoryChange: (value: string) => void;
   onColorChange: (value: string) => void;

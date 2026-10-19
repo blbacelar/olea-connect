@@ -14,7 +14,7 @@ import { getPublicSiteCopy } from "@/lib/i18n/public-site-copy";
 import { getRequestLocale } from "@/lib/i18n/server";
 
 export default async function HomePage() {
-  const locale = getRequestLocale();
+  const locale = (await getRequestLocale());
   const copy = getPublicSiteCopy(locale);
   const initialSpots = await getFoundingAvailability().catch(() => null);
 

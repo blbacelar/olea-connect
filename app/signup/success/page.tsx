@@ -14,10 +14,10 @@ import { createAdminClient } from "@/utils/supabase/admin";
 import { createClient } from "@/utils/supabase/server";
 
 interface SignupSuccessPageProps {
-  searchParams?: {
+  searchParams?: Promise<{
     activation?: string;
     session_id?: string | string[];
-  };
+  }>;
 }
 
 function firstParam(value: string | string[] | undefined) {
@@ -57,10 +57,9 @@ async function finalizeCheckoutSession(
   }
 }
 
-export default async function SignupSuccessPage({
-  searchParams,
-}: SignupSuccessPageProps) {
-  const locale = getRequestLocale();
+export default async function SignupSuccessPage(props: SignupSuccessPageProps) {
+  const searchParams = await props.searchParams;
+  const locale = (await getRequestLocale());
   const authCopy = getAuthFlowCopy(locale);
   const publicCopy = getPublicSiteCopy(locale);
   const successCopy = authCopy.signup.success;

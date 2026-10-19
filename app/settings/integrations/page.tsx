@@ -15,11 +15,12 @@ function getParam(
   return Array.isArray(value) ? value[0] : value;
 }
 
-export default async function IntegrationOperationsPage({
-  searchParams = {},
-}: {
-  searchParams?: Record<string, string | string[] | undefined>;
-}) {
+export default async function IntegrationOperationsPage(
+  props: {
+    searchParams?: Promise<Record<string, string | string[] | undefined>>;
+  }
+) {
+  const searchParams = (await props.searchParams) ?? {};
   const query = getParam(searchParams, "q")?.trim() ?? "";
   const provider = getParam(searchParams, "provider")?.trim() ?? "all";
   const status = getParam(searchParams, "status")?.trim() ?? "all";

@@ -25,7 +25,7 @@ function formatEventDate(value: string) {
 
 export default async function CommunityPage() {
   const community = await getCommunityHome();
-  const isFrench = getRequestLocale() === "fr-CA";
+  const isFrench = (await getRequestLocale()) === "fr-CA";
 
   if (!community) {
     return (

@@ -254,12 +254,12 @@ function ReportingSummary({ reports }: { reports: SponsorReport[] }) {
   );
 }
 
-function SponsorshipReportCard({
+async function SponsorshipReportCard({
   sponsorship,
 }: {
   sponsorship: SponsorshipReport;
 }) {
-  const isFrench = getRequestLocale() === "fr-CA";
+  const isFrench = (await getRequestLocale()) === "fr-CA";
   const recognitionName =
     typeof sponsorship.recognitionPreferences.public_name === "string"
       ? sponsorship.recognitionPreferences.public_name
@@ -389,7 +389,7 @@ function Metric({
 }
 
 export default async function SponsorsPage() {
-  const isFrench = getRequestLocale() === "fr-CA";
+  const isFrench = (await getRequestLocale()) === "fr-CA";
   const {
     canManageSponsors,
     directorySponsors,

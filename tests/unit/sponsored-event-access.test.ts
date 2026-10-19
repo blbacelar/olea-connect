@@ -78,7 +78,7 @@ describe("event URLs after a funded membership ends", () => {
   it("does not disclose a live event join URL before the expiration cron runs", async () => {
     const { GET } = await import("@/app/api/v1/events/[eventId]/join/route");
     const response = await GET(new Request(`https://example.com/api/v1/events/${eventId}/join`), {
-      params: { eventId },
+      params: Promise.resolve({ eventId }),
     });
 
     expect(response.status).toBe(403);
@@ -88,7 +88,7 @@ describe("event URLs after a funded membership ends", () => {
   it("does not create a recording redirect or signed URL", async () => {
     const { GET } = await import("@/app/api/v1/events/[eventId]/recording/route");
     const response = await GET(new Request(`https://example.com/api/v1/events/${eventId}/recording`), {
-      params: { eventId },
+      params: Promise.resolve({ eventId }),
     });
 
     expect(response.status).toBe(403);

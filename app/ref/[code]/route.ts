@@ -33,10 +33,8 @@ async function isActiveShareCode(code: string) {
   return referrer?.status === "approved";
 }
 
-export async function GET(
-  _request: NextRequest,
-  { params }: { params: { code: string } },
-) {
+export async function GET(_request: NextRequest, props: { params: Promise<{ code: string }> }) {
+  const params = await props.params;
   const code = normalizeReferralCode(params.code);
   const validCode = code ? await isActiveShareCode(code) : false;
   const redirectUrl = new URL(

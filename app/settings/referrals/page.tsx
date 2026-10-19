@@ -38,11 +38,12 @@ async function saveReferralPayout(formData: FormData) {
   showActionResult(await updateReferralPayout(formData));
 }
 
-export default async function ReferralAdminPage({
-  searchParams,
-}: {
-  searchParams: { status?: string; message?: string };
-}) {
+export default async function ReferralAdminPage(
+  props: {
+    searchParams: Promise<{ status?: string; message?: string }>;
+  }
+) {
+  const searchParams = await props.searchParams;
   let data: Awaited<ReturnType<typeof getReferralAdminData>>;
 
   try {

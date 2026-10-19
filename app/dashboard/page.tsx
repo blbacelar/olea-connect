@@ -28,7 +28,7 @@ function getGreeting() {
 }
 
 export default async function DashboardPage() {
-  const generosity = generosityCopy[getRequestLocale()];
+  const generosity = generosityCopy[(await getRequestLocale())];
   const [{ organization, member }, templates, summary] = await Promise.all([
     requireMemberContext(),
     getTemplates(),

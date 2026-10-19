@@ -298,14 +298,14 @@ function ReferralPayoutsTable({
   );
 }
 
-function ReferralPayoutRow({
+async function ReferralPayoutRow({
   payout,
   saveReferralPayout,
 }: {
   payout: ReferralAdminData["payouts"][number];
   saveReferralPayout: (formData: FormData) => Promise<void>;
 }) {
-  const locale = getRequestLocale();
+  const locale = (await getRequestLocale());
   const isFrench = locale === "fr-CA";
   return (
     <tr className="align-top">

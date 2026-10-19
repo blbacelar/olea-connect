@@ -21,12 +21,13 @@ import { formatReferralMoney } from "@/lib/referrals/domain";
 import { ReferralApplicationForm } from "./referral-application-form";
 import { ReferralInvalidNotice } from "./referral-invalid-notice";
 
-export default async function ReferralProgramPage({
-  searchParams,
-}: {
-  searchParams?: { referral?: string };
-}) {
-  const locale = getRequestLocale();
+export default async function ReferralProgramPage(
+  props: {
+    searchParams?: Promise<{ referral?: string }>;
+  }
+) {
+  const searchParams = await props.searchParams;
+  const locale = (await getRequestLocale());
   const copy = getReferralPageCopy(locale);
   const settings = await getReferralProgramSettings().catch(
     () => ({ ...referralProgramSettingsDefaults, programEnabled: false }),

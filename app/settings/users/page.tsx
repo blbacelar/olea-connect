@@ -80,15 +80,16 @@ const copy: Record<Locale, {
   },
 };
 
-export default async function AccountRegistryPage({
-  searchParams,
-}: {
-  searchParams?: { page?: string | string[] };
-}) {
+export default async function AccountRegistryPage(
+  props: {
+    searchParams?: Promise<{ page?: string | string[] }>;
+  }
+) {
+  const searchParams = await props.searchParams;
   const session = await requireMemberContext();
   if (!session.platformRoles?.includes("super_admin")) redirect("/users");
 
-  const locale = getRequestLocale();
+  const locale = (await getRequestLocale());
   const text = copy[locale];
   const directory = await getUserDirectory(parseUserDirectoryPage(searchParams?.page));
   const dateFormatter = new Intl.DateTimeFormat(locale, { dateStyle: "medium" });

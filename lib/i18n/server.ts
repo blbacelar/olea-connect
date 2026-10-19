@@ -6,9 +6,8 @@ import {
   type Locale,
 } from "@/lib/i18n/locales";
 
-export function getRequestLocale(): Locale {
-  const cookieStore = cookies();
-  const headerStore = headers();
+export async function getRequestLocale(): Promise<Locale> {
+  const [cookieStore, headerStore] = await Promise.all([await cookies(), await headers()]);
 
   return resolveRequestLocale({
     localeCookie: cookieStore.get(localeCookieName)?.value,

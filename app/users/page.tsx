@@ -83,12 +83,13 @@ function pageHref(page: number, search: string) {
   return `/users?${params.toString()}`;
 }
 
-export default async function UsersDirectoryPage({
-  searchParams,
-}: {
-  searchParams?: { page?: string | string[]; q?: string | string[] };
-}) {
-  const locale = getRequestLocale();
+export default async function UsersDirectoryPage(
+  props: {
+    searchParams?: Promise<{ page?: string | string[]; q?: string | string[] }>;
+  }
+) {
+  const searchParams = await props.searchParams;
+  const locale = (await getRequestLocale());
   const text = copy[locale];
   const directory = await getOrganizationDirectory(
     parseUserDirectoryPage(searchParams?.page),

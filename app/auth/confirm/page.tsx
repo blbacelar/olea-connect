@@ -105,15 +105,16 @@ function isPendingActivationStatus(status: string | undefined) {
   return status === "pending_payment" || status === "pending_verification";
 }
 
-export default function AuthConfirmPage({
-  searchParams,
-}: {
-  searchParams: {
-    token_hash?: string | string[];
-    type?: string | string[];
-    next?: string | string[];
-  };
-}) {
+export default async function AuthConfirmPage(
+  props: {
+    searchParams: Promise<{
+      token_hash?: string | string[];
+      type?: string | string[];
+      next?: string | string[];
+    }>;
+  }
+) {
+  const searchParams = await props.searchParams;
   const tokenHash = Array.isArray(searchParams.token_hash)
     ? searchParams.token_hash[0]
     : searchParams.token_hash;

@@ -11,16 +11,17 @@ export const dynamic = "force-dynamic";
 type SupabaseServerClient = Awaited<ReturnType<typeof createClient>>;
 
 type RouteContext = {
-  params: {
+  params: Promise<{
     eventId: string;
-  };
+  }>;
 };
 
 function jsonError(message: string, status: number) {
   return NextResponse.json({ error: message }, { status });
 }
 
-export async function GET(_request: Request, { params }: RouteContext) {
+export async function GET(_request: Request, props: RouteContext) {
+  const params = await props.params;
   if (!z.string().uuid().safeParse(params.eventId).success) {
     return jsonError("This recording is not available.", 404);
   }

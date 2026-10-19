@@ -10,9 +10,8 @@ vi.mock("@/lib/data/ed-review", () => ({
   submitEdReviewResponse,
 }));
 
-const routeParams = {
-  params: { token: "a".repeat(43) },
-};
+const token = "a".repeat(43);
+const routeParams = { params: Promise.resolve({ token }) };
 
 describe("public ED review survey API", () => {
   beforeEach(() => {
@@ -93,7 +92,7 @@ describe("public ED review survey API", () => {
 
     expect(response.status).toBe(201);
     expect(submitEdReviewResponse).toHaveBeenCalledWith({
-      token: routeParams.params.token,
+      token,
       answers: expect.objectContaining({ kind: "staff", ratings: { S1a: 5 } }),
     });
   });

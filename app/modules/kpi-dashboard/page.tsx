@@ -4,11 +4,12 @@ import { getKpiDashboardData } from "@/lib/data/kpi-dashboard";
 
 export const dynamic = "force-dynamic";
 
-export default async function KpiDashboardPage({
-  searchParams,
-}: {
-  searchParams?: { tab?: string };
-}) {
+export default async function KpiDashboardPage(
+  props: {
+    searchParams?: Promise<{ tab?: string }>;
+  }
+) {
+  const searchParams = await props.searchParams;
   const data = await getKpiDashboardData();
   const activeTab = resolveKpiDashboardTab(
     searchParams?.tab,

@@ -9,7 +9,7 @@ type LandingFooterCopy = PublicSiteCopy["footer"];
 type LandingFooterNav = PublicSiteCopy["nav"];
 type LandingFooterLogo = PublicSiteCopy["logo"];
 
-export function LandingFooter({
+export async function LandingFooter({
   copy,
   nav,
   logo,
@@ -19,7 +19,7 @@ export function LandingFooter({
   logo?: LandingFooterLogo;
 }) {
   const fallbackCopy =
-    copy && nav && logo ? null : getPublicSiteCopy(getRequestLocale());
+    copy && nav && logo ? null : getPublicSiteCopy((await getRequestLocale()));
   const footerCopy = copy ?? fallbackCopy!.footer;
   const footerNav = nav ?? fallbackCopy!.nav;
   const footerLogo = logo ?? fallbackCopy!.logo;

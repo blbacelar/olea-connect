@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useRef, useState, type FormEvent } from "react";
-import { useFormState } from "react-dom";
 
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -66,10 +65,9 @@ export function SponsorFundingManagement({
   reports: SponsorReport[];
   targets: SponsorBoardTarget[];
 }) {
-  const [state, formAction] = useFormState(activateSponsoredMembership, initialState);
+  const [state, setState] = useState<SponsorActionState>(initialState);
   const formRef = useRef<HTMLFormElement>(null);
   const budgetRef = useRef<HTMLInputElement>(null);
-  const approvedRef = useRef(false);
   const [sponsorshipId, setSponsorshipId] = useState("");
   const [planId, setPlanId] = useState("");
   const [organizationId, setOrganizationId] = useState("");
@@ -81,8 +79,7 @@ export function SponsorFundingManagement({
   const [budgetResetKey, setBudgetResetKey] = useState(0);
 
   useEffect(() => {
-    if (state?.status === "error") setSubmitting(false);
-    if (state?.status !== "success" && !activationConfirmed) return;
+    if (!activationConfirmed) return;
     setSubmitting(false);
     formRef.current?.reset();
     setSponsorshipId("");
@@ -92,7 +89,7 @@ export function SponsorFundingManagement({
     setShowOtherOrganizations(false);
     setFormError("");
     setBudgetResetKey((current) => current + 1);
-  }, [activationConfirmed, state]);
+  }, [activationConfirmed]);
 
   const activeTerms: ActiveTerm[] = reports.flatMap((sponsor) =>
     sponsor.sponsorships
@@ -145,25 +142,37 @@ export function SponsorFundingManagement({
   }
 
   function handleFormSubmit(event: FormEvent<HTMLFormElement>) {
-    if (!approvedRef.current) {
-      event.preventDefault();
-      reviewActivation();
-      return;
-    }
-    approvedRef.current = false;
-    setSubmitting(true);
-    setReviewOpen(false);
+    event.preventDefault();
+    reviewActivation();
   }
 
-  function confirmActivation() {
+  async function confirmActivation() {
     if (!selectedTerm || !selectedTarget || !selectedOrganization || !budgetMatchesTier) {
       setReviewOpen(false);
       reviewActivation();
       return;
     }
-    approvedRef.current = true;
-    formRef.current?.requestSubmit();
-    approvedRef.current = false;
+    if (!formRef.current) return;
+    setSubmitting(true);
+    setReviewOpen(false);
+    setState(initialState);
+    try {
+      const result = await activateSponsoredMembership(initialState, new FormData(formRef.current));
+      if (result.status === "success" && result.placementId) {
+        window.location.assign(`/sponsors?admin=funding&placement=${encodeURIComponent(result.placementId)}#funded-boards`);
+        return;
+      }
+      setState(result.status === "success"
+        ? { status: "error", message: isFrench
+          ? "L'adhésion a été activée, mais la confirmation ne s'affiche pas. Actualisez la page avant de réessayer."
+          : "The funded membership was activated, but its confirmation could not be displayed. Refresh the sponsor page before trying again." }
+        : result);
+    } catch {
+      setState({ status: "error", message: isFrench
+        ? "Impossible de confirmer l'adhésion financée. Actualisez la page avant de réessayer."
+        : "Funded membership could not be confirmed. Refresh the sponsor page before trying again." });
+    }
+    setSubmitting(false);
   }
 
   return (
@@ -190,7 +199,7 @@ export function SponsorFundingManagement({
         </p>
       ) : null}
       {termsWithPlaces.length ? (
-        <form ref={formRef} action={formAction} onSubmit={handleFormSubmit} className="rounded-xl border bg-slate-50 p-5">
+        <form ref={formRef} onSubmit={handleFormSubmit} className="rounded-xl border bg-slate-50 p-5">
           {formError ? <p role="alert" className="mb-4 rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-800">{formError}</p> : null}
           <div className="grid gap-4 md:grid-cols-2">
             <label className="min-w-0 text-sm font-semibold text-slate-700">

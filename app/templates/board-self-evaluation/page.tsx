@@ -7,7 +7,7 @@ import { getRequestLocale } from "@/lib/i18n/server";
 import { TemplateSlugPage } from "../template-slug-page";
 
 export default async function BoardSelfEvaluationPage() {
-  const isFrench = getRequestLocale() === "fr-CA";
+  const isFrench = (await getRequestLocale()) === "fr-CA";
   return (
     <div className="space-y-6">
       <Card>

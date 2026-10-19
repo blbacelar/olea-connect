@@ -4,8 +4,8 @@ import { SponsorshipPage } from "@/components/sponsorship/SponsorshipPage";
 import { getSponsorshipPageCopy } from "@/lib/i18n/sponsorship-page-copy";
 import { getRequestLocale } from "@/lib/i18n/server";
 
-export function generateMetadata(): Metadata {
-  const locale = getRequestLocale();
+export async function generateMetadata(): Promise<Metadata> {
+  const locale = (await getRequestLocale());
   const copy = getSponsorshipPageCopy(locale);
 
   return {

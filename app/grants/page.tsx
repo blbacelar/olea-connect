@@ -6,8 +6,8 @@ import { generosityCopy } from "@/lib/i18n/generosity-copy";
 import { getRequestLocale } from "@/lib/i18n/server";
 
 // Keep old links useful without reopening the discontinued application flow.
-export default function GrantsPage() {
-  const copy = generosityCopy[getRequestLocale()];
+export default async function GrantsPage() {
+  const copy = generosityCopy[(await getRequestLocale())];
   return (
     <div>
       <PageHeader

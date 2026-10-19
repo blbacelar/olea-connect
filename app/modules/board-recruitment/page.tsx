@@ -19,11 +19,12 @@ function resolveTab(value: string | undefined): RecruitmentTab {
     : "overview";
 }
 
-export default async function BoardRecruitmentPage({
-  searchParams,
-}: {
-  searchParams?: { tab?: string; refresh?: string };
-}) {
+export default async function BoardRecruitmentPage(
+  props: {
+    searchParams?: Promise<{ tab?: string; refresh?: string }>;
+  }
+) {
+  const searchParams = await props.searchParams;
   const data = await getBoardRecruitmentData();
   return (
     <BoardRecruitmentWorkspace

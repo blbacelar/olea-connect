@@ -7,8 +7,9 @@ export const dynamic = "force-dynamic";
 export default async function BoardEvaluationPage({
   searchParams,
 }: {
-  searchParams?: { cycle?: string };
+  searchParams?: Promise<{ cycle?: string }>;
 }) {
-  const data = await getBoardEvaluationData(searchParams?.cycle);
+  const params = await searchParams;
+  const data = await getBoardEvaluationData(params?.cycle);
   return <BoardEvaluationWorkspace data={data} />;
 }

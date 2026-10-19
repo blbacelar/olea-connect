@@ -13,11 +13,12 @@ import {
   saveDynamicTemplateSession,
 } from "../../templates/actions";
 
-export default async function BoardCalendarModulePage({
-  searchParams,
-}: {
-  searchParams?: { session?: string };
-}) {
+export default async function BoardCalendarModulePage(
+  props: {
+    searchParams?: Promise<{ session?: string }>;
+  }
+) {
+  const searchParams = await props.searchParams;
   const editorData = await getDynamicTemplateEditorData(
     boardCalendarModule.resourceSlug,
     searchParams?.session,

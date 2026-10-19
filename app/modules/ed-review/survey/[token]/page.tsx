@@ -5,13 +5,14 @@ import { getPublicEdReviewCampaign } from "@/lib/data/ed-review";
 
 export const dynamic = "force-dynamic";
 
-export default async function PublicEdReviewSurveyPage({
-  params,
-  searchParams,
-}: {
-  params: { token: string };
-  searchParams?: { submitted?: string };
-}) {
+export default async function PublicEdReviewSurveyPage(
+  props: {
+    params: Promise<{ token: string }>;
+    searchParams?: Promise<{ submitted?: string }>;
+  }
+) {
+  const searchParams = await props.searchParams;
+  const params = await props.params;
   const campaign = await getPublicEdReviewCampaign(params.token);
   if (!campaign) redirect("/modules/ed-review/survey/unavailable");
   return (

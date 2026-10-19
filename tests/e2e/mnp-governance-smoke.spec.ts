@@ -169,11 +169,11 @@ test.describe("@critical MNP governance and sponsor privacy", () => {
     const session = await authenticatedPage(browser, baseURL, seedling);
     try {
       await session.page.goto("/modules/board-evaluation");
-      await expect(session.page.getByText("Board Evaluation is included with Roots and Canopy or an active add-on.")).toBeVisible();
+      await expect(session.page.getByTestId("app-main").getByText("Board Evaluation is included with Roots and Canopy or an active add-on.")).toBeVisible();
       await expect(session.page.getByRole("button", { name: "Open evaluation" })).toHaveCount(0);
       await expect(session.page.getByRole("link", { name: "View membership" })).toBeVisible();
       await session.page.goto("/modules/strategic-planning");
-      await expect(session.page.getByText("Strategic Planning is included with Canopy or an active add-on.")).toBeVisible();
+      await expect(session.page.getByTestId("app-main").getByText("Strategic Planning is included with Canopy or an active add-on.")).toBeVisible();
       await expect(session.page.getByRole("button", { name: "Create plan" })).toHaveCount(0);
       await expect(session.page.getByRole("link", { name: "View membership" })).toBeVisible();
     } finally {
@@ -232,6 +232,7 @@ test.describe("@critical MNP governance and sponsor privacy", () => {
 
     const session = await authenticatedPage(browser, baseURL, finance);
     const browserErrors: string[] = [];
+    const actionRequests: string[] = [];
     session.page.on("pageerror", (error) => browserErrors.push(`pageerror: ${error.stack ?? error.message}`));
     session.page.on("console", (message) => {
       if (message.type() === "error") browserErrors.push(`console: ${message.text()}`);
@@ -239,6 +240,14 @@ test.describe("@critical MNP governance and sponsor privacy", () => {
     session.page.on("response", (response) => {
       if (response.status() >= 400 && response.url().startsWith(baseURL)) {
         browserErrors.push(`http ${response.status()}: ${response.url()}`);
+      }
+      if (response.request().method() === "POST" && response.url().startsWith(baseURL)) {
+        actionRequests.push(`POST ${response.status()} ${new URL(response.url()).pathname}`);
+      }
+    });
+    session.page.on("requestfailed", (request) => {
+      if (request.method() === "POST" && request.url().startsWith(baseURL)) {
+        actionRequests.push(`POST failed ${new URL(request.url()).pathname}: ${request.failure()?.errorText}`);
       }
     });
     try {
@@ -262,7 +271,18 @@ test.describe("@critical MNP governance and sponsor privacy", () => {
       await expect(dialog).toContainText("$450,000");
       await testInfo.attach("sponsor-finance-confirmation", { body: await session.page.screenshot({ path: visualPath("finance-confirmation"), fullPage: true }), contentType: "image/png" });
       await dialog.getByRole("button", { name: "Activate funded year" }).click();
-      await expect(session.page).toHaveURL(/\/sponsors\?admin=funding&placement=[0-9a-f-]{36}/, { timeout: 20_000 });
+      try {
+        await expect(session.page).toHaveURL(/\/sponsors\?admin=funding&placement=[0-9a-f-]{36}/, { timeout: 20_000 });
+      } catch (error) {
+        const { data: persisted, error: lookupError } = await testData.supabase.from("sponsored_memberships")
+          .select("id, status").eq("sponsorship_id", sponsorship.id)
+          .eq("organization_id", recipient.organizationId).maybeSingle();
+        const alerts = await session.page.getByRole("alert").allTextContents();
+        throw new Error(`Activation did not redirect: ${JSON.stringify({
+          currentUrl: session.page.url(), persisted, lookupError: lookupError?.message,
+          alerts, actionRequests, browserErrors,
+        })}`, { cause: error });
+      }
       if (await session.page.getByRole("heading", { name: "We could not load this workspace" }).count()) {
         throw new Error(`Sponsors workspace failed after activation: ${browserErrors.join(" | ") || "no browser error captured"}`);
       }

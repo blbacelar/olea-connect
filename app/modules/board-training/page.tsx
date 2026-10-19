@@ -6,7 +6,7 @@ import { getRequestLocale } from "@/lib/i18n/server";
 export const dynamic = "force-dynamic";
 
 export default async function BoardTrainingPage() {
-  const language = getRequestLocale() === "fr-CA" ? "fr" : "en";
+  const language = (await getRequestLocale()) === "fr-CA" ? "fr" : "en";
   if (!(await hasTrainingAccess())) return <BoardTrainingLocked language={language} />;
   const data = await getTrainingHome();
   return <BoardTrainingHome data={data} language={language} />;

@@ -7,9 +7,10 @@ import { getRequestLocale } from "@/lib/i18n/server";
 
 export const dynamic = "force-dynamic";
 
-export default async function BoardTrainingCoursePage({ params }: { params: { courseId: string } }) {
+export default async function BoardTrainingCoursePage(props: { params: Promise<{ courseId: string }> }) {
+  const params = await props.params;
   if (!(await hasTrainingAccess())) {
-    return <BoardTrainingLocked language={getRequestLocale() === "fr-CA" ? "fr" : "en"} />;
+    return <BoardTrainingLocked language={(await getRequestLocale()) === "fr-CA" ? "fr" : "en"} />;
   }
   if (params.courseId !== "essentials" && params.courseId !== "refresher") notFound();
   const data = await getTrainingCoursePageData(params.courseId);

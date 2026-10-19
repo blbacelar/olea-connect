@@ -7,8 +7,9 @@ import { getRequestLocale } from "@/lib/i18n/server";
 
 export const dynamic = "force-dynamic";
 
-export default async function ChairGuidePage({ searchParams }: { searchParams?: { session?: string; lang?: string } }) {
-  const language = searchParams?.lang === "fr" || (searchParams?.lang !== "en" && getRequestLocale() === "fr-CA") ? "fr" : "en";
+export default async function ChairGuidePage(props: { searchParams?: Promise<{ session?: string; lang?: string }> }) {
+  const searchParams = await props.searchParams;
+  const language = searchParams?.lang === "fr" || (searchParams?.lang !== "en" && (await getRequestLocale()) === "fr-CA") ? "fr" : "en";
   if (!(await hasTrainingAccess())) return <BoardTrainingLocked language={language} />;
   const context = await requireTrainingContext();
   const settings = await getTrainingSettings(context);

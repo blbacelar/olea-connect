@@ -6,7 +6,8 @@ import { getAppUrl } from "@/lib/email/server";
 
 export const dynamic = "force-dynamic";
 
-export async function GET(_request: Request, { params }: { params: { id: string } }) {
+export async function GET(_request: Request, props: { params: Promise<{ id: string }> }) {
+  const params = await props.params;
   try {
     if (!/^[0-9a-f-]{36}$/i.test(params.id)) return new NextResponse("Not found", { status: 404 });
     const { certificate, organizationName } = await getTrainingCertificateForDownload(params.id);

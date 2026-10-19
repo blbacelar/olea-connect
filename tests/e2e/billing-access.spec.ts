@@ -43,7 +43,7 @@ testWithData.describe("@critical billing access states", () => {
     try {
       await page.goto("/subscription");
       await expect(page.getByRole("heading", { name: "Subscription" })).toBeVisible();
-      await expect(page.getByText("Canopy", { exact: true })).toBeVisible();
+      await expect(page.getByTestId("app-main").getByText("Canopy", { exact: true })).toBeVisible();
       await expect(page.getByRole("heading", { name: "Upgrade your plan" })).toHaveCount(0);
       await expect(page.getByText("Harvest", { exact: true })).toHaveCount(0);
       await page.screenshot({ path: "test-results/retired-tier-canopy-subscription.png" });

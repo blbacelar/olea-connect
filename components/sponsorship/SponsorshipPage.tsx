@@ -9,8 +9,8 @@ import {
   sponsorshipContactEmail,
 } from "@/lib/sponsorship-content";
 
-export function SponsorshipPage() {
-  const locale = getRequestLocale();
+export async function SponsorshipPage() {
+  const locale = (await getRequestLocale());
   const copy = getSponsorshipPageCopy(locale);
 
   return (

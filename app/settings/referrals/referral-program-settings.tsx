@@ -9,14 +9,14 @@ type ReferralSettings = Awaited<
   ReturnType<typeof getReferralAdminData>
 >["settings"];
 
-export function ReferralProgramSettings({
+export async function ReferralProgramSettings({
   saveReferralProgramSettings,
   settings,
 }: {
   saveReferralProgramSettings: (formData: FormData) => Promise<void>;
   settings: ReferralSettings;
 }) {
-  const isFrench = getRequestLocale() === "fr-CA";
+  const isFrench = (await getRequestLocale()) === "fr-CA";
   return (
     <section className="rounded-xl border bg-white p-5 shadow-soft">
       <div className="flex items-center gap-2">

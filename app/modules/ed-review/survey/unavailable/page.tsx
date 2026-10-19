@@ -30,8 +30,8 @@ const unavailableCopy: Record<
   },
 };
 
-export default function UnavailableEdReviewSurveyPage() {
-  const copy = unavailableCopy[getRequestLocale()];
+export default async function UnavailableEdReviewSurveyPage() {
+  const copy = unavailableCopy[(await getRequestLocale())];
 
   return (
     <main className="grid min-h-screen place-items-center bg-slate-50 p-4">

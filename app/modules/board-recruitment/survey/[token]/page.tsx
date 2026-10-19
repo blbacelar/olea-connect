@@ -58,8 +58,8 @@ const surveyCopy: Record<
   },
 };
 
-export function generateMetadata(): Metadata {
-  const copy = surveyCopy[getRequestLocale()];
+export async function generateMetadata(): Promise<Metadata> {
+  const copy = surveyCopy[(await getRequestLocale())];
 
   return {
     title: copy.metadataTitle,
@@ -67,14 +67,15 @@ export function generateMetadata(): Metadata {
   };
 }
 
-export default async function BoardRecruitmentSurveyPage({
-  params,
-  searchParams,
-}: {
-  params: { token: string };
-  searchParams?: { submitted?: string };
-}) {
-  const locale = getRequestLocale();
+export default async function BoardRecruitmentSurveyPage(
+  props: {
+    params: Promise<{ token: string }>;
+    searchParams?: Promise<{ submitted?: string }>;
+  }
+) {
+  const searchParams = await props.searchParams;
+  const params = await props.params;
+  const locale = (await getRequestLocale());
   const copy = surveyCopy[locale];
   const survey = await getPublicRecruitmentSurvey(params.token);
   if (!survey) {

@@ -8,10 +8,8 @@ import { createAdminClient } from "@/utils/supabase/admin";
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
 
-export async function GET(
-  _request: Request,
-  { params }: { params: { exportId: string } },
-) {
+export async function GET(_request: Request, props: { params: Promise<{ exportId: string }> }) {
+  const params = await props.params;
   if (!z.string().uuid().safeParse(params.exportId).success) {
     return NextResponse.json({ error: "Export not found." }, { status: 404 });
   }

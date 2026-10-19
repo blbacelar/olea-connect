@@ -43,6 +43,7 @@ export default defineConfig([
     "build/**",
     "graphify-out/**",
     "node_modules/**",
+    "next-env.d.ts",
     "playwright-report/**",
     "test-results/**",
     "supabase/.branches/**",

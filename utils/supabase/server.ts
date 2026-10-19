@@ -7,7 +7,7 @@ import {
 } from "./auth-cookie-options";
 
 export async function createClient() {
-  const cookieStore = cookies();
+  const cookieStore = await cookies();
   const rememberFor30Days =
     cookieStore.get(AUTH_REMEMBER_COOKIE_NAME)?.value === "1";
 

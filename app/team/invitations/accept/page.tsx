@@ -10,11 +10,12 @@ export const metadata: Metadata = {
   description: "Accept your Olea Connects™ team invitation.",
 };
 
-export default async function AcceptTeamInvitationPage({
-  searchParams,
-}: {
-  searchParams?: { token?: string };
-}) {
+export default async function AcceptTeamInvitationPage(
+  props: {
+    searchParams?: Promise<{ token?: string }>;
+  }
+) {
+  const searchParams = await props.searchParams;
   const token = searchParams?.token ?? "";
   const [invitation, supabase] = await Promise.all([
     getPendingTeamInvitation(token),

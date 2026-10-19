@@ -12,16 +12,17 @@ import {
 
 export const dynamic = "force-dynamic";
 
-export default async function EdReviewPage({
-  searchParams,
-}: {
-  searchParams?: {
-    tab?: string;
-    recovery?: string;
-    compile?: string;
-    access?: string;
-  };
-}) {
+export default async function EdReviewPage(
+  props: {
+    searchParams?: Promise<{
+      tab?: string;
+      recovery?: string;
+      compile?: string;
+      access?: string;
+    }>;
+  }
+) {
+  const searchParams = await props.searchParams;
   let data;
   try {
     data = await getEdReviewData();
@@ -44,7 +45,7 @@ export default async function EdReviewPage({
     }
     return <EdReviewAccessRestricted />;
   }
-  const newCampaignLink = cookies().get("ed_review_new_campaign_link")?.value;
+  const newCampaignLink = (await cookies()).get("ed_review_new_campaign_link")?.value;
   return (
     <EdReviewWorkspace
       activeTab={searchParams?.tab}

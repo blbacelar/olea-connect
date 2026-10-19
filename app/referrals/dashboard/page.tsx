@@ -169,7 +169,7 @@ function PayoutTable({
 }
 
 export default async function ReferralDashboardPage() {
-  const locale = getRequestLocale();
+  const locale = (await getRequestLocale());
   const copy = getReferralPageCopy(locale).dashboardScreen;
   let data: Awaited<ReturnType<typeof getReferralDashboardData>>;
   try {

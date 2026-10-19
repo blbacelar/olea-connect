@@ -10,7 +10,7 @@ import { getRequestLocale } from "@/lib/i18n/server";
 export const dynamic = "force-dynamic";
 
 export default async function MyTrainingCertificatesPage() {
-  const french = getRequestLocale() === "fr-CA";
+  const french = (await getRequestLocale()) === "fr-CA";
   if (!(await hasTrainingAccess())) return <BoardTrainingLocked language={french ? "fr" : "en"} />;
   const certificates = await getMyTrainingCertificates();
   return <div className="mx-auto max-w-3xl space-y-6" data-no-translate>

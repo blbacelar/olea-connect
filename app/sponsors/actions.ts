@@ -1,7 +1,6 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { redirect } from "next/navigation";
 import { z } from "zod";
 import { validateCurrencyToCents } from "@/lib/sponsors/domain";
 
@@ -20,6 +19,7 @@ import {
 export type SponsorActionState = {
   message: string;
   status: "error" | "idle" | "success";
+  placementId?: string;
 };
 
 const sponsoredMembershipInput = z.object({
@@ -63,7 +63,6 @@ export async function activateSponsoredMembership(
       throw new Error("The funded membership was activated, but its placement could not be verified. Refresh the sponsor page before trying again.");
     }
     placementId = parsedPlacementId.data;
-    revalidatePath("/sponsors");
     revalidatePath("/dashboard");
   } catch (error) {
     return {
@@ -71,7 +70,7 @@ export async function activateSponsoredMembership(
       status: "error",
     };
   }
-  redirect(`/sponsors?admin=funding&placement=${encodeURIComponent(placementId)}#funded-boards`);
+  return { message: "", status: "success", placementId };
 }
 
 export async function saveSponsorProfile(

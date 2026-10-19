@@ -165,7 +165,7 @@ test.describe("@critical Canopy board training", () => {
       await rootsPage.goto("/dashboard");
       await rootsPage.getByRole("link", { name: "Board Training" }).click();
       await expect(rootsPage.getByTestId("board-training-locked")).toBeVisible();
-      await expect(rootsPage.getByRole("link", { name: "View Canopy plan" })).toBeVisible();
+      await expect(rootsPage.getByRole("link", { name: "View membership options" })).toBeVisible();
       await expect(rootsPage.getByTestId("board-training-home")).toHaveCount(0);
       for (const path of ["essentials", "chair-guide", "certificates", "report"]) {
         await rootsPage.goto(`/modules/board-training/${path}`);

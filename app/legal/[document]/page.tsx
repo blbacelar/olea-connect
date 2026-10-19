@@ -7,6 +7,7 @@ import {
   getLegalPageCopy,
 } from "@/lib/i18n/legal-documents-copy";
 import { getRequestLocale } from "@/lib/i18n/server";
+import type { Locale } from "@/lib/i18n/locales";
 import { LEGAL_DOCUMENTS, type LegalDocumentKey } from "@/lib/legal-documents";
 
 export function generateStaticParams() {
@@ -15,12 +16,13 @@ export function generateStaticParams() {
   }));
 }
 
-export function generateMetadata({
-  params,
-}: {
-  params: { document: string };
-}): Metadata {
-  const locale = getRequestLocale();
+export async function generateMetadata(
+  props: {
+    params: Promise<{ document: string }>;
+  }
+): Promise<Metadata> {
+  const params = await props.params;
+  const locale = (await getRequestLocale());
   const document = getDocument(params.document, locale);
   return document
     ? {
@@ -31,12 +33,13 @@ export function generateMetadata({
     : {};
 }
 
-export default function LegalDocumentPage({
-  params,
-}: {
-  params: { document: string };
-}) {
-  const locale = getRequestLocale();
+export default async function LegalDocumentPage(
+  props: {
+    params: Promise<{ document: string }>;
+  }
+) {
+  const params = await props.params;
+  const locale = (await getRequestLocale());
   const copy = getLegalPageCopy(locale);
   const document = getDocument(params.document, locale);
   if (!document) notFound();
@@ -107,7 +110,7 @@ export default function LegalDocumentPage({
   );
 }
 
-function getDocument(documentKey: string, locale = getRequestLocale()) {
+function getDocument(documentKey: string, locale: Locale) {
   const href = `/legal/${documentKey}`;
   const entry = Object.entries(LEGAL_DOCUMENTS).find(
     ([, document]) => document.href === href,

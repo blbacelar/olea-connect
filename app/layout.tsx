@@ -24,7 +24,7 @@ export default async function RootLayout({
   children: React.ReactNode;
 }>) {
   const session = await getOptionalMemberContext();
-  const locale = getRequestLocale();
+  const locale = (await getRequestLocale());
   const publicCopy = getPublicSiteCopy(locale);
 
   return (

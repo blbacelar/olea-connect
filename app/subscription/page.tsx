@@ -7,17 +7,16 @@ import { SubscriptionDashboard } from "./subscription-dashboard";
 import { SubscriptionEmptyState } from "./subscription-empty-state";
 
 type SubscriptionPageProps = {
-  searchParams?: {
+  searchParams?: Promise<{
     quantity?: string;
     plan?: string;
     seat?: string;
     tier?: string;
-  };
+  }>;
 };
 
-export default async function SubscriptionPage({
-  searchParams,
-}: SubscriptionPageProps) {
+export default async function SubscriptionPage(props: SubscriptionPageProps) {
+  const searchParams = await props.searchParams;
   const billing = await getBillingSummary();
 
   if (!billing) {

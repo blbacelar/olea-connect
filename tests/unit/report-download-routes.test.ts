@@ -50,7 +50,7 @@ describe("report download routes", () => {
   it("requires authentication for a template export", async () => {
     getOptionalMemberContext.mockResolvedValue(null);
     const { GET } = await import("@/app/api/template-exports/[exportId]/download/route");
-    const response = await GET(new Request("http://localhost"), { params: { exportId } });
+    const response = await GET(new Request("http://localhost"), { params: Promise.resolve({ exportId }) });
     expect(response.status).toBe(401);
     expect(createAdminClient).not.toHaveBeenCalled();
   });
@@ -58,7 +58,7 @@ describe("report download routes", () => {
   it("checks organization ownership before streaming a template export", async () => {
     maybeSingle.mockResolvedValue({ data: null, error: null });
     const { GET } = await import("@/app/api/template-exports/[exportId]/download/route");
-    const response = await GET(new Request("http://localhost"), { params: { exportId } });
+    const response = await GET(new Request("http://localhost"), { params: Promise.resolve({ exportId }) });
     expect(response.status).toBe(404);
     expect(eq).toHaveBeenCalledWith("organization_id", session.organization.id);
     expect(download).not.toHaveBeenCalled();
@@ -66,7 +66,7 @@ describe("report download routes", () => {
 
   it("serves the PDF as a same-origin attachment", async () => {
     const { GET } = await import("@/app/api/template-exports/[exportId]/download/route");
-    const response = await GET(new Request("http://localhost"), { params: { exportId } });
+    const response = await GET(new Request("http://localhost"), { params: Promise.resolve({ exportId }) });
     expect(response.status).toBe(200);
     expect(response.headers.get("content-disposition")).toBe('attachment; filename="report.pdf"');
     expect(await response.text()).toBe("%PDF-test");
@@ -83,7 +83,7 @@ describe("report download routes", () => {
       error: null,
     });
     const { GET } = await import("@/app/api/template-exports/[exportId]/download/route");
-    const response = await GET(new Request("http://localhost"), { params: { exportId } });
+    const response = await GET(new Request("http://localhost"), { params: Promise.resolve({ exportId }) });
     expect(response.status).toBe(404);
     expect(download).not.toHaveBeenCalled();
     expect(insert).not.toHaveBeenCalled();
@@ -92,7 +92,7 @@ describe("report download routes", () => {
   it("does not serve an export if its download audit cannot be recorded", async () => {
     insert.mockResolvedValue({ error: new Error("audit unavailable") });
     const { GET } = await import("@/app/api/template-exports/[exportId]/download/route");
-    const response = await GET(new Request("http://localhost"), { params: { exportId } });
+    const response = await GET(new Request("http://localhost"), { params: Promise.resolve({ exportId }) });
     expect(response.status).toBe(500);
   });
 

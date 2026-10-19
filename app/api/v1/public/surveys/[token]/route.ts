@@ -25,19 +25,15 @@ function hasAllowedOrigin(request: Request) {
   return !origin || origin === new URL(request.url).origin;
 }
 
-export async function GET(
-  _request: Request,
-  { params }: { params: { token: string } },
-) {
+export async function GET(_request: Request, props: { params: Promise<{ token: string }> }) {
+  const params = await props.params;
   const campaign = await getPublicEdReviewCampaign(params.token);
   if (!campaign) return unavailable();
   return NextResponse.json(campaign, { headers: noStoreHeaders });
 }
 
-export async function POST(
-  request: Request,
-  { params }: { params: { token: string } },
-) {
+export async function POST(request: Request, props: { params: Promise<{ token: string }> }) {
+  const params = await props.params;
   if (!hasAllowedOrigin(request)) {
     return NextResponse.json(
       { error: "Invalid survey request." },

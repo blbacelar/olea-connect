@@ -150,7 +150,7 @@ export async function createCampaignAction(formData: FormData) {
   });
   // The raw token is never persisted. Give the authorized reviewer a brief,
   // server-only handoff window to copy the generic link after creation.
-  cookies().set(newCampaignLinkCookie, publicUrl, {
+  (await cookies()).set(newCampaignLinkCookie, publicUrl, {
     httpOnly: true,
     sameSite: "lax",
     secure: process.env.NODE_ENV === "production",
@@ -162,7 +162,7 @@ export async function createCampaignAction(formData: FormData) {
 }
 
 export async function dismissNewCampaignLinkAction() {
-  cookies().delete(newCampaignLinkCookie);
+  (await cookies()).delete(newCampaignLinkCookie);
   revalidateReview();
 }
 
