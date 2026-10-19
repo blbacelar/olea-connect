@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import * as z from "zod";
 
+import { hasCurrentSubscriptionAccess } from "@/lib/billing/subscription-access";
 import { createAdminClient } from "@/utils/supabase/admin";
 import { createClient } from "@/utils/supabase/server";
 
@@ -15,7 +16,6 @@ type RouteContext = {
   };
 };
 
-const activeSubscriptionStatuses = new Set(["active", "trialing"]);
 const joinableEventStatuses = new Set(["scheduled", "live", "rescheduled"]);
 
 function jsonError(message: string, status: number) {
@@ -119,14 +119,14 @@ async function getActiveSubscription(
 ) {
   const { data, error } = await supabase
     .from("subscriptions")
-    .select("status, plan_id")
+    .select("status, plan_id, provider, current_period_end, metadata")
     .eq("organization_id", organizationId)
     .order("created_at", { ascending: false })
     .limit(1)
     .maybeSingle();
 
   if (error) throw error;
-  if (!activeSubscriptionStatuses.has(data?.status ?? "")) return null;
+  if (!hasCurrentSubscriptionAccess(data)) return null;
   return data;
 }
 

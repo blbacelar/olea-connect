@@ -59,7 +59,7 @@ export function SubscriptionDashboard({
   const upgradeSuccessMessage = searchParams?.plan === "upgraded"
     ? getPlanUpgradedMessage(searchParams.tier)
     : undefined;
-  const showPlanUpgrade = currentPlanId &&
+  const showPlanUpgrade = !billing.fundedBySponsor && currentPlanId &&
     (getUpgradeOptions(currentPlanId).length > 0 || upgradeSuccessMessage);
 
   return (
@@ -71,6 +71,7 @@ export function SubscriptionDashboard({
       <AccessNotice
         accessRestricted={accessRestricted}
         billingUnavailable={billing.billingUnavailable}
+        fundedBySponsor={billing.fundedBySponsor}
         status={billing.status}
       />
       <CurrentPlanCard
@@ -105,13 +106,13 @@ export function SubscriptionDashboard({
         />
         <BillingCycleSection billing={billing} />
       </div>
-      <div className="mb-7">
+      {!billing.fundedBySponsor ? <div className="mb-7">
         <BillingManagementControls
           canManage={canManage}
           disabled={!billing.customerId || !billing.subscriptionId}
           isPaused={isPaused}
         />
-      </div>
+      </div> : null}
       <BillingHistory billing={billing} />
     </div>
   );
@@ -120,10 +121,12 @@ export function SubscriptionDashboard({
 function AccessNotice({
   accessRestricted,
   billingUnavailable,
+  fundedBySponsor,
   status,
 }: {
   accessRestricted: boolean;
   billingUnavailable: boolean;
+  fundedBySponsor?: boolean;
   status: BillingSummary["status"];
 }) {
   if (billingUnavailable) {
@@ -154,6 +157,15 @@ function AccessNotice({
             administrator can resolve this through billing.
           </p>
         </div>
+      </section>
+    );
+  }
+
+  if (fundedBySponsor) {
+    return (
+      <section className="mb-6 flex gap-3 rounded-xl border border-emerald-200 bg-emerald-50 p-4 text-emerald-950">
+        <CheckCircle2 className="mt-0.5 size-5 shrink-0" />
+        <p className="text-sm font-semibold">Your membership is funded for one year through an Olea Connects partnership.</p>
       </section>
     );
   }
@@ -208,8 +220,9 @@ function CurrentPlanColumn({ billing }: { billing: BillingSummary }) {
         {billing.planName}
       </p>
       <p className="mt-1 text-[13.5px] text-slate-500">
-        {formatMoney(billing.amountCents, billing.currency)} /{" "}
-        {formatBillingInterval(billing.billingInterval)}
+        {billing.fundedBySponsor ? "Funded membership · no payment due from your organization" : (
+          <>{formatMoney(billing.amountCents, billing.currency)} / {formatBillingInterval(billing.billingInterval)}</>
+        )}
       </p>
     </div>
   );
@@ -260,7 +273,9 @@ function BillingDateColumn({
   return (
     <div>
       <p className="text-xs font-semibold uppercase tracking-[0.05em] text-slate-400">
-        {billing.cancelAtPeriodEnd
+        {billing.fundedBySponsor
+          ? "Funded access ends"
+          : billing.cancelAtPeriodEnd
           ? "Access ends"
           : isPaused
             ? "Pause resumes"
@@ -269,9 +284,9 @@ function BillingDateColumn({
       <p className="mt-2 text-base font-semibold">
         {primaryDate ? formatDate(primaryDate) : "Pending billing confirmation"}
       </p>
-      <p className="mt-1 text-[13px] text-slate-500">
+      {!billing.fundedBySponsor ? <p className="mt-1 text-[13px] text-slate-500">
         {billing.paymentMethod ?? "Payment method not available"}
-      </p>
+      </p> : null}
     </div>
   );
 }
@@ -301,12 +316,14 @@ function SeatUsageSection({
         <SeatMetric label="Available" value={Math.max(totalSeats - billing.seatsReserved, 0)} />
       </dl>
       <p className="mt-4 text-sm leading-6 text-slate-500">
+        {billing.fundedBySponsor ? `${billing.includedSeats} seats are included in this funded membership year. Contact Olea Connects about additional seats.` : <>
         {billing.includedSeats} included seat
         {billing.includedSeats === 1 ? "" : "s"} plus {billing.seatQuantity}{" "}
         paid seat add-on{billing.seatQuantity === 1 ? "" : "s"} at{" "}
         {formatPaidSeatPrice()}.
+        </>}
       </p>
-      <SeatManagementControls
+      {!billing.fundedBySponsor ? <SeatManagementControls
         canManage={canManage}
         disabled={!billing.customerId || !billing.subscriptionId || accessRestricted}
         initialSuccessMessage={
@@ -315,7 +332,7 @@ function SeatUsageSection({
             : getSeatPaymentMessage(searchParams?.seat) || undefined
         }
         seatPriceLabel={formatPaidSeatPrice()}
-      />
+      /> : null}
     </section>
   );
 }

@@ -16,19 +16,19 @@ export function BoardTrainingLocked({ language }: { language: TrainingLanguage }
             <BookOpen className="size-6" aria-hidden="true" />
           </div>
           <div className="space-y-3">
-            <p className="text-sm font-semibold text-olea-green">{french ? "Inclus avec Canopy" : "Included with Canopy"}</p>
+            <p className="text-sm font-semibold text-olea-green">{french ? "Inclus avec Canopy ou en option" : "Included with Canopy or an add-on"}</p>
             <h1 className="text-3xl font-semibold tracking-tight text-teal-900">
               {french ? "Formation du conseil" : "Board Training"}
             </h1>
             <p className="max-w-xl text-slate-600">
               {french
-                ? "Un abonnement Canopy actif est nécessaire pour utiliser ce module. Découvrez Canopy pour accéder aux cours, aux certificats et aux rapports de formation du conseil."
-                : "An active Canopy subscription is required to use this module. Explore Canopy to access courses, certificates, and board training reports."}
+                ? "Un abonnement Canopy actif ou l’option Formation du conseil est nécessaire pour accéder aux cours, aux certificats et aux rapports."
+                : "An active Canopy membership or Board Training add-on is required to access courses, certificates, and reports."}
             </p>
           </div>
           <Button asChild>
             <Link href="/subscription">
-              {french ? "Voir l’abonnement Canopy" : "View Canopy plan"}
+              {french ? "Voir les options d’abonnement" : "View membership options"}
               <ArrowRight className="ml-2 size-4" aria-hidden="true" />
             </Link>
           </Button>

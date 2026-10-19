@@ -17,6 +17,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { getSponsorsData } from "@/lib/data/sponsors";
+import { getSponsorFundingData, type FundedBoardSummary, type SponsorBoardTarget, type SponsorshipImpact } from "@/lib/data/sponsor-funding";
 import { getRequestLocale } from "@/lib/i18n/server";
 import type {
   SponsorDirectoryProfile,
@@ -25,6 +26,91 @@ import type {
 } from "@/lib/types";
 
 import { SponsorManagement } from "./sponsor-management";
+
+function FundedBoardProgress({
+  reports,
+  targets,
+  progress,
+  impacts,
+  isFrench,
+  canManageSponsors,
+}: {
+  reports: SponsorReport[];
+  targets: SponsorBoardTarget[];
+  progress: FundedBoardSummary[];
+  impacts: SponsorshipImpact[];
+  isFrench: boolean;
+  canManageSponsors: boolean;
+}) {
+  const sponsorships = reports.flatMap((sponsor) => sponsor.sponsorships);
+  if (!sponsorships.length) return null;
+
+  return (
+    <section className="mt-8">
+      <SectionHeading>{isFrench ? "Avancement des conseils financés" : "Funded board progress"}</SectionHeading>
+      <div className="grid gap-4 md:grid-cols-2">
+        {sponsorships.map((term) => {
+          const termTargets = targets.filter((target) => target.packageId === term.packageId);
+          if (!termTargets.length) return null;
+          const termProgress = progress.find((item) => item.sponsorshipId === term.id);
+          const targetCount = termTargets.reduce((sum, target) => sum + target.boardCount, 0);
+          const impact = canManageSponsors
+            ? impacts.find((item) => item.sponsorshipId === term.id)
+            : undefined;
+          return (
+            <article key={term.id} className="rounded-xl border bg-white p-5 shadow-soft">
+              <div className="flex flex-wrap items-center justify-between gap-2">
+                <h3 className="font-semibold text-slate-900">{term.sponsorName} · {term.packageName}</h3>
+                <Badge variant="outline">{term.status}</Badge>
+              </div>
+              <p className="mt-3 text-2xl font-bold text-slate-900">
+                {termProgress?.placed ?? 0} <span className="text-base font-medium text-slate-500">{isFrench ? `sur ${targetCount} conseils placés` : `of ${targetCount} boards placed`}</span>
+              </p>
+              <p className="mt-1 text-sm text-slate-600">
+                {isFrench ? `${termProgress?.active ?? 0} actuellement dans une année d'adhésion financée` : `${termProgress?.active ?? 0} currently in a funded membership year`}
+              </p>
+              <div className="mt-4 flex flex-wrap gap-x-5 gap-y-1 border-t pt-3 text-sm text-slate-600">
+                {termTargets.map((target) => (
+                  <span key={target.planId}>
+                    {target.planId === "roots" ? "Roots" : "Seedling"}: {termProgress?.[target.planId] ?? 0}/{target.boardCount}
+                  </span>
+                ))}
+              </div>
+              <p className="mt-3 text-xs leading-5 text-slate-500">
+                {isFrench
+                  ? "Les noms des organismes et leurs dossiers privés sont exclus des rapports aux partenaires."
+                  : "Organization names and private records are excluded from partner reporting."}
+              </p>
+              {impact && (termProgress?.placed ?? 0) > 0 ? (
+                <div className="mt-4 border-t pt-3">
+                  <p className="text-sm font-semibold text-slate-900">{isFrench ? "Activité suivie pendant les années financées" : "Tracked activity during funded years"}</p>
+                  <dl className="mt-2 grid grid-cols-2 gap-3 text-sm text-slate-600">
+                    <div><dt>{isFrench ? "Modèles exportés" : "Templates exported"}</dt><dd className="font-semibold text-slate-900">{impact.templateExports}</dd></div>
+                    <div><dt>{isFrench ? "Certificats de formation" : "Training certificates"}</dt><dd className="font-semibold text-slate-900">{impact.trainingCertificates}</dd></div>
+                    <div><dt>{isFrench ? "Événements suivis" : "Events attended"}</dt><dd className="font-semibold text-slate-900">{impact.attendedEvents}</dd></div>
+                    <div><dt>{isFrench ? "Évaluations du conseil terminées" : "Board evaluations closed"}</dt><dd className="font-semibold text-slate-900">{impact.completedEvaluations}</dd></div>
+                    <div><dt>{isFrench ? "Jalons d'indicateurs terminés" : "KPI milestones completed"}</dt><dd className="font-semibold text-slate-900">{impact.completedMilestones}</dd></div>
+                  </dl>
+                  {impact.regions.length ? (
+                    <p className="mt-3 text-xs text-slate-600">
+                      {isFrench ? "Régions avec au moins trois conseils financés" : "Regions with at least three funded boards"}: {impact.regions.map((item) => `${item.region} (${item.count})`).join(", ")}.
+                    </p>
+                  ) : null}
+                </div>
+              ) : !canManageSponsors ? (
+                <p className="mt-4 border-t pt-3 text-sm text-slate-600">
+                  {isFrench
+                    ? "Le rapport annuel d'impact agrégé sera communiqué après examen et approbation."
+                    : "The annual aggregate impact report will be shared after review and approval."}
+                </p>
+              ) : null}
+            </article>
+          );
+        })}
+      </div>
+    </section>
+  );
+}
 
 function formatMoney(amountCents: number) {
   return new Intl.NumberFormat("en-CA", {
@@ -310,6 +396,7 @@ export default async function SponsorsPage() {
     packages,
     reports,
   } = await getSponsorsData();
+  const funding = await getSponsorFundingData(reports, canManageSponsors);
 
   return (
     <div>
@@ -322,8 +409,12 @@ export default async function SponsorsPage() {
 
       {canManageSponsors ? (
         <SponsorManagement
+          isFrench={isFrench}
+          organizations={funding.organizations}
           packages={packages}
+          placements={funding.placements}
           reports={reports}
+          targets={funding.targets}
         />
       ) : null}
 
@@ -353,6 +444,15 @@ export default async function SponsorsPage() {
       </section>
 
       <ReportingSummary reports={reports} />
+
+      <FundedBoardProgress
+        reports={reports}
+        targets={funding.targets}
+        progress={funding.progress}
+        impacts={funding.impacts}
+        isFrench={isFrench}
+        canManageSponsors={canManageSponsors}
+      />
 
     </div>
   );

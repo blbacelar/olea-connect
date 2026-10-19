@@ -241,9 +241,13 @@ export function buildSponsorshipTermValues(formData: FormData) {
   if (parseIsoDate(endsOn, "End date") < parseIsoDate(startsOn, "Start date")) {
     throw new Error("End date must be on or after the start date.");
   }
+  const categoryExclusivity = nullableText(formData, "categoryExclusivity");
+  if (categoryExclusivity && categoryExclusivity.length > 120) {
+    throw new Error("Exclusive industry category must be 120 characters or fewer.");
+  }
 
   return {
-    category_exclusivity: nullableText(formData, "categoryExclusivity"),
+    category_exclusivity: categoryExclusivity,
     contract_amount_cents: validateCurrencyToCents(
       text(formData, "contractAmount"),
       "Contract amount",

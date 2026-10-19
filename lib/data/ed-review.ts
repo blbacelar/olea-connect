@@ -20,6 +20,7 @@ import type {
   SurveyResponseForAggregation,
 } from "@/lib/ed-review/domain";
 import { allowPublicSurveyRequest } from "@/lib/ed-review/public-rate-limit";
+import { hasGovernanceFeature } from "@/lib/governance-growth/entitlements";
 import {
   createAdminClient,
   createPublicServerClient,
@@ -97,6 +98,13 @@ export class EdReviewReviewerAssignmentRequiredError extends Error {
   }
 }
 
+export class EdReviewMembershipRequiredError extends Error {
+  constructor() {
+    super("ED Review requires an active Canopy membership or ED Review add-on.");
+    this.name = "EdReviewMembershipRequiredError";
+  }
+}
+
 type CycleRow = {
   id: string;
   title: string;
@@ -114,6 +122,31 @@ type ReviewerAssignmentRow = {
 
 function isWorkspaceAdmin(role: string) {
   return role === "owner" || role === "admin";
+}
+
+async function hasEdReviewMembership(
+  supabase: ReturnType<typeof createAdminClient>,
+  organizationId: string,
+) {
+  const { data: subscription, error } = await supabase
+    .from("subscriptions")
+    .select("plan_id, status, current_period_end, subscription_items(item_type, active)")
+    .eq("organization_id", organizationId)
+    .in("status", ["active", "trialing"])
+    .order("created_at", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+  if (error) throw error;
+  return hasGovernanceFeature("ed_review", subscription);
+}
+
+async function requireEdReviewMembership() {
+  const session = await requireMemberContext();
+  const supabase = createAdminClient();
+  if (!(await hasEdReviewMembership(supabase, session.organization.id))) {
+    throw new EdReviewMembershipRequiredError();
+  }
+  return { session, supabase };
 }
 
 function createSharedToken() {
@@ -142,8 +175,7 @@ async function getCurrentCycle(organizationId: string) {
 }
 
 async function ensureReviewerAccess() {
-  const session = await requireMemberContext();
-  const supabase = createAdminClient();
+  const { session, supabase } = await requireEdReviewMembership();
   let cycle = await getCurrentCycle(session.organization.id);
 
   if (!cycle) {
@@ -377,13 +409,12 @@ export async function getEdReviewData(): Promise<EdReviewData> {
 }
 
 export async function getEdReviewBoardChairRecoveryData(): Promise<EdReviewBoardChairRecoveryData | null> {
-  const session = await requireMemberContext();
+  const { session, supabase } = await requireEdReviewMembership();
   if (!isWorkspaceAdmin(session.member.membershipRole)) return null;
 
   const cycle = await getCurrentCycle(session.organization.id);
   if (!cycle) return null;
 
-  const supabase = createAdminClient();
   const availableReviewers = await getActiveWorkspaceReviewers(
     supabase,
     cycle.organization_id,
@@ -492,7 +523,7 @@ export async function appointEdReviewBoardChair(input: {
   cycleId: string;
   userId: string;
 }) {
-  const session = await requireMemberContext();
+  const { session, supabase } = await requireEdReviewMembership();
   if (!isWorkspaceAdmin(session.member.membershipRole)) {
     throw new Error("Only organization owners and administrators can recover Board Chair access.");
   }
@@ -502,7 +533,6 @@ export async function appointEdReviewBoardChair(input: {
     throw new Error("That review cycle is unavailable.");
   }
 
-  const supabase = createAdminClient();
   const { error } = await supabase.rpc(
     "appoint_ed_review_board_chair_recovery",
     {
@@ -758,7 +788,7 @@ export async function getPublicEdReviewCampaign(token: string) {
   const { data, error } = await supabase
     .from("ed_review_campaigns")
     .select(
-      "id, kind, title, status, opens_at, closes_at, ed_review_cycles!inner(title, status)",
+      "id, kind, title, status, opens_at, closes_at, ed_review_cycles!inner(title, status, organization_id)",
     )
     .eq("token_hash", hashValue(token))
     .maybeSingle();
@@ -777,6 +807,9 @@ export async function getPublicEdReviewCampaign(token: string) {
   ) {
     return null;
   }
+  // A public token does not bypass the organization's current entitlement.
+  // Previously issued links remain usable while Canopy or the add-on is active.
+  if (!(await hasEdReviewMembership(supabase, review.organization_id))) return null;
   return {
     kind: data.kind as EdReviewCampaignKind,
     title: data.title,

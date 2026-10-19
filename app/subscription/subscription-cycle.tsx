@@ -11,12 +11,12 @@ export function BillingCycleSection({ billing }: { billing: BillingSummary }) {
     <section className="rounded-[14px] border bg-white p-[22px] shadow-soft">
       <h2 className="flex items-center gap-2 text-base font-bold text-slate-800">
         <CalendarDays className="size-5 text-olea-green" />
-        Billing cycle
+        {billing.fundedBySponsor ? "Membership period" : "Billing cycle"}
       </h2>
       <dl className="mt-5 grid gap-4 sm:grid-cols-2">
         <BillingCycleMetric
           label="Cycle"
-          value={billing.billingInterval === "year" ? "Annual" : "Quarterly"}
+          value={billing.fundedBySponsor ? "Funded year" : billing.billingInterval === "year" ? "Annual" : "Quarterly"}
         />
         <BillingCycleMetric
           label="Current period"
@@ -67,6 +67,9 @@ function getCurrentPeriodLabel(billing: BillingSummary) {
 }
 
 function getBillingScheduleNotice(billing: BillingSummary) {
+  if (billing.fundedBySponsor && billing.currentPeriodEnd) {
+    return `Your funded year ends on ${formatDate(billing.currentPeriodEnd)}. Contact Olea Connects to discuss continued access.`;
+  }
   if (billing.pauseStartsAt && billing.pauseEndsAt) {
     return `Paused from ${formatDate(billing.pauseStartsAt)} until ${formatDate(
       billing.pauseEndsAt,

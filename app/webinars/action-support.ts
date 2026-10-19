@@ -1,10 +1,9 @@
 import { requireMemberContext } from "@/lib/data/member-context";
+import { hasCurrentSubscriptionAccess, type SubscriptionAccess } from "@/lib/billing/subscription-access";
 import { platformEventRoles } from "@/lib/data/webinars";
 import type { MembershipTier } from "@/lib/types";
 import { createAdminClient } from "@/utils/supabase/admin";
 import { createClient } from "@/utils/supabase/server";
-
-const activeSubscriptionStatuses = new Set(["active", "trialing"]);
 
 export type WebinarActionState = {
   message: string;
@@ -130,7 +129,7 @@ function fetchRegistrationSubscription(
 ) {
   return supabase
     .from("subscriptions")
-    .select("status")
+    .select("status, provider, current_period_end, metadata")
     .eq("organization_id", organizationId)
     .order("created_at", { ascending: false })
     .limit(1)
@@ -202,7 +201,7 @@ function throwRegistrationContextErrors(results: RegistrationContextRows) {
 }
 
 function assertRegistrationAllowed(results: RegistrationContextRows) {
-  assertActiveSubscription(results.subscription.data?.status ?? "");
+  assertActiveSubscription(results.subscription.data);
   if (!results.access.data) throw new Error("This event is not included with your plan.");
   if (!results.event.data) throw new Error("This event is not available.");
 
@@ -214,8 +213,8 @@ function assertRegistrationAllowed(results: RegistrationContextRows) {
   }
 }
 
-function assertActiveSubscription(status: string) {
-  if (!activeSubscriptionStatuses.has(status)) {
+function assertActiveSubscription(subscription: SubscriptionAccess | null) {
+  if (!hasCurrentSubscriptionAccess(subscription)) {
     throw new Error("An active membership is required to register for events.");
   }
 }

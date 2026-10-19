@@ -9,6 +9,7 @@ import { renderTrainingCertificatePdf } from "@/lib/board-training/certificate-p
 import { requireMemberContext } from "@/lib/data/member-context";
 import { getAppUrl, getEmailRecipient, getEmailSender, getReplyTo, getResend } from "@/lib/email/server";
 import { createAdminClient } from "@/utils/supabase/admin";
+import { hasGovernanceFeature } from "@/lib/governance-growth/entitlements";
 
 const bucket = "board-training-documents";
 const courseIds = ["essentials", "refresher"] as const;
@@ -26,14 +27,14 @@ type EnrollmentRow = {
 async function hasActiveCanopySubscription(admin: ReturnType<typeof createAdminClient>, organizationId: string) {
   const { data: subscription, error } = await admin
     .from("subscriptions")
-    .select("plan_id, status")
+    .select("plan_id, status, current_period_end, subscription_items(item_type, active)")
     .eq("organization_id", organizationId)
     .in("status", ["active", "trialing"])
     .order("created_at", { ascending: false })
     .limit(1)
     .maybeSingle();
   if (error) throw error;
-  return subscription?.plan_id === "canopy";
+  return hasGovernanceFeature("board_training", subscription);
 }
 
 export async function hasTrainingAccess() {

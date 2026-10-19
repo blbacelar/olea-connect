@@ -3,6 +3,7 @@ import {
   BookOpen,
   CalendarDays,
   ClipboardList,
+  ClipboardCheck,
   CircleHelp,
   ContactRound,
   CreditCard,
@@ -11,6 +12,7 @@ import {
   Home,
   Palette,
   ShieldCheck,
+  Target,
   Users,
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
@@ -38,6 +40,7 @@ export const navigationGroups: NavigationItem[][] = [
       icon: CalendarDays,
     },
     { label: "KPI Dashboard", href: "/modules/kpi-dashboard", icon: BarChart3 },
+    { label: "Strategic Planning", href: "/modules/strategic-planning", icon: Target },
     {
       label: "Board Recruitment",
       href: "/modules/board-recruitment",
@@ -49,6 +52,7 @@ export const navigationGroups: NavigationItem[][] = [
       href: "/modules/accreditation",
       icon: ShieldCheck,
     },
+    { label: "Board Evaluation", href: "/modules/board-evaluation", icon: ClipboardCheck },
     {
       label: "Grant Platform",
       href: "/modules/grant-platform",

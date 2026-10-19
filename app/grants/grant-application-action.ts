@@ -1,5 +1,6 @@
 import { revalidatePath } from "next/cache";
 
+import { hasCurrentSubscriptionAccess } from "@/lib/billing/subscription-access";
 import { requireMemberContext } from "@/lib/data/member-context";
 import {
   grantFocusAreas,
@@ -72,7 +73,7 @@ async function loadSubmissionContext(roundId: string, organizationId: string) {
       .single(),
     supabase
       .from("subscriptions")
-      .select("status")
+      .select("status, provider, current_period_end, metadata")
       .eq("organization_id", organizationId)
       .order("created_at", { ascending: false })
       .limit(1)
@@ -86,7 +87,9 @@ async function loadSubmissionContext(roundId: string, organizationId: string) {
   return {
     organization: organizationResult.data,
     round: roundResult.data,
-    subscriptionStatus: subscriptionResult.data?.status ?? null,
+    subscriptionStatus: hasCurrentSubscriptionAccess(subscriptionResult.data)
+      ? subscriptionResult.data?.status ?? null
+      : null,
   };
 }
 

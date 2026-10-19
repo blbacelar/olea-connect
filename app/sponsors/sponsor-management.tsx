@@ -1,16 +1,24 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import { useFormState, useFormStatus } from "react-dom";
+import { useSearchParams } from "next/navigation";
 
 import { SectionHeading } from "@/components/SectionHeading";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
 import { CurrencyInput } from "@/components/ui/currency-input";
 import { FormSelect } from "@/components/ui/form-select";
 import { Input } from "@/components/ui/input";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Textarea } from "@/components/ui/textarea";
 import { FORM_SELECT_EMPTY_VALUE } from "@/lib/forms/constants";
+import type {
+  SponsorBoardTarget,
+  SponsoredPlacement,
+  SponsorableOrganization,
+} from "@/lib/data/sponsor-funding";
 import type { SponsorReport, SponsorshipPackageSummary } from "@/lib/types";
 
 import {
@@ -19,6 +27,7 @@ import {
   saveSponsorshipTerm,
   type SponsorActionState,
 } from "./actions";
+import { SponsorFundingManagement } from "./sponsor-funding-management";
 
 const initialSponsorActionState: SponsorActionState = {
   message: "",
@@ -212,11 +221,11 @@ function SponsorProfileForm({ reports }: { reports: SponsorReport[] }) {
       </div>
       <div className="mt-4 space-y-2 text-sm font-semibold text-slate-700">
         <label className="flex items-center gap-2">
-          <input type="checkbox" name="directoryVisible" />
+          <Checkbox name="directoryVisible" />
           Show in member sponsor directory
         </label>
         <label className="flex items-center gap-2">
-          <input type="checkbox" name="valuesReviewed" />
+          <Checkbox name="valuesReviewed" />
           Values and profile approved for publication
         </label>
       </div>
@@ -302,7 +311,8 @@ function SponsorshipTermsForm({
         </label>
         <label className="text-sm font-semibold text-slate-700">
           Category exclusivity
-          <Input name="categoryExclusivity" placeholder="Governance tools" />
+          <Input name="categoryExclusivity" maxLength={120} placeholder="Accounting firms" />
+          <span className="mt-1 block text-xs font-normal text-slate-500">Required for active packages that include exclusivity; use a clear industry category.</span>
         </label>
       </div>
       <div className="mt-4 grid gap-4 md:grid-cols-2">
@@ -399,17 +409,60 @@ function SponsorContributionForm({ reports }: { reports: SponsorReport[] }) {
 }
 
 export function SponsorManagement({
+  isFrench,
+  organizations,
   packages,
+  placements,
   reports,
+  targets,
 }: {
+  isFrench: boolean;
+  organizations: SponsorableOrganization[];
   packages: SponsorshipPackageSummary[];
+  placements: SponsoredPlacement[];
   reports: SponsorReport[];
+  targets: SponsorBoardTarget[];
 }) {
+  const searchParams = useSearchParams();
+  const requestedTab = searchParams.get("admin");
+  const initialTab = requestedTab && ["profile", "terms", "contributions", "funding"].includes(requestedTab)
+    ? requestedTab
+    : "profile";
+  const [tab, setTab] = useState(initialTab);
+  const [noticeDismissed, setNoticeDismissed] = useState(false);
+  const activated = placements.some((placement) =>
+    placement.id === searchParams.get("placement") && placement.status === "active"
+  ) && !noticeDismissed;
+  const searchKey = searchParams.toString();
+
+  useEffect(() => {
+    setTab(initialTab);
+    setNoticeDismissed(false);
+  }, [initialTab, searchKey]);
+
+  function updateUrl(nextTab: string, clearNotice: boolean) {
+    const url = new URL(window.location.href);
+    if (nextTab === "profile") url.searchParams.delete("admin");
+    else url.searchParams.set("admin", nextTab);
+    if (clearNotice) url.searchParams.delete("placement");
+    window.history.replaceState(window.history.state, "", url.toString());
+  }
+
+  function beginAnotherActivation() {
+    setNoticeDismissed(true);
+    updateUrl("funding", true);
+  }
+
   return (
     <section className="mt-8">
       <SectionHeading>Finance administration</SectionHeading>
       <Tabs
-        defaultValue="profile"
+        value={tab}
+        onValueChange={(value) => {
+          setTab(value);
+          setNoticeDismissed(true);
+          updateUrl(value, true);
+        }}
         className="rounded-xl border bg-white p-4 shadow-soft"
       >
         <div className="overflow-x-auto pb-1">
@@ -419,6 +472,7 @@ export function SponsorManagement({
             <TabsTrigger value="contributions">
               Sponsor contributions
             </TabsTrigger>
+            <TabsTrigger value="funding">Funded boards</TabsTrigger>
           </TabsList>
         </div>
         <TabsContent value="profile" className="mt-5">
@@ -429,6 +483,24 @@ export function SponsorManagement({
         </TabsContent>
         <TabsContent value="contributions" className="mt-5">
           <SponsorContributionForm reports={reports} />
+        </TabsContent>
+        <TabsContent value="funding" id="funded-boards" className="mt-5">
+          {activated ? (
+            <p role="status" className="mb-5 rounded-lg border border-green-200 bg-green-50 p-4 text-sm font-medium text-green-800">
+              {isFrench
+                ? "L'année d'adhésion financée est active. L'avancement des conseils financés est à jour ci-dessous."
+                : "One full year of funded membership is active. Funded board progress is updated below."}
+            </p>
+          ) : null}
+          <SponsorFundingManagement
+            activationConfirmed={activated}
+            isFrench={isFrench}
+            onBeginReview={beginAnotherActivation}
+            organizations={organizations}
+            placements={placements}
+            reports={reports}
+            targets={targets}
+          />
         </TabsContent>
       </Tabs>
     </section>

@@ -6,6 +6,7 @@ import { EdReviewAccessRestricted } from "@/app/modules/ed-review/_components/ed
 import {
   getEdReviewBoardChairRecoveryData,
   getEdReviewData,
+  EdReviewMembershipRequiredError,
   EdReviewReviewerAssignmentRequiredError,
 } from "@/lib/data/ed-review";
 
@@ -25,6 +26,9 @@ export default async function EdReviewPage({
   try {
     data = await getEdReviewData();
   } catch (error) {
+    if (error instanceof EdReviewMembershipRequiredError) {
+      return <EdReviewAccessRestricted reason="membership" />;
+    }
     if (!(error instanceof EdReviewReviewerAssignmentRequiredError)) {
       throw error;
     }

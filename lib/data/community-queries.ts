@@ -1,6 +1,7 @@
 import { redirect } from "next/navigation";
 
 import { logWarn } from "@/lib/observability/logger";
+import { hasCurrentSubscriptionAccess } from "@/lib/billing/subscription-access";
 
 import type {
   CommunityCommentMentionRow,
@@ -13,7 +14,6 @@ import type {
   CommunitySpaceRow,
 } from "./community-mappers";
 import {
-  ACTIVE_SUBSCRIPTION_STATUSES,
   emptyQueryResult,
   isMissingCommunitySchema,
 } from "./community-shared";
@@ -35,14 +35,14 @@ export async function ensureActiveCommunitySubscription(
 ) {
   const { data: subscription, error } = await supabase
     .from("subscriptions")
-    .select("status")
+    .select("status, provider, current_period_end, metadata")
     .eq("organization_id", organizationId)
     .order("created_at", { ascending: false })
     .limit(1)
     .maybeSingle();
 
   if (error) throw error;
-  if (!ACTIVE_SUBSCRIPTION_STATUSES.has(subscription?.status ?? "")) {
+  if (!hasCurrentSubscriptionAccess(subscription)) {
     redirect("/subscription?billing=required");
   }
 }

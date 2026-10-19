@@ -1,7 +1,9 @@
 import { boardCalendarExactTranslations, boardCalendarPhraseTranslations } from "./board-calendar-fr";
+import { governanceGrowthFrenchPhrases, governanceGrowthFrenchTranslations } from "./governance-growth-fr";
 
 const exactTranslations = new Map<string, string>([
   ...boardCalendarExactTranslations,
+  ...governanceGrowthFrenchTranslations,
   ["Edit grant", "Modifier la subvention"],
   ["Delete grant", "Supprimer la subvention"],
   ["Delete grant draft?", "Supprimer le brouillon de subvention?"],
@@ -1419,6 +1421,7 @@ const exactTranslations = new Map<string, string>([
 
 const phraseTranslations: Array<[RegExp, string]> = [
   ...boardCalendarPhraseTranslations,
+  ...governanceGrowthFrenchPhrases,
   [/Apply now\s*→?/g, "Soumettre maintenant"],
   [/\bEdit (.+)$/g, "Modifier $1"],
   [/\bAGM held\b/g, "AGA tenue"],

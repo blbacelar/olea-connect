@@ -123,7 +123,7 @@ async function getReportsData({
       sponsors: bundle.sponsorRows,
       sponsorships: sponsorshipRows,
     }),
-    packages: bundle.packageRows.map(mapPackage),
+    packages: bundle.packageRows.filter((item) => item.is_active).map(mapPackage),
     grantPrograms: bundle.programRows.map((program) => ({
       id: program.id,
       name: program.name,

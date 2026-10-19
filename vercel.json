@@ -3,6 +3,10 @@
     {
       "path": "/api/v1/generated-documents/cleanup",
       "schedule": "0 10 * * *"
+    },
+    {
+      "path": "/api/v1/sponsorships/expire",
+      "schedule": "15 10 * * *"
     }
   ]
 }

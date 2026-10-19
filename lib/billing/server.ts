@@ -34,6 +34,7 @@ export interface BillingSummary {
   customerId: string | null;
   subscriptionId: string | null;
   billingUnavailable: boolean;
+  fundedBySponsor?: boolean;
   localSubscriptionId: string;
   amountCents: number;
   currency: string;
@@ -116,7 +117,7 @@ export async function getBillingSummary(): Promise<BillingSummary | null> {
   const { data: subscription, error: subscriptionError } = await supabase
     .from("subscriptions")
     .select(
-      "id, plan_id, provider_customer_id, provider_subscription_id, billing_interval, status, current_period_start, current_period_end, pause_starts_at, pause_ends_at, cancel_at_period_end, canceled_at, membership_plans(name, monthly_price_cents, annual_price_cents, currency, included_seats), subscription_items(item_type, quantity, unit_amount_cents, currency, active)",
+      "id, plan_id, provider, metadata, provider_customer_id, provider_subscription_id, billing_interval, status, current_period_start, current_period_end, pause_starts_at, pause_ends_at, cancel_at_period_end, canceled_at, membership_plans(name, monthly_price_cents, annual_price_cents, currency, included_seats), subscription_items(item_type, quantity, unit_amount_cents, currency, active)",
     )
     .eq("organization_id", membership.organization_id)
     .order("created_at", { ascending: false })
@@ -145,14 +146,18 @@ export async function getBillingSummary(): Promise<BillingSummary | null> {
   const membershipItem = activeItems.find(
     (item) => item.item_type === "membership" && item.active,
   );
+  const fundedBySponsor = subscription.provider === "manual" &&
+    Boolean(subscription.metadata && typeof subscription.metadata === "object" &&
+      (subscription.metadata as Record<string, unknown>).funding_source === "sponsorship");
   // The legacy DB column is named monthly_price_cents, but current plans bill
   // quarterly or annually. Until the storage column is renamed, month means
   // the quarterly upfront catalog price.
-  const amountCents =
+  const amountCents = fundedBySponsor ? 0 : (
     membershipItem?.unit_amount_cents ??
     (subscription.billing_interval === "year"
       ? (plan?.annual_price_cents ?? 0)
-      : (plan?.monthly_price_cents ?? 0));
+      : (plan?.monthly_price_cents ?? 0))
+  );
   const [
     {
       count: activeMemberCount,
@@ -237,6 +242,7 @@ export async function getBillingSummary(): Promise<BillingSummary | null> {
     customerId: billingUnavailable ? null : subscription.provider_customer_id,
     subscriptionId: billingUnavailable ? null : subscription.provider_subscription_id,
     billingUnavailable,
+    fundedBySponsor,
     localSubscriptionId: subscription.id,
     amountCents,
     currency: plan?.currency ?? "CAD",
