@@ -95,6 +95,7 @@ values
   ('referral_payouts', 'service'),
   ('referral_program_settings', 'service'),
   ('referral_rewards', 'service'),
+  ('referral_tracking_codes', 'service'),
   ('referrals', 'service'),
   ('referrers', 'service'),
   ('organization_referrals', 'service'),
