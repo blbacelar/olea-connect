@@ -129,7 +129,7 @@ test.describe("@critical Canopy board training", () => {
       try {
         const verify = await anonymous.newPage();
         await verify.goto(`/verify/training/${certificate.data!.certificate_number}`);
-        await expect(verify.getByText("Valid certificate")).toBeVisible();
+        await expect(verify.getByText("Valid certificate").first()).toBeVisible();
       } finally { await anonymous.close(); }
       await page.reload();
       await expect(page.getByText(owner.fullName, { exact: true }).last()).toBeVisible();

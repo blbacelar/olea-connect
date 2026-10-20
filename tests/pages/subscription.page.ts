@@ -32,7 +32,7 @@ export class SubscriptionPage {
 
   async expectPastDueRecovery() {
     await expect(this.page).toHaveURL("/subscription?billing=required");
-    await expect(this.page.getByText("Your membership needs attention")).toBeVisible();
+    await expect(this.page.getByTestId("app-main").getByText("Your membership needs attention")).toBeVisible();
     await expect(this.page.getByText("Past due", { exact: true })).toBeVisible();
   }
 
