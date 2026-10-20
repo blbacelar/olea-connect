@@ -19,7 +19,7 @@ async function authenticatedPage(browser: Browser, baseURL: string, account: Tes
 }
 
 async function chooseOption(page: Page, label: string, option: string) {
-  const field = page.locator("label").filter({ hasText: label }).getByRole("combobox");
+  const field = page.getByTestId("app-main").locator("label").filter({ hasText: label }).getByRole("combobox");
   await field.click();
   await page.getByRole("option", { name: option, exact: true }).click();
 }
@@ -68,7 +68,7 @@ test.describe("@critical MNP governance and sponsor privacy", () => {
       await submitRatings(ownerPage, 1);
       await submitRatings(secondPage, 3);
       await ownerPage.reload();
-      await expect(ownerPage.getByText("At least three board members must respond before you can close the evaluation.")).toBeVisible();
+      await expect(ownerPage.getByTestId("app-main").getByText("At least three board members must respond before you can close the evaluation.")).toBeVisible();
       await expect(ownerPage.getByRole("button", { name: "Close evaluation and show results" })).toHaveCount(0);
       await submitRatings(thirdPage, 5);
 
@@ -115,17 +115,18 @@ test.describe("@critical MNP governance and sponsor privacy", () => {
     try {
       const page = ownerSession.page;
       await page.goto("/modules/strategic-planning");
-      await expect(page.getByRole("heading", { name: "Strategic Planning" })).toBeVisible();
+      const main = page.getByTestId("app-main");
+      await expect(main.getByRole("heading", { name: "Strategic Planning" })).toBeVisible();
       const title = `Board priorities ${owner.marker}`;
-      await page.getByLabel("Plan title").fill(title);
-      await page.getByLabel("Mission").fill("Serve local communities effectively.");
-      await page.getByLabel("Vision").fill("Every community has strong governance.");
-      await page.getByLabel("Board approval date").fill(new Date().toISOString().slice(0, 10));
+      await main.getByLabel("Plan title").fill(title);
+      await main.getByLabel("Mission").fill("Serve local communities effectively.");
+      await main.getByLabel("Vision").fill("Every community has strong governance.");
+      await main.getByLabel("Board approval date").fill(new Date().toISOString().slice(0, 10));
       await chooseOption(page, "Status", "Board approved");
-      await page.getByRole("button", { name: "Create plan" }).click();
-      await expect(page.getByRole("button", { name: "Save plan" })).toBeVisible();
+      await main.getByRole("button", { name: "Create plan" }).click();
+      await expect(main.getByRole("button", { name: "Save plan" })).toBeVisible();
 
-      await page.getByRole("button", { name: "Add goal" }).click();
+      await main.getByRole("button", { name: "Add goal" }).click();
       const dialog = page.getByRole("dialog");
       await dialog.getByLabel("Priority or goal").fill("Improve board succession");
       await dialog.getByLabel("How progress will be measured").fill("Fill vacancies within 90 days");
@@ -140,7 +141,7 @@ test.describe("@critical MNP governance and sponsor privacy", () => {
         return Boolean(data);
       }, { timeout: 30_000, message: "Strategic goal must persist before navigation" }).toBe(true);
       await page.reload();
-      await expect(page.getByRole("heading", { name: "Improve board succession" })).toBeVisible();
+      await expect(main.getByRole("heading", { name: "Improve board succession" })).toBeVisible();
       await testInfo.attach("strategic-planning", { body: await page.screenshot({ path: visualPath("strategic-planning"), fullPage: true }), contentType: "image/png" });
       await page.setViewportSize({ width: 390, height: 844 });
       await expect(page.getByTestId("app-sidebar")).toBeHidden();
@@ -148,10 +149,11 @@ test.describe("@critical MNP governance and sponsor privacy", () => {
       await testInfo.attach("strategic-planning-mobile", { body: await page.screenshot({ path: visualPath("strategic-planning-mobile"), fullPage: true }), contentType: "image/png" });
 
       await memberSession.page.goto("/modules/strategic-planning");
-      await expect(memberSession.page.getByText(title)).toBeVisible();
-      await expect(memberSession.page.getByRole("heading", { name: "Improve board succession" })).toBeVisible();
-      await expect(memberSession.page.getByRole("button", { name: "Edit goal" })).toHaveCount(0);
-      await expect(memberSession.page.getByRole("button", { name: "Add goal" })).toHaveCount(0);
+      const memberMain = memberSession.page.getByTestId("app-main");
+      await expect(memberMain.getByText(title)).toBeVisible();
+      await expect(memberMain.getByRole("heading", { name: "Improve board succession" })).toBeVisible();
+      await expect(memberMain.getByRole("button", { name: "Edit goal" })).toHaveCount(0);
+      await expect(memberMain.getByRole("button", { name: "Add goal" })).toHaveCount(0);
       const { data: plan, error } = await testData.supabase.from("strategic_plans")
         .select("status, approved_on").eq("organization_id", owner.organizationId).single();
       expect(error).toBeNull();
@@ -191,7 +193,7 @@ test.describe("@critical MNP governance and sponsor privacy", () => {
     try {
       await rootsSession.page.goto("/modules/ed-review");
       await expect(rootsSession.page.getByRole("heading", { name: "This review is restricted" })).toBeVisible();
-      await expect(rootsSession.page.getByText("ED Review requires an active Canopy membership or ED Review add-on.", { exact: false })).toBeVisible();
+      await expect(rootsSession.page.getByTestId("app-main").getByText("ED Review requires an active Canopy membership or ED Review add-on.", { exact: false })).toBeVisible();
       await canopySession.page.goto("/modules/ed-review");
       await expect(canopySession.page.getByRole("heading", { name: "ED/CEO annual review" })).toBeVisible();
       await expect(canopySession.page.getByText("ED Review requires an active Canopy membership or ED Review add-on.", { exact: false })).toHaveCount(0);

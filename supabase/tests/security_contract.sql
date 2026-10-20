@@ -1,11 +1,11 @@
 begin;
 
-select plan(10);
+select plan(11);
 
 create temporary table expected_public_access (
   table_name text primary key,
   access_model text not null check (
-    access_model in ('tenant', 'self', 'catalog', 'admin', 'service')
+    access_model in ('tenant', 'self', 'catalog', 'admin', 'service', 'intake')
   )
 );
 
@@ -127,6 +127,12 @@ values
   ('webhook_events', 'service'),
   ('workspace_provisioning_requests', 'service');
 
+-- Older production databases have a public, write-only waitlist that is not
+-- present in fresh installations. Classify it without assuming its presence.
+insert into expected_public_access (table_name, access_model)
+select 'waitlist', 'intake'
+where to_regclass('public.waitlist') is not null;
+
 select is_empty(
   $test$
     select tablename
@@ -165,7 +171,7 @@ select is_empty(
   $test$
     select access.table_name
     from expected_public_access access
-    where access.access_model <> 'service'
+    where access.access_model not in ('service', 'intake')
       and not exists (
         select 1
         from pg_policies policies
@@ -187,6 +193,26 @@ select is_empty(
       )
   $test$,
   'service-owned tables deny browser roles'
+);
+
+select is_empty(
+  $test$
+    select access.table_name
+    from expected_public_access access
+    where access.access_model = 'intake'
+      and (
+        not has_table_privilege('anon', format('public.%I', access.table_name), 'INSERT')
+        or has_table_privilege('anon', format('public.%I', access.table_name), 'SELECT')
+        or has_table_privilege('authenticated', format('public.%I', access.table_name), 'SELECT')
+        or exists (
+          select 1 from pg_policies policies
+          where policies.schemaname = 'public'
+            and policies.tablename = access.table_name
+            and policies.cmd <> 'INSERT'
+        )
+      )
+  $test$,
+  'public intake tables allow submissions and deny browser reads'
 );
 
 select is_empty(
