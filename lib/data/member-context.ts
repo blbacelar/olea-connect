@@ -8,13 +8,27 @@ import type {
   MembershipTier,
   Organization,
   OrganizationRole,
+  PlatformRole,
   Session,
 } from "@/lib/types";
+import { createAdminClient } from "@/utils/supabase/admin";
 import { createClient } from "@/utils/supabase/server";
 import { createLogoSignedUrl } from "./brand-assets";
 
-const DEFAULT_PRIMARY_COLOR = "#4A7C59";
-const DEFAULT_SECONDARY_COLOR = "#2D5C3E";
+const DEFAULT_PRIMARY_COLOR = "#446B52";
+const DEFAULT_SECONDARY_COLOR = "#F4EFE4";
+const platformRoles = [
+  "super_admin",
+  "community_admin",
+  "consulting_admin",
+  "consultant",
+  "finance_admin",
+  "grants_admin",
+] as const satisfies readonly PlatformRole[];
+
+function isPlatformRole(value: unknown): value is PlatformRole {
+  return platformRoles.includes(value as PlatformRole);
+}
 
 function initials(value: string) {
   return (
@@ -26,6 +40,23 @@ function initials(value: string) {
       .join("")
       .toUpperCase() || "OC"
   );
+}
+
+async function getPlatformRoles(userId: string): Promise<PlatformRole[]> {
+  try {
+    const { data, error } = await createAdminClient()
+      .from("platform_user_roles")
+      .select("role")
+      .eq("user_id", userId);
+
+    if (error) throw error;
+
+    return (data ?? [])
+      .map((roleRow) => roleRow.role)
+      .filter(isPlatformRole);
+  } catch {
+    return [];
+  }
 }
 
 export async function getOptionalMemberContext(): Promise<Session | null> {
@@ -62,6 +93,12 @@ export async function getOptionalMemberContext(): Promise<Session | null> {
     { data: brand, error: brandError },
     { data: subscription, error: subscriptionError },
     { count: memberCount, error: memberCountError },
+    platformRoleRows,
+    {
+      data: notificationRows,
+      count: unreadNotificationCount,
+      error: notificationError,
+    },
   ] = await Promise.all([
     supabase
       .from("profiles")
@@ -89,12 +126,25 @@ export async function getOptionalMemberContext(): Promise<Session | null> {
       .select("*", { count: "exact", head: true })
       .eq("organization_id", membership.organization_id)
       .eq("status", "active"),
+    getPlatformRoles(user.id),
+    supabase
+      .from("notifications")
+      .select(
+        "id, type, severity, title, body, action_url, read_at, expires_at, created_at",
+        { count: "exact" },
+      )
+      .eq("user_id", user.id)
+      .is("read_at", null)
+      .or(`expires_at.is.null,expires_at.gt.${new Date().toISOString()}`)
+      .order("created_at", { ascending: false })
+      .limit(5),
   ]);
 
   if (profileError) throw profileError;
   if (brandError) throw brandError;
   if (subscriptionError) throw subscriptionError;
   if (memberCountError) throw memberCountError;
+  if (notificationError) throw notificationError;
 
   const plan = Array.isArray(subscription?.membership_plans)
     ? subscription.membership_plans[0]
@@ -143,7 +193,27 @@ export async function getOptionalMemberContext(): Promise<Session | null> {
     email: user.email ?? "",
   };
 
-  return { member, organization };
+  const notifications = {
+    unreadCount: unreadNotificationCount ?? 0,
+    items: (notificationRows ?? []).map((notification) => ({
+      id: notification.id,
+      type: notification.type,
+      severity: notification.severity,
+      title: notification.title,
+      body: notification.body,
+      actionUrl: notification.action_url,
+      readAt: notification.read_at,
+      expiresAt: notification.expires_at,
+      createdAt: notification.created_at,
+    })),
+  };
+
+  return {
+    member,
+    organization,
+    notifications,
+    platformRoles: platformRoleRows,
+  };
 }
 
 export async function requireMemberContext() {

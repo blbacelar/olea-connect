@@ -4,27 +4,32 @@ import { redirect } from "next/navigation";
 
 import { AuthCard } from "@/components/auth/AuthCard";
 import { Button } from "@/components/ui/button";
+import { getSafeNextPath } from "@/lib/auth/safe-next-path";
+import { logError } from "@/lib/observability/logger";
+import { getPostActivationPath } from "@/lib/onboarding/post-activation";
+import { attemptUserWorkspaceProvisioning } from "@/lib/stripe/registration";
+import { createAdminClient } from "@/utils/supabase/admin";
 import { createClient } from "@/utils/supabase/server";
+
+type SupabaseServerClient = Awaited<ReturnType<typeof createClient>>;
 
 const allowedTypes = new Set<EmailOtpType>([
   "email",
+  "magiclink",
   "recovery",
   "invite",
   "email_change",
 ]);
-
-function getSafeNextPath(value: string | string[] | undefined) {
-  const next = Array.isArray(value) ? value[0] : value;
-  return next?.startsWith("/") && !next.startsWith("//")
-    ? next
-    : "/dashboard";
-}
 
 function getSafeType(value: string | string[] | undefined) {
   const type = Array.isArray(value) ? value[0] : value;
   return type && allowedTypes.has(type as EmailOtpType)
     ? (type as EmailOtpType)
     : null;
+}
+
+function shouldSkipProvisioning(next: string) {
+  return next.startsWith("/update-password");
 }
 
 async function confirmEmail(formData: FormData) {
@@ -48,18 +53,68 @@ async function confirmEmail(formData: FormData) {
     redirect("/login?error=This authentication link is invalid or has expired.");
   }
 
+  const activationRedirect = await getActivationRedirectAfterConfirmation({
+    next,
+    supabase,
+  });
+  if (activationRedirect) {
+    redirect(activationRedirect);
+  }
+
   redirect(next);
 }
 
-export default function AuthConfirmPage({
-  searchParams,
+async function getActivationRedirectAfterConfirmation({
+  next,
+  supabase,
 }: {
-  searchParams: {
-    token_hash?: string | string[];
-    type?: string | string[];
-    next?: string | string[];
-  };
+  next: string;
+  supabase: SupabaseServerClient;
 }) {
+  if (shouldSkipProvisioning(next)) return null;
+
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  return user ? getProvisioningRedirect(user.id) : null;
+}
+
+async function getProvisioningRedirect(userId: string) {
+  try {
+    const admin = createAdminClient();
+    const result = await attemptUserWorkspaceProvisioning(admin, userId);
+
+    if (result?.status === "completed") {
+      return getPostActivationPath(admin, result.organization_id);
+    }
+    if (isPendingActivationStatus(result?.status)) {
+      return `/signup/success?activation=${result.status}`;
+    }
+  } catch (provisioningError) {
+    logError(
+      "Unable to complete workspace provisioning after email confirmation",
+      provisioningError,
+    );
+  }
+
+  return null;
+}
+
+function isPendingActivationStatus(status: string | undefined) {
+  return status === "pending_payment" || status === "pending_verification";
+}
+
+export default async function AuthConfirmPage(
+  props: {
+    searchParams: Promise<{
+      token_hash?: string | string[];
+      type?: string | string[];
+      next?: string | string[];
+    }>;
+  }
+) {
+  const searchParams = await props.searchParams;
   const tokenHash = Array.isArray(searchParams.token_hash)
     ? searchParams.token_hash[0]
     : searchParams.token_hash;

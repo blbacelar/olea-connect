@@ -24,7 +24,7 @@ export function FeaturePlaceholder({
           </p>
           <h2 className="mt-2 text-xl font-semibold">{title}</h2>
           <p className="mx-auto mt-2 max-w-md text-sm leading-6 text-slate-500">
-            This area is part of the Olea Connects roadmap and will be added to
+            This area is part of the Olea Connects™ roadmap and will be added to
             the workspace soon.
           </p>
         </div>

@@ -1,37 +1,55 @@
-import { CalendarDays, Lock, Play } from "lucide-react";
+import { CalendarDays, ListChecks, Play, Plus } from "lucide-react";
+import Link from "next/link";
 
-import { DemoActionButton } from "@/components/DemoActionButton";
+import { Button } from "@/components/ui/button";
 import { EmptyPanel } from "@/components/EmptyPanel";
 import { PageHeader } from "@/components/PageHeader";
 import { SectionHeading } from "@/components/SectionHeading";
-import { getWebinars } from "@/lib/data/webinars";
-
-function formatEventDate(value: string) {
-  return new Intl.DateTimeFormat("en-CA", {
-    dateStyle: "long",
-    timeStyle: "short",
-  }).format(new Date(value));
-}
+import { getWebinarCatalog } from "@/lib/data/webinars";
+import {
+  EventAction,
+  RecordingAction,
+  formatEventDate,
+  formatEventType,
+  formatTicketLabel,
+  isUpcomingOrActiveEvent,
+} from "./webinar-ui";
 
 export default async function WebinarsPage() {
-  const webinars = await getWebinars();
+  const { canManageEvents, webinars } = await getWebinarCatalog();
   const now = Date.now();
-  const upcoming = webinars.filter(
-    (webinar) =>
-      webinar.status === "scheduled" &&
-      new Date(webinar.startsAt).getTime() >= now,
+  const upcoming = webinars.filter((webinar) =>
+    isUpcomingOrActiveEvent(webinar, now),
   );
   const recordings = webinars.filter(
-    (webinar) => webinar.status === "completed" && webinar.recordingUrl,
+    (webinar) => webinar.status === "completed" && webinar.recordingAvailable,
   );
   const locked = webinars.filter((webinar) => !webinar.available);
 
   return (
     <div>
-      <PageHeader
-        title="Webinars"
-        description="Live sessions and recordings on governance, fundraising, and nonprofit leadership."
-      />
+      <div className="flex flex-wrap items-start justify-between gap-4">
+        <PageHeader
+          title="Webinars"
+          description="Live sessions and recordings on governance, fundraising, and nonprofit leadership."
+        />
+        {canManageEvents ? (
+          <div className="flex flex-wrap gap-2">
+            <Button asChild variant="outline">
+              <Link href="/webinars/manage">
+                <ListChecks className="size-4" />
+                Manage webinars
+              </Link>
+            </Button>
+            <Button asChild>
+              <Link href="/webinars/new">
+                <Plus className="size-4" />
+                Create webinar
+              </Link>
+            </Button>
+          </div>
+        ) : null}
+      </div>
 
       <SectionHeading>Upcoming</SectionHeading>
       {upcoming.length ? (
@@ -39,6 +57,7 @@ export default async function WebinarsPage() {
           {upcoming.map((webinar) => (
             <section
               key={webinar.id}
+              data-testid="webinar-card"
               className="flex flex-wrap items-center gap-[22px] rounded-[14px] border bg-white p-6 shadow-soft"
             >
               <span className="grid size-16 shrink-0 place-items-center rounded-[14px] bg-olea-light text-olea-green">
@@ -47,28 +66,20 @@ export default async function WebinarsPage() {
               <div className="min-w-[220px] flex-1">
                 <h2 className="text-lg font-semibold">{webinar.title}</h2>
                 <p className="mt-1.5 text-[13.5px] text-slate-500">
-                  {formatEventDate(webinar.startsAt)} · {webinar.timezone}
+                  {formatEventType(webinar.type)} · {formatEventDate(webinar.startsAt)} ·{" "}
+                  {webinar.timezone}
                 </p>
                 <p className="mt-2 text-sm text-slate-600">
                   {webinar.summary}
                 </p>
+                <p className="mt-2 text-xs font-semibold uppercase tracking-[0.18em] text-olea-green">
+                  {formatTicketLabel(webinar)}
+                </p>
               </div>
-              {webinar.available ? (
-                <DemoActionButton
-                  message={
-                    webinar.registered
-                      ? "You are already registered."
-                      : "Registration will be available shortly."
-                  }
-                >
-                  {webinar.registered ? "Registered" : "Register →"}
-                </DemoActionButton>
-              ) : (
-                <span className="inline-flex items-center gap-2 text-sm font-semibold text-slate-500">
-                  <Lock className="size-4" />
-                  Upgrade required
-                </span>
-              )}
+              <EventAction webinar={webinar} />
+              <Button asChild variant="outline">
+                <Link href={`/webinars/${webinar.slug}`}>View details</Link>
+              </Button>
             </section>
           ))}
         </div>
@@ -88,27 +99,21 @@ export default async function WebinarsPage() {
           {recordings.map((webinar) => (
             <div
               key={webinar.id}
+              data-testid="webinar-card"
               className="flex items-center justify-between gap-4 border-b border-slate-100 px-[22px] py-4 last:border-0"
             >
               <div>
-                <p className="text-[15px] font-semibold">{webinar.title}</p>
+                <h3 className="text-[15px] font-semibold">{webinar.title}</h3>
                 <p className="mt-0.5 text-[13px] text-slate-400">
-                  {formatEventDate(webinar.startsAt)}
+                  {formatEventType(webinar.type)} · {formatEventDate(webinar.startsAt)}
                 </p>
               </div>
-              {webinar.available ? (
-                <DemoActionButton
-                  size="sm"
-                  variant="outline"
-                  className="text-olea-green"
-                  message={`Opening "${webinar.title}" recording.`}
-                >
-                  <Play className="size-3.5" />
-                  Watch
-                </DemoActionButton>
-              ) : (
-                <Lock className="size-4 text-slate-400" />
-              )}
+              <div className="flex flex-wrap items-center justify-end gap-2">
+                <RecordingAction webinar={webinar} />
+                <Button asChild size="sm" variant="outline">
+                  <Link href={`/webinars/${webinar.slug}`}>View details</Link>
+                </Button>
+              </div>
             </div>
           ))}
         </div>

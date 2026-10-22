@@ -1,0 +1,20 @@
+import { KpiDashboardWorkspace } from "@/app/modules/kpi-dashboard/_components/kpi-dashboard-workspace";
+import { resolveKpiDashboardTab } from "@/app/modules/kpi-dashboard/tab-state";
+import { getKpiDashboardData } from "@/lib/data/kpi-dashboard";
+
+export const dynamic = "force-dynamic";
+
+export default async function KpiDashboardPage(
+  props: {
+    searchParams?: Promise<{ tab?: string }>;
+  }
+) {
+  const searchParams = await props.searchParams;
+  const data = await getKpiDashboardData();
+  const activeTab = resolveKpiDashboardTab(
+    searchParams?.tab,
+    Boolean(data.dashboard.financialYearEnd),
+  );
+
+  return <KpiDashboardWorkspace activeTab={activeTab} data={data} />;
+}

@@ -1,20 +1,35 @@
 import "server-only";
 
-import type Stripe from "stripe";
 import type { SupabaseClient } from "@supabase/supabase-js";
 
-import {
-  mapSubscriptionStatus,
-  toIsoDate,
-} from "@/lib/stripe/subscription-domain";
-import { getStripe } from "@/lib/stripe/server";
-import { syncStripeSubscription } from "@/lib/stripe/subscriptions";
+import { LEGAL_DOCUMENTS } from "@/lib/legal-documents";
+import { normalizeReferralCode } from "@/lib/referral-capture";
+import { SignupValidationError } from "@/lib/signup-flow";
 import type { MembershipTier, RegistrationState } from "@/lib/types";
+import { validateFoundingMemberCode } from "@/lib/stripe/founding-member";
+
+export { validateFoundingMemberCode } from "@/lib/stripe/founding-member";
 
 type BillingCycle = RegistrationState["billingCycle"];
-const tiers: MembershipTier[] = ["seedling", "roots", "canopy", "harvest"];
 
-interface CheckoutRegistration {
+export {
+  attachCheckoutSession,
+  attemptUserWorkspaceProvisioning,
+  attemptWorkspaceProvisioning,
+  recoverCheckoutSessionProvisioning,
+  recordStripeSubscription,
+} from "@/lib/stripe/provisioning";
+export {
+  reconcilePendingCheckoutProvisioning,
+} from "@/lib/stripe/provisioning-reconciliation";
+export type {
+  ProvisioningResult,
+} from "@/lib/stripe/provisioning";
+export type {
+  ProvisioningReconciliationSummary,
+} from "@/lib/stripe/provisioning-reconciliation";
+
+export interface CheckoutRegistration {
   userId: string;
   email: string;
   fullName: string;
@@ -22,33 +37,80 @@ interface CheckoutRegistration {
   province: string;
   tier: MembershipTier;
   billingCycle: BillingCycle;
+  organizationKind: RegistrationState["organizationKind"];
+  annualBudgetRange: RegistrationState["annualBudgetRange"];
+  boardSizeRange: RegistrationState["boardSizeRange"];
+  phone: string;
+  acquisitionSource: RegistrationState["acquisitionSource"];
+  referralCode: string;
+  foundingMemberCode: string;
+  consents: RegistrationState["consents"];
 }
 
-export interface ProvisioningResult {
-  status:
-    | "not_found"
-    | "pending_verification"
-    | "pending_payment"
-    | "completed"
-    | "failed";
-  request_id: string;
-  organization_id?: string;
-  subscription_id?: string;
-  error?: string;
+type CheckoutAuthUser = {
+  email?: string | null;
+  email_confirmed_at?: string | null;
+};
+
+type ExistingProvisioningRequest = {
+  id: string;
+  status: string;
+  referral_code: string | null;
+  founding_member_eligible: boolean | null;
+  founding_discount_identifier: string | null;
+  founding_member_year: number | null;
+  founding_offer_requested: boolean | null;
+};
+
+async function isActiveTrackingCode(
+  supabase: SupabaseClient,
+  referralCode: string,
+) {
+  const { data, error } = await supabase
+    .from("referral_tracking_codes")
+    .select("code")
+    .eq("code", referralCode)
+    .eq("active", true)
+    .maybeSingle();
+  if (error) throw error;
+  return Boolean(data);
 }
 
-export interface ProvisioningReconciliationSummary {
-  checked: number;
-  completed: number;
-  pending: number;
-  failed: number;
-  errors: Array<{
-    requestId: string;
-    message: string;
-  }>;
+async function validatePartnerReferral(
+  supabase: SupabaseClient,
+  email: string,
+  referralCode: string,
+) {
+  const { data: partnerReferral, error: partnerReferralError } = await supabase
+    .from("referral_links")
+    .select("id, referrers(email, status)")
+    .eq("code", referralCode)
+    .eq("active", true)
+    .maybeSingle();
+  if (partnerReferralError) throw partnerReferralError;
+
+  const referrer = Array.isArray(partnerReferral?.referrers)
+    ? partnerReferral?.referrers[0]
+    : partnerReferral?.referrers;
+  if (!partnerReferral && await isActiveTrackingCode(supabase, referralCode)) return;
+  if (referrer?.status !== "approved") {
+    throw new SignupValidationError("That referral code is invalid or expired.");
+  }
+
+  if (referrer.email?.toLowerCase() === email.trim().toLowerCase()) {
+    throw new SignupValidationError("You cannot use your own referral link.");
+  }
 }
 
-export async function prepareCheckoutRegistration(
+export async function validateSignupReferralCode(
+  supabase: SupabaseClient,
+  email: string,
+  referralCode: string,
+) {
+  await validatePartnerReferral(supabase, email, referralCode);
+}
+
+async function assertCheckoutAuthUser(
   supabase: SupabaseClient,
   registration: CheckoutRegistration,
 ) {
@@ -56,342 +118,219 @@ export async function prepareCheckoutRegistration(
     await supabase.auth.admin.getUserById(registration.userId);
 
   if (authError || !authUser.user) {
-    throw new Error("The signup account could not be verified.");
+    throw new SignupValidationError("The signup account could not be verified.");
   }
 
   if (
     authUser.user.email?.toLowerCase() !== registration.email.toLowerCase()
   ) {
-    throw new Error("The checkout email does not match the signup account.");
+    throw new SignupValidationError("The checkout email does not match the signup account.");
   }
 
+  return authUser.user as CheckoutAuthUser;
+}
+
+async function getExistingProvisioningRequest(
+  supabase: SupabaseClient,
+  userId: string,
+) {
   const { data: existing, error: lookupError } = await supabase
     .from("workspace_provisioning_requests")
-    .select("id, status")
-    .eq("user_id", registration.userId)
+    .select(
+      "id, status, referral_code, founding_member_eligible, founding_discount_identifier, founding_member_year, founding_offer_requested",
+    )
+    .eq("user_id", userId)
     .maybeSingle();
 
   if (lookupError) throw lookupError;
   if (existing?.status === "completed") {
-    throw new Error("This account already has an active workspace.");
+    throw new SignupValidationError("This account already has an active workspace.");
   }
 
-  const values = {
+  return existing as ExistingProvisioningRequest | null;
+}
+
+function getFoundingReservationSnapshot(
+  existing: ExistingProvisioningRequest | null,
+) {
+  return {
+    founding_member_eligible: existing?.founding_member_eligible ?? false,
+    founding_discount_identifier:
+      existing?.founding_discount_identifier ?? null,
+    founding_member_year: existing?.founding_member_year ?? null,
+  };
+}
+
+function getBillingInterval(billingCycle: BillingCycle) {
+  // The legacy database enum calls non-annual plans "month". Stripe prices
+  // for that enum now recur every three months.
+  return billingCycle === "annual" ? "year" : "month";
+}
+
+function getProvisioningStatus(authUser: CheckoutAuthUser) {
+  return authUser.email_confirmed_at
+    ? "pending_payment"
+    : "pending_verification";
+}
+
+function buildProvisioningRequestValues({
+  authUser,
+  existing,
+  referralCode,
+  registration,
+}: {
+  authUser: CheckoutAuthUser;
+  existing: ExistingProvisioningRequest | null;
+  referralCode: string;
+  registration: CheckoutRegistration;
+}) {
+  return {
     user_id: registration.userId,
     email: registration.email.trim().toLowerCase(),
     full_name: registration.fullName.trim(),
     organization_name: registration.organizationName.trim(),
     province_or_region: registration.province,
+    organization_kind: registration.organizationKind,
+    annual_budget_range: registration.annualBudgetRange,
+    board_size_range: registration.boardSizeRange,
+    contact_phone: registration.phone.trim() || null,
+    acquisition_source: registration.acquisitionSource || null,
+    referral_code: referralCode || null,
+    referral_status: referralCode ? "pending" : "none",
+    founding_offer_requested: Boolean(registration.foundingMemberCode),
+    ...getFoundingReservationSnapshot(existing),
     plan_id: registration.tier,
-    billing_interval:
-      registration.billingCycle === "annual" ? "year" : "month",
-    status: authUser.user.email_confirmed_at
-      ? "pending_payment"
-      : "pending_verification",
+    billing_interval: getBillingInterval(registration.billingCycle),
+    status: getProvisioningStatus(authUser),
     last_error: null,
   };
-
-  if (existing) {
-    const { data, error } = await supabase
-      .from("workspace_provisioning_requests")
-      .update(values)
-      .eq("id", existing.id)
-      .select("id")
-      .single();
-
-    if (error) throw error;
-    return { requestId: data.id as string };
-  }
-
-  const { data, error } = await supabase
-    .from("workspace_provisioning_requests")
-    .insert(values)
-    .select("id")
-    .single();
-
-  if (error) throw error;
-  return { requestId: data.id as string };
 }
 
-export async function attachCheckoutSession(
-  supabase: SupabaseClient,
-  requestId: string,
-  checkoutSessionId: string,
-) {
-  const { error } = await supabase
-    .from("workspace_provisioning_requests")
-    .update({ checkout_session_id: checkoutSessionId })
-    .eq("id", requestId);
-
-  if (error) throw error;
-}
-
-export async function recordStripeSubscription(
-  supabase: SupabaseClient,
-  subscription: Stripe.Subscription,
-) {
-  const requestId = subscription.metadata.provisioning_request_id;
-  if (!requestId) return null;
-
-  const firstItem = subscription.items.data[0];
-  const status = mapSubscriptionStatus(subscription);
-  const customerId =
-    typeof subscription.customer === "string"
-      ? subscription.customer
-      : subscription.customer.id;
-  const planId = tiers.includes(
-    subscription.metadata.plan_id as MembershipTier,
-  )
-    ? (subscription.metadata.plan_id as MembershipTier)
-    : undefined;
-  const billingInterval =
-    firstItem?.price.recurring?.interval === "year" ? "year" : "month";
-
-  const { data, error } = await supabase
-    .from("workspace_provisioning_requests")
-    .update({
-      ...(planId ? { plan_id: planId } : {}),
-      billing_interval: billingInterval,
-      provider_customer_id: customerId,
-      provider_subscription_id: subscription.id,
-      provider_status: status,
-      quantity: firstItem?.quantity ?? 1,
-      current_period_start: toIsoDate(firstItem?.current_period_start),
-      current_period_end: toIsoDate(firstItem?.current_period_end),
-      cancel_at_period_end: subscription.cancel_at_period_end,
-      canceled_at: toIsoDate(subscription.canceled_at),
-      stripe_snapshot: subscription,
-      payment_confirmed_at:
-        status === "active" || status === "trialing"
-          ? new Date().toISOString()
-          : null,
-    })
-    .eq("id", requestId)
-    .select("id")
-    .single();
+async function upsertProvisioningRequest({
+  existing,
+  supabase,
+  values,
+}: {
+  existing: ExistingProvisioningRequest | null;
+  supabase: SupabaseClient;
+  values: ReturnType<typeof buildProvisioningRequestValues>;
+}) {
+  const query = existing
+    ? supabase
+        .from("workspace_provisioning_requests")
+        .update(values)
+        .eq("id", existing.id)
+    : supabase.from("workspace_provisioning_requests").insert(values);
+  const { data, error } = await query.select("id").single();
 
   if (error) throw error;
   return data.id as string;
 }
 
-async function retrieveCheckoutSubscription(checkoutSessionId: string) {
-  const stripe = getStripe();
-  const session = await stripe.checkout.sessions.retrieve(checkoutSessionId, {
-    expand: ["subscription"],
+export async function prepareCheckoutRegistration(
+  supabase: SupabaseClient,
+  registration: CheckoutRegistration,
+) {
+  const authUser = await assertCheckoutAuthUser(supabase, registration);
+  const existing = await getExistingProvisioningRequest(
+    supabase,
+    registration.userId,
+  );
+  const referralCode =
+    normalizeReferralCode(existing?.referral_code ?? registration.referralCode) ?? "";
+  if (referralCode) {
+    await validateSignupReferralCode(supabase, registration.email, referralCode);
+  }
+
+  validateFoundingMemberCode(registration.foundingMemberCode);
+  const requestId = await upsertProvisioningRequest({
+    existing,
+    supabase,
+    values: buildProvisioningRequestValues({
+      authUser,
+      existing,
+      referralCode,
+      registration,
+    }),
   });
 
-  const subscriptionRef = session.subscription;
-  if (!subscriptionRef) {
-    throw new Error("Checkout session does not have a subscription.");
-  }
-
-  if (typeof subscriptionRef !== "string") {
-    return { session, subscription: subscriptionRef };
-  }
-
-  const subscription = await stripe.subscriptions.retrieve(subscriptionRef);
-  return { session, subscription };
-}
-
-export async function recoverCheckoutSessionProvisioning(
-  supabase: SupabaseClient,
-  checkoutSessionId: string,
-) {
-  const stripe = getStripe();
-  const { session, subscription } =
-    await retrieveCheckoutSubscription(checkoutSessionId);
-  const requestId =
-    session.metadata?.provisioning_request_id ??
-    subscription.metadata.provisioning_request_id;
-
-  if (!requestId) {
-    throw new Error("Checkout session is missing provisioning metadata.");
-  }
-
-  const { data: request, error: requestError } = await supabase
-    .from("workspace_provisioning_requests")
-    .select("id, checkout_session_id")
-    .eq("id", requestId)
-    .single();
-
-  if (requestError) throw requestError;
-  if (
-    request.checkout_session_id &&
-    request.checkout_session_id !== checkoutSessionId
-  ) {
-    throw new Error("Checkout session does not match this activation record.");
-  }
-
-  if (!request.checkout_session_id) {
-    await attachCheckoutSession(supabase, requestId, checkoutSessionId);
-  }
-
-  const subscriptionWithMetadata =
-    subscription.metadata.provisioning_request_id === requestId
-      ? subscription
-      : await stripe.subscriptions.update(subscription.id, {
-          metadata: {
-            ...subscription.metadata,
-            provisioning_request_id: requestId,
-            ...(session.metadata?.user_id
-              ? { user_id: session.metadata.user_id }
-              : {}),
-            ...(session.metadata?.plan_id
-              ? { plan_id: session.metadata.plan_id }
-              : {}),
-            ...(session.metadata?.billing_cycle
-              ? { billing_cycle: session.metadata.billing_cycle }
-              : {}),
-          },
-        });
-
-  await recordStripeSubscription(supabase, subscriptionWithMetadata);
-  return attemptWorkspaceProvisioning(
-    supabase,
+  return {
     requestId,
-    subscriptionWithMetadata,
-  );
+    referralCode: referralCode || null,
+    foundingMemberEligible: existing?.founding_member_eligible === true,
+    foundingDiscountIdentifier:
+      existing?.founding_discount_identifier ?? null,
+  };
 }
 
-export async function attemptWorkspaceProvisioning(
+export async function reserveFoundingMember(
   supabase: SupabaseClient,
   requestId: string,
-  stripeSubscription?: Stripe.Subscription,
+  couponId: string,
+  referralCode: string | null,
 ) {
-  const { data, error } = await supabase.rpc(
-    "attempt_workspace_provisioning",
-    { target_request_id: requestId },
+  if (!couponId) {
+    return {
+      requestId,
+      referralCode,
+      foundingMemberEligible: false,
+      foundingDiscountIdentifier: null,
+    };
+  }
+
+  const { data, error } = await supabase.rpc("reserve_founding_member", {
+    target_request_id: requestId,
+    target_discount_identifier: couponId,
+  });
+  if (error) throw error;
+
+  const result = data as {
+    eligible?: boolean;
+    discount_identifier?: string | null;
+  };
+  return {
+    requestId,
+    referralCode,
+    foundingMemberEligible: result.eligible === true,
+    foundingDiscountIdentifier:
+      result.eligible === true ? result.discount_identifier ?? couponId : null,
+  };
+}
+
+export async function storeSignupConsents(
+  supabase: SupabaseClient,
+  registration: CheckoutRegistration,
+  requestId: string,
+) {
+  if (!Object.values(registration.consents).every(Boolean)) {
+    throw new SignupValidationError("Review and accept all required policies.");
+  }
+
+  const documents = [
+    ["terms_of_service", LEGAL_DOCUMENTS.terms],
+    ["privacy_policy", LEGAL_DOCUMENTS.privacy],
+    ["data_ownership", LEGAL_DOCUMENTS.dataOwnership],
+    ["confidentiality", LEGAL_DOCUMENTS.confidentiality],
+  ] as const;
+
+  const { error } = await supabase.from("privacy_consents").upsert(
+    documents.map(([consentType, document]) => ({
+      user_id: registration.userId,
+      signup_request_id: requestId,
+      consent_type: consentType,
+      policy_version: document.version,
+      granted: true,
+      document_path: document.href,
+      context: {
+        tier: registration.tier,
+        billing_cycle: registration.billingCycle,
+        organization_kind: registration.organizationKind,
+        referral_present: Boolean(registration.referralCode),
+        founding_member_code_present: Boolean(registration.foundingMemberCode),
+      },
+    })),
+    { onConflict: "signup_request_id,consent_type" },
   );
 
   if (error) throw error;
-  const result = data as ProvisioningResult;
-
-  if (result.status === "completed") {
-    const { data: request, error: requestError } = await supabase
-      .from("workspace_provisioning_requests")
-      .select("provider_subscription_id")
-      .eq("id", requestId)
-      .single();
-
-    if (requestError) throw requestError;
-    if (request.provider_subscription_id) {
-      let subscription =
-        stripeSubscription ??
-        (await getStripe().subscriptions.retrieve(
-          request.provider_subscription_id,
-        ));
-      const metadataIsCurrent =
-        subscription.metadata.provisioning_request_id === requestId &&
-        subscription.metadata.local_subscription_id ===
-          result.subscription_id &&
-        subscription.metadata.organization_id === result.organization_id;
-
-      if (!metadataIsCurrent) {
-        subscription = await getStripe().subscriptions.update(
-          request.provider_subscription_id,
-          {
-            metadata: {
-              provisioning_request_id: requestId,
-              local_subscription_id: result.subscription_id ?? "",
-              organization_id: result.organization_id ?? "",
-            },
-          },
-        );
-      }
-      await syncStripeSubscription(supabase, subscription);
-    }
-  }
-
-  return result;
-}
-
-export async function attemptUserWorkspaceProvisioning(
-  supabase: SupabaseClient,
-  userId: string,
-) {
-  const { data, error } = await supabase
-    .from("workspace_provisioning_requests")
-    .select("id, checkout_session_id")
-    .eq("user_id", userId)
-    .maybeSingle();
-
-  if (error) throw error;
-  if (!data) return null;
-
-  const result = await attemptWorkspaceProvisioning(supabase, data.id);
-  if (result.status === "pending_payment" && data.checkout_session_id) {
-    return recoverCheckoutSessionProvisioning(
-      supabase,
-      data.checkout_session_id,
-    );
-  }
-
-  return result;
-}
-
-export async function reconcilePendingCheckoutProvisioning(
-  supabase: SupabaseClient,
-  {
-    limit = 10,
-    staleAfterMinutes = 2,
-  }: { limit?: number; staleAfterMinutes?: number } = {},
-): Promise<ProvisioningReconciliationSummary> {
-  const staleBefore = new Date(
-    Date.now() - staleAfterMinutes * 60 * 1000,
-  ).toISOString();
-  const { data: requests, error } = await supabase
-    .from("workspace_provisioning_requests")
-    .select("id, checkout_session_id")
-    .eq("status", "pending_payment")
-    .not("checkout_session_id", "is", null)
-    .lte("updated_at", staleBefore)
-    .order("updated_at", { ascending: true })
-    .limit(limit);
-
-  if (error) throw error;
-
-  const summary: ProvisioningReconciliationSummary = {
-    checked: requests?.length ?? 0,
-    completed: 0,
-    pending: 0,
-    failed: 0,
-    errors: [],
-  };
-
-  for (const request of requests ?? []) {
-    if (!request.checkout_session_id) continue;
-
-    try {
-      const result = await recoverCheckoutSessionProvisioning(
-        supabase,
-        request.checkout_session_id,
-      );
-
-      if (result.status === "completed") {
-        summary.completed += 1;
-      } else if (
-        result.status === "pending_payment" ||
-        result.status === "pending_verification"
-      ) {
-        summary.pending += 1;
-      } else {
-        summary.failed += 1;
-        summary.errors.push({
-          requestId: request.id,
-          message: result.error ?? `Provisioning ended as ${result.status}.`,
-        });
-      }
-    } catch (error) {
-      const message =
-        error instanceof Error ? error.message : "Unknown reconciliation error";
-      summary.failed += 1;
-      summary.errors.push({ requestId: request.id, message });
-      await supabase
-        .from("workspace_provisioning_requests")
-        .update({ last_error: message })
-        .eq("id", request.id);
-    }
-  }
-
-  return summary;
 }

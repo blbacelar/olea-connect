@@ -134,6 +134,8 @@ export function BrandSettingsForm({
               <Label htmlFor="phone">Footer phone</Label>
               <Input
                 id="phone"
+                type="tel"
+                inputMode="tel"
                 value={brand.phone ?? ""}
                 onChange={(event) => updateBrand("phone", event.target.value)}
                 placeholder="+1 555 123 4567"
@@ -155,6 +157,7 @@ export function BrandSettingsForm({
               <Label htmlFor="website">Footer website</Label>
               <Input
                 id="website"
+                type="url"
                 value={brand.website ?? ""}
                 onChange={(event) => updateBrand("website", event.target.value)}
                 placeholder="https://example.org"

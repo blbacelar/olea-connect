@@ -1,27 +1,16 @@
 "use client";
 
-import {
-  CreditCard,
-  ExternalLink,
-  LoaderCircle,
-  Pause,
-  Plus,
-  Settings2,
-  XCircle,
-} from "lucide-react";
-import { useEffect, useRef, useState, useTransition } from "react";
+import { CreditCard, ExternalLink, LoaderCircle, Pause, XCircle } from "lucide-react";
+import { useState, useTransition } from "react";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { apiRoutes } from "@/lib/api-routes";
 
-type BillingAction =
-  | "manage"
-  | "payment_method"
-  | "subscription_update"
-  | "cancel"
-  | "pause"
-  | "resume"
-  | "add_seat";
+import type { BillingAction } from "./billing-action-utils";
+
+export { PlanUpgradeControls } from "./plan-upgrade-controls";
+export { SeatManagementControls } from "./seat-management-controls";
 
 type BillingManagementControlsProps = {
   canManage: boolean;
@@ -30,25 +19,16 @@ type BillingManagementControlsProps = {
 };
 
 const portalActions: Array<{
-  action: Extract<
-    BillingAction,
-    "payment_method" | "subscription_update" | "cancel"
-  >;
+  action: Extract<BillingAction, "payment_method" | "cancel">;
   description: string;
   icon: typeof CreditCard;
   label: string;
 }> = [
   {
     action: "payment_method",
-    description: "Update card details in Stripe.",
+    description: "Update card details securely.",
     icon: CreditCard,
     label: "Payment method",
-  },
-  {
-    action: "subscription_update",
-    description: "Change plan or adjust $10/month seat add-ons.",
-    icon: Settings2,
-    label: "Plans & seats",
   },
   {
     action: "cancel",
@@ -68,11 +48,11 @@ export function BillingManagementControls({
   const [isPending, startTransition] = useTransition();
   const unavailable = disabled || isPending || !canManage;
 
-  const runBillingAction = (action: BillingAction) => {
+  function runBillingAction(action: BillingAction) {
     startTransition(async () => {
       setError("");
       try {
-        const response = await fetch("/api/stripe/portal", {
+        const response = await fetch(apiRoutes.stripePortal, {
           body: JSON.stringify({
             action,
             ...(action === "pause" ? { pauseDays: Number(pauseDays) } : {}),
@@ -81,9 +61,9 @@ export function BillingManagementControls({
           method: "POST",
         });
         const result = (await response.json().catch(() => ({}))) as {
+          error?: string;
           ok?: boolean;
           url?: string;
-          error?: string;
         };
 
         if (!response.ok) {
@@ -101,7 +81,7 @@ export function BillingManagementControls({
         setError("Unable to reach billing management. Please try again.");
       }
     });
-  };
+  }
 
   return (
     <section className="rounded-[14px] border bg-white p-5 shadow-soft">
@@ -111,9 +91,8 @@ export function BillingManagementControls({
             Admin billing actions
           </h2>
           <p className="mt-1 max-w-2xl text-sm leading-6 text-slate-500">
-            Payment-sensitive changes open Stripe-hosted flows. Access changes
-            are applied only after Stripe syncs the confirmed subscription
-            state.
+            Payment-sensitive changes open secure hosted billing flows. Access
+            changes are applied only after the confirmed subscription state syncs.
           </p>
         </div>
         <Button
@@ -165,7 +144,7 @@ export function BillingManagementControls({
             </h3>
             <p className="mt-1 max-w-xl text-xs leading-5 text-amber-900">
               Pauses are limited to 60 days. During a pause, platform access is
-              restricted until Stripe confirms collection has resumed.
+              restricted until billing confirms collection has resumed.
             </p>
           </div>
           <div className="flex flex-wrap items-center gap-2">
@@ -176,6 +155,7 @@ export function BillingManagementControls({
                 max={60}
                 min={1}
                 onChange={(event) => setPauseDays(event.target.value)}
+                step={1}
                 type="number"
                 value={pauseDays}
               />
@@ -205,151 +185,5 @@ export function BillingManagementControls({
         </p>
       ) : null}
     </section>
-  );
-}
-
-type SeatManagementControlsProps = {
-  canManage: boolean;
-  disabled?: boolean;
-  seatPriceLabel: string;
-};
-
-export function SeatManagementControls({
-  canManage,
-  disabled = false,
-  seatPriceLabel,
-}: SeatManagementControlsProps) {
-  const [error, setError] = useState("");
-  const [confirmOpen, setConfirmOpen] = useState(false);
-  const confirmButtonRef = useRef<HTMLButtonElement>(null);
-  const [isPending, startTransition] = useTransition();
-  const unavailable = disabled || isPending || !canManage;
-
-  useEffect(() => {
-    if (!confirmOpen) return;
-    confirmButtonRef.current?.focus();
-
-    const closeOnEscape = (event: KeyboardEvent) => {
-      if (event.key === "Escape") setConfirmOpen(false);
-    };
-    window.addEventListener("keydown", closeOnEscape);
-    return () => window.removeEventListener("keydown", closeOnEscape);
-  }, [confirmOpen]);
-
-  const addSeat = () => {
-    startTransition(async () => {
-      setError("");
-      try {
-        const response = await fetch("/api/stripe/portal", {
-          body: JSON.stringify({ action: "add_seat" }),
-          headers: { "Content-Type": "application/json" },
-          method: "POST",
-        });
-        const result = (await response.json().catch(() => ({}))) as {
-          error?: string;
-        };
-
-        if (!response.ok) {
-          setError(result.error ?? "Unable to add a seat.");
-          setConfirmOpen(false);
-          return;
-        }
-
-        window.location.reload();
-      } catch {
-        setError("Unable to reach billing management. Please try again.");
-        setConfirmOpen(false);
-      }
-    });
-  };
-
-  return (
-    <div className="mt-5 rounded-xl border border-emerald-200 bg-emerald-50 p-4">
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <div>
-          <h3 className="text-sm font-bold text-emerald-950">
-            Need another teammate?
-          </h3>
-          <p className="mt-1 text-xs leading-5 text-emerald-900">
-            Add one paid seat for {seatPriceLabel}. After Stripe confirms it,
-            invite the teammate from Team.
-          </p>
-          {!canManage ? (
-            <p className="mt-2 text-xs font-semibold text-emerald-900">
-              Only organization owners and admins can add seats.
-            </p>
-          ) : null}
-        </div>
-        <Button
-          disabled={unavailable}
-          onClick={() => setConfirmOpen(true)}
-          type="button"
-        >
-          {isPending ? (
-            <LoaderCircle className="size-4 animate-spin" />
-          ) : (
-            <Plus className="size-4" />
-          )}
-          Add paid seat
-        </Button>
-      </div>
-      {confirmOpen ? (
-        <div className="fixed inset-0 z-50 grid place-items-center bg-slate-950/45 px-4">
-          <div
-            aria-describedby="add-seat-dialog-description"
-            aria-labelledby="add-seat-dialog-title"
-            aria-modal="true"
-            className="w-full max-w-md rounded-[14px] border bg-white p-6 shadow-elevated"
-            role="dialog"
-          >
-            <div className="flex size-11 items-center justify-center rounded-xl bg-emerald-50 text-olea-green">
-              <Plus className="size-5" />
-            </div>
-            <h3
-              id="add-seat-dialog-title"
-              className="mt-4 text-lg font-bold text-slate-900"
-            >
-              Add one paid seat?
-            </h3>
-            <p
-              id="add-seat-dialog-description"
-              className="mt-2 text-sm leading-6 text-slate-600"
-            >
-              This adds one teammate seat for {seatPriceLabel}. Stripe will bill
-              the prorated amount now, then you can invite the teammate from
-              Team.
-            </p>
-            <div className="mt-6 flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
-              <Button
-                disabled={isPending}
-                onClick={() => setConfirmOpen(false)}
-                type="button"
-                variant="outline"
-              >
-                Cancel
-              </Button>
-              <Button
-                disabled={isPending}
-                onClick={addSeat}
-                ref={confirmButtonRef}
-                type="button"
-              >
-                {isPending ? (
-                  <LoaderCircle className="size-4 animate-spin" />
-                ) : (
-                  <Plus className="size-4" />
-                )}
-                Confirm seat
-              </Button>
-            </div>
-          </div>
-        </div>
-      ) : null}
-      {error ? (
-        <p role="alert" className="mt-3 text-sm font-medium text-red-700">
-          {error}
-        </p>
-      ) : null}
-    </div>
   );
 }

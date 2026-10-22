@@ -8,13 +8,7 @@ type BillingCycle = RegistrationState["billingCycle"];
 
 let stripeClient: Stripe | undefined;
 
-const membershipTiers: MembershipTier[] = [
-  "seedling",
-  "roots",
-  "canopy",
-  "harvest",
-];
-const billingCycles: BillingCycle[] = ["monthly", "annual"];
+const signupTiers: MembershipTier[] = ["seedling", "roots", "canopy"];
 
 export function getStripe() {
   const secretKey = process.env.STRIPE_SECRET_KEY;
@@ -42,17 +36,13 @@ export function getStripePriceId(
 }
 
 export function getStripeSeatPriceId() {
-  const priceId = process.env.STRIPE_PRICE_SEAT_MONTHLY;
+  const priceId = process.env.STRIPE_PRICE_SEAT_ONE_TIME;
 
   if (!priceId) {
-    throw new Error("STRIPE_PRICE_SEAT_MONTHLY is not configured.");
+    throw new Error("STRIPE_PRICE_SEAT_ONE_TIME is not configured.");
   }
 
   return priceId;
-}
-
-function getOptionalStripeSeatPriceId() {
-  return process.env.STRIPE_PRICE_SEAT_MONTHLY || null;
 }
 
 export function getWebhookSecret() {
@@ -65,15 +55,20 @@ export function getWebhookSecret() {
   return webhookSecret;
 }
 
+export function isLegacyTestCheckoutSession(sessionId: string) {
+  const secretKey = process.env.STRIPE_SECRET_KEY;
+  return (
+    sessionId.startsWith("cs_test_") &&
+    (secretKey?.startsWith("sk_live_") || secretKey?.startsWith("rk_live_"))
+  );
+}
+
 async function getPortalUpdateProducts() {
   const stripe = getStripe();
-  const seatPriceId = getOptionalStripeSeatPriceId();
-  const priceIds = [
-    ...membershipTiers.flatMap((tier) =>
-      billingCycles.map((cycle) => getStripePriceId(tier, cycle)),
-    ),
-    ...(seatPriceId ? [seatPriceId] : []),
-  ];
+  const priceIds = signupTiers.flatMap((tier) => [
+    getStripePriceId(tier, "annual"),
+    getStripePriceId(tier, "quarterly"),
+  ]);
   const prices = await Promise.all(
     priceIds.map((priceId) => stripe.prices.retrieve(priceId)),
   );
@@ -88,22 +83,13 @@ async function getPortalUpdateProducts() {
   return [...products.entries()].map(([product, pricesForProduct]) => ({
     product,
     prices: pricesForProduct,
-    ...(seatPriceId && pricesForProduct.includes(seatPriceId)
-      ? {
-          adjustable_quantity: {
-            enabled: true,
-            minimum: 1,
-            maximum: 100,
-          },
-        }
-      : {}),
   }));
 }
 
 async function getBillingPortalConfigurationParams() {
   return {
     business_profile: {
-      headline: "Manage your Olea Connects membership and payment details.",
+      headline: "Manage your Olea Connects™ membership and payment details.",
     },
     features: {
       customer_update: {

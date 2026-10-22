@@ -10,11 +10,18 @@ import { Input } from "@/components/ui/input";
 import type { Template } from "@/lib/types";
 import { cn } from "@/lib/utils";
 
-const categories = ["All", "Governance", "Board Operations", "People", "Policy"];
-
 export function TemplateLibrary({ templates }: { templates: Template[] }) {
   const [search, setSearch] = useState("");
   const [category, setCategory] = useState("All");
+  const categories = useMemo(
+    () => [
+      "All",
+      ...Array.from(new Set(templates.map((template) => template.category))).sort(
+        (left, right) => left.localeCompare(right),
+      ),
+    ],
+    [templates],
+  );
 
   const filteredTemplates = useMemo(() => {
     const query = search.trim().toLowerCase();

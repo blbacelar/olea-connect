@@ -51,7 +51,7 @@ export default function PdfPanel({
           </Button>
           <PDFDownloadLink
             document={document}
-            fileName="jp-centre-board-self-evaluation.pdf"
+            fileName="maple-grove-board-self-evaluation.pdf"
           >
             {({ loading }) => (
               <Button asChild>

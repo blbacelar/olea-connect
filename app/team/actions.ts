@@ -13,6 +13,27 @@ import type { OrganizationRole } from "@/lib/types";
 import { createAdminClient } from "@/utils/supabase/admin";
 import { createClient } from "@/utils/supabase/server";
 
+type InviteTeamMemberResult =
+  | { ok: true }
+  | { ok: false; message: string };
+
+const expectedInviteFailures = [
+  "Only organization owners and admins can invite members.",
+  "Enter a valid email address.",
+  "This person already belongs to the organization.",
+  "This email already has an Olea Connects account. Invite a new email address, or ask support to move the existing account.",
+  "A pending invitation already exists for this email.",
+  "Your plan has no available team seats.",
+] as const;
+
+function getSafeInviteFailureMessage(message: string) {
+  return (
+    expectedInviteFailures.find((expectedMessage) =>
+      message.includes(expectedMessage),
+    ) ?? "Unable to send this invitation. Please try again."
+  );
+}
+
 function assertManager(role: OrganizationRole) {
   if (!["owner", "admin"].includes(role)) {
     throw new Error("Only organization owners and admins can manage the team.");
@@ -22,23 +43,39 @@ function assertManager(role: OrganizationRole) {
 export async function inviteTeamMember(
   email: string,
   role: Exclude<OrganizationRole, "owner"> = "member",
-) {
-  const { member, organization } = await requireMemberContext();
-  assertManager(member.membershipRole);
+): Promise<InviteTeamMemberResult> {
+  try {
+    const { member, organization } = await requireMemberContext();
+    assertManager(member.membershipRole);
 
-  const supabase = await createClient();
-  const { error } = await supabase.rpc("create_team_invitation", {
-    target_organization_id: organization.id,
-    target_email: email.trim().toLowerCase(),
-    target_role: role,
-    raw_token: randomBytes(32).toString("base64url"),
-    target_expires_at: new Date(
-      Date.now() + 7 * 24 * 60 * 60 * 1000,
-    ).toISOString(),
-  });
+    const supabase = await createClient();
+    const { error } = await supabase.rpc("create_team_invitation", {
+      target_organization_id: organization.id,
+      target_email: email.trim().toLowerCase(),
+      target_role: role,
+      raw_token: randomBytes(32).toString("base64url"),
+      target_expires_at: new Date(
+        Date.now() + 7 * 24 * 60 * 60 * 1000,
+      ).toISOString(),
+    });
 
-  if (error) throw new Error(error.message);
-  revalidatePath("/team");
+    if (error) {
+      return {
+        ok: false,
+        message: getSafeInviteFailureMessage(error.message),
+      };
+    }
+
+    revalidatePath("/team");
+    return { ok: true };
+  } catch (error) {
+    return {
+      ok: false,
+      message: getSafeInviteFailureMessage(
+        error instanceof Error ? error.message : "",
+      ),
+    };
+  }
 }
 
 export async function cancelTeamInvitation(invitationId: string) {

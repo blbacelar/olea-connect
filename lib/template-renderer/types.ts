@@ -17,6 +17,7 @@ export type TemplateFieldType =
   | "signature"
   | "email"
   | "url"
+  | "color"
   | "file"
   | "heading"
   | "paragraph";
@@ -72,11 +73,22 @@ export interface TemplateSection {
   id: string;
   title: string;
   description?: string;
+  layout?: "default" | "two_column";
   questions: TemplateField[];
+}
+
+export interface TemplateSchemaPresentation {
+  section_layout?: "stack" | "tabs";
+  sectionLayout?: "stack" | "tabs";
+  calendar?: {
+    enabled?: boolean;
+    source?: string;
+  };
 }
 
 export interface TemplateFieldSchema {
   version: number;
+  presentation?: TemplateSchemaPresentation;
   header_fields?: TemplateField[];
   sections: TemplateSection[];
 }
@@ -106,8 +118,15 @@ export interface TemplateExportRecord {
   generatedBy: string | null;
 }
 
+export interface WorkspaceMemberOption {
+  id: string;
+  name: string;
+  email: string;
+}
+
 export interface DynamicTemplateEditorData {
   organization: Organization;
+  membershipRole: "owner" | "admin" | "member";
   template: {
     id: string;
     slug: string;
@@ -120,7 +139,14 @@ export interface DynamicTemplateEditorData {
     supportsDocx: boolean;
   };
   session: DynamicTemplateSession;
+  sessions: Array<{
+    id: string;
+    title: string;
+    status: DynamicTemplateSession["status"];
+    updatedAt: string;
+  }>;
   exports: TemplateExportRecord[];
+  workspaceMembers: WorkspaceMemberOption[];
 }
 
 export type FieldPath = Array<string | number>;

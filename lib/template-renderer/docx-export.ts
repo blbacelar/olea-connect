@@ -27,7 +27,7 @@ export async function renderTemplateDocxBuffer({
 }) {
   const logo = getEmbeddedLogo(brand.logoUrl);
   const document = new Document({
-    creator: "Olea Connects",
+    creator: "Olea Connects™",
     title: `${organizationName} ${title}`,
     sections: [
       {

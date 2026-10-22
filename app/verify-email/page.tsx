@@ -4,14 +4,18 @@ import { MailCheck } from "lucide-react";
 import { useEffect, useState, useTransition } from "react";
 
 import { AuthCard } from "@/components/auth/AuthCard";
-import { Button } from "@/components/ui/button";
+import { useLocaleContext } from "@/components/i18n/LocaleProvider";
 import { useRegistration } from "@/hooks/use-registration";
-import {
-  resendVerificationEmail,
-} from "@/lib/auth";
+import { resendVerificationEmail } from "@/lib/auth";
+import { getAuthFlowCopy } from "@/lib/i18n/auth-flow-copy";
+import { getPublicSiteCopy } from "@/lib/i18n/public-site-copy";
 
 export default function VerifyEmailPage() {
   const { registration } = useRegistration();
+  const { locale } = useLocaleContext();
+  const authCopy = getAuthFlowCopy(locale);
+  const publicCopy = getPublicSiteCopy(locale);
+  const verifyCopy = authCopy.verifyEmail;
   const [cooldown, setCooldown] = useState(0);
   const [message, setMessage] = useState("");
   const [isPending, startTransition] = useTransition();
@@ -38,23 +42,20 @@ export default function VerifyEmailPage() {
         setMessage("");
         await resendVerificationEmail(registration.email);
         setCooldown(60);
-        setMessage("A new verification email has been sent.");
-      } catch (resendError) {
-        setMessage(
-          resendError instanceof Error
-            ? resendError.message
-            : "Unable to resend the verification email.",
-        );
+        setMessage(verifyCopy.sentMessage);
+      } catch {
+        setMessage(verifyCopy.fallbackError);
       }
     });
   };
 
   return (
     <AuthCard
-      title="Check your email"
-      description={`We sent a verification link to ${
-        registration.email || "your email address"
-      }.`}
+      title={verifyCopy.title}
+      description={verifyCopy.description(
+        registration.email || verifyCopy.fallbackEmail,
+      )}
+      logo={publicCopy.logo}
     >
       <div className="text-center">
         <span className="mx-auto grid size-16 place-items-center rounded-2xl bg-olea-light text-olea-green">
@@ -62,10 +63,9 @@ export default function VerifyEmailPage() {
         </span>
         <p className="mt-5 text-sm leading-6 text-slate-500">
           {paymentComplete
-            ? "Your payment was received. Confirm your email before accessing the dashboard."
-            : "Confirm your email before accessing the dashboard."}{" "}
-          The secure link will return you to Olea Connects and continue setup
-          automatically.
+            ? verifyCopy.paymentMessage
+            : verifyCopy.defaultMessage}{" "}
+          {verifyCopy.returnMessage}
         </p>
         {message ? (
           <p className="mt-5 rounded-lg bg-slate-50 p-3 text-sm text-slate-600">
@@ -77,9 +77,7 @@ export default function VerifyEmailPage() {
           onClick={resend}
           className="mt-6 text-sm font-semibold text-olea-green disabled:text-slate-400"
         >
-          {cooldown > 0
-            ? `Resend available in ${cooldown}s`
-            : "Resend verification email"}
+          {cooldown > 0 ? verifyCopy.resendIn(cooldown) : verifyCopy.resend}
         </button>
       </div>
     </AuthCard>

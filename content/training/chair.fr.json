@@ -1,0 +1,129 @@
+{
+  "id": "chair-discussion-guide",
+  "locale": "fr",
+  "version": "1.0.0",
+  "currentAsOf": "octobre 2026",
+  "audience": "Présidences de conseil et responsables de l’organisme",
+  "title": "Le guide de discussion de la présidence",
+  "subtitle": "Des conversations génératives pour votre conseil",
+  "intro": [
+    "Ce guide s’adresse aux présidences de conseil. Utilisez-le pour transformer ce que les membres ont appris dans L’essentiel de la gouvernance en de meilleures conversations autour de votre propre table.",
+    "La plus grande partie du temps du conseil est consacrée à deux types de travail. Le travail **fiduciaire** se demande si nous sommes en sécurité, conformes et si nous utilisons bien nos ressources. Le travail **stratégique** se demande où concentrer nos efforts. Les deux sont importants. Un troisième type, souvent appelé gouvernance **générative**, pose les questions de fond : quel problème sommes-nous vraiment là pour résoudre, en quoi croyons-nous, et qu’est-ce que nous ne voyons pas? L’idée vient du livre *Governance as Leadership* de Richard Chait, William Ryan et Barbara Taylor, et c’est là que le conseil apporte la valeur que le personnel ne peut pas apporter.",
+    "Chaque séance ci-dessous dure de 20 à 45 minutes. Utilisez-en une au début d’une réunion ordinaire, avant les affaires courantes, ou plusieurs lors d’une retraite."
+  ],
+  "howTo": {
+    "heading": "Comment animer une discussion générative",
+    "items": [
+      "**Placez-la en premier à l’ordre du jour,** et non à la fin, quand tout le monde est fatigué.",
+      "**Aucune proposition, aucune décision.** Dites-le dès le départ. Le but est de comprendre, et non de voter.",
+      "**Formulez-la comme une question,** et non comme une présentation. Joignez la mise en situation ou la question à la documentation du conseil pour que les membres arrivent en y ayant réfléchi.",
+      "**Entendez chaque voix.** Faites un tour de table avant la discussion ouverte. Donnez d’abord la parole aux nouveaux membres, pour qu’ils ne soient pas influencés par les plus anciens.",
+      "**Parlez en dernier.** Votre avis de présidence pèse lourd; le garder pour la fin laisse les autres penser librement.",
+      "**Accueillez l’inconfort.** Quand la conversation devient inconfortable, c’est souvent qu’elle mène quelque part.",
+      "**Résumez et concluez.** Nommez les thèmes entendus, convenez de ce qui, le cas échéant, reviendra comme point d’affaires, et consignez-le."
+    ]
+  },
+  "sessions": [
+    {
+      "id": "s0",
+      "title": "Après L’essentiel de la gouvernance : qu’avons-nous appris?",
+      "minutes": 20,
+      "when": "À la première réunion après que tous les membres ont terminé la formation.",
+      "purpose": "Établir une norme commune et faire ressortir les questions que les membres se posent.",
+      "opener": "Demandez à chaque membre de nommer une chose de la formation qui a confirmé notre façon de faire, et une chose qui l’a amené à se demander si nous le faisons bien.",
+      "questions": [
+        "Quelle mise en situation ressemble le plus à ce qui pourrait arriver ici?",
+        "Où confondons-nous gouverner et gérer?",
+        "Notre pratique en matière de conflits d’intérêts est-elle aussi solide en réalité que sur papier?",
+        "Quelle est une chose que nous devrions faire autrement dès la prochaine réunion?"
+      ],
+      "tip": "Attendez-vous à ce que les membres les plus expérimentés soient les plus francs au sujet des lacunes. Remerciez-les."
+    },
+    {
+      "id": "s1",
+      "title": "Pour qui sommes-nous vraiment là?",
+      "minutes": 30,
+      "when": "Avant un cycle de planification stratégique, ou une fois par année.",
+      "purpose": "Reconnecter le conseil avec les personnes que sert l’organisme, au-delà des chiffres.",
+      "opener": "Invitez une personne participante, un membre du personnel de première ligne ou un partenaire communautaire à parler pendant cinq minutes de ce que l’organisme représente pour lui. Remerciez-le et laissez-le partir avant la discussion du conseil.",
+      "questions": [
+        "Qu’avons-nous entendu que nos rapports ne nous disent jamais?",
+        "Si nous disparaissions demain, qui le remarquerait en premier, et que perdrait cette personne?",
+        "Qui devrions-nous servir et ne servons-nous pas?",
+        "Comment les personnes que nous servons décriraient-elles notre conseil, si elles savaient qui nous sommes?"
+      ],
+      "tip": "Résistez à l’envie de régler les problèmes. Laissez les questions faire leur chemin."
+    },
+    {
+      "id": "s2",
+      "title": "Qu’est-ce qui pourrait nous faire échouer?",
+      "minutes": 30,
+      "when": "Lors de l’examen du registre des risques ou du budget.",
+      "purpose": "Faire ressortir les risques que les rapports officiels ne montrent pas, au moyen d’un « pré-mortem ».",
+      "opener": "Imaginez que nous sommes dans trois ans et que l’organisme a fermé ses portes. Demandez à chaque membre d’écrire la raison la plus probable, puis de la partager.",
+      "questions": [
+        "Lesquels de ces risques figurent dans notre registre des risques? Lesquels n’y sont pas?",
+        "Où dépendons-nous d’une seule personne, d’un seul bailleur de fonds ou d’un seul système?",
+        "Quels signes avant-coureurs verrions-nous, et se rendraient-ils jusqu’au conseil?",
+        "Qu’aimerions-nous avoir fait cette année?"
+      ],
+      "tip": "Demandez aux membres d’écrire avant de parler. Les réponses sont plus franches et plus variées."
+    },
+    {
+      "id": "s3",
+      "title": "Quand des gens de bonne foi ne sont pas d’accord",
+      "minutes": 25,
+      "when": "Après une décision difficile, ou quand des tensions s’installent.",
+      "purpose": "Renforcer la capacité du conseil à exprimer ses désaccords et à parler quand même d’une seule voix.",
+      "opener": "Revoyez la mise en situation de l’administratrice qui a critiqué publiquement une décision du conseil. Demandez : qu’est-ce qui aurait dû être différent pour qu’elle se sente entendue?",
+      "questions": [
+        "Comment faire place à la dissidence avant la décision, pour qu’elle ne surgisse pas après?",
+        "Les membres se sentent-ils libres d’être en désaccord avec la présidence, ou avec les membres de longue date?",
+        "Comment communiquons-nous les décisions difficiles aux membres et à la communauté?",
+        "Que signifie concrètement « parler d’une seule voix » pour nous?"
+      ],
+      "tip": "Si vous avez pris récemment une décision difficile, nommez-la directement. Faire comme si elle n’avait pas eu lieu nuit à la séance."
+    },
+    {
+      "id": "s4",
+      "title": "La réconciliation en pratique",
+      "minutes": 45,
+      "when": "Une fois par année, idéalement avec une animatrice ou un partenaire autochtone invité et rémunéré pour son temps.",
+      "purpose": "Passer des déclarations à des engagements dont le conseil peut rendre compte.",
+      "opener": "Lisez à voix haute votre reconnaissance territoriale actuelle, si vous en avez une. Demandez : à quoi nous engage-t-elle?",
+      "questions": [
+        "Sur quel territoire sommes-nous, et que savons-nous des Nations et des communautés d’ici?",
+        "Quelles personnes, quels organismes ou quelles communautés des Premières Nations, inuits ou métis sont liés à notre travail? Avons-nous de véritables relations avec eux?",
+        "À quoi ressemblerait une gouvernance, et non seulement des programmes, qui reflète la réconciliation?",
+        "Quel engagement pourrions-nous prendre cette année, et comment saurions-nous que nous l’avons tenu?"
+      ],
+      "tip": "Ne demandez pas aux membres autochtones de parler au nom de tous les peuples autochtones ni de porter l’apprentissage du conseil. Faites-en un travail partagé."
+    },
+    {
+      "id": "s5",
+      "title": "Le conseil que nous voulons être",
+      "minutes": 30,
+      "when": "Après l’autoévaluation annuelle du conseil.",
+      "purpose": "Transformer les résultats de l’évaluation en une vision commune de la culture du conseil et des prochaines étapes.",
+      "opener": "Présentez les trois principales forces et les trois principales lacunes ressorties de l’autoévaluation, sans nommer personne.",
+      "questions": [
+        "Qu’est-ce qui nous a surpris?",
+        "De quelles compétences, expériences ou perspectives aurons-nous besoin dans les trois prochaines années que nous n’avons pas aujourd’hui?",
+        "Quelle habitude voulons-nous adopter, et laquelle voulons-nous abandonner?",
+        "Comment allons-nous nous y tenir?"
+      ],
+      "tip": "Concluez en convenant d’au plus deux changements. Les conseils qui veulent tout régler ne règlent rien."
+    }
+  ],
+  "capture": {
+    "heading": "Modèle de compte rendu",
+    "intro": "Consignez le résultat de chaque discussion au procès-verbal, ou dans une courte note au conseil.",
+    "fields": [
+      "Séance et date",
+      "Ce que nous avons entendu (des thèmes, pas des noms)",
+      "Ce sur quoi nous sommes d’accord",
+      "Les questions qui restent ouvertes",
+      "Ce qui reviendra comme point d’affaires, qui s’en charge et pour quand"
+    ]
+  }
+}

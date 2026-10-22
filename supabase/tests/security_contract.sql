@@ -1,31 +1,81 @@
 begin;
 
-select plan(10);
+select plan(11);
 
 create temporary table expected_public_access (
   table_name text primary key,
   access_model text not null check (
-    access_model in ('tenant', 'self', 'catalog', 'admin', 'service')
+    access_model in ('tenant', 'self', 'catalog', 'admin', 'service', 'intake')
   )
 );
 
 insert into expected_public_access (table_name, access_model)
 values
   ('audit_logs', 'admin'),
+  ('board_evaluation_actions', 'service'),
+  ('board_evaluation_cycles', 'service'),
+  ('board_evaluation_responses', 'service'),
+  ('board_recruitment_committee_members', 'tenant'),
+  ('board_recruitment_committees', 'tenant'),
+  ('board_recruitment_invitations', 'tenant'),
+  ('board_recruitment_members', 'tenant'),
+  ('board_recruitment_responses', 'tenant'),
+  ('board_recruitment_skill_assignments', 'tenant'),
+  ('board_recruitment_skill_categories', 'tenant'),
+  ('board_recruitment_skills', 'tenant'),
+  ('board_recruitment_workspaces', 'tenant'),
+  ('board_training_attempts', 'service'),
+  ('board_training_certificates', 'service'),
+  ('board_training_declarations', 'service'),
+  ('board_training_documents', 'service'),
+  ('board_training_enrollments', 'service'),
+  ('board_training_invitations', 'service'),
+  ('board_training_settings', 'service'),
   ('community_memberships', 'tenant'),
+  ('community_comments', 'tenant'),
+  ('community_events', 'tenant'),
+  ('community_managers', 'admin'),
+  ('community_mentions', 'tenant'),
+  ('community_posts', 'tenant'),
+  ('community_reactions', 'self'),
+  ('community_space_access_rules', 'catalog'),
+  ('community_spaces', 'catalog'),
+  ('communities', 'catalog'),
   ('consulting_engagements', 'tenant'),
+  ('consulting_request_activity', 'tenant'),
+  ('consulting_request_attachments', 'tenant'),
   ('consulting_requests', 'tenant'),
   ('consulting_time_entries', 'tenant'),
+  ('ed_review_audit_events', 'admin'),
+  ('ed_review_campaigns', 'admin'),
+  ('ed_review_compilations', 'admin'),
+  ('ed_review_cycles', 'admin'),
+  ('ed_review_responses', 'service'),
+  ('ed_review_reviewer_assignments', 'admin'),
+  ('ed_review_survey_distributions', 'service'),
   ('event_plan_access', 'catalog'),
   ('event_registrations', 'tenant'),
   ('event_sponsors', 'catalog'),
   ('events', 'catalog'),
   ('grant_application_reviews', 'admin'),
   ('grant_applications', 'tenant'),
+  ('grant_application_attachments', 'tenant'),
   ('grant_awards', 'tenant'),
+  ('grant_funder_interactions', 'tenant'),
+  ('grant_organization_settings', 'tenant'),
+  ('grant_partners', 'tenant'),
   ('grant_program_contributions', 'service'),
   ('grant_programs', 'catalog'),
   ('grant_rounds', 'catalog'),
+  ('kpi_annual_summaries', 'tenant'),
+  ('kpi_board_assessments', 'tenant'),
+  ('kpi_dashboards', 'tenant'),
+  ('kpi_definitions', 'tenant'),
+  ('kpi_milestones', 'tenant'),
+  ('kpi_quarter_assignments', 'tenant'),
+  ('kpi_quarter_results', 'tenant'),
+  ('kpi_quarter_settings', 'tenant'),
+  ('kpi_risks', 'tenant'),
   ('integration_events', 'service'),
   ('membership_plans', 'catalog'),
   ('notifications', 'self'),
@@ -38,15 +88,31 @@ values
   ('platform_user_roles', 'admin'),
   ('privacy_consents', 'self'),
   ('profiles', 'self'),
+  ('referral_codes', 'service'),
+  ('referral_audit_events', 'service'),
+  ('referral_links', 'service'),
+  ('referral_milestones', 'service'),
+  ('referral_payouts', 'service'),
+  ('referral_program_settings', 'service'),
+  ('referral_rewards', 'service'),
+  ('referral_tracking_codes', 'service'),
+  ('referrals', 'service'),
+  ('referrers', 'service'),
+  ('organization_referrals', 'service'),
+  ('founding_member_claims', 'service'),
   ('resource_categories', 'catalog'),
   ('resource_plan_access', 'catalog'),
   ('resource_versions', 'catalog'),
   ('resources', 'catalog'),
   ('sponsor_contacts', 'service'),
   ('sponsor_contributions', 'service'),
+  ('sponsored_memberships', 'service'),
   ('sponsors', 'catalog'),
+  ('sponsorship_board_targets', 'service'),
   ('sponsorship_packages', 'catalog'),
   ('sponsorships', 'service'),
+  ('strategic_goals', 'service'),
+  ('strategic_plans', 'service'),
   ('subscription_items', 'tenant'),
   ('subscriptions', 'tenant'),
   ('survey_answers', 'tenant'),
@@ -60,6 +126,12 @@ values
   ('user_integrations', 'self'),
   ('webhook_events', 'service'),
   ('workspace_provisioning_requests', 'service');
+
+-- Older production databases have a public, write-only waitlist that is not
+-- present in fresh installations. Classify it without assuming its presence.
+insert into expected_public_access (table_name, access_model)
+select 'waitlist', 'intake'
+where to_regclass('public.waitlist') is not null;
 
 select is_empty(
   $test$
@@ -99,7 +171,7 @@ select is_empty(
   $test$
     select access.table_name
     from expected_public_access access
-    where access.access_model <> 'service'
+    where access.access_model not in ('service', 'intake')
       and not exists (
         select 1
         from pg_policies policies
@@ -121,6 +193,26 @@ select is_empty(
       )
   $test$,
   'service-owned tables deny browser roles'
+);
+
+select is_empty(
+  $test$
+    select access.table_name
+    from expected_public_access access
+    where access.access_model = 'intake'
+      and (
+        not has_table_privilege('anon', format('public.%I', access.table_name), 'INSERT')
+        or has_table_privilege('anon', format('public.%I', access.table_name), 'SELECT')
+        or has_table_privilege('authenticated', format('public.%I', access.table_name), 'SELECT')
+        or exists (
+          select 1 from pg_policies policies
+          where policies.schemaname = 'public'
+            and policies.tablename = access.table_name
+            and policies.cmd <> 'INSERT'
+        )
+      )
+  $test$,
+  'public intake tables allow submissions and deny browser reads'
 );
 
 select is_empty(

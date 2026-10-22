@@ -1,65 +1,144 @@
-import { MessageSquareText } from "lucide-react";
-import Link from "next/link";
+import {
+  CalendarDays,
+  MessageSquareText,
+  ShieldCheck,
+  Users,
+} from "lucide-react";
 
+import { EmptyPanel } from "@/components/EmptyPanel";
 import { PageHeader } from "@/components/PageHeader";
+import { SectionHeading } from "@/components/SectionHeading";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { brandName } from "@/lib/brand";
+import { getCommunityHome } from "@/lib/data/community";
+import { getRequestLocale } from "@/lib/i18n/server";
 
-const channels = [
-  "Welcome & Introductions",
-  "Governance Questions",
-  "Grants & Funding",
-  "Wins & Shoutouts",
-  "Resource Sharing",
-];
+import { CommunityFeed } from "./community-feed";
 
-export default function CommunityPage() {
+function formatEventDate(value: string) {
+  return new Intl.DateTimeFormat("en-CA", {
+    dateStyle: "medium",
+    timeStyle: "short",
+  }).format(new Date(value));
+}
+
+export default async function CommunityPage() {
+  const community = await getCommunityHome();
+  const isFrench = (await getRequestLocale()) === "fr-CA";
+
+  if (!community) {
+    return (
+      <div>
+        <PageHeader
+          title="Community"
+          description="A private member space for nonprofit operators and board leaders."
+        />
+        <EmptyPanel
+          title="Community is coming soon"
+          description="Community spaces will appear here when they are available."
+          icon={<MessageSquareText className="size-5" />}
+        />
+      </div>
+    );
+  }
+
+  const communityName =
+    community.name === "Olea Connects Community"
+      ? `${brandName} Community`
+      : community.name;
+
   return (
     <div>
       <PageHeader
         title="Community"
-        description="Connect with nonprofit leaders across the country. You're already signed in."
+        description={
+          community.description ??
+          "A private member space for nonprofit operators and board leaders."
+        }
+        action={
+          community.canManage ? (
+            <Badge className="rounded-full bg-olea-light px-3 py-1 text-olea-green hover:bg-olea-light">
+              <ShieldCheck className="mr-1.5 size-3.5" />
+              Community manager
+            </Badge>
+          ) : null
+        }
       />
-      <div className="overflow-hidden rounded-[14px] border bg-white shadow-soft">
-        <div className="flex items-center gap-2.5 border-b bg-[#FAFBFA] px-[22px] py-4 text-[13.5px] font-medium text-slate-500">
-          <span className="size-[9px] rounded-full bg-olea-green" />
-          Connected via single sign-on · powered by Circle
-        </div>
-        <div className="grid min-h-[390px] md:grid-cols-[240px_1fr]">
-          <aside className="border-r bg-slate-50/60 p-4">
-            <p className="px-2.5 pb-2 text-[11px] font-semibold uppercase tracking-[0.05em] text-slate-400">
-              Channels
+
+      <section className="mb-7 rounded-[14px] border border-olea-green/20 bg-white px-5 py-4 shadow-soft" aria-label={isFrench ? "Règles de la communauté" : "Community guidelines"}>
+        <h2 className="font-semibold text-slate-900">
+          {isFrench ? "Règles de la communauté" : "Community guidelines"}
+        </h2>
+        <p className="mt-2 text-sm leading-6 text-slate-600">
+          {isFrench
+            ? "Échangez avec respect. Ne publiez pas de renseignements confidentiels sur des personnes ou des organismes sans leur consentement. Signalez tout contenu préoccupant à l'équipe Olea pour examen."
+            : "Collaborate respectfully. Do not share another person's or organization's confidential information without permission. Report concerning content to the Olea team for review."}
+        </p>
+      </section>
+
+      <section className="mb-7 overflow-hidden rounded-[14px] border bg-white shadow-soft">
+        <div className="flex flex-wrap items-center justify-between gap-3 border-b bg-[#FAFBFA] px-[22px] py-4">
+          <div>
+            <p className="text-xs font-semibold uppercase tracking-[0.08em] text-olea-green">
+              Native Olea community
             </p>
-            {channels.map((channel) => (
-              <div
-                key={channel}
-                className="rounded-lg px-3 py-2.5 text-sm text-slate-600 hover:bg-white"
-              >
-                # {channel}
-              </div>
-            ))}
-          </aside>
-          <div className="grid place-items-center p-8 text-center">
-            <div>
-              <span className="mx-auto grid size-12 place-items-center rounded-xl bg-olea-light text-olea-green">
-                <MessageSquareText className="size-6" />
-              </span>
-              <h2 className="mt-4 text-[15px] font-semibold text-slate-600">
-                Open Olea Connects on Circle
-              </h2>
-              <p className="mx-auto mt-2 max-w-sm text-[13.5px] leading-6 text-slate-400">
-                Active members are passed through with single sign-on and the
-                right tier access.
-              </p>
-              <Link
-                href="/api/circle-sso"
-                prefetch={false}
-                className="mt-5 inline-flex h-10 items-center rounded-full bg-black px-5 text-[13px] font-semibold text-white"
-              >
-                Continue to community
-              </Link>
-            </div>
+            <h2 className="mt-1 text-lg font-semibold text-slate-900">
+              {communityName}
+            </h2>
           </div>
+          <span className="inline-flex items-center gap-2 rounded-full bg-white px-3 py-1.5 text-sm font-medium text-slate-600 shadow-sm ring-1 ring-slate-200">
+            <Users className="size-4 text-olea-green" />
+            Included with your membership
+          </span>
         </div>
-      </div>
+
+        <CommunityFeed community={community} />
+      </section>
+
+      <section>
+        <SectionHeading>Upcoming community events</SectionHeading>
+        {community.events.length ? (
+          <div className="grid gap-4 md:grid-cols-2">
+            {community.events.map((event) => (
+              <article
+                key={event.id}
+                className="rounded-[14px] border bg-white p-5 shadow-soft"
+              >
+                <span className="grid size-11 place-items-center rounded-xl bg-olea-light text-olea-green">
+                  <CalendarDays className="size-5" />
+                </span>
+                <h3 className="mt-4 text-base font-semibold text-slate-900">
+                  {event.title}
+                </h3>
+                <p className="mt-1 text-[13px] text-slate-500">
+                  {formatEventDate(event.startsAt)} · {event.timezone}
+                </p>
+                <p className="mt-2 text-sm leading-6 text-slate-600">
+                  {event.summary}
+                </p>
+                {event.zoomUrl ? (
+                  <Button asChild className="mt-4" size="sm">
+                    <a href={event.zoomUrl} target="_blank" rel="noreferrer">
+                      Join on Zoom
+                    </a>
+                  </Button>
+                ) : (
+                  <Badge variant="outline" className="mt-4">
+                    Zoom link coming soon
+                  </Badge>
+                )}
+              </article>
+            ))}
+          </div>
+        ) : (
+          <EmptyPanel
+            title="No community events scheduled"
+            description="Live calls and webinars can be added with Zoom links once the manager workflow is ready."
+            icon={<CalendarDays className="size-5" />}
+          />
+        )}
+      </section>
     </div>
   );
 }

@@ -1,8 +1,16 @@
 import { createClient, type SupabaseClient } from "@supabase/supabase-js";
-import { test as base } from "@playwright/test";
+
+import type { EdReviewCampaignStatus } from "@/lib/ed-review/domain";
 
 import { createTestIdentity } from "../factories/identity";
 import { getTestSupabaseEnvironment } from "../support/test-environment";
+import { test as base } from "./browser.fixture";
+import * as communityMethods from "./test-data/community";
+import * as consultingReviewMethods from "./test-data/consultingReview";
+import * as eventMethods from "./test-data/events";
+import * as invitationMethods from "./test-data/invitations";
+import * as organizationMethods from "./test-data/organization";
+import * as templateMethods from "./test-data/templates";
 
 type CleanupTask = {
   label: string;
@@ -15,6 +23,7 @@ export type CreatedOrganizationOwner = {
   organizationId: string;
   organizationName: string;
   subscriptionId: string | null;
+  fullName: string;
   email: string;
   password: string;
 };
@@ -23,354 +32,228 @@ export type CreatedOrganizationMember = {
   marker: string;
   userId: string;
   organizationId: string;
+  fullName: string;
   email: string;
   password: string;
 };
 
+export type CreatedTeamInvitee = {
+  marker: string;
+  fullName: string;
+  email: string;
+  password: string;
+};
+
+export type TeamInvitationState = {
+  id: string;
+  rawToken: string;
+  status: "pending" | "accepted" | "revoked" | "expired";
+  acceptedBy: string | null;
+};
+
+export type CreatedEvent = {
+  id: string;
+  slug: string;
+  title: string;
+  startsAt: string;
+};
+
+export type CreatedNotification = {
+  id: string;
+  userId: string;
+  title: string;
+};
+
+export type EdReviewCycleState = {
+  status: EdReviewCampaignStatus;
+  campaigns: Array<{
+    status: EdReviewCampaignStatus;
+    title: string;
+  }>;
+};
+
+export type EdReviewReviewerAssignmentState = {
+  id: string;
+  role: "board_chair" | "hr_reviewer" | "privileged_auditor";
+};
+
+export type EventStatus =
+  | "draft"
+  | "scheduled"
+  | "live"
+  | "completed"
+  | "canceled"
+  | "archived"
+  | "rescheduled";
+
+export type PlatformRole =
+  | "super_admin"
+  | "content_admin"
+  | "consultant"
+  | "consulting_admin"
+  | "grants_admin"
+  | "community_admin"
+  | "finance_admin";
+
+export type ConsultingRequestLookup = {
+  id: string;
+  assigned_to: string | null;
+  description: string;
+  internal_notes: string | null;
+  member_notes: string | null;
+  status: string;
+  title: string;
+};
+
+export type ConsultingActivityLookup = {
+  event_type: string;
+  message: string | null;
+  new_status: string | null;
+  old_status: string | null;
+};
+
+export type ConsultingTimeEntryLookup = {
+  description: string;
+  is_in_kind: boolean;
+  minutes: number;
+  work_date: string;
+};
+
+export type CreatedTemplateInstance = {
+  id: string;
+  organizationId: string;
+  resourceId: string;
+  title: string;
+};
+
+export type CreatedTemplateExport = {
+  id: string;
+  organizationId: string;
+  resourceId: string;
+  templateInstanceId: string;
+};
+
+export type CreatedTemplateExportDownload = {
+  id: string;
+  exportId: string;
+  organizationId: string;
+};
+
+export type DefaultCommunity = {
+  id: string;
+};
+
+export type CommunitySpace = {
+  id: string;
+  community_id: string;
+};
+
+export type MailpitMessage = {
+  ID: string;
+  To?: Array<{ Address?: string }>;
+};
+
+export type MailpitMessageDetails = {
+  HTML?: string;
+  Text?: string;
+};
+
 export class TestDataManager {
-  private readonly cleanupTasks: CleanupTask[] = [];
-  private identitySequence = 0;
-  private purged = false;
+  readonly cleanupTasks: CleanupTask[] = [];
+  identitySequence = 0;
+  purged = false;
 
   constructor(
-    private readonly supabase: SupabaseClient,
-    private readonly testInfo: Parameters<typeof createTestIdentity>[0],
+    readonly supabase: SupabaseClient,
+    readonly testInfo: Parameters<typeof createTestIdentity>[0],
   ) {}
 
-  private registerCleanup(task: CleanupTask) {
+  registerCleanup(task: CleanupTask) {
     this.cleanupTasks.push(task);
   }
 
-  async createOrganizationOwner(
-    options: {
-      activeSubscription?: boolean;
-      planId?: "seedling" | "roots" | "canopy" | "harvest";
-      subscriptionStatus?:
-        | "incomplete"
-        | "trialing"
-        | "active"
-        | "past_due"
-        | "paused"
-        | "canceled"
-        | "unpaid";
-    } = {},
-  ): Promise<CreatedOrganizationOwner> {
-    const identity = createTestIdentity(
-      this.testInfo,
-      ++this.identitySequence,
-    );
-    const { data: authData, error: authError } =
-      await this.supabase.auth.admin.createUser({
-        email: identity.email,
-        password: identity.password,
-        email_confirm: true,
-        user_metadata: {
-          full_name: identity.fullName,
-          e2e_marker: identity.marker,
-        },
-      });
+  async cleanupAuthUserDependencies(userId: string) {
+    const { error: consultingAttachmentError } = await this.supabase
+      .from("consulting_request_attachments")
+      .delete()
+      .eq("uploaded_by", userId);
+    if (consultingAttachmentError) throw consultingAttachmentError;
 
-    if (authError) throw authError;
-    const userId = authData.user.id;
+    const { error: consultingTimeError } = await this.supabase
+      .from("consulting_time_entries")
+      .delete()
+      .eq("user_id", userId);
+    if (consultingTimeError) throw consultingTimeError;
 
-    this.registerCleanup({
-      label: `auth user ${userId}`,
-      run: async () => {
-        const { error } = await this.supabase.auth.admin.deleteUser(userId);
-        if (error && error.status !== 404) throw error;
+    const { error: consultingAssignmentError } = await this.supabase
+      .from("consulting_requests")
+      .update({ assigned_to: null })
+      .eq("assigned_to", userId);
+    if (consultingAssignmentError) throw consultingAssignmentError;
 
-        const { data } = await this.supabase.auth.admin.getUserById(userId);
-        if (data.user) throw new Error(`Auth user ${userId} still exists.`);
-      },
-    });
+    const { error: consultingRequestError } = await this.supabase
+      .from("consulting_requests")
+      .delete()
+      .eq("requested_by", userId);
+    if (consultingRequestError) throw consultingRequestError;
 
-    const { data: organization, error: organizationError } = await this.supabase
-      .from("organizations")
-      .insert({
-        name: identity.organizationName,
-        slug: identity.marker,
-        province_or_region: "AB",
-        created_by: userId,
-      })
-      .select("id")
-      .single();
+    const { error: notificationError } = await this.supabase
+      .from("notifications")
+      .delete()
+      .eq("user_id", userId);
+    if (notificationError) throw notificationError;
 
-    if (organizationError) throw organizationError;
-    const organizationId = organization.id as string;
-
-    this.registerCleanup({
-      label: `organization ${organizationId}`,
-      run: async () => {
-        const { error } = await this.supabase
-          .from("organizations")
-          .delete()
-          .eq("id", organizationId)
-          .eq("created_by", userId);
-        if (error) throw error;
-
-        const { data, error: lookupError } = await this.supabase
-          .from("organizations")
-          .select("id")
-          .eq("id", organizationId)
-          .maybeSingle();
-        if (lookupError) throw lookupError;
-        if (data) throw new Error(`Organization ${organizationId} still exists.`);
-      },
-    });
-
-    this.registerCleanup({
-      label: `organization logo storage ${organizationId}`,
-      run: async () => {
-        const { data, error } = await this.supabase.storage
-          .from("organization-logos")
-          .list(organizationId);
-        if (error) throw error;
-        const paths = (data ?? []).map((file) => `${organizationId}/${file.name}`);
-        if (!paths.length) return;
-
-        const { error: removeError } = await this.supabase.storage
-          .from("organization-logos")
-          .remove(paths);
-        if (removeError) throw removeError;
-      },
-    });
-
-    const { error: memberError } = await this.supabase
-      .from("organization_members")
-      .insert({
-        organization_id: organizationId,
-        user_id: userId,
-        role: "owner",
-        status: "active",
-        joined_at: new Date().toISOString(),
-      });
-    if (memberError) throw memberError;
-
-    this.registerCleanup({
-      label: `organization member ${organizationId}/${userId}`,
-      run: async () => {
-        const { error } = await this.supabase
-          .from("organization_members")
-          .delete()
-          .eq("organization_id", organizationId)
-          .eq("user_id", userId);
-        if (error) throw error;
-      },
-    });
-
-    const { error: brandError } = await this.supabase
-      .from("organization_brand_profiles")
-      .insert({
-        organization_id: organizationId,
-        display_name: identity.organizationName,
-      });
-    if (brandError) throw brandError;
-
-    this.registerCleanup({
-      label: `brand profile ${organizationId}`,
-      run: async () => {
-        const { error } = await this.supabase
-          .from("organization_brand_profiles")
-          .delete()
-          .eq("organization_id", organizationId);
-        if (error) throw error;
-      },
-    });
-
-    let subscriptionId: string | null = null;
-    if (options.activeSubscription || options.subscriptionStatus) {
-      const { data: subscription, error: subscriptionError } =
-        await this.supabase
-          .from("subscriptions")
-          .insert({
-            organization_id: organizationId,
-            plan_id: options.planId ?? "roots",
-            provider: "manual",
-            billing_interval: "month",
-            status: options.subscriptionStatus ?? "active",
-            current_period_start: new Date().toISOString(),
-            current_period_end: new Date(
-              Date.now() + 30 * 24 * 60 * 60 * 1000,
-            ).toISOString(),
-            metadata: { e2e_marker: identity.marker },
-          })
-          .select("id")
-          .single();
-      if (subscriptionError) throw subscriptionError;
-      subscriptionId = subscription.id as string;
-
-      this.registerCleanup({
-        label: `subscription ${subscriptionId}`,
-        run: async () => {
-          const { error } = await this.supabase
-            .from("subscriptions")
-            .delete()
-            .eq("id", subscriptionId);
-          if (error) throw error;
-        },
-      });
-    }
-
-    return {
-      marker: identity.marker,
-      userId,
-      organizationId,
-      organizationName: identity.organizationName,
-      subscriptionId,
-      email: identity.email,
-      password: identity.password,
-    };
+    const { error: profileError } = await this.supabase
+      .from("profiles")
+      .delete()
+      .eq("id", userId);
+    if (profileError) throw profileError;
   }
 
-  async organizationExists(organizationId: string) {
-    const { data, error } = await this.supabase
-      .from("organizations")
-      .select("id")
-      .eq("id", organizationId)
-      .maybeSingle();
-    if (error) throw error;
-    return Boolean(data);
-  }
-
-  async getBrandProfile(organizationId: string) {
-    const { data, error } = await this.supabase
-      .from("organization_brand_profiles")
-      .select("display_name, logo_path, primary_color, secondary_color, brand_completed_at")
-      .eq("organization_id", organizationId)
-      .single();
-    if (error) throw error;
-    return data;
-  }
-
-  async createOrganizationMember(
-    owner: CreatedOrganizationOwner,
-    options: {
-      role?: "admin" | "member";
-    } = {},
-  ): Promise<CreatedOrganizationMember> {
-    const identity = createTestIdentity(
-      this.testInfo,
-      ++this.identitySequence,
-    );
-    const { data: authData, error: authError } =
-      await this.supabase.auth.admin.createUser({
-        email: identity.email,
-        password: identity.password,
-        email_confirm: true,
-        user_metadata: {
-          full_name: identity.fullName,
-          e2e_marker: identity.marker,
-        },
-      });
-
-    if (authError) throw authError;
-    const userId = authData.user.id;
-
-    this.registerCleanup({
-      label: `auth user ${userId}`,
-      run: async () => {
-        const { error } = await this.supabase.auth.admin.deleteUser(userId);
-        if (error && error.status !== 404) throw error;
-      },
-    });
-
-    const { error: memberError } = await this.supabase
-      .from("organization_members")
-      .insert({
-        organization_id: owner.organizationId,
-        user_id: userId,
-        role: options.role ?? "member",
-        status: "active",
-        joined_at: new Date().toISOString(),
-      });
-    if (memberError) throw memberError;
-
-    this.registerCleanup({
-      label: `organization member ${owner.organizationId}/${userId}`,
-      run: async () => {
-        const { error } = await this.supabase
-          .from("organization_members")
-          .delete()
-          .eq("organization_id", owner.organizationId)
-          .eq("user_id", userId);
-        if (error) throw error;
-      },
-    });
-
-    return {
-      marker: identity.marker,
-      userId,
-      organizationId: owner.organizationId,
-      email: identity.email,
-      password: identity.password,
-    };
-  }
-
-  async authUserExists(userId: string) {
-    const { data, error } = await this.supabase.auth.admin.getUserById(userId);
-    if (error) {
-      if (error.status === 404 || error.code === "user_not_found") return false;
-      throw error;
-    }
-    return Boolean(data.user);
-  }
-
-  async getTemplateExportCounts(organizationId: string) {
-    const { count: exportsCount, error: exportsError } = await this.supabase
-      .from("template_exports")
-      .select("id", { count: "exact", head: true })
-      .eq("organization_id", organizationId);
-    if (exportsError) throw exportsError;
-
-    const { count: downloadsCount, error: downloadsError } = await this.supabase
-      .from("template_export_downloads")
-      .select("id", { count: "exact", head: true })
-      .eq("organization_id", organizationId);
-    if (downloadsError) throw downloadsError;
-
-    return {
-      exports: exportsCount ?? 0,
-      downloads: downloadsCount ?? 0,
-    };
-  }
-
-  async createWorkspaceProvisioningRequest(owner: CreatedOrganizationOwner) {
-    const { data, error } = await this.supabase
-      .from("workspace_provisioning_requests")
-      .insert({
-        user_id: owner.userId,
-        email: owner.email,
-        full_name: "QA Owner",
-        organization_name: owner.organizationName,
-        province_or_region: "AB",
-        plan_id: "roots",
-        billing_interval: "month",
-        status: "processing",
-        checkout_session_id: `cs_test_${owner.marker}`,
-        provider_customer_id: `cus_${owner.marker}`,
-        provider_subscription_id: `sub_${owner.marker}`,
-        provider_status: "active",
-        payment_confirmed_at: new Date().toISOString(),
-      })
-      .select("id")
-      .single();
-
-    if (error) throw error;
-    const requestId = data.id as string;
-
-    this.registerCleanup({
-      label: `workspace provisioning request ${requestId}`,
-      run: async () => {
-        const { error: deleteError } = await this.supabase
-          .from("workspace_provisioning_requests")
-          .delete()
-          .eq("id", requestId);
-        if (deleteError) throw deleteError;
-      },
-    });
-
-    return requestId;
-  }
+  createOrganizationOwner = organizationMethods.createOrganizationOwner;
+  organizationExists = organizationMethods.organizationExists;
+  getBrandProfile = organizationMethods.getBrandProfile;
+  createOrganizationMember = organizationMethods.createOrganizationMember;
+  createUnregisteredTeamInvitee = organizationMethods.createUnregisteredTeamInvitee;
+  getTeamInvitation = invitationMethods.getTeamInvitation;
+  getInvitedAccountUserId = invitationMethods.getInvitedAccountUserId;
+  getAuthEmailConfirmationLink = invitationMethods.getAuthEmailConfirmationLink;
+  getOrganizationMembership = invitationMethods.getOrganizationMembership;
+  assignPlatformRole = invitationMethods.assignPlatformRole;
+  authUserExists = invitationMethods.authUserExists;
+  getTemplateExportCounts = templateMethods.getTemplateExportCounts;
+  getFirstResourceId = templateMethods.getFirstResourceId;
+  createTemplateInstance = templateMethods.createTemplateInstance;
+  createTemplateExport = templateMethods.createTemplateExport;
+  createTemplateExportDownload = templateMethods.createTemplateExportDownload;
+  createWorkspaceProvisioningRequest = templateMethods.createWorkspaceProvisioningRequest;
+  getDefaultCommunity = communityMethods.getDefaultCommunity;
+  getCommunitySpace = communityMethods.getCommunitySpace;
+  assignCommunityManager = communityMethods.assignCommunityManager;
+  createCommunityPost = communityMethods.createCommunityPost;
+  getPendingCommunityPostModerationEventId = communityMethods.getPendingCommunityPostModerationEventId;
+  createCommunityComment = communityMethods.createCommunityComment;
+  createCommunityEvent = communityMethods.createCommunityEvent;
+  createEvent = eventMethods.createEvent;
+  trackEventCleanup = eventMethods.trackEventCleanup;
+  updateEvent = eventMethods.updateEvent;
+  getEventRegistration = eventMethods.getEventRegistration;
+  getEventByTitle = eventMethods.getEventByTitle;
+  getEventPlanAccess = eventMethods.getEventPlanAccess;
+  getEventRegistrationCount = eventMethods.getEventRegistrationCount;
+  getEventEmailIntegrationEvents = eventMethods.getEventEmailIntegrationEvents;
+  createEventRegistration = eventMethods.createEventRegistration;
+  getConsultingRequestByTitle = consultingReviewMethods.getConsultingRequestByTitle;
+  getConsultingRequestCountByTitle = consultingReviewMethods.getConsultingRequestCountByTitle;
+  getConsultingRequestActivity = consultingReviewMethods.getConsultingRequestActivity;
+  getConsultingTimeEntries = consultingReviewMethods.getConsultingTimeEntries;
+  clearNotifications = consultingReviewMethods.clearNotifications;
+  createNotification = consultingReviewMethods.createNotification;
+  getNotification = consultingReviewMethods.getNotification;
+  getEdReviewCycleState = consultingReviewMethods.getEdReviewCycleState;
+  getEdReviewReviewerAssignments = consultingReviewMethods.getEdReviewReviewerAssignments;
+  removeEdReviewReviewerAssignment = consultingReviewMethods.removeEdReviewReviewerAssignment;
+  revokeEdReviewBoardChair = consultingReviewMethods.revokeEdReviewBoardChair;
 
   async purge() {
     if (this.purged) return;
@@ -403,7 +286,7 @@ export class TestDataManager {
 }
 
 export const test = base.extend<{ testData: TestDataManager }>({
-  testData: async ({}, use, testInfo) => {
+  testData: async ({ browserName: _browserName }, use, testInfo) => {
     const { url, serviceRoleKey } = getTestSupabaseEnvironment();
     const supabase = createClient(url, serviceRoleKey, {
       auth: {
@@ -421,4 +304,4 @@ export const test = base.extend<{ testData: TestDataManager }>({
   },
 });
 
-export { expect } from "@playwright/test";
+export { expect } from "./browser.fixture";

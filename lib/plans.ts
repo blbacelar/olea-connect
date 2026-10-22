@@ -1,15 +1,16 @@
-import type { MembershipTier } from "@/lib/types";
+import type { ActiveMembershipTier } from "@/lib/types";
+import { foundingPricing } from "@/lib/founding-pricing";
 
 export interface MembershipPlan {
-  id: MembershipTier;
+  id: ActiveMembershipTier;
   name: string;
-  icon: string;
-  monthlyPrice: number;
+  quarterlyPrice: number;
   annualPrice: number;
   seats: string;
   audience: string;
   summary: string;
   features: string[];
+  notIncluded?: string[];
   popular?: boolean;
 }
 
@@ -17,78 +18,69 @@ export const membershipPlans: MembershipPlan[] = [
   {
     id: "seedling",
     name: "Seedling",
-    icon: "🌱",
-    monthlyPrice: 44,
-    annualPrice: 440,
-    seats: "1 seat",
-    audience: "Grassroots and small organizations",
-    summary: "Choose the resources that matter most right now.",
+    quarterlyPrice: foundingPricing.seedling.quarterly.standard,
+    annualPrice: foundingPricing.seedling.annual.standard,
+    seats: "5 seats included",
+    audience: "Organizations with under $500k annual budget",
+    summary:
+      "Core governance operations, branded resources, and community access.",
     features: [
-      "Choose any 3 governance templates",
-      "Branded document downloads",
-      "Ebooks and tutorial videos",
-      "Full Olea community access",
-      "Weekly grant alerts",
+      "Board calendar, meetings, workflows, and packages",
+      "Grant checklists, templates, dashboard, and deadlines",
+      "Olea Connects™ Community, webinars, and forums",
+      "48-hour email support",
+    ],
+    notIncluded: [
+      "Board recruitment toolkit",
+      "KPI and impact dashboard",
+      "Board evaluation system",
+      "ED/CEO 360 review",
+      "Strategic planning module",
     ],
   },
   {
     id: "roots",
     name: "Roots",
-    icon: "🌿",
-    monthlyPrice: 99,
-    annualPrice: 990,
-    seats: "2 seats",
-    audience: "Organizations building capacity",
-    summary: "A complete, branded governance toolkit for your team.",
+    quarterlyPrice: foundingPricing.roots.quarterly.standard,
+    annualPrice: foundingPricing.roots.annual.standard,
+    seats: "10 seats included",
+    audience: "Organizations with $500k-$2M annual budget",
+    summary:
+      "Deeper governance, recruitment, impact tracking, and learning support.",
     features: [
-      "Full governance template suite",
-      "Customized branded templates",
-      "Live how-to webinars",
-      "Quarterly governance guide",
-      "Annual organizational health check",
-      "Full Olea community access",
+      "Everything in Seedling",
+      "Board recruitment toolkit and skills matrix",
+      "KPI and impact dashboard",
+      "Board evaluation system",
+      "Priority email support within 48 hours",
     ],
-    popular: true,
+    notIncluded: [
+      "ED/CEO 360 review",
+      "Strategic planning module",
+    ],
   },
   {
     id: "canopy",
     name: "Canopy",
-    icon: "🌳",
-    monthlyPrice: 199,
-    annualPrice: 1990,
-    seats: "3 seats",
-    audience: "Established organizations",
-    summary: "The full resource library, learning calendar, and funder access.",
+    quarterlyPrice: foundingPricing.canopy.quarterly.standard,
+    annualPrice: foundingPricing.canopy.annual.standard,
+    seats: "15 seats included",
+    audience: "Organizations with $2M+ annual budget",
+    summary:
+      "Complete governance systems, executive review, and strategy tools.",
     features: [
       "Everything in Roots",
-      "Full library across all topics",
-      "Monthly speaker webinars",
-      "Funder AMA sessions",
-      "Annual virtual summit",
-      "Full Olea community access",
-    ],
-  },
-  {
-    id: "harvest",
-    name: "Harvest",
-    icon: "🫒",
-    monthlyPrice: 1350,
-    annualPrice: 13500,
-    seats: "3 seats",
-    audience: "Organizations needing hands-on help",
-    summary: "Full platform access plus CEO-delivered fractional administration.",
-    features: [
-      "Everything in Canopy",
-      "5 hours of admin support monthly",
-      "2 additional in-kind hours",
-      "Board packages prepared",
-      "Committee minutes drafted",
-      "Monthly CEO strategy call",
-      "Limited to 6 seats"
+      "ED/CEO 360 review",
+      "Strategic planning module",
+      "Board training modules",
+      "Community leadership opportunities",
+      "Priority phone and email support",
     ],
   },
 ];
 
-export function getPlan(id: MembershipTier) {
+export const signupMembershipPlans = membershipPlans;
+
+export function getPlan(id: ActiveMembershipTier) {
   return membershipPlans.find((plan) => plan.id === id) ?? membershipPlans[1];
 }

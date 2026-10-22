@@ -2,26 +2,40 @@
 
 import { useEffect, useMemo, useRef, useState, useTransition } from "react";
 
-import { setValue } from "@/lib/template-renderer/schema";
 import {
   calculateCompletionPercent,
   validateTemplateData,
 } from "@/lib/template-renderer/validation";
 import type {
   DynamicTemplateSession,
-  FieldPath,
-  TemplateFormData,
   TemplateSavePayload,
-  TemplateValue,
 } from "@/lib/template-renderer/types";
+import { createDynamicTemplateSessionEditors } from "@/hooks/dynamic-template-session-editors";
+import {
+  type SaveState,
+  getInitialSessionKey,
+  persistDynamicTemplateSession,
+  syncInitialSession,
+} from "@/hooks/dynamic-template-session-helpers";
+import { mergeSavedSession } from "@/hooks/dynamic-template-session-payload";
 
-type SaveState = "saved" | "saving" | "unsaved" | "error";
+export { mergeSavedSession };
 
 export function useDynamicTemplateSession({
+  enableCompletionFlow = true,
   initialSession,
+  onSaved,
+  preserveSameResourceRefresh = false,
   saveSession,
 }: {
+  enableCompletionFlow?: boolean;
   initialSession: DynamicTemplateSession;
+  onSaved?: (
+    saved: DynamicTemplateSession,
+    previousSession: DynamicTemplateSession,
+    hasNewerLocalEdits: boolean,
+  ) => void;
+  preserveSameResourceRefresh?: boolean;
   saveSession: (payload: TemplateSavePayload) => Promise<DynamicTemplateSession>;
 }) {
   const [session, setSession] = useState(initialSession);
@@ -29,68 +43,99 @@ export function useDynamicTemplateSession({
   const [saveError, setSaveError] = useState("");
   const [isCompleting, startCompleteTransition] = useTransition();
   const didMount = useRef(false);
+  const editVersion = useRef(0);
+  const hasUnsavedEditsRef = useRef(false);
+  const isPersistingRef = useRef(false);
+  const sessionRef = useRef(initialSession);
+  const initialSessionKey = getInitialSessionKey(initialSession);
+  const previousInitialSessionKey = useRef(initialSessionKey);
 
   const validationErrors = useMemo(
-    () => validateTemplateData(session.schemaSnapshot, session.formData),
-    [session.formData, session.schemaSnapshot],
+    () =>
+      enableCompletionFlow
+        ? validateTemplateData(session.schemaSnapshot, session.formData)
+        : [],
+    [enableCompletionFlow, session.formData, session.schemaSnapshot],
   );
   const completionPercent = useMemo(
-    () => calculateCompletionPercent(session.schemaSnapshot, session.formData),
-    [session.formData, session.schemaSnapshot],
+    () =>
+      enableCompletionFlow
+        ? calculateCompletionPercent(session.schemaSnapshot, session.formData)
+        : session.completionPercent,
+    [
+      enableCompletionFlow,
+      session.completionPercent,
+      session.formData,
+      session.schemaSnapshot,
+    ],
   );
 
-  const updateValue = (path: FieldPath, value: TemplateValue) => {
-    setSession((current) => {
-      const formData = setValue(current.formData, path, value);
-
-      return {
-        ...current,
-        completionPercent: calculateCompletionPercent(
-          current.schemaSnapshot,
-          formData,
-        ),
-        formData,
-      };
+  useEffect(() => {
+    if (previousInitialSessionKey.current === initialSessionKey) return;
+    previousInitialSessionKey.current = initialSessionKey;
+    syncInitialSession({
+      hasUnsavedEditsRef,
+      initialSession,
+      isPersistingRef,
+      preserveSameResourceRefresh,
+      saveState,
+      sessionRef,
+      setSaveError,
+      setSaveState,
+      setSession,
     });
-    setSaveState("unsaved");
-  };
+  }, [
+    initialSession,
+    initialSessionKey,
+    preserveSameResourceRefresh,
+    saveState,
+  ]);
+
+  const { updateData, updateTitle, updateValue } =
+    createDynamicTemplateSessionEditors({
+      editVersion,
+      enableCompletionFlow,
+      hasUnsavedEditsRef,
+      isPersistingRef,
+      sessionRef,
+      setSaveState,
+      setSession,
+    });
 
   const persist = async (status: "draft" | "completed" = "draft") => {
-    const payload = toSavePayload({
-      ...session,
+    const saved = await persistDynamicTemplateSession({
+      editVersion,
+      enableCompletionFlow,
+      hasUnsavedEditsRef,
+      isPersistingRef,
+      onSaved,
+      saveSession,
+      sessionRef,
+      setSaveError,
+      setSaveState,
+      setSession,
       status,
-      completionPercent:
-        status === "completed"
-          ? 100
-          : calculateCompletionPercent(session.schemaSnapshot, session.formData),
     });
 
-    setSaveState("saving");
-    try {
-      const saved = await saveSession(payload);
-      setSession((current) => ({ ...current, ...saved, slug: current.slug }));
-      setSaveError("");
-      setSaveState("saved");
-      return saved;
-    } catch (error) {
-      setSaveError(
-        error instanceof Error ? error.message : "Unable to save this template.",
-      );
-      setSaveState("error");
-      throw error;
-    }
+    return saved;
   };
 
-  const complete = () => {
-    if (validationErrors.length > 0) {
-      setSaveError("Please fix the highlighted fields before completing.");
-      return;
-    }
+  const saveNow = enableCompletionFlow
+    ? () => persist("draft")
+    : undefined;
 
-    startCompleteTransition(async () => {
-      await persist("completed");
-    });
-  };
+  const complete = enableCompletionFlow
+    ? () => {
+        if (validationErrors.length > 0) {
+          setSaveError("Please fix the highlighted fields before completing.");
+          return;
+        }
+
+        startCompleteTransition(async () => {
+          await persist("completed");
+        });
+      }
+    : undefined;
 
   useEffect(() => {
     if (!didMount.current) {
@@ -100,7 +145,9 @@ export function useDynamicTemplateSession({
     if (saveState !== "unsaved") return;
 
     const timer = window.setTimeout(() => {
-      void persist("draft");
+      void persist("draft").catch(() => {
+        // persist records the error in saveState/saveError for the editor to display.
+      });
     }, 800);
 
     return () => window.clearTimeout(timer);
@@ -110,28 +157,15 @@ export function useDynamicTemplateSession({
 
   return {
     session,
+    updateTitle,
     updateValue,
+    updateData,
     saveState,
     saveError,
     validationErrors,
     completionPercent,
     isCompleting,
-    saveNow: () => persist("draft"),
+    saveNow,
     complete,
-  };
-}
-
-function toSavePayload(session: DynamicTemplateSession): TemplateSavePayload {
-  return {
-    id: session.id,
-    resourceId: session.resourceId,
-    organizationId: session.organizationId,
-    title: session.title,
-    schemaVersion: session.schemaVersion,
-    schemaSnapshot: session.schemaSnapshot,
-    brandingSnapshot: session.brandingSnapshot,
-    formData: session.formData,
-    completionPercent: session.completionPercent,
-    status: session.status === "completed" ? "completed" : "draft",
   };
 }

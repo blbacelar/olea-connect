@@ -5,63 +5,104 @@ import { useRouter } from "next/navigation";
 import { useEffect, useState, useTransition } from "react";
 
 import { AuthCard } from "@/components/auth/AuthCard";
+import { PasswordInput } from "@/components/auth/PasswordInput";
+import { useLocaleContext } from "@/components/i18n/LocaleProvider";
 import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useRegistration } from "@/hooks/use-registration";
 import { signIn } from "@/lib/auth";
+import {
+  getPostLoginRecoveryFailurePath,
+  getSafeNextPath,
+} from "@/lib/auth/safe-next-path";
+import { getAuthFlowCopy } from "@/lib/i18n/auth-flow-copy";
+import { getPublicSiteCopy } from "@/lib/i18n/public-site-copy";
+import { retryMembershipActivation } from "@/lib/provisioning/client";
 
 export default function LoginPage() {
   const router = useRouter();
   const { registration } = useRegistration();
+  const { locale } = useLocaleContext();
+  const authCopy = getAuthFlowCopy(locale);
+  const publicCopy = getPublicSiteCopy(locale);
+  const loginCopy = authCopy.login;
   const [email, setEmail] = useState(registration.email);
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [message, setMessage] = useState("");
   const [nextPath, setNextPath] = useState("");
+  const [rememberFor30Days, setRememberFor30Days] = useState(false);
   const [isPending, startTransition] = useTransition();
 
   useEffect(() => {
     const searchParams = new URLSearchParams(window.location.search);
-    setError(searchParams.get("error") || "");
+    setError(searchParams.get("error") ? loginCopy.fallbackError : "");
     const paymentSucceeded = searchParams.get("payment") === "success";
     const needsEmailVerification = searchParams.get("verify") === "email";
     setMessage(
       needsEmailVerification
-        ? "Payment received. Check your inbox for a confirmation email from Olea Connects, confirm your address, then sign in."
+        ? loginCopy.paymentVerifyMessage
         : paymentSucceeded
-          ? "Payment received. Sign in to finish setting up your membership."
+          ? loginCopy.paymentSuccessMessage
           : "",
     );
     setNextPath(searchParams.get("next") || "");
-  }, []);
+  }, [
+    loginCopy.fallbackError,
+    loginCopy.paymentSuccessMessage,
+    loginCopy.paymentVerifyMessage,
+  ]);
 
   const handleLogin = () => {
     startTransition(async () => {
       try {
         setError("");
-        await signIn(email, password);
-        router.push(
-          nextPath.startsWith("/") && !nextPath.startsWith("//")
-            ? nextPath
-            : "/dashboard",
-        );
+        await signIn(email, password, { rememberFor30Days });
+        try {
+          const { response, result } = await retryMembershipActivation();
+          if (response.ok && result.checkoutUrl) {
+            window.location.assign(result.checkoutUrl);
+            return;
+          }
+          if (response.ok && result.status === "completed") {
+            router.push(getSafeNextPath(result.nextPath));
+            router.refresh();
+            return;
+          }
+          if (!response.ok) {
+            router.push(
+              result.status === "failed"
+                ? "/signup/success?activation=failed"
+                : getPostLoginRecoveryFailurePath(nextPath),
+            );
+            router.refresh();
+            return;
+          }
+          if (result.status === "pending_payment") {
+            router.push("/signup/success?activation=failed");
+            router.refresh();
+            return;
+          }
+        } catch {
+          router.push(getPostLoginRecoveryFailurePath(nextPath));
+          router.refresh();
+          return;
+        }
+        router.push(getSafeNextPath(nextPath));
         router.refresh();
-      } catch (loginError) {
-        setError(
-          loginError instanceof Error
-            ? loginError.message
-            : "Unable to sign in.",
-        );
+      } catch {
+        setError(loginCopy.fallbackError);
       }
     });
   };
 
   return (
-    <AuthCard title="Welcome back">
+    <AuthCard title={loginCopy.title} logo={publicCopy.logo}>
       <div className="space-y-5">
         <div className="space-y-2">
-          <Label htmlFor="loginEmail">Email address</Label>
+          <Label htmlFor="loginEmail">{authCopy.shared.emailAddress}</Label>
           <Input
             id="loginEmail"
             type="email"
@@ -71,22 +112,23 @@ export default function LoginPage() {
         </div>
         <div className="space-y-2">
           <div className="flex items-center justify-between">
-            <Label htmlFor="loginPassword">Password</Label>
+            <Label htmlFor="loginPassword">{loginCopy.password}</Label>
             <Link
               href="/reset-password"
               className="text-xs font-semibold text-olea-green"
             >
-              Forgot password?
+              {loginCopy.forgotPassword}
             </Link>
           </div>
-          <Input
+          <PasswordInput
             id="loginPassword"
-            type="password"
             value={password}
+            hideLabel={authCopy.shared.hidePassword}
             onChange={(event) => setPassword(event.target.value)}
             onKeyDown={(event) => {
               if (event.key === "Enter") handleLogin();
             }}
+            showLabel={authCopy.shared.showPassword}
           />
         </div>
         {error ? (
@@ -100,20 +142,20 @@ export default function LoginPage() {
           </p>
         ) : null}
         <label className="flex items-center gap-2 text-sm text-slate-500">
-          <input type="checkbox" className="size-4 accent-olea-green" />
-          Remember me for 30 days
+          <Checkbox
+            id="rememberFor30Days"
+            checked={rememberFor30Days}
+            onChange={(event) => setRememberFor30Days(event.target.checked)}
+          />
+          <span>{loginCopy.remember}</span>
         </label>
-        <Button
-          className="w-full"
-          disabled={isPending}
-          onClick={handleLogin}
-        >
-          {isPending ? "Signing in..." : "Sign in →"}
+        <Button className="w-full" disabled={isPending} onClick={handleLogin}>
+          {isPending ? loginCopy.pending : loginCopy.submit}
         </Button>
         <p className="text-center text-sm text-slate-500">
-          Don&apos;t have an account?{" "}
+          {loginCopy.noAccount}{" "}
           <Link href="/signup" className="font-semibold text-olea-green">
-            Sign up →
+            {loginCopy.signUp}
           </Link>
         </p>
       </div>

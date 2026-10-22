@@ -1,5 +1,7 @@
-import { ArrowLeft, BellRing, FileClock } from "lucide-react";
+import { BellRing, FileClock } from "lucide-react";
 import Link from "next/link";
+
+import { GrantPlatformWorkspace } from "@/app/modules/grant-platform/_components/grant-platform-workspace";
 
 import { DynamicTemplateEditor } from "@/components/templates/DynamicTemplateEditor";
 import { TierBadge } from "@/components/TierBadge";
@@ -24,8 +26,21 @@ function formatSlug(slug: string) {
     .join(" ");
 }
 
-export async function TemplateSlugPage({ slug }: { slug: string }) {
-  const editorData = await getDynamicTemplateEditorData(slug);
+export async function TemplateSlugPage({
+  slug,
+  sessionId,
+}: {
+  slug: string;
+  sessionId?: string;
+}) {
+  if (slug === "grant-platform") {
+    const { getGrantPlatformData } = await import("@/lib/data/grant-platform");
+    const data = await getGrantPlatformData();
+
+    return <GrantPlatformWorkspace activeTab="overview" data={data} />;
+  }
+
+  const editorData = await getDynamicTemplateEditorData(slug, sessionId);
   if (editorData) {
     return (
       <DynamicTemplateEditor
@@ -42,13 +57,6 @@ export async function TemplateSlugPage({ slug }: { slug: string }) {
 
   return (
     <div className="space-y-6">
-      <Button asChild variant="ghost" className="-ml-3 text-slate-600">
-        <Link href="/templates">
-          <ArrowLeft className="size-4" />
-          Back to templates
-        </Link>
-      </Button>
-
       <Card className="overflow-hidden shadow-soft">
         <div className="h-2 bg-olea-orange" />
         <CardContent className="grid min-h-[520px] place-items-center p-6 text-center md:p-12">
@@ -57,7 +65,9 @@ export async function TemplateSlugPage({ slug }: { slug: string }) {
               <FileClock className="size-8" />
             </span>
             <div className="mt-6 flex justify-center">
-              {template ? <TierBadge tier={template.requiredTier} /> : null}
+              {template && template.requiredTier !== "harvest" ? (
+                <TierBadge tier={template.requiredTier} />
+              ) : null}
             </div>
             <p className="mt-5 text-xs font-semibold uppercase tracking-[0.08em] text-olea-green">
               Coming soon

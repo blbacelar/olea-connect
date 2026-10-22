@@ -2,18 +2,21 @@ import type { Metadata } from "next";
 import { Inter } from "next/font/google";
 
 import { AppShell } from "@/components/AppShell";
+import { OleaAnalytics } from "@/components/analytics/OleaAnalytics";
+import { LocaleProvider } from "@/components/i18n/LocaleProvider";
 import { SessionProvider } from "@/hooks/use-session";
 import { RegistrationProvider } from "@/hooks/use-registration";
 import { getOptionalMemberContext } from "@/lib/data/member-context";
+import { getPublicSiteCopy } from "@/lib/i18n/public-site-copy";
+import { getRequestLocale } from "@/lib/i18n/server";
+import { localeToHtmlLang } from "@/lib/i18n/locales";
+import { buildSiteMetadata } from "@/lib/site-metadata";
 
 import "./globals.css";
 
 const inter = Inter({ subsets: ["latin"] });
 
-export const metadata: Metadata = {
-  title: "Olea Connects",
-  description: "Branded governance tools for Canadian nonprofits.",
-};
+export const metadata: Metadata = buildSiteMetadata();
 
 export default async function RootLayout({
   children,
@@ -21,15 +24,23 @@ export default async function RootLayout({
   children: React.ReactNode;
 }>) {
   const session = await getOptionalMemberContext();
+  const locale = (await getRequestLocale());
+  const publicCopy = getPublicSiteCopy(locale);
 
   return (
-    <html lang="en">
+    <html lang={localeToHtmlLang(locale)}>
       <body className={inter.className}>
         <SessionProvider initialSession={session}>
-          <RegistrationProvider>
-            <AppShell>{children}</AppShell>
-          </RegistrationProvider>
+          <LocaleProvider
+            initialLocale={locale}
+            labels={publicCopy.localeSelector}
+          >
+            <RegistrationProvider>
+              <AppShell>{children}</AppShell>
+            </RegistrationProvider>
+          </LocaleProvider>
         </SessionProvider>
+        {process.env.VERCEL_ENV ? <OleaAnalytics /> : null}
       </body>
     </html>
   );

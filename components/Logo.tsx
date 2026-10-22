@@ -1,29 +1,41 @@
 import Image from "next/image";
 import Link from "next/link";
 
+import { brandName } from "@/lib/brand";
+
 export function Logo({
   compact = false,
+  hideTaglineOnMobile = false,
   href = "/dashboard",
+  ariaLabel = "Olea Connects™ governance platform",
+  tagline = "Governance, branded.",
 }: {
   compact?: boolean;
+  hideTaglineOnMobile?: boolean;
   href?: string;
+  ariaLabel?: string;
+  tagline?: string;
 }) {
   return (
-    <Link href={href} className="inline-flex items-center gap-3">
+    <Link
+      href={href}
+      aria-label={ariaLabel}
+      className="inline-flex shrink-0 items-center gap-3"
+    >
       <Image
         src="/olea-tree.png"
         alt=""
         width={34}
         height={34}
-        className="size-[34px] object-contain"
+        className="size-[34px] shrink-0 object-contain"
         priority
       />
-      <span className={compact ? "hidden sm:block" : undefined}>
-        <span className="block text-[15px] font-bold leading-tight text-olea-ink">
-          Olea Connects
+      <span className={compact ? "sr-only" : undefined}>
+        <span className="block text-[15px] font-bold leading-tight text-olea-green">
+          {brandName}
         </span>
-        <span className="block text-[11px] font-medium text-slate-600">
-          Governance, branded.
+        <span className={`${hideTaglineOnMobile ? "hidden sm:block" : "block"} text-[11px] font-medium text-slate-600`}>
+          {tagline}
         </span>
       </span>
     </Link>

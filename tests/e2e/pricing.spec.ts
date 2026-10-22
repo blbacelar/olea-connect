@@ -1,0 +1,109 @@
+import type { Page } from "@playwright/test";
+import { expect, test } from "@playwright/test";
+
+async function switchToFrench(page: Page) {
+  await page.getByTestId("locale-selector").click();
+  await Promise.all([
+    page.waitForResponse(
+      (response) => response.url().includes("/api/locale") && response.ok(),
+    ),
+    page.getByRole("option", { name: "Français" }).click(),
+  ]);
+  await expect(page.locator("html")).toHaveAttribute("lang", "fr-CA");
+}
+
+test.describe("public pricing package", () => {
+  test("shows the approved membership and support catalog", async ({ page }) => {
+    await page.goto("/");
+
+    await expect(
+      page.getByRole("heading", { name: "Choose the support that fits today." }),
+    ).toBeVisible();
+    await expect(page.getByText("$1,180 CAD").first()).toBeVisible();
+    await expect(page.getByText("$3,530 CAD").first()).toBeVisible();
+    await expect(page.getByText("$7,060 CAD").first()).toBeVisible();
+    await expect(
+      page.getByText("5 seats included", { exact: true }),
+    ).toBeVisible();
+    await expect(
+      page.getByText("$15 CAD one-time per seat", { exact: true }),
+    ).toBeVisible();
+    await expect(page.getByText("Optional support")).toBeVisible();
+    await expect(page.getByRole("heading", { name: "KPI and Impact Dashboard" })).toBeVisible();
+    await expect(page.getByText("$995 CAD").first()).toBeVisible();
+    await expect(page.getByText("$1,195 CAD").first()).toBeVisible();
+    await expect(page.getByText("$1,495 CAD").first()).toBeVisible();
+    await expect(page.getByText("$99 CAD").first()).toBeVisible();
+    await expect(page.getByText("$500 CAD", { exact: true })).toHaveCount(0);
+    await expect(page.getByText("$1,000 CAD").first()).toBeVisible();
+    await expect(page.getByText("$3,000 CAD").first()).toBeVisible();
+    await expect(page.getByText("$7,776 CAD")).toHaveCount(0);
+    await expect(page.getByText("$162 CAD/hour")).toHaveCount(0);
+    await expect(page.getByText("$100 CAD/hour")).toHaveCount(0);
+    await expect(page.getByRole("link", { name: "Contact us for a quote" }).first())
+      .toHaveAttribute("href", /mailto:hello@olivesocialimpact.com\?subject=/);
+    await expect(
+      page.getByRole("heading", { name: "Board Retreat Facilitation" }),
+    ).toBeVisible();
+    await expect(page.locator("#plans").getByText("Circle of generosity"))
+      .toBeVisible();
+    await expect(page.getByText(/15% of its profits to nonprofits as unrestricted donations/).first())
+      .toBeVisible();
+    await expect(page.getByText("$250 Olea Gives grant")).toHaveCount(0);
+    await expect(page.getByRole("link", { name: "Explore the referral program" }))
+      .toHaveAttribute("href", "/referrals");
+    await expect(page.getByText("No free trial")).toBeVisible();
+    await expect(page.getByText("Organizations with $2M+ annual budget")).toBeVisible();
+    await expect(page.getByText("How many seats are included?")).toBeVisible();
+    await expect(page.locator("body")).not.toContainText("Harvest");
+    await expect(page.locator("#plans")).not.toContainText("for your whole board");
+    await expect(page.locator("#plans")).not.toContainText("Cancel before renewal");
+    await expect(
+      page.locator('#plans a[href^="/signup/account?tier=seedling&billing=annual"]'),
+    ).toHaveAttribute("href", /\/signup\/account\?tier=seedling&billing=annual/);
+  });
+
+  test("offers annual and quarterly billing for new memberships", async ({
+    page,
+  }) => {
+    await page.goto("/");
+    await expect(page.getByRole("button", { name: "Quarterly" })).toHaveCount(0);
+    await expect(page.locator("#plans")).toContainText("Or pay quarterly:");
+    await expect(page.locator("#plans")).not.toContainText("Cancel before the next renewal");
+    await expect(page.getByRole("link", { name: "Choose Harvest" })).toHaveCount(0);
+    await expect(
+      page.locator('#plans a[href^="/signup/account?tier=seedling&billing=annual"]'),
+    ).toHaveAttribute("href", /\/signup\/account\?tier=seedling&billing=annual/);
+  });
+
+  test("does not show hourly rates in French optional support", async ({
+    page,
+  }) => {
+    await page.goto("/");
+    await switchToFrench(page);
+
+    await expect(page.getByRole("heading", { name: "Tableau de bord KPI et impact" })).toBeVisible();
+    await expect(page.getByText("1\u00A0944\u00A0$ CA")).toHaveCount(0);
+    await expect(page.getByText("162 $ CA/heure")).toHaveCount(0);
+    await expect(page.getByText("100 $ CA/heure")).toHaveCount(0);
+    await expect(page.getByRole("link", { name: "Contactez-nous pour obtenir un devis" }).first())
+      .toHaveAttribute("href", /mailto:hello@olivesocialimpact.com\?subject=/);
+    await expect(page.getByText(/15 % de ses bénéfices à des organismes sans but lucratif/).first())
+      .toBeVisible();
+    await expect(page.locator("#plans")).not.toContainText("pour tout votre conseil");
+    await expect(page.locator("#plans")).not.toContainText("Annulez avant le renouvellement");
+    await expect(page.getByText("Organismes avec un budget annuel de 2 M$ et plus")).toBeVisible();
+    await expect(page.locator("body")).not.toContainText("Harvest");
+  });
+
+  test("shows the capped commission without legacy milestones in French", async ({ page }) => {
+    await page.goto("/referrals");
+    await switchToFrench(page);
+
+    await expect(page.getByText("10 %", { exact: true })).toBeVisible();
+    await expect(page.getByText(/jusqu'à 500/).first()).toBeVisible();
+    await expect(page.getByText(/démonstration à laquelle la personne participe/))
+      .toHaveCount(0);
+    await expect(page.getByText(/Lorsqu'elle reste/)).toHaveCount(0);
+  });
+});

@@ -1,0 +1,63 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <style>
+      * { box-sizing: border-box; }
+      html, body { width: 1920px; height: 1080px; margin: 0; overflow: hidden; }
+      body {
+        font-family: -apple-system, BlinkMacSystemFont, "Helvetica Neue", Arial, sans-serif;
+        color: #1f2937;
+        background:
+          radial-gradient(circle at 12% 18%, rgba(214,154,58,.16), transparent 26%),
+          radial-gradient(circle at 88% 84%, rgba(68,107,82,.14), transparent 30%),
+          linear-gradient(145deg, #f4efe4 0%, #ffffff 52%, #eaf1ea 100%);
+        display: grid;
+        place-items: center;
+      }
+      .card {
+        width: 1660px;
+        min-height: 850px;
+        padding: 88px 104px 76px;
+        border: 1px solid rgba(68,107,82,.18);
+        border-radius: 44px;
+        background: rgba(255,255,255,.94);
+        box-shadow: 0 42px 120px rgba(23,63,42,.14);
+        display: flex;
+        flex-direction: column;
+        justify-content: space-between;
+      }
+      .brand { display: flex; align-items: center; gap: 28px; }
+      .brand img { width: 126px; height: 126px; object-fit: contain; }
+      .brand-name { color: #173f2a; font-size: 66px; line-height: 1; font-weight: 760; letter-spacing: -2px; }
+      .tagline { margin-top: 13px; color: #64748b; font-size: 31px; font-weight: 520; }
+      .rule { width: 230px; height: 10px; margin: 52px 0 38px; border-radius: 99px; background: #d69a3a; }
+      h1 { max-width: 1300px; margin: 0; color: #111827; font-size: 70px; line-height: 1.08; letter-spacing: -2.2px; }
+      .support { max-width: 1320px; margin-top: 30px; color: #475569; font-size: 34px; line-height: 1.45; }
+      .actions { display: flex; align-items: center; justify-content: space-between; gap: 44px; margin-top: 58px; }
+      .website { color: #173f2a; font-size: 53px; font-weight: 800; letter-spacing: -1px; }
+      .youtube { padding: 20px 30px; border: 2px solid rgba(68,107,82,.22); border-radius: 18px; color: #446b52; font-size: 27px; font-weight: 700; background: #f8fbf8; }
+    </style>
+  </head>
+  <body>
+    <main class="card">
+      <section>
+        <div class="brand">
+          <img src="file:///Users/brunobacelar/Documents/Olea%20Connects/public/olea-tree.png" alt="" />
+          <div>
+            <div class="brand-name">Olea Connects™</div>
+            <div class="tagline">Governance, branded.</div>
+          </div>
+        </div>
+        <div class="rule"></div>
+        <h1>Give your nonprofit a stronger place to grow.</h1>
+        <p class="support">Tools, learning, community, funding connections, and reporting support for Canadian nonprofits.</p>
+      </section>
+      <section class="actions">
+        <div class="website">OleaConnects.com</div>
+        <div class="youtube">YouTube · Olive in Good Company</div>
+      </section>
+    </main>
+  </body>
+</html>

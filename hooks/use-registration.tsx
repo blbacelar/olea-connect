@@ -10,21 +10,65 @@ import {
 } from "react";
 
 import type { RegistrationState } from "@/lib/types";
+import { isSignupTier } from "@/lib/founding-pricing";
 
-const STORAGE_KEY = "olea-registration-demo";
+const STORAGE_KEY = "olea-registration";
+const LEGACY_STORAGE_KEY = "olea-registration-demo";
 
 const initialState: RegistrationState = {
   tier: "roots",
-  billingCycle: "monthly",
+  billingCycle: "annual",
   organizationName: "",
   fullName: "",
   email: "",
   password: "",
   province: "AB",
+  organizationKind: "",
+  annualBudgetRange: "",
+  boardSizeRange: "",
+  phone: "",
+  acquisitionSource: "",
+  referralCode: "",
+  foundingMemberCode: "",
+  consents: {
+    terms: false,
+    privacy: false,
+    dataOwnership: false,
+    confidentiality: false,
+  },
   emailVerified: false,
   brandComplete: false,
   selectedTemplateIds: [],
 };
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === "object" && value !== null;
+}
+
+function normalizeStoredRegistration(stored: unknown): RegistrationState {
+  if (!isRecord(stored)) return initialState;
+
+  const candidate = stored as Partial<RegistrationState>;
+  const billingCycle = candidate.billingCycle === "quarterly" ? "quarterly" : "annual";
+  const storedConsents: Record<string, unknown> = isRecord(candidate.consents)
+    ? candidate.consents
+    : {};
+
+  return {
+    ...initialState,
+    ...candidate,
+    tier: typeof stored.tier === "string" && isSignupTier(stored.tier)
+      ? stored.tier
+      : initialState.tier,
+    billingCycle,
+    consents: {
+      terms: storedConsents.terms === true,
+      privacy: storedConsents.privacy === true,
+      dataOwnership: storedConsents.dataOwnership === true,
+      confidentiality: storedConsents.confidentiality === true,
+    },
+  };
+}
 
 interface RegistrationContextValue {
   registration: RegistrationState;
@@ -43,9 +87,18 @@ export function RegistrationProvider({ children }: { children: ReactNode }) {
   const [hydrated, setHydrated] = useState(false);
 
   useEffect(() => {
-    const stored = window.localStorage.getItem(STORAGE_KEY);
+    const stored =
+      window.localStorage.getItem(STORAGE_KEY) ??
+      window.localStorage.getItem(LEGACY_STORAGE_KEY);
     if (stored) {
-      setRegistration({ ...initialState, ...JSON.parse(stored) });
+      try {
+        setRegistration(normalizeStoredRegistration(JSON.parse(stored)));
+        window.localStorage.removeItem(LEGACY_STORAGE_KEY);
+      } catch {
+        window.localStorage.removeItem(STORAGE_KEY);
+        window.localStorage.removeItem(LEGACY_STORAGE_KEY);
+        setRegistration(initialState);
+      }
     }
     setHydrated(true);
   }, []);
@@ -62,7 +115,11 @@ export function RegistrationProvider({ children }: { children: ReactNode }) {
     setRegistration((current) => ({ ...current, ...updates }));
   }, []);
 
-  const resetRegistration = useCallback(() => setRegistration(initialState), []);
+  const resetRegistration = useCallback(() => {
+    window.localStorage.removeItem(STORAGE_KEY);
+    window.localStorage.removeItem(LEGACY_STORAGE_KEY);
+    setRegistration(initialState);
+  }, []);
 
   return (
     <RegistrationContext.Provider

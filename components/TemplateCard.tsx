@@ -2,6 +2,7 @@ import { ArrowRight, FileText, LockKeyhole } from "lucide-react";
 import Link from "next/link";
 
 import { Button } from "@/components/ui/button";
+import { getResourceHref } from "@/lib/modules";
 import type { Template } from "@/lib/types";
 import { cn } from "@/lib/utils";
 
@@ -13,6 +14,9 @@ export function TemplateCard({
   variant?: "dashboard" | "library";
 }) {
   const locked = !template.available;
+  const legacyOnly = template.requiredTier === "harvest";
+  const href = getResourceHref(template.slug);
+  const opensModule = href.startsWith("/modules/");
 
   return (
     <article
@@ -71,15 +75,23 @@ export function TemplateCard({
         {locked ? (
           <>
             <span className="inline-flex items-center gap-1 rounded-full bg-slate-200/70 px-2.5 py-1 text-xs font-semibold capitalize text-slate-500">
-              🔒 {template.requiredTier} & above
+              <LockKeyhole className="size-3.5" aria-hidden="true" />
+              {legacyOnly ? "Unavailable for new plans" : `${template.requiredTier} & above`}
             </span>
-            <Button
-              variant="outline"
-              size="sm"
-              className="border-olea-green text-olea-green hover:bg-olea-light"
-            >
-              Upgrade{variant === "dashboard" ? " to unlock" : ""}
-            </Button>
+            {legacyOnly ? null : (
+              <Button
+                asChild
+                variant="outline"
+                size="sm"
+                className="border-olea-green text-olea-green hover:bg-olea-light"
+              >
+                <Link
+                  href={`/subscription?upgrade=${template.requiredTier}&resource=${template.slug}`}
+                >
+                  Upgrade{variant === "dashboard" ? " to unlock" : ""}
+                </Link>
+              </Button>
+            )}
           </>
         ) : (
           <>
@@ -87,8 +99,12 @@ export function TemplateCard({
               {template.status}
             </span>
             <Button asChild size="sm">
-              <Link href={`/templates/${template.slug}`}>
-                {variant === "dashboard" ? "Open template" : "Open"}
+              <Link href={href}>
+                {variant === "dashboard"
+                  ? opensModule
+                    ? "Open module"
+                    : "Open template"
+                  : "Open"}
                 <ArrowRight className="size-3.5" />
               </Link>
             </Button>

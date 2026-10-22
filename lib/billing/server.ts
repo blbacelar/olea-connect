@@ -2,6 +2,8 @@ import "server-only";
 
 import type Stripe from "stripe";
 
+import { PAID_SEAT_PRICE_CENTS, PAID_SEAT_CURRENCY } from "@/lib/billing/seat-pricing";
+import { isMissingStripeCustomerError } from "@/lib/billing/stripe-customer";
 import { getStripe } from "@/lib/stripe/server";
 import { createAdminClient } from "@/utils/supabase/admin";
 import { createClient } from "@/utils/supabase/server";
@@ -31,6 +33,8 @@ export interface BillingSummary {
   canceledAt: string | null;
   customerId: string | null;
   subscriptionId: string | null;
+  billingUnavailable: boolean;
+  fundedBySponsor?: boolean;
   localSubscriptionId: string;
   amountCents: number;
   currency: string;
@@ -113,7 +117,7 @@ export async function getBillingSummary(): Promise<BillingSummary | null> {
   const { data: subscription, error: subscriptionError } = await supabase
     .from("subscriptions")
     .select(
-      "id, plan_id, provider_customer_id, provider_subscription_id, billing_interval, status, current_period_start, current_period_end, pause_starts_at, pause_ends_at, cancel_at_period_end, canceled_at, membership_plans(name, monthly_price_cents, annual_price_cents, currency, included_seats), subscription_items(item_type, quantity, unit_amount_cents, currency, active)",
+      "id, plan_id, provider, metadata, provider_customer_id, provider_subscription_id, billing_interval, status, current_period_start, current_period_end, pause_starts_at, pause_ends_at, cancel_at_period_end, canceled_at, membership_plans(name, monthly_price_cents, annual_price_cents, currency, included_seats), subscription_items(item_type, quantity, unit_amount_cents, currency, active)",
     )
     .eq("organization_id", membership.organization_id)
     .order("created_at", { ascending: false })
@@ -137,13 +141,23 @@ export async function getBillingSummary(): Promise<BillingSummary | null> {
     (total, item) => total + item.quantity,
     0,
   );
-  const seatUnitAmountCents = seatItems[0]?.unit_amount_cents ?? 1000;
-  const seatCurrency =
-    seatItems[0]?.currency ?? plan?.currency ?? "CAD";
-  const amountCents =
-    subscription.billing_interval === "year"
+  const seatUnitAmountCents = PAID_SEAT_PRICE_CENTS;
+  const seatCurrency = PAID_SEAT_CURRENCY;
+  const membershipItem = activeItems.find(
+    (item) => item.item_type === "membership" && item.active,
+  );
+  const fundedBySponsor = subscription.provider === "manual" &&
+    Boolean(subscription.metadata && typeof subscription.metadata === "object" &&
+      (subscription.metadata as Record<string, unknown>).funding_source === "sponsorship");
+  // The legacy DB column is named monthly_price_cents, but current plans bill
+  // quarterly or annually. Until the storage column is renamed, month means
+  // the quarterly upfront catalog price.
+  const amountCents = fundedBySponsor ? 0 : (
+    membershipItem?.unit_amount_cents ??
+    (subscription.billing_interval === "year"
       ? (plan?.annual_price_cents ?? 0)
-      : (plan?.monthly_price_cents ?? 0);
+      : (plan?.monthly_price_cents ?? 0))
+  );
   const [
     {
       count: activeMemberCount,
@@ -170,39 +184,45 @@ export async function getBillingSummary(): Promise<BillingSummary | null> {
 
   let paymentMethod: Stripe.PaymentMethod | null = null;
   let invoices: BillingSummary["invoices"] = [];
+  let billingUnavailable = false;
 
   if (subscription.provider_customer_id) {
     const stripe = getStripe();
-    const [methods, invoiceList] = await Promise.all([
-      stripe.paymentMethods.list({
-        customer: subscription.provider_customer_id,
-        type: "card",
-        limit: 1,
-      }),
-      stripe.invoices.list({
-        customer: subscription.provider_customer_id,
-        limit: 12,
-      }),
-    ]);
+    try {
+      const [methods, invoiceList] = await Promise.all([
+        stripe.paymentMethods.list({
+          customer: subscription.provider_customer_id,
+          type: "card",
+          limit: 1,
+        }),
+        stripe.invoices.list({
+          customer: subscription.provider_customer_id,
+          limit: 12,
+        }),
+      ]);
 
-    paymentMethod = methods.data[0] ?? null;
-    invoices = invoiceList.data
-      .filter((invoice) => {
-        const invoiceSubscriptionId = getInvoiceSubscriptionId(invoice);
-        return (
-          !subscription.provider_subscription_id ||
-          invoiceSubscriptionId === subscription.provider_subscription_id
-        );
-      })
-      .map((invoice) => ({
-        id: invoice.id,
-        createdAt: new Date(invoice.created * 1000).toISOString(),
-        amountCents: invoice.amount_paid || invoice.amount_due,
-        currency: invoice.currency.toUpperCase(),
-        status: invoice.status,
-        hostedUrl: invoice.hosted_invoice_url ?? null,
-        pdfUrl: invoice.invoice_pdf ?? null,
-      }));
+      paymentMethod = methods.data[0] ?? null;
+      invoices = invoiceList.data
+        .filter((invoice) => {
+          const invoiceSubscriptionId = getInvoiceSubscriptionId(invoice);
+          return (
+            !subscription.provider_subscription_id ||
+            invoiceSubscriptionId === subscription.provider_subscription_id
+          );
+        })
+        .map((invoice) => ({
+          id: invoice.id,
+          createdAt: new Date(invoice.created * 1000).toISOString(),
+          amountCents: invoice.amount_paid || invoice.amount_due,
+          currency: invoice.currency.toUpperCase(),
+          status: invoice.status,
+          hostedUrl: invoice.hosted_invoice_url ?? null,
+          pdfUrl: invoice.invoice_pdf ?? null,
+        }));
+    } catch (error) {
+      if (!isMissingStripeCustomerError(error)) throw error;
+      billingUnavailable = true;
+    }
   }
 
   return {
@@ -219,8 +239,10 @@ export async function getBillingSummary(): Promise<BillingSummary | null> {
     pauseEndsAt: subscription.pause_ends_at,
     cancelAtPeriodEnd: subscription.cancel_at_period_end,
     canceledAt: subscription.canceled_at,
-    customerId: subscription.provider_customer_id,
-    subscriptionId: subscription.provider_subscription_id,
+    customerId: billingUnavailable ? null : subscription.provider_customer_id,
+    subscriptionId: billingUnavailable ? null : subscription.provider_subscription_id,
+    billingUnavailable,
+    fundedBySponsor,
     localSubscriptionId: subscription.id,
     amountCents,
     currency: plan?.currency ?? "CAD",

@@ -1,5 +1,6 @@
 import { PublicHeader } from "@/components/auth/PublicHeader";
 import { FinalCta } from "@/components/landing/FinalCta";
+import { LandingDemo } from "@/components/landing/LandingDemo";
 import { LandingFaq } from "@/components/landing/LandingFaq";
 import { LandingFeatures } from "@/components/landing/LandingFeatures";
 import { LandingFooter } from "@/components/landing/LandingFooter";
@@ -8,22 +9,30 @@ import { LandingPricing } from "@/components/landing/LandingPricing";
 import { LandingTrust } from "@/components/landing/LandingTrust";
 import { LandingTransformation } from "@/components/landing/LandingTransformation";
 import { LandingWorkflow } from "@/components/landing/LandingWorkflow";
+import { getFoundingAvailability } from "@/lib/founding-availability";
+import { getPublicSiteCopy } from "@/lib/i18n/public-site-copy";
+import { getRequestLocale } from "@/lib/i18n/server";
 
-export default function HomePage() {
+export default async function HomePage() {
+  const locale = (await getRequestLocale());
+  const copy = getPublicSiteCopy(locale);
+  const initialSpots = await getFoundingAvailability().catch(() => null);
+
   return (
     <div className="min-h-screen bg-white">
-      <PublicHeader />
+      <PublicHeader showFoundingOffer={initialSpots?.foundingAvailable === true} />
       <main>
-        <LandingHero />
-        <LandingTransformation />
-        <LandingFeatures />
-        <LandingTrust />
-        <LandingWorkflow />
-        <LandingPricing />
-        <LandingFaq />
-        <FinalCta />
+        <LandingHero copy={copy.hero} />
+        <LandingTransformation copy={copy.transformation} />
+        <LandingFeatures copy={copy.features} />
+        <LandingTrust copy={copy.trust} />
+        <LandingDemo copy={copy.demo} />
+        <LandingWorkflow copy={copy.workflow} />
+        <LandingPricing copy={copy.pricing} locale={locale} initialSpots={initialSpots} />
+        <LandingFaq copy={copy.faq} />
+        <FinalCta copy={copy.finalCta} />
       </main>
-      <LandingFooter />
+      <LandingFooter copy={copy.footer} nav={copy.nav} logo={copy.logo} />
     </div>
   );
 }

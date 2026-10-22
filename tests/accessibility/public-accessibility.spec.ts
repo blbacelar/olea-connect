@@ -1,8 +1,9 @@
 import AxeBuilder from "@axe-core/playwright";
-import { expect, test } from "@playwright/test";
+import { expect, test } from "../fixtures/browser.fixture";
 
 const publicRoutes = [
   { path: "/", name: "landing page" },
+  { path: "/sponsorship", name: "sponsorship page" },
   { path: "/login", name: "login page" },
   { path: "/signup/account", name: "account creation page" },
 ];
@@ -21,7 +22,7 @@ test.describe("@a11y @regression public accessibility", () => {
         ["serious", "critical"].includes(impact ?? ""),
       );
 
-      expect(blockingViolations).toEqual([]);
+      expect(blockingViolations).toHaveLength(0);
     });
   }
 });

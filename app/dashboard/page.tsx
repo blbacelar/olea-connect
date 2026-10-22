@@ -17,6 +17,8 @@ import { Button } from "@/components/ui/button";
 import { getDashboardSummary } from "@/lib/data/dashboard";
 import { requireMemberContext } from "@/lib/data/member-context";
 import { getTemplates } from "@/lib/data/templates";
+import { generosityCopy } from "@/lib/i18n/generosity-copy";
+import { getRequestLocale } from "@/lib/i18n/server";
 
 function getGreeting() {
   const hour = new Date().getHours();
@@ -26,6 +28,7 @@ function getGreeting() {
 }
 
 export default async function DashboardPage() {
+  const generosity = generosityCopy[(await getRequestLocale())];
   const [{ organization, member }, templates, summary] = await Promise.all([
     requireMemberContext(),
     getTemplates(),
@@ -55,9 +58,9 @@ export default async function DashboardPage() {
       tone: "bg-orange-50 text-orange-700",
     },
     {
-      label: "Grants",
-      value: summary.grantRound?.status === "open" ? "Open" : "Upcoming",
-      detail: summary.grantRound?.name ?? "No active round",
+      label: generosity.statLabel,
+      value: generosity.statValue,
+      detail: generosity.statDetail,
       icon: Gift,
       tone: "bg-amber-50 text-amber-600",
     },
@@ -110,7 +113,7 @@ export default async function DashboardPage() {
       </section>
 
       <section className="grid gap-4 lg:grid-cols-[1.3fr_1fr]">
-        <div className="relative overflow-hidden rounded-[14px] bg-[linear-gradient(120deg,#2D5C3E_0%,#4A7C59_100%)] p-6 text-white shadow-soft md:p-[26px]">
+        <div className="relative overflow-hidden rounded-[14px] bg-[linear-gradient(120deg,#173F2A_0%,#446B52_100%)] p-6 text-white shadow-soft md:p-[26px]">
           <Image
             src="/olea-tree.png"
             alt=""
@@ -119,22 +122,14 @@ export default async function DashboardPage() {
             className="absolute -bottom-10 -right-8 size-[190px] opacity-10"
           />
           <p className="relative text-xs font-semibold uppercase tracking-[0.08em] text-[#CFE6D6]">
-            Olea Gives Fund
+            {generosity.title}
           </p>
           <h2 className="relative mt-2.5 text-[22px] font-bold tracking-[-0.01em]">
-            {summary.grantRound?.name ?? "Olea Gives grants"}
+            {generosity.cardTitle}
           </h2>
           <p className="relative mt-2 max-w-md text-sm leading-6 text-[#E2EFE6]">
-            {summary.grantRound
-              ? `Applications ${summary.grantRound.status}. Review the current round and your application history.`
-              : "New grant rounds will appear here when applications become available."}
+            {generosity.body}
           </p>
-          <Button
-            asChild
-            className="relative mt-[18px] bg-white text-olea-dark hover:bg-green-50"
-          >
-            <Link href="/grants">Apply now →</Link>
-          </Button>
         </div>
 
         <div className="rounded-[14px] border bg-white p-[22px] shadow-soft">

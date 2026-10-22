@@ -1,7 +1,12 @@
 import { defineConfig, devices } from "@playwright/test";
+import { loadEnvConfig } from "@next/env";
+
+loadEnvConfig(process.cwd());
 
 const localBaseUrl = "http://127.0.0.1:3011";
 const baseURL = process.env.PLAYWRIGHT_BASE_URL ?? localBaseUrl;
+const videoMode = process.env.PLAYWRIGHT_VIDEO === "on" ? "on" : "retain-on-failure";
+const slowMo = Number.parseInt(process.env.PLAYWRIGHT_SLOWMO_MS ?? "0", 10);
 
 export default defineConfig({
   testDir: "./tests",
@@ -22,18 +27,29 @@ export default defineConfig({
   ],
   use: {
     baseURL,
+    launchOptions: Number.isFinite(slowMo) && slowMo > 0 ? { slowMo } : undefined,
     trace: "on-first-retry",
     screenshot: "only-on-failure",
-    video: "retain-on-failure",
+    video: videoMode,
   },
   webServer:
     baseURL === localBaseUrl &&
     process.env.PLAYWRIGHT_SKIP_WEBSERVER !== "true"
       ? {
-          command: "npm run dev -- -p 3011",
+          command: "npm run build && npm run start -- -p 3011",
+          env: {
+            ...process.env,
+            // E2E validates deterministic local moderation rules. Set this to
+            // "false" explicitly when running a dedicated OpenRouter integration test.
+            COMMUNITY_MODERATION_DISABLE_AI:
+              process.env.COMMUNITY_MODERATION_DISABLE_AI ?? "true",
+            COMMUNITY_MODERATION_DISABLE_AUTOMATIC_WORKER: "true",
+            NEXT_PUBLIC_APP_URL: localBaseUrl,
+            NEXT_PUBLIC_SITE_URL: localBaseUrl,
+          },
           url: localBaseUrl,
           reuseExistingServer: !process.env.CI,
-          timeout: 120_000,
+          timeout: 180_000,
         }
       : undefined,
   projects: [

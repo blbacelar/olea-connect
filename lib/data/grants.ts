@@ -13,12 +13,51 @@ type PlatformRole = "super_admin" | "grants_admin" | "finance_admin";
 
 const grantsAdminRoles = new Set<PlatformRole>(["super_admin", "grants_admin"]);
 
+type GrantApplicationReviewRow = {
+  id: string;
+  score: number | null;
+  recommendation: string | null;
+  internal_notes: string | null;
+  reviewed_at: string;
+};
+
+type GrantAwardRow = {
+  id: string;
+  status: NonNullable<GrantApplicationSummary["award"]>["status"];
+  amount_cents: number;
+  paid_on: string | null;
+  payment_reference: string | null;
+  impact_story: string | null;
+  impact_story_consent: boolean;
+  outcome_received_at: string | null;
+};
+
+type GrantApplicationRow = {
+  id: string;
+  round_id: string;
+  status: GrantApplicationSummary["status"];
+  focus_area: string;
+  funding_request: string;
+  expected_outcome: string;
+  requested_amount_cents: number;
+  annual_revenue_cents: number | null;
+  cra_good_standing: boolean;
+  registered_in_canada: boolean;
+  submitted_at: string | null;
+  withdrawn_at: string | null;
+  updated_at: string;
+  organizations?: { name: string } | Array<{ name: string }> | null;
+  grant_rounds?: { name: string } | Array<{ name: string }> | null;
+  grant_awards?: GrantAwardRow | GrantAwardRow[] | null;
+  grant_application_reviews?: GrantApplicationReviewRow[] | null;
+};
+
 function singleRelation<T>(value: T | T[] | null | undefined) {
   return Array.isArray(value) ? value[0] : value;
 }
 
 function mapApplication(
-  application: any,
+  application: GrantApplicationRow,
   applicantReviews?: GrantApplicationSummary["reviews"],
 ): GrantApplicationSummary {
   const round = singleRelation(application.grant_rounds);
@@ -55,7 +94,7 @@ function mapApplication(
       : null,
     reviews:
       applicantReviews ??
-      application.grant_application_reviews?.map((review: any) => ({
+      application.grant_application_reviews?.map((review) => ({
         id: review.id,
         score: review.score,
         recommendation: review.recommendation,
@@ -78,9 +117,10 @@ export async function getGrantsData(): Promise<{
 }> {
   const { member, organization } = await requireMemberContext();
   const supabase = await createClient();
+  const admin = createAdminClient();
   const [
     { data: organizationRecord, error: organizationError },
-    { data: subscription, error: subscriptionError },
+    { error: subscriptionError },
     { data: roles, error: rolesError },
     { data: rounds, error: roundsError },
     { data: applications, error: applicationsError },
@@ -99,7 +139,7 @@ export async function getGrantsData(): Promise<{
       .order("created_at", { ascending: false })
       .limit(1)
       .maybeSingle(),
-    supabase
+    admin
       .from("platform_user_roles")
       .select("role")
       .eq("user_id", member.id)
@@ -129,7 +169,6 @@ export async function getGrantsData(): Promise<{
   const canAdministerGrants = (roles ?? []).some((role) =>
     grantsAdminRoles.has(role.role as PlatformRole),
   );
-  const admin = createAdminClient();
   let adminApplications: GrantApplicationSummary[] = [];
 
   if (canAdministerGrants) {

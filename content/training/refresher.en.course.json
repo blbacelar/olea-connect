@@ -1,0 +1,243 @@
+{
+  "id": "governance-refresher",
+  "locale": "en",
+  "version": "2026.1",
+  "currentAsOf": "October 2026",
+  "kind": "refresher",
+  "prerequisite": "governance-essentials",
+  "title": "Governance Refresher 2026",
+  "subtitle": "The annual check-in for directors who have completed Governance Essentials",
+  "provider": "Olea Connects",
+  "tagline": "Stronger Roots, Thriving Together",
+  "estimatedMinutes": 12,
+  "passMarkPercent": 80,
+  "certificateValidMonths": 12,
+  "jurisdictionNote": "Education, not legal advice. Your organization’s bylaws, policies and professional advisors are the final word.",
+  "welcome": {
+    "heading": "Welcome back",
+    "body": [
+      "You’ve already completed Governance Essentials. This short refresher keeps your knowledge current and renews your record with your organization. It takes about 12 minutes: a two-minute recap, what’s new this year, three quick scenarios, a six-question check and your annual conflict-of-interest declaration."
+    ],
+    "outcomes": [
+      "Recall the core duties and the Declare, Abstain, Leave standard",
+      "Apply them to three new scenarios",
+      "Renew your conflict-of-interest declaration for the year"
+    ]
+  },
+  "testOut": {
+    "enabled": false
+  },
+  "lessons": [
+    {
+      "id": "r1",
+      "number": 1,
+      "title": "The Essentials in Two Minutes",
+      "minutes": 2,
+      "blocks": [
+        {
+          "type": "keypoints",
+          "title": "What hasn’t changed",
+          "items": [
+            "**Govern, don’t manage.** The board sets direction, policy and accountability; the ED/CEO runs the organization.",
+            "**Loyalty, care and compliance.** Act in the organization’s best interests, prepare and ask questions, and stay within your Act and bylaws.",
+            "**Declare, Abstain, Leave** whenever a conflict arises, and have it recorded in the minutes.",
+            "**Ask about remittances** at every meeting. Unremitted source deductions can make directors personally liable.",
+            "**Speak with one voice** once the board has decided."
+          ]
+        },
+        {
+          "type": "takeaway",
+          "body": "Good process protects you: read the material, ask questions, and make sure decisions are recorded properly."
+        }
+      ]
+    },
+    {
+      "id": "r2",
+      "number": 2,
+      "title": "What’s New This Year",
+      "minutes": 3,
+      "blocks": [
+        {
+          "type": "text",
+          "body": "Each year, Olea Connects updates this lesson with changes that matter to nonprofit and charity boards across Canada, such as new CRA guidance, legislative changes and emerging risks. Your organization may add its own updates too."
+        },
+        {
+          "type": "updates",
+          "title": "2026 updates",
+          "editorNote": "Olea Connects editors: replace these items each year before publishing the new edition.",
+          "items": [
+            "**Review your filings calendar.** Confirm the dates for your T3010, your annual return under your Act, and your annual meeting. Missed annual returns can lead to dissolution in several jurisdictions.",
+            "**Cyber risk is board business.** Fraudulent payment requests and impersonation emails targeting nonprofits continue to rise. Ask management what controls are in place for changing payment details and approving transfers.",
+            "**AI in your organization.** Staff and volunteers are using AI tools. Ask whether the organization has guidance on what information may be shared with them, especially donor and client information."
+          ]
+        },
+        {
+          "type": "takeaway",
+          "body": "Ask for a five-minute compliance and risk update at your next meeting, using these items as a checklist."
+        }
+      ]
+    },
+    {
+      "id": "r3",
+      "number": 3,
+      "title": "Three Quick Scenarios",
+      "minutes": 4,
+      "blocks": [
+        {
+          "type": "scenario",
+          "title": "Scenario 1",
+          "situation": "A director’s consulting firm offers to redesign the organization’s website at half the market rate. Everyone at the table thinks it’s a generous offer.",
+          "question": "What should happen?",
+          "debrief": "It may well be a good deal, and a properly managed conflict makes it defensible. The director declares the interest and leaves the room; the board compares it with at least one other quote and decides on the merits. For charities, check whether your province’s rules restrict payments to directors (Ontario’s are especially strict).",
+          "choices": [
+            {
+              "id": "a",
+              "best": false,
+              "text": "Accept the offer. Half price is too good to pass up, and everyone agrees.",
+              "outcome": "Agreement around the table doesn’t remove the conflict. Without a declaration and a comparison, a good deal can look like a favour."
+            },
+            {
+              "id": "b",
+              "best": true,
+              "text": "The director declares the interest and leaves; the board compares at least one other quote and decides on the merits.",
+              "outcome": "The organization may still get a great price, with a decision it can defend. If you are a charity, check your province’s rules on paying directors first."
+            },
+            {
+              "id": "c",
+              "best": false,
+              "text": "Decline automatically. Directors should never do business with the organization.",
+              "outcome": "Some organizations choose that as policy, but it isn’t the legal standard everywhere. With proper disclosure, recusal and a fair comparison, it can be the best value."
+            }
+          ]
+        },
+        {
+          "type": "scenario",
+          "title": "Scenario 2",
+          "situation": "The finance report shows a healthy surplus, but the ED/CEO mentions in passing that payroll remittances were “a little late” last month because of cash timing.",
+          "question": "What should the board do?",
+          "debrief": "Treat it as a priority. Ask for confirmation that remittances are now current, what caused the delay, and what will prevent it happening again. Ask for a cash-flow forecast. A surplus on paper doesn’t mean cash is available when it is needed, and directors can be personally liable for unremitted deductions.",
+          "choices": [
+            {
+              "id": "a",
+              "best": false,
+              "text": "Move on. There’s a surplus, and it was only a little late.",
+              "outcome": "A surplus on paper doesn’t mean cash is there when payroll is due, and late remittances carry penalties and personal liability for directors."
+            },
+            {
+              "id": "b",
+              "best": true,
+              "text": "Ask for confirmation that remittances are now current, what caused the delay, and a cash-flow forecast.",
+              "outcome": "The board treats it as the risk it is, without micromanaging. Adding a remittance confirmation to every meeting’s finance report closes the gap."
+            },
+            {
+              "id": "c",
+              "best": false,
+              "text": "Have the Treasurer take over payroll until further notice.",
+              "outcome": "That pulls a director into operations and blurs accountability. The board’s job is to require reliable controls and reporting, not to run payroll."
+            }
+          ]
+        },
+        {
+          "type": "scenario",
+          "title": "Scenario 3",
+          "situation": "After a tense vote, a director who voted against a program closure posts on social media that the board “ignored the community.”",
+          "question": "How should the board respond?",
+          "debrief": "The Chair should speak with the director privately and promptly. Directors can ask for their dissent to be recorded in the minutes, but must support the board’s decision publicly or resign. The board may also want to look at how the decision was communicated to the community.",
+          "choices": [
+            {
+              "id": "a",
+              "best": false,
+              "text": "Post a public reply from the board correcting her.",
+              "outcome": "A public back-and-forth deepens the damage and puts the disagreement on display. This is a conversation to have in private first."
+            },
+            {
+              "id": "b",
+              "best": true,
+              "text": "The Chair speaks with her privately and promptly, and the board looks at how the decision was communicated.",
+              "outcome": "She is reminded that dissent belongs in the minutes, not online, and the board learns something about how it explains hard decisions."
+            },
+            {
+              "id": "c",
+              "best": false,
+              "text": "Ask her to resign immediately.",
+              "outcome": "That may become necessary if it happens again, but it skips a step. Most directors who go public feel unheard. Start with a conversation."
+            }
+          ]
+        },
+        {
+          "type": "takeaway",
+          "body": "The same few principles solve most governance problems: declare conflicts, ask about cash and remittances, and keep debate inside the boardroom."
+        }
+      ]
+    }
+  ],
+  "orgLesson": {
+    "id": "org",
+    "mode": "declaration-only",
+    "title": "Annual Declaration",
+    "minutes": 2,
+    "intro": "Each year, directors renew their conflict-of-interest declaration and their commitment to the code of conduct. Your declaration is recorded with your organization.",
+    "coi": {
+      "heading": "Conflict-of-interest declaration",
+      "intro": "List any interests that could conflict, or appear to conflict, with your duties to this organization. Include employment, business interests, other boards you serve on, family members who work for or do business with the organization, and funders you are connected to.",
+      "noneLabel": "I have no interests to declare at this time.",
+      "listLabel": "I have the following interests to declare:",
+      "placeholder": "For example: I joined the board of the Westside Community Foundation this year.",
+      "commitment": "I will update this declaration if my circumstances change, and declare any conflict at the meeting where it arises."
+    },
+    "conduct": {
+      "heading": "Code of conduct",
+      "statement": "I have re-read the organization’s code of conduct and continue to agree to follow it.",
+      "missing": "Your organization hasn’t added a code of conduct. You can continue, and your administrator can add one later."
+    },
+    "signatureLabel": "Type your full name to sign",
+    "button": "Sign and continue"
+  },
+  "attestation": {
+    "heading": "Annual acknowledgement",
+    "statements": [
+      "I have completed the Governance Refresher.",
+      "My conflict-of-interest declaration is current.",
+      "I understand this course is educational and does not replace my organization’s bylaws, policies or legal advice."
+    ]
+  },
+  "closing": {
+    "heading": "You’re current for another year",
+    "body": "Thank you for staying sharp. Your organization has a record of your refresher and your updated declaration."
+  },
+  "media": {
+    "welcomeVideo": {
+      "url": null
+    },
+    "lessonAudio": {}
+  },
+  "actionPlan": {
+    "heading": "Your action plan",
+    "intro": "Learning sticks when it turns into action. Choose up to three things you’ll do in the next 90 days, or write your own. We’ll include them with your certificate, and the annual refresher will ask how they went.",
+    "suggestions": [
+      "Read our bylaws and strategic plan before my next board meeting.",
+      "Prepare questions for every board package and send them ahead of the meeting.",
+      "Ask at each meeting for confirmation that payroll remittances are current.",
+      "Update my conflict-of-interest declaration whenever my situation changes.",
+      "Ask for a one-page compliance calendar for the board.",
+      "Meet one-on-one with our Chair or ED/CEO within 60 days.",
+      "Learn whose traditional territory our organization is on, and about the Nations in our area.",
+      "Ask that the board review its risk register this year.",
+      "Suggest a short in-camera session at the end of each board meeting.",
+      "Visit one of our programs or events to see the mission in action."
+    ],
+    "customLabel": "Or write your own",
+    "customPlaceholder": "For example: Join the finance committee and learn our budget process.",
+    "max": 3,
+    "button": "Save my action plan",
+    "previous": {
+      "heading": "Last time, you committed to",
+      "intro": "How did it go? Be honest. This is for you, and your organization only sees combined results.",
+      "statuses": {
+        "done": "Done",
+        "partly": "Partly",
+        "not_yet": "Not yet"
+      }
+    }
+  }
+}

@@ -25,10 +25,10 @@ export default function BrandSetupPage() {
       "",
   );
   const [primaryColor, setPrimaryColor] = useState(
-    session?.organization.brand.primaryColor ?? "#4A7C59",
+    session?.organization.brand.primaryColor ?? "#446B52",
   );
   const [secondaryColor, setSecondaryColor] = useState(
-    session?.organization.brand.secondaryColor ?? "#2D5C3E",
+    session?.organization.brand.secondaryColor ?? "#F4EFE4",
   );
   const [logoUrl, setLogoUrl] = useState<string | undefined>(
     session?.organization.brand.logoUrl,
@@ -196,6 +196,8 @@ export default function BrandSetupPage() {
                 <Label htmlFor="brandPhone">Footer phone</Label>
                 <Input
                   id="brandPhone"
+                  type="tel"
+                  inputMode="tel"
                   value={phone}
                   onChange={(event) => setPhone(event.target.value)}
                   placeholder="+1 555 123 4567"
@@ -215,6 +217,7 @@ export default function BrandSetupPage() {
                 <Label htmlFor="brandWebsite">Footer website</Label>
                 <Input
                   id="brandWebsite"
+                  type="url"
                   value={website}
                   onChange={(event) => setWebsite(event.target.value)}
                   placeholder="https://example.org"

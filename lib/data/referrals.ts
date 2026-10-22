@@ -1,0 +1,289 @@
+import "server-only";
+
+import { cache } from "react";
+
+import {
+  getOptionalMemberContext,
+  requireMemberContext,
+} from "@/lib/data/member-context";
+import { createAdminClient } from "@/utils/supabase/admin";
+
+import {
+  mapPayout,
+  mapReferral,
+  mapReferrer,
+  mapSettings,
+  referralProgramSettingsDefaults,
+  type ReferralAdminData,
+  type ReferralDashboardData,
+} from "./referral-records";
+
+export {
+  referralProgramSettingsDefaults,
+  type ReferralAdminData,
+  type ReferralDashboardData,
+  type ReferralLink,
+  type ReferralPayoutRecord,
+  type ReferralProgramSettings,
+  type ReferralRecord,
+  type ReferrerRecord,
+} from "./referral-records";
+
+const settingsSelect =
+  "program_enabled, currency, contact_email, terms_url";
+const referrerSelect =
+  "id, user_id, full_name, email, organization_name, relationship_to_olea, payout_contact, status, status_reason, approved_at, created_at, referral_links(code, active, created_at)";
+const referralSelect =
+  "id, referral_code, referred_email, status, created_at, last_milestone_at, organizations(name)";
+const adminReferralSelect = `${referralSelect}, referrers(full_name, email)`;
+const payoutSelect =
+  "id, referral_id, milestone, amount_cents, currency, status, due_at, paid_at, notes, evidence_url, source_invoice_id, purchase_amount_cents";
+
+async function getTrackedSignupRows(
+  supabase: ReturnType<typeof createAdminClient>,
+  codes: string[],
+) {
+  if (codes.length === 0) return { rows: [], count: 0 };
+  const [rowsResult, countResult] = await Promise.all([
+    supabase
+      .from("workspace_provisioning_requests")
+      .select("id, referral_code, email, organization_name, status, created_at, completed_at")
+      .in("referral_code", codes)
+      .order("created_at", { ascending: false })
+      .limit(100),
+    supabase
+      .from("workspace_provisioning_requests")
+      .select("id", { count: "exact", head: true })
+      .in("referral_code", codes),
+  ]);
+  if (rowsResult.error) throw rowsResult.error;
+  if (countResult.error) throw countResult.error;
+  return { rows: rowsResult.data ?? [], count: countResult.count ?? 0 };
+}
+
+export const getReferralProgramSettings = cache(async () => {
+  const { data, error } = await createAdminClient()
+    .from("referral_program_settings")
+    .select(settingsSelect)
+    .eq("id", true)
+    .single();
+
+  if (error) throw error;
+  return mapSettings(data);
+});
+
+export async function requireReferralAdmin() {
+  const session = await requireMemberContext();
+  if (!(session.platformRoles ?? []).includes("super_admin")) {
+    throw new Error("Only platform administrators can manage referrals.");
+  }
+  return session;
+}
+
+export async function getReferralAdminData(): Promise<ReferralAdminData> {
+  await requireReferralAdmin();
+  const supabase = createAdminClient();
+  const [settingsResult, referrersResult, referralsResult, payoutsResult, trackingCodesResult] =
+    await Promise.all([
+      supabase
+        .from("referral_program_settings")
+        .select(settingsSelect)
+        .eq("id", true)
+        .single(),
+      supabase
+        .from("referrers")
+        .select(referrerSelect)
+        .neq("status", "archived")
+        .order("created_at", { ascending: false })
+        .limit(100),
+      supabase
+        .from("referrals")
+        .select(adminReferralSelect)
+        .order("created_at", { ascending: false })
+        .limit(100),
+      supabase
+        .from("referral_payouts")
+        .select(payoutSelect)
+        .order("created_at", { ascending: false })
+        .limit(100),
+      supabase
+        .from("referral_tracking_codes")
+        .select("code, label, active, created_at")
+        .order("created_at", { ascending: false }),
+    ]);
+
+  if (settingsResult.error) throw settingsResult.error;
+  if (referrersResult.error) throw referrersResult.error;
+  if (referralsResult.error) throw referralsResult.error;
+  if (payoutsResult.error) throw payoutsResult.error;
+  if (trackingCodesResult.error) throw trackingCodesResult.error;
+
+  const trackingCodes = trackingCodesResult.data ?? [];
+  const trackedSignupResult = await getTrackedSignupRows(
+    supabase,
+    trackingCodes.map((item) => item.code),
+  );
+
+  return {
+    settings: mapSettings(settingsResult.data),
+    referrers: (referrersResult.data ?? []).map(mapReferrer),
+    referrals: (referralsResult.data ?? []).map(mapReferral),
+    payouts: (payoutsResult.data ?? []).map(mapPayout),
+    trackingCodes: trackingCodes.map((item) => ({
+      code: item.code,
+      label: item.label,
+      active: item.active,
+      createdAt: item.created_at,
+    })),
+    trackedSignupCount: trackedSignupResult.count,
+    trackedSignups: trackedSignupResult.rows.map((item) => ({
+      id: item.id,
+      code: item.referral_code ?? "",
+      email: item.email,
+      organizationName: item.organization_name,
+      status: item.status,
+      createdAt: item.created_at,
+      completedAt: item.completed_at,
+    })),
+  };
+}
+
+export async function getReferralDashboardData(): Promise<ReferralDashboardData> {
+  const session = await getOptionalMemberContext();
+  const settings = await getSettingsOrDefaults();
+
+  if (!session?.member.email) return emptyReferralDashboard(settings);
+
+  const supabase = createAdminClient();
+  const referrerRow = await resolveDashboardReferrer({
+    email: session.member.email,
+    supabase,
+    userId: session.member.id,
+  });
+  if (!referrerRow) return emptyReferralDashboard(settings);
+
+  const referrer = mapReferrer(referrerRow);
+  const referralsResult = await getReferralsForReferrer(supabase, referrer.id);
+  const payoutsResult = await getPayoutsForReferrals(
+    supabase,
+    getReferralIds(referralsResult.data ?? []),
+  );
+
+  if (payoutsResult.error) throw payoutsResult.error;
+
+  return {
+    settings,
+    referrer,
+    referrals: (referralsResult.data ?? []).map(mapReferral),
+    payouts: (payoutsResult.data ?? []).map(mapPayout),
+  };
+}
+
+async function getSettingsOrDefaults() {
+  return getReferralProgramSettings().catch(
+    () => referralProgramSettingsDefaults,
+  );
+}
+
+function emptyReferralDashboard(
+  settings: ReferralDashboardData["settings"],
+): ReferralDashboardData {
+  return { settings, referrer: null, referrals: [], payouts: [] };
+}
+
+async function resolveDashboardReferrer({
+  email,
+  supabase,
+  userId,
+}: {
+  email: string;
+  supabase: ReturnType<typeof createAdminClient>;
+  userId: string;
+}) {
+  const referrerByUserId = await getReferrerByUserId(supabase, userId);
+  if (referrerByUserId) return referrerByUserId;
+
+  const referrerByEmail = await getReferrerByEmail(supabase, email);
+  if (referrerByEmail?.user_id && referrerByEmail.user_id !== userId) {
+    return null;
+  }
+  if (!referrerByEmail || referrerByEmail.user_id) return referrerByEmail;
+
+  return claimReferrerForUser(supabase, referrerByEmail.id, userId);
+}
+
+async function getReferrerByUserId(
+  supabase: ReturnType<typeof createAdminClient>,
+  userId: string,
+) {
+  const { data, error } = await supabase
+    .from("referrers")
+    .select(referrerSelect)
+    .eq("user_id", userId)
+    .maybeSingle();
+
+  if (error) throw error;
+  return data;
+}
+
+async function getReferrerByEmail(
+  supabase: ReturnType<typeof createAdminClient>,
+  email: string,
+) {
+  const { data, error } = await supabase
+    .from("referrers")
+    .select(referrerSelect)
+    .eq("email", email.toLowerCase())
+    .maybeSingle();
+
+  if (error) throw error;
+  return data;
+}
+
+async function claimReferrerForUser(
+  supabase: ReturnType<typeof createAdminClient>,
+  referrerId: string,
+  userId: string,
+) {
+  const { data, error } = await supabase
+    .from("referrers")
+    .update({ user_id: userId })
+    .eq("id", referrerId)
+    .is("user_id", null)
+    .select(referrerSelect)
+    .single();
+
+  if (error) throw error;
+  return data;
+}
+
+async function getReferralsForReferrer(
+  supabase: ReturnType<typeof createAdminClient>,
+  referrerId: string,
+) {
+  const result = await supabase
+    .from("referrals")
+    .select(referralSelect)
+    .eq("referrer_id", referrerId)
+    .order("created_at", { ascending: false });
+
+  if (result.error) throw result.error;
+  return result;
+}
+
+function getReferralIds(referrals: Array<{ id: string }>) {
+  return referrals.map((row) => row.id);
+}
+
+async function getPayoutsForReferrals(
+  supabase: ReturnType<typeof createAdminClient>,
+  referralIds: string[],
+) {
+  if (referralIds.length === 0) return { data: [], error: null };
+
+  return supabase
+    .from("referral_payouts")
+    .select(payoutSelect)
+    .in("referral_id", referralIds)
+    .order("created_at", { ascending: false });
+}

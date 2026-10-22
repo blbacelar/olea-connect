@@ -16,6 +16,10 @@ export function normalizeTemplateSchema(value: unknown): TemplateFieldSchema | n
 
   return {
     version: Number(schema.version ?? 1),
+    presentation:
+      schema.presentation && typeof schema.presentation === "object"
+        ? schema.presentation
+        : undefined,
     header_fields: Array.isArray(schema.header_fields)
       ? schema.header_fields
       : [],

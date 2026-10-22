@@ -5,22 +5,39 @@ export function SectionIntro({
   title,
   description,
   centered = false,
+  inverse = false,
 }: {
   eyebrow: string;
   title: string;
   description?: string;
   centered?: boolean;
+  inverse?: boolean;
 }) {
   return (
     <div className={cn("max-w-2xl", centered && "mx-auto text-center")}>
-      <p className="text-xs font-bold uppercase tracking-[0.14em] text-olea-green">
+      <p
+        className={cn(
+          "text-xs font-bold uppercase tracking-[0.14em]",
+          inverse ? "text-emerald-200" : "text-olea-green",
+        )}
+      >
         {eyebrow}
       </p>
-      <h2 className="mt-3 text-balance text-3xl font-extrabold tracking-[-0.03em] text-slate-900 md:text-4xl">
+      <h2
+        className={cn(
+          "mt-3 text-balance text-3xl font-extrabold tracking-[-0.03em] md:text-4xl",
+          inverse ? "text-white" : "text-slate-900",
+        )}
+      >
         {title}
       </h2>
       {description ? (
-        <p className="mt-4 text-base leading-7 text-slate-600 md:text-lg">
+        <p
+          className={cn(
+            "mt-4 text-base leading-7 md:text-lg",
+            inverse ? "text-white/75" : "text-slate-600",
+          )}
+        >
           {description}
         </p>
       ) : null}

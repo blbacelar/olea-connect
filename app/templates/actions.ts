@@ -9,13 +9,30 @@ import { requireMemberContext } from "@/lib/data/member-context";
 import { buildExportFileName, buildExportStoragePath } from "@/lib/template-renderer/export-files";
 import { buildTemplateExportModel } from "@/lib/template-renderer/export-model";
 import { renderTemplateDocxBuffer } from "@/lib/template-renderer/docx-export";
+import {
+  buildBoardCalendarReportFooterText,
+  buildBoardCalendarReportHeaderHtml,
+  buildBoardCalendarReportHtml,
+  isBoardCalendarSchema,
+} from "@/lib/template-renderer/board-calendar-report-html";
+import { normalizeBoardCalendarMemberAssignments } from "@/lib/template-renderer/board-calendar-chairs";
+import {
+  assertMeetingDocumentWriteAccess,
+  assertMeetingDocumentMembers,
+  validateMeetingDocuments,
+} from "@/lib/template-renderer/board-calendar-meeting-documents";
+import { renderHtmlToPdfBuffer } from "@/lib/template-renderer/html-pdf-export";
 import { renderTemplatePdfBuffer } from "@/lib/template-renderer/pdf-export";
 import { validateTemplateData } from "@/lib/template-renderer/validation";
+import type { BrandProfile } from "@/lib/types";
 import type {
   DynamicTemplateSession,
+  TemplateFieldSchema,
   TemplateExportFormat,
+  TemplateFormData,
   TemplateSavePayload,
 } from "@/lib/template-renderer/types";
+import type { TemplateExportModel } from "@/lib/template-renderer/export-model";
 import { createClient } from "@/utils/supabase/server";
 import { createAdminClient } from "@/utils/supabase/admin";
 
@@ -36,16 +53,51 @@ export async function saveDynamicTemplateSession(
     throw new Error("This template belongs to another organization.");
   }
 
-  const validationErrors = validateTemplateData(
-    payload.schemaSnapshot,
-    payload.formData,
-  );
+  const supabase = await createClient();
+  let previousFormData: TemplateFormData | undefined;
+  if (payload.id) {
+    const { data: existingInstance, error: existingError } = await supabase
+      .from("template_instances")
+      .select("resource_id, form_data")
+      .eq("id", payload.id)
+      .eq("organization_id", organization.id)
+      .single();
+    if (existingError || !existingInstance || existingInstance.resource_id !== payload.resourceId) {
+      throw new Error("This template session does not belong to the selected resource.");
+    }
+    previousFormData = existingInstance.form_data as TemplateFormData;
+  }
+  const { data: resource, error: resourceError } = await supabase
+    .from("resources")
+    .select("slug")
+    .eq("id", payload.resourceId)
+    .single();
+  if (resourceError || !resource) throw new Error("This template resource is unavailable.");
+  const isBoardCalendar = resource.slug === "board-calendar-operational-workflow";
+  const calendarData = isBoardCalendar
+    ? await normalizeBoardCalendarMemberFormData({
+        formData: payload.formData,
+        organizationId: organization.id,
+        previousFormData,
+        supabase,
+      })
+    : null;
+  const formData = calendarData?.formData ?? payload.formData;
+  if (isBoardCalendar) {
+    const after = validateMeetingDocuments(formData);
+    const before = previousFormData ? validateMeetingDocuments(previousFormData) : [];
+    assertMeetingDocumentWriteAccess({
+      before,
+      after,
+      canApprove: member.membershipRole !== "member",
+    });
+    assertMeetingDocumentMembers({ before, after, activeMemberIds: calendarData?.activeMemberIds ?? [] });
+  }
+  const validationErrors = validateTemplateData(payload.schemaSnapshot, formData);
 
   if (payload.status === "completed" && validationErrors.length > 0) {
     throw new Error("Please complete required fields before marking complete.");
   }
-
-  const supabase = await createClient();
   const brandingSnapshot = payload.id
     ? payload.brandingSnapshot
     : await createBrandingSnapshot(supabase, organization.brand);
@@ -53,7 +105,7 @@ export async function saveDynamicTemplateSession(
     organization_id: organization.id,
     resource_id: payload.resourceId,
     title: payload.title,
-    form_data: payload.formData,
+    form_data: formData,
     branding_snapshot: brandingSnapshot,
     definition_version: payload.schemaVersion,
     schema_snapshot: payload.schemaSnapshot,
@@ -80,8 +132,6 @@ export async function saveDynamicTemplateSession(
 
   if (error) throw error;
 
-  revalidatePath("/templates");
-
   return {
     id: data.id,
     resourceId: data.resource_id,
@@ -96,6 +146,41 @@ export async function saveDynamicTemplateSession(
     status: data.status,
     lastSavedAt: data.last_saved_at,
   } as DynamicTemplateSession;
+}
+
+async function normalizeBoardCalendarMemberFormData({
+  formData,
+  organizationId,
+  previousFormData,
+  supabase,
+}: {
+  formData: TemplateFormData;
+  organizationId: string;
+  previousFormData?: TemplateFormData;
+  supabase: Awaited<ReturnType<typeof createClient>>;
+}) {
+  const { data, error } = await supabase.rpc("get_team_directory", {
+    target_organization_id: organizationId,
+  });
+
+  if (error) throw error;
+
+  const activeMembers = ((data ?? []) as Array<{
+      user_id: string;
+      email: string;
+      full_name: string;
+      status: "invited" | "active" | "suspended";
+    }>)
+      .filter((directoryMember) => directoryMember.status === "active")
+      .map((directoryMember) => ({
+        id: directoryMember.user_id,
+        email: directoryMember.email,
+        name: directoryMember.full_name,
+      }));
+  return {
+    formData: normalizeBoardCalendarMemberAssignments(formData, activeMembers, previousFormData),
+    activeMemberIds: activeMembers.map((member) => member.id),
+  };
 }
 
 export async function generateTemplateExport({
@@ -153,11 +238,13 @@ export async function generateTemplateExport({
   });
   const buffer =
     format === "pdf"
-      ? await renderTemplatePdfBuffer({
-          title,
-          organizationName: organization.name,
+      ? await renderPdfExportBuffer({
           brand: instance.branding_snapshot,
+          formData: instance.form_data,
           model,
+          organizationName: organization.name,
+          schema: instance.schema_snapshot,
+          title,
         })
       : await renderTemplateDocxBuffer({
           title,
@@ -217,36 +304,55 @@ export async function generateTemplateExport({
   };
 }
 
+async function renderPdfExportBuffer({
+  brand,
+  formData,
+  model,
+  organizationName,
+  schema,
+  title,
+}: {
+  brand: BrandProfile;
+  formData: TemplateFormData;
+  model: TemplateExportModel;
+  organizationName: string;
+  schema: TemplateFieldSchema;
+  title: string;
+}) {
+  if (isBoardCalendarSchema(schema)) {
+    return renderHtmlToPdfBuffer(
+      buildBoardCalendarReportHtml({
+        brand,
+        formData,
+        organizationName,
+        title,
+      }),
+      {
+        footerText: buildBoardCalendarReportFooterText(brand, organizationName),
+        headerHtml: buildBoardCalendarReportHeaderHtml(organizationName, title),
+      },
+    );
+  }
+
+  return renderTemplatePdfBuffer({
+    title,
+    organizationName,
+    brand,
+    model,
+  });
+}
+
 export async function createTemplateExportDownloadUrl(exportId: string) {
-  const { member, organization } = await requireMemberContext();
+  const { organization } = await requireMemberContext();
   const supabase = await createClient();
   const { data: exportRecord, error: exportError } = await supabase
     .from("template_exports")
-    .select("id, organization_id, storage_path, file_name")
+    .select("id")
     .eq("id", exportId)
     .eq("organization_id", organization.id)
     .single();
 
   if (exportError) throw exportError;
 
-  const { error: eventError } = await supabase
-    .from("template_export_downloads")
-    .insert({
-      export_id: exportRecord.id,
-      organization_id: organization.id,
-      downloaded_by: member.id,
-      metadata: { file_name: exportRecord.file_name },
-    });
-
-  if (eventError) throw eventError;
-
-  const { data: signedUrl, error: signedUrlError } = await supabase.storage
-    .from("generated-documents")
-    .createSignedUrl(exportRecord.storage_path, 60, {
-      download: exportRecord.file_name,
-    });
-
-  if (signedUrlError) throw signedUrlError;
-
-  return signedUrl.signedUrl;
+  return `/api/template-exports/${exportRecord.id}/download`;
 }

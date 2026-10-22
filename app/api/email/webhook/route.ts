@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 
 import { getResend } from "@/lib/email/server";
+import { logError } from "@/lib/observability/logger";
 import { createAdminClient } from "@/utils/supabase/admin";
 
 export const runtime = "nodejs";
@@ -70,7 +71,7 @@ export async function POST(request: Request) {
 
     return NextResponse.json({ received: true });
   } catch (error) {
-    console.error("Invalid Resend webhook", error);
+    logError("Invalid Resend webhook", error);
     return NextResponse.json(
       { error: "Invalid Resend webhook signature." },
       { status: 400 },

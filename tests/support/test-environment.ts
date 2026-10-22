@@ -20,7 +20,9 @@ export function getTestSupabaseEnvironment(
 
   const url = process.env.TEST_SUPABASE_URL;
   const serviceRoleKey = process.env.TEST_SUPABASE_SERVICE_ROLE_KEY;
-  const publishableKey = process.env.TEST_SUPABASE_PUBLISHABLE_KEY;
+  const publishableKey =
+    process.env.TEST_SUPABASE_PUBLISHABLE_KEY ??
+    process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY;
 
   if (!url || !serviceRoleKey) {
     throw new Error(

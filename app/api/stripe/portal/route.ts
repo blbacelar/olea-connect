@@ -1,274 +1,344 @@
 import { NextResponse } from "next/server";
-import type Stripe from "stripe";
 
 import { getBillingSummary } from "@/lib/billing/server";
 import {
   getBillingPortalConfigurationId,
   getStripe,
+  getStripePriceId,
   getStripeSeatPriceId,
 } from "@/lib/stripe/server";
+import { logError } from "@/lib/observability/logger";
 import { syncStripeSubscription } from "@/lib/stripe/subscriptions";
+import type { MembershipTier } from "@/lib/types";
 import { createAdminClient } from "@/utils/supabase/admin";
+
+import {
+  BillingActionError,
+  assertPauseTransition,
+  assertPlanUpgradeAllowed,
+  assertSameOrigin,
+  assertSeatAdjustmentAllowed,
+  assertSupportedPortalAction,
+  getBillingActionErrorResponse,
+  getBillingCycle,
+  getIdempotencyKey,
+  getPauseResumeTimestamp,
+  getPendingPlanSyncResponse,
+  getPortalFlowData,
+  getSeatCheckoutMetadata,
+  getSeatCheckoutUrls,
+  getSeatQuantity,
+  getTargetPlanId,
+  isMembershipItem,
+  isSubscriptionMutation,
+  parseActionBody,
+  type BillingAction,
+  type BillingActionBody,
+  type ManageableBillingFields,
+} from "./portal-route-support";
 
 export const runtime = "nodejs";
 
-type BillingAction =
-  | "manage"
-  | "payment_method"
-  | "subscription_update"
-  | "cancel"
-  | "pause"
-  | "resume"
-  | "add_seat";
-
-type BillingActionBody = {
-  action?: BillingAction;
-  pauseDays?: number;
-};
-
-class BillingActionError extends Error {
-  constructor(
-    message: string,
-    readonly status: number,
-  ) {
-    super(message);
-  }
-}
-
-const pauseableStatuses = new Set(["active", "trialing"]);
-const resumableStatuses = new Set(["paused"]);
-const seatAdjustableStatuses = new Set(["active", "trialing"]);
-
-function parseActionBody(value: unknown): BillingActionBody {
-  if (!value || typeof value !== "object") return {};
-  const body = value as BillingActionBody;
-  return {
-    action: body.action,
-    pauseDays: body.pauseDays,
-  };
-}
-
-function getPortalFlowData(
-  action: BillingAction,
-  subscriptionId: string,
-  returnUrl: string,
-): Stripe.BillingPortal.SessionCreateParams.FlowData | undefined {
-  const after_completion = {
-    type: "redirect" as const,
-    redirect: { return_url: returnUrl },
-  };
-
-  if (action === "payment_method") {
-    return {
-      after_completion,
-      type: "payment_method_update",
-    };
-  }
-
-  if (action === "subscription_update") {
-    return {
-      after_completion,
-      subscription_update: { subscription: subscriptionId },
-      type: "subscription_update",
-    };
-  }
-
-  if (action === "cancel") {
-    return {
-      after_completion,
-      subscription_cancel: { subscription: subscriptionId },
-      type: "subscription_cancel",
-    };
-  }
-
-  return undefined;
-}
-
-function getPauseResumeTimestamp(days: number) {
-  if (!Number.isInteger(days) || days < 1 || days > 60) {
-    throw new BillingActionError(
-      "Membership pauses must be between 1 and 60 days.",
-      400,
-    );
-  }
-
-  return Math.floor((Date.now() + days * 24 * 60 * 60 * 1000) / 1000);
-}
-
-function assertSameOrigin(request: Request) {
-  const expectedOrigin = new URL(request.url).origin;
-  const origin = request.headers.get("origin");
-  const referer = request.headers.get("referer");
-
-  if (!origin && !referer) {
-    throw new BillingActionError("Billing requests must come from this app.", 403);
-  }
-
-  if (origin && origin !== expectedOrigin) {
-    throw new BillingActionError("Billing requests must come from this app.", 403);
-  }
-
-  if (!origin && referer) {
-    try {
-      if (new URL(referer).origin !== expectedOrigin) {
-        throw new BillingActionError("Billing requests must come from this app.", 403);
-      }
-    } catch {
-      throw new BillingActionError("Billing requests must come from this app.", 403);
-    }
-  }
-}
-
-function assertPauseTransition(action: "pause" | "resume", status: string) {
-  if (action === "pause" && !pauseableStatuses.has(status)) {
-    throw new BillingActionError(
-      "Only active or trialing memberships can be paused.",
-      409,
-    );
-  }
-
-  if (action === "resume" && !resumableStatuses.has(status)) {
-    throw new BillingActionError("Only paused memberships can be resumed.", 409);
-  }
-}
-
-function assertSeatAdjustmentAllowed(status: string) {
-  if (!seatAdjustableStatuses.has(status)) {
-    throw new BillingActionError(
-      "Only active or trialing memberships can add seats.",
-      409,
-    );
-  }
-}
-
-async function addSeatToSubscription(subscriptionId: string) {
-  const stripe = getStripe();
-  const seatPriceId = getStripeSeatPriceId();
-  const subscription = await stripe.subscriptions.retrieve(subscriptionId, {
-    expand: ["items.data.price"],
-  });
-  const seatItem = subscription.items.data.find((item) => {
-    const priceId =
-      typeof item.price === "string" ? item.price : item.price.id;
-    return priceId === seatPriceId;
-  });
-
-  return stripe.subscriptions.update(subscriptionId, {
-    items: seatItem
-      ? [
-          {
-            id: seatItem.id,
-            quantity: (seatItem.quantity ?? 0) + 1,
-          },
-        ]
-      : [
-          {
-            price: seatPriceId,
-            quantity: 1,
-          },
-        ],
-    proration_behavior: "always_invoice",
-  });
-}
+type BillingSummary = NonNullable<Awaited<ReturnType<typeof getBillingSummary>>>;
+type ManageableBilling = BillingSummary & ManageableBillingFields;
 
 export async function POST(request: Request) {
   try {
     assertSameOrigin(request);
     const body = parseActionBody(await request.json().catch(() => ({})));
     const action = body.action ?? "manage";
-    const billing = await getBillingSummary();
+    const billing = await getManageableBilling();
+    const returnUrl = `${new URL(request.url).origin}/subscription`;
 
-    if (!billing) {
-      return NextResponse.json(
-        { error: "No organization subscription was found." },
-        { status: 404 },
-      );
-    }
-    if (billing.role !== "owner" && billing.role !== "admin") {
-      return NextResponse.json(
-        { error: "Only organization administrators can manage billing." },
-        { status: 403 },
-      );
-    }
-    if (!billing.customerId) {
-      return NextResponse.json(
-        { error: "Stripe billing is not ready for this membership yet." },
-        { status: 409 },
-      );
-    }
-    if (!billing.subscriptionId) {
-      return NextResponse.json(
-        { error: "Stripe subscription is not ready for this membership yet." },
-        { status: 409 },
-      );
-    }
-
-    const origin = new URL(request.url).origin;
-    const returnUrl = `${origin}/subscription`;
-
-    if (action === "pause" || action === "resume" || action === "add_seat") {
-      if (action === "add_seat") {
-        assertSeatAdjustmentAllowed(billing.status);
-      } else {
-        assertPauseTransition(action, billing.status);
-      }
-      const subscription =
-        action === "pause"
-          ? await getStripe().subscriptions.update(billing.subscriptionId, {
-              pause_collection: {
-                behavior: "void",
-                resumes_at: getPauseResumeTimestamp(body.pauseDays ?? 30),
-              },
-            })
-          : action === "resume"
-            ? await getStripe().subscriptions.update(billing.subscriptionId, {
-                pause_collection: "",
-              })
-            : await addSeatToSubscription(billing.subscriptionId);
-
-      try {
-        await syncStripeSubscription(createAdminClient(), subscription);
-      } catch (syncError) {
-        console.error("Stripe billing action succeeded but local sync failed", {
-          action,
-          subscriptionId: subscription.id,
-          syncError,
-        });
-      }
-      return NextResponse.json({ ok: true });
-    }
-
-    if (
-      action !== "manage" &&
-      action !== "payment_method" &&
-      action !== "subscription_update" &&
-      action !== "cancel"
-    ) {
-      return NextResponse.json(
-        { error: "Unsupported billing action." },
-        { status: 400 },
-      );
-    }
-
-    const session = await getStripe().billingPortal.sessions.create({
-      configuration: await getBillingPortalConfigurationId(),
-      customer: billing.customerId,
-      flow_data: getPortalFlowData(action, billing.subscriptionId, returnUrl),
-      return_url: returnUrl,
-    });
-
-    return NextResponse.json({ url: session.url });
+    return await handleBillingAction({ action, billing, body, returnUrl });
   } catch (error) {
-    console.error("Unable to create Stripe billing portal session", error);
-    const status = error instanceof BillingActionError ? error.status : 500;
-    return NextResponse.json(
-      {
-        error:
-          error instanceof Error
-            ? error.message
-            : "Unable to open billing management.",
-      },
-      { status },
+    return getBillingActionErrorResponse(error);
+  }
+}
+
+async function getManageableBilling(): Promise<ManageableBilling> {
+  const billing = await getBillingSummary();
+
+  if (!billing) {
+    throw new BillingActionError("No organization subscription was found.", 404);
+  }
+  if (billing.role !== "owner" && billing.role !== "admin") {
+    throw new BillingActionError(
+      "Only organization administrators can manage billing.",
+      403,
     );
   }
+  if (!billing.customerId) {
+    throw new BillingActionError(
+      "Billing is not ready for this membership yet.",
+      409,
+    );
+  }
+  if (!billing.subscriptionId) {
+    throw new BillingActionError(
+      "Subscription billing is not ready for this membership yet.",
+      409,
+    );
+  }
+
+  return billing as ManageableBilling;
+}
+
+async function handleBillingAction({
+  action,
+  billing,
+  body,
+  returnUrl,
+}: {
+  action: BillingAction;
+  billing: ManageableBilling;
+  body: BillingActionBody;
+  returnUrl: string;
+}) {
+  if (action === "add_seat") {
+    return handleAddSeatAction({ billing, body, returnUrl });
+  }
+  if (isSubscriptionMutation(action)) {
+    return handleSubscriptionMutation({ action, billing, body });
+  }
+
+  assertSupportedPortalAction(action);
+  return createPortalSessionResponse({ action, billing, returnUrl });
+}
+
+async function handleAddSeatAction({
+  billing,
+  body,
+  returnUrl,
+}: {
+  billing: ManageableBilling;
+  body: BillingActionBody;
+  returnUrl: string;
+}) {
+  assertSeatAdjustmentAllowed(billing.status);
+  const session = await createPaidSeatCheckout({
+    customerId: billing.customerId,
+    idempotencyKey: getIdempotencyKey(body.idempotencyKey),
+    localSubscriptionId: billing.localSubscriptionId,
+    organizationId: billing.organizationId,
+    quantity: getSeatQuantity(body.seatQuantity),
+    returnUrl,
+  });
+
+  if (!session.url) {
+    throw new Error("Seat payment did not return a checkout URL.");
+  }
+
+  return NextResponse.json({ ok: true, url: session.url });
+}
+
+async function handleSubscriptionMutation({
+  action,
+  billing,
+  body,
+}: {
+  action: "pause" | "resume" | "change_plan";
+  billing: ManageableBilling;
+  body: BillingActionBody;
+}) {
+  validateSubscriptionMutation({ action, billing, body });
+  const subscription = await runSubscriptionMutation({ action, billing, body });
+  const syncResponse = await syncBillingMutation({ action, subscription });
+
+  return (
+    syncResponse ??
+    NextResponse.json({
+      ok: true,
+      ...(action === "change_plan" ? { planId: body.targetPlanId } : {}),
+    })
+  );
+}
+
+function validateSubscriptionMutation({
+  action,
+  billing,
+  body,
+}: {
+  action: "pause" | "resume" | "change_plan";
+  billing: ManageableBilling;
+  body: BillingActionBody;
+}) {
+  if (action !== "change_plan") {
+    assertPauseTransition(action, billing.status);
+    return;
+  }
+
+  assertSeatAdjustmentAllowed(billing.status);
+  const targetPlanId = getTargetPlanId(body.targetPlanId);
+  assertPlanUpgradeAllowed(
+    billing.planId,
+    targetPlanId,
+    billing.cancelAtPeriodEnd,
+  );
+}
+
+async function runSubscriptionMutation({
+  action,
+  billing,
+  body,
+}: {
+  action: "pause" | "resume" | "change_plan";
+  billing: ManageableBilling;
+  body: BillingActionBody;
+}) {
+  if (action === "pause") return pauseSubscription(billing.subscriptionId, body);
+  if (action === "resume") return resumeSubscription(billing.subscriptionId);
+
+  return changePlanSubscription({
+    billingInterval: billing.billingInterval,
+    idempotencyKey: getIdempotencyKey(body.idempotencyKey),
+    subscriptionId: billing.subscriptionId,
+    targetPlanId: getTargetPlanId(body.targetPlanId),
+  });
+}
+
+async function syncBillingMutation({
+  action,
+  subscription,
+}: {
+  action: BillingAction;
+  subscription: { id: string };
+}) {
+  try {
+    await syncStripeSubscription(
+      createAdminClient(),
+      await retrieveSubscriptionForSync(subscription.id),
+    );
+  } catch (syncError) {
+    logError("Stripe billing action succeeded but local sync failed", syncError, {
+      action,
+      subscriptionId: subscription.id,
+    });
+    if (action === "change_plan") return getPendingPlanSyncResponse();
+  }
+
+  return null;
+}
+
+async function createPaidSeatCheckout({
+  idempotencyKey,
+  organizationId,
+  quantity,
+  returnUrl,
+  localSubscriptionId,
+  customerId,
+}: {
+  idempotencyKey: string;
+  organizationId: string;
+  quantity: number;
+  returnUrl: string;
+  localSubscriptionId: string;
+  customerId: string;
+}) {
+  const stripe = getStripe();
+  const metadata = getSeatCheckoutMetadata({
+    localSubscriptionId,
+    organizationId,
+    quantity,
+  });
+  const urls = getSeatCheckoutUrls({ quantity, returnUrl });
+
+  return stripe.checkout.sessions.create(
+    {
+      mode: "payment",
+      customer: customerId,
+      client_reference_id: localSubscriptionId,
+      line_items: [{ price: getStripeSeatPriceId(), quantity }],
+      billing_address_collection: "required",
+      metadata,
+      payment_intent_data: { metadata },
+      ...urls,
+    },
+    { idempotencyKey },
+  );
+}
+
+async function changePlanSubscription({
+  billingInterval,
+  idempotencyKey,
+  subscriptionId,
+  targetPlanId,
+}: {
+  billingInterval: "month" | "year";
+  idempotencyKey: string;
+  subscriptionId: string;
+  targetPlanId: MembershipTier;
+}) {
+  const stripe = getStripe();
+  const subscription = await stripe.subscriptions.retrieve(subscriptionId, {
+    expand: ["items.data.price"],
+  });
+  const membershipItem =
+    subscription.items.data.find(isMembershipItem) ?? subscription.items.data[0];
+
+  if (!membershipItem) {
+    throw new BillingActionError(
+      "Subscription billing does not have a membership item to upgrade.",
+      409,
+    );
+  }
+
+  return stripe.subscriptions.update(
+    subscriptionId,
+    {
+      items: [
+        {
+          id: membershipItem.id,
+          price: getStripePriceId(targetPlanId, getBillingCycle(billingInterval)),
+          quantity: membershipItem.quantity ?? 1,
+        },
+      ],
+      metadata: {
+        ...subscription.metadata,
+        plan_id: targetPlanId,
+      },
+      proration_behavior: "always_invoice",
+    },
+    { idempotencyKey },
+  );
+}
+
+function pauseSubscription(subscriptionId: string, body: BillingActionBody) {
+  return getStripe().subscriptions.update(subscriptionId, {
+    pause_collection: {
+      behavior: "void",
+      resumes_at: getPauseResumeTimestamp(body.pauseDays ?? 30),
+    },
+  });
+}
+
+function resumeSubscription(subscriptionId: string) {
+  return getStripe().subscriptions.update(subscriptionId, {
+    pause_collection: "",
+  });
+}
+
+function retrieveSubscriptionForSync(subscriptionId: string) {
+  return getStripe().subscriptions.retrieve(subscriptionId, {
+    expand: ["items.data.price"],
+  });
+}
+
+async function createPortalSessionResponse({
+  action,
+  billing,
+  returnUrl,
+}: {
+  action: BillingAction;
+  billing: ManageableBilling;
+  returnUrl: string;
+}) {
+  const session = await getStripe().billingPortal.sessions.create({
+    configuration: await getBillingPortalConfigurationId(),
+    customer: billing.customerId,
+    flow_data: getPortalFlowData(action, billing.subscriptionId, returnUrl),
+    return_url: returnUrl,
+  });
+
+  return NextResponse.json({ url: session.url });
 }

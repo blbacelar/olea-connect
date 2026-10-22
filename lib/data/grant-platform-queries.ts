@@ -1,0 +1,237 @@
+import { logError } from "@/lib/observability/logger";
+import { createClient } from "@/utils/supabase/server";
+
+type SupabaseServerClient = Awaited<ReturnType<typeof createClient>>;
+
+export type GrantPlatformRoundRow = {
+  available_awards: number;
+  award_amount_cents: number;
+  budget_cents: number;
+  closes_at: string | null;
+  decision_at: string | null;
+  grant_programs:
+    | { description: string; name: string; type: string }
+    | Array<{ description: string; name: string; type: string }>
+    | null;
+  id: string;
+  name: string;
+  opens_at: string | null;
+  public_notes: string | null;
+  status: string;
+};
+
+export type GrantPlatformApplicationRow = {
+  collaboration_note: string | null;
+  eligibility_snapshot: { source?: string } | null;
+  focus_area: string;
+  funding_request: string;
+  grant_awards: { status: string } | Array<{ status: string }> | null;
+  grant_rounds: { closes_at: string | null; name: string; public_notes: string | null } | Array<{
+    closes_at: string | null;
+    name: string;
+    public_notes: string | null;
+  }> | null;
+  id: string;
+  requested_amount_cents: number;
+  round_id: string;
+  status: string;
+  submitted_at: string | null;
+  updated_at: string;
+};
+
+export type GrantPlatformPartnerRow = {
+  added_note: string | null;
+  contact_name: string;
+  email: string;
+  focus_areas: string;
+  id: string;
+  last_collaboration: string | null;
+  name: string;
+  notes: string;
+  partner_type: string;
+  phone: string;
+  status: string;
+};
+
+export type GrantPlatformFunderInteractionRow = {
+  contact_method: string;
+  contact_name: string;
+  follow_up_date: string | null;
+  id: string;
+  interaction_date: string;
+  next_action: string;
+  partner_id: string;
+  summary: string;
+};
+
+export type GrantPlatformMemberRow = {
+  email?: string | null;
+  full_name?: string | null;
+  role: string;
+  status: string;
+  user_id: string;
+};
+
+export type GrantPlatformVaultRow = {
+  content_type: string | null;
+  created_at: string;
+  file_name: string;
+  id: string;
+  size_bytes: number | null;
+};
+
+export type GrantPlatformSettingsRow = {
+  board_chair_email: string | null;
+  board_chair_name: string | null;
+  board_chair_phone: string | null;
+  board_chair_user_id: string | null;
+  charity_registration_number: string | null;
+  current_annual_revenue_cents: number | null;
+  funding_sources: string[] | null;
+  organization_type: string;
+  society_number: string | null;
+};
+
+export type GrantPlatformOrganizationRow = {
+  name: string;
+};
+
+export async function loadGrantPlatformRows(
+  supabase: SupabaseServerClient,
+  organizationId: string,
+  options: { requireApplications?: boolean } = {},
+) {
+  const results = await fetchGrantPlatformRows(supabase, organizationId);
+  logGrantPlatformErrors(results);
+  if (options.requireApplications && results.applications.error) {
+    throw results.applications.error;
+  }
+
+  return {
+    applications: readQueryArray<GrantPlatformApplicationRow>(results.applications),
+    funderInteractions: readQueryArray<GrantPlatformFunderInteractionRow>(
+      results.funderInteractions,
+    ),
+    members: readQueryArray<GrantPlatformMemberRow>(results.members),
+    organizationRecord: readQueryRecord<GrantPlatformOrganizationRow>(
+      results.organizationRecord,
+    ),
+    organizationSettings: readQueryRecord<GrantPlatformSettingsRow>(results.settings),
+    partners: readQueryArray<GrantPlatformPartnerRow>(results.partners),
+    rounds: readQueryArray<GrantPlatformRoundRow>(results.rounds),
+    vaultItems: readQueryArray<GrantPlatformVaultRow>(results.vault),
+  };
+}
+
+export async function loadGrantPlatformProfileMap(
+  supabase: SupabaseServerClient,
+  members: GrantPlatformMemberRow[],
+) {
+  const profileIds = members.map((memberRecord) => memberRecord.user_id);
+  const profileMap = new Map<string, string>();
+  if (!profileIds.length) return profileMap;
+
+  const { data: profiles, error } = await supabase
+    .from("profiles")
+    .select("id, full_name")
+    .in("id", profileIds);
+
+  if (error) {
+    logError("grant-platform: failed to load member profiles", error);
+    return profileMap;
+  }
+
+  for (const profile of profiles ?? []) {
+    profileMap.set(profile.id, profile.full_name?.trim() || profile.id);
+  }
+
+  return profileMap;
+}
+
+function fetchGrantPlatformRows(
+  supabase: SupabaseServerClient,
+  organizationId: string,
+) {
+  return Promise.all([
+    supabase.from("organizations").select("name").eq("id", organizationId).maybeSingle(),
+    supabase
+      .from("grant_organization_settings")
+      .select("organization_type, current_annual_revenue_cents, funding_sources, society_number, charity_registration_number, board_chair_user_id, board_chair_name, board_chair_email, board_chair_phone")
+      .eq("organization_id", organizationId)
+      .maybeSingle(),
+    supabase
+      .from("grant_rounds")
+      .select("id, name, status, opens_at, closes_at, decision_at, award_amount_cents, available_awards, budget_cents, public_notes, grant_programs(name, type, description)")
+      .order("opens_at", { ascending: true }),
+    supabase
+      .from("grant_applications")
+      .select("id, round_id, status, focus_area, funding_request, requested_amount_cents, submitted_at, collaboration_note, eligibility_snapshot, updated_at, grant_rounds(name, closes_at, public_notes), grant_awards(status)")
+      .eq("organization_id", organizationId)
+      .order("updated_at", { ascending: false }),
+    supabase
+      .from("grant_partners")
+      .select("id, name, partner_type, contact_name, email, phone, focus_areas, status, notes, last_collaboration, added_note, updated_at")
+      .eq("organization_id", organizationId)
+      .order("updated_at", { ascending: false }),
+    supabase
+      .from("grant_funder_interactions")
+      .select("id, partner_id, interaction_date, contact_method, contact_name, summary, next_action, follow_up_date")
+      .eq("organization_id", organizationId)
+      .order("interaction_date", { ascending: false }),
+    supabase.rpc("get_team_directory", {
+      target_organization_id: organizationId,
+    }),
+    supabase
+      .from("grant_application_attachments")
+      .select("id, file_name, content_type, size_bytes, created_at")
+      .eq("organization_id", organizationId)
+      .order("created_at", { ascending: false }),
+  ]).then(
+    ([
+      organizationRecord,
+      settings,
+      rounds,
+      applications,
+      partners,
+      funderInteractions,
+      members,
+      vault,
+    ]) => ({
+      applications,
+      funderInteractions,
+      members,
+      organizationRecord,
+      partners,
+      rounds,
+      settings,
+      vault,
+    }),
+  );
+}
+
+type GrantPlatformQueryResults = Awaited<
+  ReturnType<typeof fetchGrantPlatformRows>
+>;
+
+function logGrantPlatformErrors(results: GrantPlatformQueryResults) {
+  logQueryError(results.organizationRecord.error, "organization record");
+  logQueryError(results.settings.error, "organization settings");
+  logQueryError(results.rounds.error, "grant rounds");
+  logQueryError(results.applications.error, "grant applications");
+  logQueryError(results.funderInteractions.error, "funder interactions");
+  logQueryError(results.partners.error, "grant partners");
+  logQueryError(results.members.error, "organization members");
+  logQueryError(results.vault.error, "vault items");
+}
+
+function logQueryError(error: unknown, label: string) {
+  if (error) logError(`grant-platform: failed to load ${label}`, error);
+}
+
+function readQueryArray<Row>(result: { data: unknown; error: unknown }) {
+  return result.error ? [] : ((result.data ?? []) as Row[]);
+}
+
+function readQueryRecord<Row>(result: { data: unknown; error: unknown }) {
+  return result.error ? null : (result.data as Row | null);
+}

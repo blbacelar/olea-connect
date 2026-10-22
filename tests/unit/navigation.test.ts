@@ -1,0 +1,58 @@
+import { describe, expect, it } from "vitest";
+
+import { getNavigationGroups } from "@/components/navigation";
+
+function navigationLabelsFor(
+  roles: Parameters<typeof getNavigationGroups>[0],
+  organizationRole?: Parameters<typeof getNavigationGroups>[1],
+) {
+  return getNavigationGroups(roles, organizationRole)
+    .flat()
+    .map((item) => item.label);
+}
+
+describe("application navigation", () => {
+  it("shows member sponsor directory navigation to regular members", () => {
+    expect(navigationLabelsFor([])).toContain("Sponsors");
+  });
+
+  it("shows the KPI dashboard module to regular members", () => {
+    expect(navigationLabelsFor([])).toContain("KPI Dashboard");
+  });
+
+  it("shows the Grant Platform module to regular members", () => {
+    expect(navigationLabelsFor([])).toContain("Grant Platform");
+  });
+
+  it("shows the Board Training entry for lower tiers in both languages", () => {
+    expect(getNavigationGroups([], "member", "en-CA", "seedling").flat().map((item) => item.label)).toContain("Board Training");
+    expect(getNavigationGroups([], "member", "fr-CA", "roots").flat().map((item) => item.label)).toContain("Formation du conseil");
+  });
+
+  it("hides Board Recruitment from regular organization members", () => {
+    expect(navigationLabelsFor([], "member")).not.toContain(
+      "Board Recruitment",
+    );
+  });
+
+  it("shows Board Recruitment to organization administrators", () => {
+    expect(navigationLabelsFor([], "admin")).toContain("Board Recruitment");
+  });
+
+  it("shows the users directory but hides operator navigation from regular members", () => {
+    expect(navigationLabelsFor([])).not.toContain("Operations");
+    expect(navigationLabelsFor([])).toContain("Users Directory");
+  });
+
+  it("shows the operations console to super admins", () => {
+    expect(navigationLabelsFor(["super_admin"])).toContain("Operations");
+    expect(navigationLabelsFor(["super_admin"])).toContain("Users Directory");
+  });
+
+  it("translates the member directory link into Canadian French", () => {
+    const labels = getNavigationGroups([], "member", "fr-CA")
+      .flat()
+      .map((item) => item.label);
+    expect(labels).toContain("Répertoire des utilisateurs");
+  });
+});

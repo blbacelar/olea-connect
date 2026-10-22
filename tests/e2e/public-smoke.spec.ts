@@ -1,17 +1,181 @@
-import { expect, test } from "@playwright/test";
+import type { Page } from "@playwright/test";
+
+import { expect, test } from "../fixtures/browser.fixture";
+
+async function switchToFrench(page: Page) {
+  await page.getByTestId("locale-selector").click();
+  await Promise.all([
+    page.waitForResponse(
+      (response) => response.url().includes("/api/locale") && response.ok(),
+    ),
+    page.getByRole("option", { name: "Français" }).click(),
+  ]);
+  await expect(page.locator("html")).toHaveAttribute("lang", "fr-CA");
+}
 
 test.describe("@smoke @critical public entry points", () => {
-  test("presents the product value and signup entry point", async ({ page }) => {
+  test("presents the product value and signup entry point", async ({
+    page,
+  }) => {
     await page.goto("/");
+
+    const offer = page.getByTestId("founding-offer-banner");
+    await expect(offer).toContainText("Founding rates for your first two years with OLEAFOUNDING15, limited to the first 50 paid organizations.");
+    await expect(offer).toContainText("OLEAFOUNDING15");
+    await expect(offer.getByRole("link", { name: "Join now" })).toHaveAttribute("href", "/signup");
 
     await expect(
       page.getByRole("heading", {
-        name: "The tools, community, and funding connections your nonprofit needs to grow.",
+        name: /tools, community, and funding connections/i,
       }),
+    ).toBeVisible();
+    await expect(
+      page.getByText(
+        /Olive Social Impact donates 15% of its profits to nonprofits as unrestricted donations\./,
+      ).first(),
     ).toBeVisible();
     await expect(
       page.getByRole("link", { name: "Get started" }),
     ).toHaveAttribute("href", "/signup");
+    await expect(
+      page.getByRole("link", { name: "Our YouTube channel" }),
+    ).toHaveAttribute("href", "https://www.youtube.com/@OliveinGoodCompany");
+  });
+
+  test("shows the new standard and founding membership pricing", async ({ page }) => {
+    await page.goto("/");
+
+    const plans = page.locator("#plans");
+    await expect(plans.getByRole("heading", { name: "Seedling", exact: true })).toBeVisible();
+    await expect(plans).toContainText("$1,180 CAD");
+    await expect(plans).not.toContainText("Years 1 and 2 with a valid founding code");
+
+    await switchToFrench(page);
+    await expect(plans).not.toContainText("Années 1 et 2 avec un code fondateur valide");
+    await expect(plans).toContainText("Offre membre fondateur");
+  });
+
+  test("lets visitors switch the public site to French Canadian", async ({
+    page,
+  }) => {
+    await page.goto("/");
+
+    await switchToFrench(page);
+    await expect(page.getByTestId("founding-offer-banner")).toContainText(
+      "Tarifs fondateurs pendant vos deux premières années avec OLEAFOUNDING15, pour les 50 premiers organismes payants.",
+    );
+    await expect(
+      page.getByRole("heading", {
+        name: /Les outils, la communauté et les liens de financement/i,
+      }),
+    ).toBeVisible();
+    await expect(page.getByRole("link", { name: "Commencer" })).toHaveAttribute(
+      "href",
+      "/signup",
+    );
+    await expect(
+      page.getByRole("link", { name: "Notre chaîne YouTube" }),
+    ).toHaveAttribute("href", "https://www.youtube.com/@OliveinGoodCompany");
+
+    await page.reload();
+    await expect(page.locator("html")).toHaveAttribute("lang", "fr-CA");
+    await expect(
+      page.getByRole("heading", {
+        name: /Les outils, la communauté et les liens de financement/i,
+      }),
+    ).toBeVisible();
+  });
+
+  test("keeps the offer visible while scrolling on mobile without horizontal overflow", async ({ page }) => {
+    await page.setViewportSize({ width: 390, height: 844 });
+    await page.goto("/");
+    await page.locator("#plans").scrollIntoViewIfNeeded();
+    await expect.poll(() => page.evaluate(() => window.scrollY)).toBeGreaterThan(0);
+    await expect.poll(() =>
+      page.getByTestId("founding-offer-banner").evaluate((element) => element.getBoundingClientRect().top),
+    ).toBe(0);
+    await expect(page.getByTestId("founding-offer-banner")).toBeVisible();
+    expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(390);
+
+    await switchToFrench(page);
+    await page.goto("/");
+    expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(390);
+    await page.goto("/signup");
+    await expect(page.getByTestId("founding-offer-banner")).toContainText("OLEAFOUNDING15");
+    expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(390);
+  });
+
+  test("limits the founding offer to membership marketing and signup", async ({ page }) => {
+    await page.goto("/signup");
+    await expect(page.getByTestId("founding-offer-banner")).toContainText("OLEAFOUNDING15");
+
+    await page.goto("/sponsorship");
+    await expect(page.getByTestId("founding-offer-banner")).toHaveCount(0);
+
+    await page.goto("/login");
+    await expect(page.getByTestId("founding-offer-banner")).toHaveCount(0);
+  });
+
+  test("keeps the offer code visible where founding members enter it", async ({ page }) => {
+    await page.goto("/signup/account");
+    await expect(page.getByTestId("founding-offer-banner")).toContainText("OLEAFOUNDING15");
+    await expect(page.getByLabel(/founding.member code/i)).toBeVisible();
+  });
+
+  test("keeps the signup flow in French Canadian after language selection", async ({
+    page,
+  }) => {
+    await page.goto("/");
+
+    await switchToFrench(page);
+    await page.goto("/signup");
+
+    await expect(
+      page.getByRole("heading", { name: "Choisissez votre forfait" }),
+    ).toBeVisible();
+    await expect(page.getByRole("button", { name: /Roots.*3\s?530/ })).toBeVisible();
+    await expect(page.getByText("10 sièges inclus")).toBeVisible();
+    await expect(
+      page.getByRole("button", { name: /Continuer avec Roots/ }),
+    ).toBeVisible();
+
+    await page.getByRole("button", { name: /Continuer avec Roots/ }).click();
+    await expect(
+      page.getByRole("heading", { name: "Créez votre compte" }),
+    ).toBeVisible();
+    await expect(page.getByLabel("Nom de l'organisme *")).toBeVisible();
+    await expect(page.getByText("Sélectionner un type")).toBeVisible();
+    await expect(
+      page.getByRole("button", { name: /Continuer au paiement/ }),
+    ).toBeVisible();
+  });
+
+  test("keeps public referral and sponsorship pages in French Canadian", async ({
+    page,
+  }) => {
+    await page.goto("/");
+
+    await switchToFrench(page);
+
+    await page.goto("/referrals");
+    await expect(
+      page.getByRole("heading", {
+        name: /Gagnez jusqu'à .* après le premier paiement d'adhésion/,
+      }),
+    ).toBeVisible();
+    await expect(
+      page.getByRole("heading", { name: "Recevoir votre lien de référence" }),
+    ).toBeVisible();
+
+    await page.goto("/sponsorship");
+    await expect(
+      page.getByRole("heading", {
+        name: /Ensemble, renforçons la résilience des organismes/i,
+      }),
+    ).toBeVisible();
+    await expect(
+      page.getByText(/2\s?000\s?\$ CA/).first(),
+    ).toBeVisible();
   });
 
   test("carries the selected plan directly into account creation", async ({
@@ -19,17 +183,13 @@ test.describe("@smoke @critical public entry points", () => {
   }) => {
     await page.goto("/");
 
-    const rootsLink = page.getByRole("link", { name: "Choose Roots" });
+    const rootsLink = page.locator('#plans a[href^="/signup/account?tier=roots&billing=annual"]');
     await expect(rootsLink).toHaveAttribute(
       "href",
-      "/signup/account?tier=roots&billing=annual",
+      /\/signup\/account\?tier=roots&billing=annual/,
     );
 
-    await page.getByRole("button", { name: "Monthly" }).click();
-    await expect(rootsLink).toHaveAttribute(
-      "href",
-      "/signup/account?tier=roots&billing=monthly",
-    );
+    await expect(page.getByRole("button", { name: "Quarterly" })).toHaveCount(0);
   });
 
   test("exposes login and password recovery", async ({ page }) => {
@@ -39,9 +199,130 @@ test.describe("@smoke @critical public entry points", () => {
       page.getByRole("heading", { name: "Welcome back" }),
     ).toBeVisible();
     await expect(page.getByLabel("Email address")).toBeVisible();
-    await expect(page.getByLabel("Password")).toBeVisible();
+    const password = page.getByRole("textbox", { name: "Password" });
+    await expect(password).toBeVisible();
+    await expect(password).toHaveAttribute("type", "password");
+    await page.getByRole("button", { name: "Show password" }).click();
+    await expect(password).toHaveAttribute("type", "text");
+    await expect(
+      page.getByRole("button", { name: "Hide password" }),
+    ).toHaveAttribute("aria-pressed", "true");
+    await page.getByRole("button", { name: "Hide password" }).click();
+    await expect(password).toHaveAttribute("type", "password");
+    await expect(
+      page.getByRole("checkbox", { name: "Remember me for 30 days" }),
+    ).toBeVisible();
+    const rememberMe = page.getByRole("checkbox", {
+      name: "Remember me for 30 days",
+    });
+    await rememberMe.check();
+    await expect(rememberMe).toBeChecked();
+    await rememberMe.uncheck();
+    await expect(rememberMe).not.toBeChecked();
     await expect(
       page.getByRole("link", { name: "Forgot password?" }),
     ).toHaveAttribute("href", "/reset-password");
   });
+
+  test("presents the public sponsorship prices without authentication", async ({
+    page,
+  }) => {
+    await page.goto("/sponsorship");
+
+    await expect(
+      page.getByRole("heading", {
+        name: "Partner with us to strengthen nonprofit resilience",
+      }),
+    ).toBeVisible();
+    await expect(
+      page.getByRole("heading", { name: "Seedkeeper" }),
+    ).toBeVisible();
+    await expect(
+      page.getByRole("heading", { name: "Root Keeper" }),
+    ).toBeVisible();
+    await expect(
+      page.getByRole("heading", { name: "Resilience Builder" }),
+    ).toBeVisible();
+    await expect(
+      page.getByRole("heading", { name: "Legacy Guardian" }),
+    ).toBeVisible();
+    await expect(
+      page.getByTestId("sponsorship-tier-catalyst").getByRole("heading", {
+        name: "Catalyst",
+      }),
+    ).toBeVisible();
+    for (const amount of ["$2,000", "$8,000", "$14,444", "$33,000", "$44,000"]) {
+      await expect(page.getByText(amount, { exact: false }).first()).toBeVisible();
+    }
+    await expect(
+      page.getByRole("heading", { name: "What every partner receives" }),
+    ).toBeVisible();
+    await expect(
+      page.getByRole("heading", {
+        name: "The Impact Circle",
+      }),
+    ).toBeVisible();
+    await expect(
+      page.getByRole("link", { name: "sponsorship@olivesocialimpact.com" }),
+    ).toHaveAttribute("href", "mailto:sponsorship@olivesocialimpact.com");
+    const bookingCtas = page.getByTestId("sponsorship-booking-cta");
+    await expect(bookingCtas).toHaveCount(
+      process.env.NEXT_PUBLIC_SPONSORSHIP_CALENDLY_URL?.trim() ? 7 : 6,
+    );
+    const bookingHrefs = await bookingCtas.evaluateAll((links) =>
+      Array.from(new Set(links.map((link) => link.getAttribute("href")))),
+    );
+    const configuredCalendlyUrl =
+      process.env.NEXT_PUBLIC_SPONSORSHIP_CALENDLY_URL?.trim();
+    if (configuredCalendlyUrl) {
+      expect(bookingHrefs).toContain(new URL(configuredCalendlyUrl).toString());
+      expect(bookingHrefs).toContain("mailto:sponsorship@olivesocialimpact.com");
+    } else {
+      expect(bookingHrefs).toEqual(["mailto:sponsorship@olivesocialimpact.com"]);
+      await expect(bookingCtas.first()).toContainText("Email");
+    }
+    await expect(page).not.toHaveURL(/login|dashboard/);
+  });
+
+  test("exposes all versioned legal documents as public pages", async ({
+    page,
+  }) => {
+    const documents = [
+      ["terms", "Terms of Service", "2026-10-08"],
+      ["privacy", "Privacy Policy", "2026-07-24"],
+      ["data-ownership", "Data Ownership Agreement", "2026-07-24"],
+      ["confidentiality", "Confidentiality Policy", "2026-07-24"],
+    ] as const;
+
+    for (const [slug, title, version] of documents) {
+      await page.goto(`/legal/${slug}`);
+      await expect(page.getByRole("heading", { name: title })).toBeVisible();
+      await expect(page.getByText(`Version ${version}`, { exact: false })).toBeVisible();
+      await expect(
+        page.getByRole("link", { name: "Return to signup" }),
+      ).toHaveAttribute("href", "/signup");
+      await expect(page).not.toHaveURL(/login|dashboard/);
+    }
+  });
+
+  test("keeps legal documents in French Canadian after language selection", async ({
+    page,
+  }) => {
+    await page.goto("/");
+    await switchToFrench(page);
+
+    await page.goto("/legal/terms");
+
+    await expect(page.locator("html")).toHaveAttribute("lang", "fr-CA");
+    await expect(
+      page.getByRole("heading", { name: "Conditions d'utilisation" }),
+    ).toBeVisible();
+    await expect(
+      page.getByRole("link", { name: "Retour à l'inscription" }),
+    ).toHaveAttribute("href", "/signup");
+    await expect(
+      page.getByText("Document juridique Olea Connects™"),
+    ).toBeVisible();
+  });
+
 });

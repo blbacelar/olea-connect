@@ -1,0 +1,998 @@
+import type { ActiveMembershipTier } from "@/lib/types";
+import type { Locale } from "@/lib/i18n/locales";
+
+export type LocalizedPlanCopy = {
+  name: string;
+  seats: string;
+  audience: string;
+  summary: string;
+  features: string[];
+};
+
+export type PublicSiteCopy = {
+  localeSelector: {
+    ariaLabel: string;
+    english: string;
+    french: string;
+  };
+  logo: {
+    ariaLabel: string;
+    tagline: string;
+  };
+  nav: {
+    alreadyMember: string;
+    login: string;
+    memberLogin: string;
+    whatYouGet: string;
+    howItWorks: string;
+    pricing: string;
+    faq: string;
+    sponsorship: string;
+    referrals: string;
+    getStarted: string;
+  };
+  foundingBanner: {
+    message: string;
+    codeLabel: string;
+    signup: string;
+  };
+  hero: {
+    badge: string;
+    title: string;
+    description: string;
+    primaryCta: string;
+    secondaryCta: string;
+    youtubeCta: string;
+    assurances: string[];
+    quote: string;
+    quoteLabel: string;
+    preview: {
+      nav: string[];
+      organization: string;
+      greeting: string;
+      title: string;
+      governanceTemplates: string;
+      learningResources: string;
+      fundTitle: string;
+      fundSubtitle: string;
+      fundDescription: string;
+      brandProfile: string;
+      appliedToDownloads: string;
+      templateTitle: string;
+      templateStatus: string;
+    };
+  };
+  transformation: {
+    eyebrow: string;
+    title: string;
+    description: string;
+    problems: Array<{
+      title: string;
+      text: string;
+    }>;
+    afterEyebrow: string;
+    afterTitle: string;
+    afterDescription: string;
+  };
+  features: {
+    eyebrow: string;
+    title: string;
+    description: string;
+    items: Array<{
+      title: string;
+      text: string;
+      outcome: string;
+    }>;
+  };
+  trust: {
+    intro: string;
+    signals: Array<{
+      value: string;
+      label: string;
+    }>;
+  };
+  demo: {
+    eyebrow: string;
+    title: string;
+    description: string;
+    videoLabel: string;
+    videoFallback: string;
+    caption: string;
+  };
+  workflow: {
+    eyebrow: string;
+    title: string;
+    description: string;
+    steps: Array<{
+      number: string;
+      title: string;
+      text: string;
+    }>;
+  };
+  pricing: {
+    eyebrow: string;
+    title: string;
+    description: string;
+    foundingLabel: string;
+    foundingNotice: string;
+    quarterly: string;
+    annual: string;
+    annualBadge: string;
+    mostPopular: string;
+    recommended: string;
+    standardRate: string;
+    saveTwoYears: string;
+    foundingRate: string;
+    foundingCode: string;
+    quarterlyOption: string;
+    monthlyEquivalent: string;
+    spotsLimited: string;
+    spotsLeft: string;
+    perYear: string;
+    perQuarter: string;
+    choosePlan: string;
+    optionalSupportEyebrow: string;
+    optionalSupportTitle: string;
+    optionalSupportDescription: string;
+    retreatTitle: string;
+    retreatDescription: string;
+    requestQuote: string;
+    contactToArrange: string;
+    referralsEyebrow: string;
+    referralsTitle: string;
+    referralsDescription: string;
+    referralsCta: string;
+    plans: Record<ActiveMembershipTier, LocalizedPlanCopy>;
+    policies: string[];
+    addOns: Array<{
+      id: "ceoReview" | "boardEvaluation" | "boardRecruitment" | "kpiDashboard" | "boardTraining" | "smallBoardTraining" | "strategicPlanning" | "accreditationPrep";
+      name: string;
+      description: string;
+    }>;
+    sponsorshipTitle: string;
+    sponsorshipEyebrow: string;
+    sponsorshipDescription: string;
+    sponsorshipOffers: Array<{
+      id: "sponsorSeedlingBoard" | "sponsorRootsBoard";
+      name: string;
+      description: string;
+    }>;
+    perOneTime: string;
+  };
+  faq: {
+    eyebrow: string;
+    title: string;
+    description: string;
+    items: Array<{
+      question: string;
+      answer: string;
+    }>;
+  };
+  finalCta: {
+    eyebrow: string;
+    title: string;
+    description: string;
+    cta: string;
+    pricingNote: string;
+  };
+  footer: {
+    description: string;
+    copyright: string;
+    prices: string;
+  };
+};
+
+export const publicSiteCopy: Record<Locale, PublicSiteCopy> = {
+  "en-CA": {
+    localeSelector: {
+      ariaLabel: "Choose language",
+      english: "English",
+      french: "Français",
+    },
+    logo: {
+      ariaLabel: "Olea Connects™ governance platform",
+      tagline: "Governance, branded.",
+    },
+    nav: {
+      alreadyMember: "Already a member?",
+      login: "Log in",
+      memberLogin: "Member login",
+      whatYouGet: "What you get",
+      howItWorks: "How it works",
+      pricing: "Pricing",
+      faq: "FAQ",
+      sponsorship: "Sponsorship",
+      referrals: "Referrals",
+      getStarted: "Get started",
+    },
+    foundingBanner: {
+      message: "Founding rates for your first two years with OLEAFOUNDING15, limited to the first 50 paid organizations.",
+      codeLabel: "Use code",
+      signup: "Join now",
+    },
+    hero: {
+      badge: "Built for nonprofit organizations",
+      title:
+        "The tools, community, and funding connections your nonprofit needs to grow.",
+      description:
+        "Create board-ready documents in your own brand, learn from sector experts, manage funding opportunities, and connect with nonprofit leaders who understand the work.",
+      primaryCta: "Join Olea Connects™",
+      secondaryCta: "Watch the demo",
+      youtubeCta: "Our YouTube channel",
+      assurances: [
+        "Join in about 5 minutes",
+        "Plans from $1,000 CAD/year with the founding code",
+        "Annual billing",
+      ],
+      quote:
+        "Whatever stage your organization is at, there is a place for you here.",
+      quoteLabel: "The Olea Connects™ promise",
+      preview: {
+        nav: ["Dashboard", "Board Calendar", "Webinars", "Community"],
+        organization: "Your organization",
+        greeting: "Good morning",
+        title: "Your nonprofit home base",
+        governanceTemplates: "Governance templates",
+        learningResources: "Learning resources",
+        fundTitle: "Olea's Circle of Generosity",
+        fundSubtitle: "15% of profits",
+        fundDescription:
+          "Unrestricted donations flow back to nonprofits.",
+        brandProfile: "Brand profile",
+        appliedToDownloads: "Applied to every download",
+        templateTitle: "Board Self-Evaluation",
+        templateStatus: "Branded and ready",
+      },
+    },
+    transformation: {
+      eyebrow: "Built for stretched teams",
+      title: "Spend less time piecing support together.",
+      description:
+        "Olea Connects™ brings the practical pieces of nonprofit operations into one welcoming home base, so your team can move from searching and formatting to making decisions and serving your community.",
+      problems: [
+        {
+          title: "Too much time rebuilding basics",
+          text: "Board packages, policies, and governance documents should not start from a blank page.",
+        },
+        {
+          title: "Advice scattered everywhere",
+          text: "Resources, funding leads, expert learning, and peer support live in too many disconnected places.",
+        },
+        {
+          title: "Templates that do not feel like yours",
+          text: "Generic files still require hours of formatting before they are ready for your board.",
+        },
+      ],
+      afterEyebrow: "The after",
+      afterTitle:
+        "One login. Your brand. Practical support ready when you need it.",
+      afterDescription:
+        "Download a board-ready document, join a webinar, find a funding lead, or ask your peers without leaving the Olea environment.",
+    },
+    features: {
+      eyebrow: "What you get",
+      title: "Useful on Monday morning, not someday.",
+      description:
+        "Every part of Olea Connects™ is designed to reduce administrative friction and help your organization build capacity at its own pace.",
+      items: [
+        {
+          title: "Brand once. Use everywhere.",
+          text: "Upload your logo and colours once. Every eligible template renders with your organization’s identity automatically.",
+          outcome: "No design skills or reformatting required.",
+        },
+        {
+          title: "Start with board-ready tools.",
+          text: "Use practical governance templates, ebooks, and how-to resources written primarily for the Canadian nonprofit context.",
+          outcome: "Move confidently from blank page to usable document.",
+        },
+        {
+          title: "Find people who understand.",
+          text: "Ask questions and share experience in a private, moderated community for nonprofit leaders at every stage.",
+          outcome: "Community access is included in every tier.",
+        },
+        {
+          title: "Spot funding opportunities.",
+          text: "Receive weekly grant alerts and connect with funders through focused sessions and community channels.",
+          outcome: "Spend less time hunting across the web.",
+        },
+        {
+          title: "Learn directly from experts.",
+          text: "Join live and recorded sessions led by professionals in governance, legal, finance, HR, technology, and funding.",
+          outcome: "Turn expert knowledge into practical next steps.",
+        },
+        {
+          title: "Grow through Olea's Circle of Generosity.",
+          text: "Olive Social Impact donates 15% of its profits to nonprofits as unrestricted donations. There is no grant application or guaranteed payment for members.",
+          outcome: "15% of profits flow back to nonprofits.",
+        },
+      ],
+    },
+    trust: {
+      intro:
+        "An independent Canadian social enterprise built around nonprofit capacity, inclusion, and belonging.",
+      signals: [
+        { value: "Every tier", label: "includes the full peer community" },
+        {
+          value: "15% of profits",
+          label: "flow back to nonprofits as unrestricted donations",
+        },
+        { value: "English + French", label: "core governance resources" },
+        { value: "WCAG 2.1 AA", label: "accessibility standard" },
+      ],
+    },
+    demo: {
+      eyebrow: "Product demo",
+      title: "See the Grant Platform in action.",
+      description:
+        "Follow a realistic grant workflow, from creating an opportunity to tracking funders and reviewing reports.",
+      videoLabel: "Grant Platform demo video",
+      videoFallback: "Your browser does not support this video.",
+      caption: "1 min 25 sec · English on-screen text · Music and interface sounds, no narration.",
+    },
+    workflow: {
+      eyebrow: "How it works",
+      title: "From sign-up to board-ready in three steps.",
+      description:
+        "Olea Connects™ is designed to feel simple from the first login, even when your organization is busy and your team is small.",
+      steps: [
+        {
+          number: "01",
+          title: "Choose your membership",
+          text: "Pick the resource depth that fits your organization. Sign-up takes about five minutes and access begins immediately.",
+        },
+        {
+          number: "02",
+          title: "Set up your brand",
+          text: "Add your organization name, logo, and colours once. Seedling members then choose their three priority templates.",
+        },
+        {
+          number: "03",
+          title: "Use your home base",
+          text: "Open resources with your brand already applied, download board-ready PDFs, join the community, and explore learning and funding tools.",
+        },
+      ],
+    },
+    pricing: {
+      eyebrow: "Membership",
+      title: "Choose the support that fits today.",
+      description:
+        "Choose annual or quarterly billing. The first 50 paid organizations using the founding code keep their founding rate for 2 years.",
+      foundingLabel: "Founding member offer:",
+      foundingNotice:
+        "Save up to $2,120 over your first 2 years with code OLEAFOUNDING15. Your exact total is confirmed before payment.",
+      quarterly: "Quarterly",
+      annual: "Annual",
+      annualBadge: "Best for renewal planning",
+      mostPopular: "Most popular",
+      recommended: "Recommended",
+      standardRate: "Standard rate",
+      saveTwoYears: "Save {amount} over 2 years",
+      foundingRate: "Founding member rate",
+      foundingCode: "Use code OLEAFOUNDING15 at checkout.",
+      quarterlyOption: "Or pay quarterly: {amount}.",
+      monthlyEquivalent: "About {amount} a month, billed annually.",
+      spotsLimited: "Limited to the first 50 organizations",
+      spotsLeft: "{left} of 50 spots left",
+      perYear: "year",
+      perQuarter: "quarter",
+      choosePlan: "Choose",
+      optionalSupportEyebrow: "Optional support",
+      optionalSupportTitle: "Add capacity when your team needs it.",
+      optionalSupportDescription:
+        "Add single modules to a smaller package. Board facilitation and 1:1 impact coaching are available by quote. Impact Accelerator is coming soon.",
+      retreatTitle: "Board Retreat Facilitation",
+      retreatDescription:
+        "Professional facilitation for annual board retreats and strategic planning sessions.",
+      requestQuote: "Contact us for a quote",
+      contactToArrange: "Contact us to arrange",
+      referralsEyebrow: "Circle of generosity",
+      referralsTitle: "Your referrals help another nonprofit access support.",
+      referralsDescription:
+        "Approved referrers can earn 10% of a referred organization's first successful membership payment, up to $500. Renewals and self-referrals are not eligible.",
+      referralsCta: "Explore the referral program",
+      plans: {
+        seedling: {
+          name: "Seedling",
+          seats: "5 seats included",
+          audience: "Organizations with under $500k annual budget",
+          summary:
+            "Core governance operations, branded resources, and community access.",
+          features: [
+            "Board calendar, meetings, workflows, and packages",
+            "Grant checklists, templates, dashboard, and deadlines",
+            "Olea Connects™ Community, webinars, and forums",
+            "48-hour email support",
+          ],
+        },
+        roots: {
+          name: "Roots",
+          seats: "10 seats included",
+          audience: "Organizations with $500k-$2M annual budget",
+          summary:
+            "Deeper governance, recruitment, impact tracking, and learning support.",
+          features: [
+            "Everything in Seedling",
+            "Board recruitment toolkit and skills matrix",
+            "KPI and impact dashboard",
+            "Board Evaluation System",
+            "Priority email support within 48 hours",
+          ],
+        },
+        canopy: {
+          name: "Canopy",
+          seats: "15 seats included",
+          audience: "Organizations with $2M+ annual budget",
+          summary:
+            "Complete governance systems, executive review, and strategy tools.",
+          features: [
+            "Everything in Roots",
+            "ED/CEO 360 review",
+            "Strategic planning module",
+            "Board training modules",
+            "Community leadership opportunities",
+            "Priority phone and email support",
+          ],
+        },
+      },
+      policies: [
+        "$15 CAD one-time per seat",
+        "Your total is shown at secure checkout before payment. Taxes are not currently collected.",
+        "No free trial",
+      ],
+      addOns: [
+        {
+          id: "ceoReview",
+          name: "ED/CEO 360 Review",
+          description: "Available for Seedling and Roots organizations.",
+        },
+        {
+          id: "boardEvaluation",
+          name: "Board Evaluation System",
+          description: "Available for Seedling organizations; included in Roots and Canopy.",
+        },
+        {
+          id: "boardRecruitment",
+          name: "Board Recruitment Toolkit and Skills Matrix",
+          description: "Available for Seedling organizations; included in Roots and Canopy.",
+        },
+        {
+          id: "kpiDashboard",
+          name: "KPI and Impact Dashboard",
+          description:
+            "Available for Seedling organizations; included in Roots and Canopy.",
+        },
+        {
+          id: "boardTraining",
+          name: "Board Governance Training",
+          description:
+            "Available for Seedling and Roots organizations.",
+        },
+        {
+          id: "smallBoardTraining",
+          name: "Board Governance Training, small boards",
+          description: "For Seedling boards with up to 9 directors.",
+        },
+        {
+          id: "strategicPlanning",
+          name: "Strategic Planning Module",
+          description: "Available for Seedling and Roots organizations.",
+        },
+        {
+          id: "accreditationPrep",
+          name: "Accreditation Prep",
+          description: "Organize documents and track accreditation readiness.",
+        },
+      ],
+      sponsorshipTitle: "Sponsor nonprofit capacity",
+      sponsorshipEyebrow: "Sponsorship",
+      sponsorshipDescription:
+        "Fund a nonprofit board for a full year, or explore a longer-term partnership.",
+      sponsorshipOffers: [
+        {
+          id: "sponsorSeedlingBoard",
+          name: "Sponsor a Seedling board",
+          description: "Support one Seedling board for a year.",
+        },
+        {
+          id: "sponsorRootsBoard",
+          name: "Sponsor a Roots board",
+          description: "Support one Roots board for a year.",
+        },
+      ],
+      perOneTime: "one-time",
+    },
+    faq: {
+      eyebrow: "Frequently asked questions",
+      title: "A few things you may be wondering.",
+      description:
+        "Straight answers about pricing, billing, seats, referrals, and support.",
+      items: [
+        {
+          question: "Who is Olea Connects™ for?",
+          answer:
+            "Registered nonprofits, societies, charities, and community organizations at any size or stage are welcome. Resources are written primarily for a Canadian context, while international members can also join.",
+        },
+        {
+          question: "How does billing work?",
+          answer:
+            "Choose annual or quarterly billing, paid upfront in Canadian dollars. Quarterly payments renew every three months. Your total is shown at checkout before payment; taxes are not currently collected. Existing members keep their current terms.",
+        },
+        {
+          question: "Is there a free trial?",
+          answer:
+            "No. Olea Connects™ does not offer a free trial. Founding rates are available for the first 2 years with OLEAFOUNDING15 while the first 50 paid places remain.",
+        },
+        {
+          question: "What is the founding-member offer?",
+          answer:
+            "Use OLEAFOUNDING15 during signup. The first 50 paid organizations receive the fixed founding rate for 2 years (2 annual or 8 quarterly payments). After that, the standard rate applies.",
+        },
+        {
+          question: "How many seats are included?",
+          answer:
+            "Seedling includes 5 seats, Roots includes 10, and Canopy includes 15. Additional seats are $15 CAD one-time per seat on any plan.",
+        },
+        {
+          question: "Can we upgrade or downgrade?",
+          answer:
+            "Upgrades are available anytime and charge the price difference immediately while keeping the renewal date unchanged. Downgrades happen at renewal.",
+        },
+        {
+          question: "Can we cancel?",
+          answer:
+            "Cancel before the next renewal to stop future payments. Quarterly memberships run through the quarter paid, and annual memberships run through the year paid. Membership fees are non-refundable.",
+        },
+        {
+          question: "How do referrals work?",
+          answer:
+            "Approved referrers receive a unique link. Eligible referrals can earn 10% of the referred organization's first successful membership payment, up to $500. Renewals, self-referrals, and duplicate credits are not eligible.",
+        },
+        {
+          question: "Are coaching and admin support included?",
+          answer:
+            "Board facilitation and 1:1 impact coaching are available by quote. If you need board administration help, tell us what you need.",
+        },
+        {
+          question: "What is Olea's Circle of Generosity?",
+          answer:
+            "Olive Social Impact donates 15% of its profits to nonprofits as unrestricted donations. This is not a grant program: there is no application, and membership does not guarantee a donation.",
+        },
+        {
+          question: "What happens to our data if we cancel?",
+          answer:
+            "Your organization owns its data. After cancellation, you have a 30-day grace period to download or export it before it is removed from live systems.",
+        },
+      ],
+    },
+    finalCta: {
+      eyebrow: "You belong here",
+      title: "Give your nonprofit a stronger place to grow.",
+      description:
+        "Start with the plan that fits now. Your tools, brand profile, history, and community connections can grow with you.",
+      cta: "Join Olea Connects™",
+      pricingNote: "Founding memberships start at $1,000 CAD/year with OLEAFOUNDING15. Review your total before payment.",
+    },
+    footer: {
+      description:
+        "A membership platform by Olive Social Impact Inc., an independent Canadian social enterprise.",
+      copyright: "© 2026 Olive Social Impact Inc.",
+      prices: "All prices in CAD.",
+    },
+  },
+  "fr-CA": {
+    localeSelector: {
+      ariaLabel: "Choisir la langue",
+      english: "English",
+      french: "Français",
+    },
+    logo: {
+      ariaLabel: "Plateforme de gouvernance Olea Connects™",
+      tagline: "La gouvernance, à votre image.",
+    },
+    nav: {
+      alreadyMember: "Déjà membre?",
+      login: "Connexion",
+      memberLogin: "Connexion membre",
+      whatYouGet: "Ce que vous obtenez",
+      howItWorks: "Fonctionnement",
+      pricing: "Tarifs",
+      faq: "FAQ",
+      sponsorship: "Commandites",
+      referrals: "Références",
+      getStarted: "Commencer",
+    },
+    foundingBanner: {
+      message: "Tarifs fondateurs pendant vos deux premières années avec OLEAFOUNDING15, pour les 50 premiers organismes payants.",
+      codeLabel: "Code",
+      signup: "S'inscrire",
+    },
+    hero: {
+      badge: "Conçu pour les organismes sans but lucratif",
+      title:
+        "Les outils, la communauté et les liens de financement dont votre organisme a besoin pour grandir.",
+      description:
+        "Créez des documents prêts pour le conseil dans votre propre marque, apprenez auprès d'experts du secteur, trouvez des occasions de subvention et échangez avec des leaders qui comprennent votre réalité.",
+      primaryCta: "Rejoindre Olea Connects™",
+      secondaryCta: "Voir la démo",
+      youtubeCta: "Notre chaîne YouTube",
+      assurances: [
+        "Inscription en environ 5 minutes",
+        "Forfaits à partir de 1 000 $ CA/an avec le code fondateur",
+        "Facturation annuelle",
+      ],
+      quote:
+        "Peu importe l'étape où se trouve votre organisme, il y a une place pour vous ici.",
+      quoteLabel: "La promesse Olea Connects™",
+      preview: {
+        nav: [
+          "Tableau de bord",
+          "Calendrier du conseil",
+          "Webinaires",
+          "Communauté",
+        ],
+        organization: "Votre organisme",
+        greeting: "Bonjour",
+        title: "Votre espace central pour l'organisme",
+        governanceTemplates: "Modèles de gouvernance",
+        learningResources: "Ressources d'apprentissage",
+        fundTitle: "Le Cercle de générosité d'Olea",
+        fundSubtitle: "15 % des bénéfices",
+        fundDescription:
+          "Des dons sans restriction sont remis à des organismes sans but lucratif.",
+        brandProfile: "Profil de marque",
+        appliedToDownloads: "Appliqué à chaque téléchargement",
+        templateTitle: "Autoévaluation du conseil",
+        templateStatus: "Personnalisé et prêt",
+      },
+    },
+    transformation: {
+      eyebrow: "Conçu pour les équipes surchargées",
+      title: "Passez moins de temps à assembler du soutien éparpillé.",
+      description:
+        "Olea Connects™ rassemble les éléments pratiques des opérations sans but lucratif dans un espace accueillant, afin que votre équipe passe de la recherche et de la mise en page à la prise de décision et au service de votre communauté.",
+      problems: [
+        {
+          title: "Trop de temps à recréer les bases",
+          text: "Les dossiers du conseil, les politiques et les documents de gouvernance ne devraient pas partir d'une page blanche.",
+        },
+        {
+          title: "Des conseils dispersés partout",
+          text: "Les ressources, les pistes de financement, l'apprentissage avec des experts et le soutien entre pairs vivent dans trop d'endroits déconnectés.",
+        },
+        {
+          title: "Des modèles qui ne vous ressemblent pas",
+          text: "Les fichiers génériques demandent encore des heures de mise en forme avant d'être prêts pour votre conseil.",
+        },
+      ],
+      afterEyebrow: "Le résultat",
+      afterTitle:
+        "Un seul accès. Votre marque. Un soutien pratique prêt au bon moment.",
+      afterDescription:
+        "Téléchargez un document prêt pour le conseil, participez à un webinaire, trouvez une piste de financement ou posez vos questions à vos pairs sans quitter l'environnement Olea.",
+    },
+    features: {
+      eyebrow: "Ce que vous obtenez",
+      title: "Utile le lundi matin, pas un jour peut-être.",
+      description:
+        "Chaque élément d'Olea Connects™ est conçu pour réduire la charge administrative et aider votre organisme à renforcer sa capacité à son propre rythme.",
+      items: [
+        {
+          title: "Créez votre marque une fois. Utilisez-la partout.",
+          text: "Téléversez votre logo et vos couleurs une seule fois. Chaque modèle admissible s'affiche automatiquement avec l'identité de votre organisme.",
+          outcome: "Aucune compétence en design ni remise en page requise.",
+        },
+        {
+          title: "Commencez avec des outils prêts pour le conseil.",
+          text: "Utilisez des modèles de gouvernance, des guides et des ressources pratiques écrits principalement pour le contexte canadien sans but lucratif.",
+          outcome:
+            "Passez avec confiance de la page blanche au document utile.",
+        },
+        {
+          title: "Trouvez des personnes qui comprennent.",
+          text: "Posez des questions et partagez vos expériences dans une communauté privée et modérée pour les leaders d'organismes sans but lucratif.",
+          outcome: "L'accès à la communauté est inclus dans chaque forfait.",
+        },
+        {
+          title: "Repérez les occasions de financement.",
+          text: "Recevez des alertes hebdomadaires de subventions et créez des liens avec des bailleurs de fonds grâce à des séances ciblées et à la communauté.",
+          outcome: "Passez moins de temps à chercher partout sur le Web.",
+        },
+        {
+          title: "Apprenez directement des experts.",
+          text: "Participez à des séances en direct ou enregistrées avec des professionnels en gouvernance, droit, finances, RH, technologie et financement.",
+          outcome: "Transformez l'expertise en prochaines étapes concrètes.",
+        },
+        {
+          title: "Grandissez avec le Cercle de générosité d'Olea.",
+          text: "Olive Social Impact remet 15 % de ses bénéfices à des organismes sans but lucratif sous forme de dons sans restriction. Il n'y a ni demande de subvention ni paiement garanti aux membres.",
+          outcome: "15 % des bénéfices sont remis aux organismes sans but lucratif.",
+        },
+      ],
+    },
+    trust: {
+      intro:
+        "Une entreprise sociale canadienne indépendante axée sur la capacité, l'inclusion et le sentiment d'appartenance des organismes sans but lucratif.",
+      signals: [
+        {
+          value: "Chaque forfait",
+          label: "inclut toute la communauté de pairs",
+        },
+        {
+          value: "15 % des bénéfices",
+          label: "sont remis aux organismes sous forme de dons sans restriction",
+        },
+        {
+          value: "Anglais + français",
+          label: "ressources de gouvernance essentielles",
+        },
+        { value: "WCAG 2.1 AA", label: "norme d'accessibilité" },
+      ],
+    },
+    demo: {
+      eyebrow: "Démo du produit",
+      title: "Découvrez la plateforme de subventions en action.",
+      description:
+        "Suivez un parcours concret, de la création d'une occasion de financement au suivi des bailleurs de fonds et à la consultation des rapports.",
+      videoLabel: "Vidéo de démonstration de la plateforme de subventions",
+      videoFallback: "Votre navigateur ne prend pas en charge cette vidéo.",
+      caption: "1 min 25 s · Texte à l'écran en anglais · Musique et sons d'interface, sans narration.",
+    },
+    workflow: {
+      eyebrow: "Fonctionnement",
+      title:
+        "De l'inscription aux documents prêts pour le conseil en trois étapes.",
+      description:
+        "Olea Connects™ est conçu pour être simple dès la première connexion, même lorsque votre organisme est occupé et que votre équipe est petite.",
+      steps: [
+        {
+          number: "01",
+          title: "Choisissez votre forfait",
+          text: "Sélectionnez le niveau de ressources qui convient à votre organisme. L'inscription prend environ cinq minutes et l'accès commence immédiatement.",
+        },
+        {
+          number: "02",
+          title: "Configurez votre marque",
+          text: "Ajoutez le nom de votre organisme, votre logo et vos couleurs une seule fois. Les membres Seedling choisissent ensuite leurs trois modèles prioritaires.",
+        },
+        {
+          number: "03",
+          title: "Utilisez votre espace central",
+          text: "Ouvrez des ressources déjà adaptées à votre marque, téléchargez des PDF prêts pour le conseil, rejoignez la communauté et explorez les formations et outils de financement.",
+        },
+      ],
+    },
+    pricing: {
+      eyebrow: "Adhésion",
+      title: "Choisissez le soutien qui convient aujourd'hui.",
+      description:
+        "Choisissez une facturation annuelle ou trimestrielle. Les 50 premiers organismes payants utilisant le code fondateur conservent leur tarif fondateur pendant 2 ans.",
+      foundingLabel: "Offre membre fondateur :",
+      foundingNotice:
+        "Économisez jusqu'à 2 120 $ sur vos deux premières années avec le code OLEAFOUNDING15. Le montant exact est confirmé avant le paiement.",
+      quarterly: "Trimestriel",
+      annual: "Annuel",
+      annualBadge: "Idéal pour planifier le renouvellement",
+      mostPopular: "Le plus populaire",
+      recommended: "Recommandé",
+      standardRate: "Tarif standard",
+      saveTwoYears: "Économisez {amount} sur 2 ans",
+      foundingRate: "Tarif membre fondateur",
+      foundingCode: "Utilisez le code OLEAFOUNDING15 à la caisse.",
+      quarterlyOption: "Ou payez chaque trimestre : {amount}.",
+      monthlyEquivalent: "Environ {amount} par mois, facturé annuellement.",
+      spotsLimited: "Réservé aux 50 premiers organismes",
+      spotsLeft: "{left} places restantes sur 50",
+      perYear: "an",
+      perQuarter: "trimestre",
+      choosePlan: "Choisir",
+      optionalSupportEyebrow: "Soutien optionnel",
+      optionalSupportTitle:
+        "Ajoutez de la capacité quand votre équipe en a besoin.",
+      optionalSupportDescription:
+        "Ajoutez des modules à un forfait plus petit. L'animation du conseil et l'accompagnement individuel en impact sont offerts sur devis. L'Accélérateur d'impact arrive bientôt.",
+      retreatTitle: "Animation de retraite du conseil",
+      retreatDescription:
+        "Animation professionnelle pour les retraites annuelles du conseil et les séances de planification stratégique.",
+      requestQuote: "Contactez-nous pour obtenir un devis",
+      contactToArrange: "Contactez-nous pour organiser l'achat",
+      referralsEyebrow: "Cercle de générosité",
+      referralsTitle:
+        "Vos références aident un autre organisme à accéder au soutien.",
+      referralsDescription:
+        "Les personnes approuvées peuvent recevoir 10 % du premier paiement d'adhésion réussi d'un organisme référé, jusqu'à 500 $. Les renouvellements et les auto-références sont exclus.",
+      referralsCta: "Découvrir le programme de référencement",
+      plans: {
+        seedling: {
+          name: "Seedling",
+          seats: "5 sièges inclus",
+          audience: "Organismes avec un budget annuel de moins de 500 k$",
+          summary:
+            "Opérations de gouvernance de base, ressources personnalisées et accès à la communauté.",
+          features: [
+            "Calendrier du conseil, réunions, flux de travail et dossiers",
+            "Listes de vérification, modèles, tableau de bord et échéances de subventions",
+            "Communauté Olea Connects™, webinaires et forums",
+            "Soutien par courriel sous 48 heures",
+          ],
+        },
+        roots: {
+          name: "Roots",
+          seats: "10 sièges inclus",
+          audience: "Organismes avec un budget annuel de 500 k$ à 2 M$",
+          summary:
+            "Gouvernance approfondie, recrutement, suivi d'impact et soutien à l'apprentissage.",
+          features: [
+            "Tout ce qui est inclus dans Seedling",
+            "Boîte à outils de recrutement du conseil et matrice des compétences",
+            "Tableau de bord KPI et impact",
+            "Système d'évaluation du conseil",
+            "Soutien prioritaire par courriel sous 48 heures",
+          ],
+        },
+        canopy: {
+          name: "Canopy",
+          seats: "15 sièges inclus",
+          audience: "Organismes avec un budget annuel de 2 M$ et plus",
+          summary:
+            "Systèmes complets de gouvernance, évaluation de la direction et outils de stratégie.",
+          features: [
+            "Tout ce qui est inclus dans Roots",
+            "Évaluation 360 ED/CEO",
+            "Module de planification stratégique",
+            "Modules de formation du conseil",
+            "Occasions de leadership communautaire",
+            "Soutien prioritaire par téléphone et courriel",
+          ],
+        },
+      },
+      policies: [
+        "15 $ CA par siège supplémentaire, paiement unique",
+        "Le montant total est affiché à la caisse sécurisée avant le paiement. Les taxes ne sont pas perçues actuellement.",
+        "Aucun essai gratuit",
+      ],
+      addOns: [
+        {
+          id: "ceoReview",
+          name: "Évaluation 360 de la direction générale",
+          description: "Disponible pour les organismes Seedling et Roots.",
+        },
+        {
+          id: "boardEvaluation",
+          name: "Système d'évaluation du conseil",
+          description: "Disponible pour Seedling; inclus dans Roots et Canopy.",
+        },
+        {
+          id: "boardRecruitment",
+          name: "Outils de recrutement du conseil et matrice des compétences",
+          description: "Disponible pour Seedling; inclus dans Roots et Canopy.",
+        },
+        {
+          id: "kpiDashboard",
+          name: "Tableau de bord KPI et impact",
+          description:
+            "Disponible pour Seedling; inclus dans Roots et Canopy.",
+        },
+        {
+          id: "boardTraining",
+          name: "Formation en gouvernance du conseil",
+          description:
+            "Disponible pour les organismes Seedling et Roots.",
+        },
+        {
+          id: "smallBoardTraining",
+          name: "Formation en gouvernance, petits conseils",
+          description: "Pour les conseils Seedling comptant jusqu'à 9 administrateurs.",
+        },
+        {
+          id: "strategicPlanning",
+          name: "Module de planification stratégique",
+          description: "Disponible pour les organismes Seedling et Roots.",
+        },
+        {
+          id: "accreditationPrep",
+          name: "Préparation à l'accréditation",
+          description: "Organisez les documents et suivez l'état de préparation à l'accréditation.",
+        },
+      ],
+      sponsorshipTitle: "Soutenir les organismes sans but lucratif",
+      sponsorshipEyebrow: "Commandites",
+      sponsorshipDescription:
+        "Soutenez un conseil d'administration sans but lucratif pendant un an ou explorez un partenariat durable.",
+      sponsorshipOffers: [
+        {
+          id: "sponsorSeedlingBoard",
+          name: "Soutenir un conseil Seedling",
+          description: "Soutenez un conseil Seedling pendant un an.",
+        },
+        {
+          id: "sponsorRootsBoard",
+          name: "Soutenir un conseil Roots",
+          description: "Soutenez un conseil Roots pendant un an.",
+        },
+      ],
+      perOneTime: "paiement unique",
+    },
+    faq: {
+      eyebrow: "Questions fréquentes",
+      title: "Quelques réponses utiles.",
+      description:
+        "Des réponses directes sur les tarifs, la facturation, les sièges, les références et le soutien.",
+      items: [
+        {
+          question: "À qui s'adresse Olea Connects™?",
+          answer:
+            "Les organismes sans but lucratif enregistrés, sociétés, organismes de bienfaisance et organismes communautaires de toute taille ou étape sont les bienvenus. Les ressources sont écrites principalement pour le contexte canadien, et les membres internationaux peuvent aussi se joindre.",
+        },
+        {
+          question: "Comment fonctionne la facturation?",
+          answer:
+            "Choisissez une facturation annuelle ou trimestrielle, payée à l'avance en dollars canadiens. Les paiements trimestriels se renouvellent tous les trois mois. Le montant total est affiché avant le paiement; les taxes ne sont pas perçues actuellement. Les membres actuels conservent leurs modalités.",
+        },
+        {
+          question: "Y a-t-il un essai gratuit?",
+          answer:
+            "Non. Olea Connects™ n'offre pas d'essai gratuit. Les tarifs fondateurs s'appliquent pendant les deux premières années avec OLEAFOUNDING15, tant que les 50 premières places payantes restent disponibles.",
+        },
+        {
+          question: "Qu'est-ce que l'offre membre fondateur?",
+          answer:
+            "Utilisez OLEAFOUNDING15 pendant l'inscription. Les 50 premiers organismes payants bénéficient du tarif fondateur fixe pendant 2 ans (2 paiements annuels ou 8 paiements trimestriels). Ensuite, le tarif standard s'applique.",
+        },
+        {
+          question: "Combien de sièges sont inclus?",
+          answer:
+            "Seedling inclut 5 sièges, Roots en inclut 10 et Canopy en inclut 15. Les sièges supplémentaires coûtent 15 $ CA par siège, en paiement unique, pour tous les forfaits.",
+        },
+        {
+          question: "Pouvons-nous changer de forfait?",
+          answer:
+            "Les mises à niveau sont offertes en tout temps et facturent immédiatement la différence de prix, sans changer la date de renouvellement. Les rétrogradations prennent effet au renouvellement.",
+        },
+        {
+          question: "Pouvons-nous annuler?",
+          answer:
+            "Annulez avant le prochain renouvellement pour arrêter les paiements futurs. Les adhésions trimestrielles restent actives jusqu'à la fin du trimestre payé, et les adhésions annuelles jusqu'à la fin de l'année payée. Les frais ne sont pas remboursables.",
+        },
+        {
+          question: "Comment fonctionnent les références?",
+          answer:
+            "Les personnes approuvées reçoivent un lien unique. Une référence admissible peut rapporter 10 % du premier paiement d'adhésion réussi de l'organisme référé, jusqu'à 500 $. Les renouvellements, les auto-références et les crédits en double sont exclus.",
+        },
+        {
+          question: "Le coaching et le soutien administratif sont-ils inclus?",
+          answer:
+            "L'animation du conseil et l'accompagnement individuel en impact sont offerts sur devis. Pour obtenir de l'aide administrative, dites-nous ce dont vous avez besoin.",
+        },
+        {
+          question: "Qu'est-ce que le Cercle de générosité d'Olea?",
+          answer:
+            "Olive Social Impact remet 15 % de ses bénéfices à des organismes sans but lucratif sous forme de dons sans restriction. Ce n'est pas un programme de subventions : il n'y a aucune demande à soumettre et l'adhésion ne garantit pas de don.",
+        },
+        {
+          question: "Qu'arrive-t-il à nos données si nous annulons?",
+          answer:
+            "Votre organisme reste propriétaire de ses données. Après l'annulation, vous disposez d'une période de grâce de 30 jours pour les télécharger ou les exporter avant leur retrait des systèmes actifs.",
+        },
+      ],
+    },
+    finalCta: {
+      eyebrow: "Votre place est ici",
+      title: "Offrez à votre organisme un espace plus solide pour grandir.",
+      description:
+        "Commencez avec le forfait qui convient maintenant. Vos outils, votre profil de marque, votre historique et vos liens communautaires peuvent grandir avec vous.",
+      cta: "Rejoindre Olea Connects™",
+      pricingNote:
+        "Les adhésions fondatrices commencent à 1 000 $ CA/an avec OLEAFOUNDING15. Vérifiez le montant total avant de payer.",
+    },
+    footer: {
+      description:
+        "Une plateforme d'adhésion par Olive Social Impact Inc., une entreprise sociale canadienne indépendante.",
+      copyright: "© 2026 Olive Social Impact Inc.",
+      prices: "Tous les prix sont en dollars canadiens.",
+    },
+  },
+};
+
+export function getPublicSiteCopy(locale: Locale) {
+  return publicSiteCopy[locale];
+}

@@ -1,0 +1,385 @@
+{
+  "courseId": "governance-essentials",
+  "locale": "fr",
+  "version": "2.0.0",
+  "passMarkPercent": 80,
+  "shuffleQuestions": true,
+  "shuffleOptions": true,
+  "questions": [
+    {
+      "id": "q1",
+      "lesson": "l1",
+      "prompt": "Laquelle des responsabilités suivantes relève principalement du conseil (gouvernance) plutôt que de la direction (gestion)?",
+      "options": [
+        {
+          "id": "a",
+          "text": "Planifier les horaires des bénévoles pour l’événement du printemps"
+        },
+        {
+          "id": "b",
+          "text": "Approuver le budget annuel et le plan stratégique"
+        },
+        {
+          "id": "c",
+          "text": "Choisir le logiciel de courriel du bureau"
+        },
+        {
+          "id": "d",
+          "text": "Embaucher la coordonnatrice ou le coordonnateur des programmes"
+        }
+      ],
+      "answer": "b",
+      "explanation": "Le conseil fixe l’orientation et approuve le budget et le plan stratégique. Les décisions courantes, y compris l’embauche du personnel autre que la DG, relèvent de la direction."
+    },
+    {
+      "id": "q2",
+      "lesson": "l8",
+      "prompt": "Votre conseil ouvre chaque réunion par une reconnaissance territoriale lue à partir d’un texte. Un nouveau membre demande ce que l’organisme fait concrètement pour la réconciliation. Quelle est la réponse la plus utile?",
+      "options": [
+        {
+          "id": "a",
+          "text": "La reconnaissance suffit. Elle témoigne du respect, et le reste relève de la direction"
+        },
+        {
+          "id": "b",
+          "text": "Traiter la question comme un enjeu de gouvernance : se demander quelles relations, quels engagements et quelles actions sous-tendent la reconnaissance, et envisager de l’intégrer à la stratégie et à la formation du conseil"
+        },
+        {
+          "id": "c",
+          "text": "Cesser les reconnaissances territoriales pour éviter de paraître peu sincère"
+        },
+        {
+          "id": "d",
+          "text": "Demander au seul membre autochtone du conseil de décider de ce que le conseil devrait faire"
+        }
+      ],
+      "answer": "b",
+      "explanation": "La réconciliation fait partie de la stratégie, de la reddition de comptes et de la culture du conseil. Une reconnaissance significative est précise et liée à des actions, et c’est l’ensemble du conseil qui partage la responsabilité de l’apprentissage et des relations."
+    },
+    {
+      "id": "q3",
+      "lesson": "l2",
+      "prompt": "Un administrateur a été proposé au conseil par un important bailleur de fonds. Lorsqu’une décision sert l’intérêt de l’organisme, mais pas celui du bailleur de fonds, l’administrateur devrait :",
+      "options": [
+        {
+          "id": "a",
+          "text": "Voter comme le souhaiterait le bailleur de fonds, puisque c’est la raison de sa nomination"
+        },
+        {
+          "id": "b",
+          "text": "Agir dans l’intérêt de l’organisme et traiter la divergence comme un conflit potentiel à déclarer"
+        },
+        {
+          "id": "c",
+          "text": "Demander des instructions écrites au bailleur de fonds avant de voter"
+        },
+        {
+          "id": "d",
+          "text": "Démissionner immédiatement"
+        }
+      ],
+      "answer": "b",
+      "explanation": "Le devoir de loyauté de l’administrateur s’exerce envers l’organisme, peu importe qui l’a proposé. Les intérêts divergents doivent être déclarés et gérés comme un conflit."
+    },
+    {
+      "id": "q4",
+      "lesson": "l2",
+      "prompt": "Qu’est-ce qui décrit le mieux la façon dont les administrateurs respectent leur devoir de prudence et de diligence?",
+      "options": [
+        {
+          "id": "a",
+          "text": "En s’assurant que chaque décision donne un bon résultat"
+        },
+        {
+          "id": "b",
+          "text": "En détenant des titres professionnels en finance ou en droit"
+        },
+        {
+          "id": "c",
+          "text": "En s’en remettant à la présidence sur les questions difficiles"
+        },
+        {
+          "id": "d",
+          "text": "En se préparant, en assistant aux réunions, en posant des questions et en exerçant un jugement raisonnable"
+        }
+      ],
+      "answer": "d",
+      "explanation": "Ce devoir porte sur une façon de faire diligente et éclairée. Les tribunaux protègent généralement les décisions éclairées et prises de bonne foi, même lorsque les résultats sont décevants."
+    },
+    {
+      "id": "q5",
+      "lesson": "l3",
+      "prompt": "Le conseil examine des soumissions pour un contrat. L’un des soumissionnaires appartient au frère d’une administratrice. Que devrait-elle faire?",
+      "options": [
+        {
+          "id": "a",
+          "text": "Déclarer l’intérêt, s’abstenir de voter et quitter la réunion pendant la discussion"
+        },
+        {
+          "id": "b",
+          "text": "Rester et voter, mais mentionner le lien si quelqu’un pose la question"
+        },
+        {
+          "id": "c",
+          "text": "Rester pour la discussion, mais s’abstenir de voter"
+        },
+        {
+          "id": "d",
+          "text": "Rien, tant que la soumission de son frère est la plus basse"
+        }
+      ],
+      "answer": "a",
+      "explanation": "Déclarer, S’abstenir, Sortir. La déclaration et l’abstention doivent être consignées au procès-verbal."
+    },
+    {
+      "id": "q6",
+      "lesson": "l3",
+      "prompt": "Après un débat animé, le conseil approuve une décision contre laquelle vous avez voté. Un journaliste local vous demande votre avis. Vous devriez :",
+      "options": [
+        {
+          "id": "a",
+          "text": "Expliquer votre désaccord et ses raisons"
+        },
+        {
+          "id": "b",
+          "text": "Dire « aucun commentaire » et publier plutôt vos préoccupations sur les réseaux sociaux"
+        },
+        {
+          "id": "c",
+          "text": "Appuyer publiquement la décision du conseil, ou diriger le journaliste vers le porte-parole désigné du conseil"
+        },
+        {
+          "id": "d",
+          "text": "Partager les délibérations confidentielles du conseil pour que le public puisse juger"
+        }
+      ],
+      "answer": "c",
+      "explanation": "Le conseil parle d’une seule voix. Vous pouvez demander que votre dissidence soit consignée au procès-verbal, mais vous ne devez pas miner une décision du conseil en public."
+    },
+    {
+      "id": "q7",
+      "lesson": "l4",
+      "prompt": "Quel état financier montre si l’organisme a suffisamment de liquidités pour payer ses factures à l’échéance?",
+      "options": [
+        {
+          "id": "a",
+          "text": "L’état des résultats"
+        },
+        {
+          "id": "b",
+          "text": "L’état des flux de trésorerie"
+        },
+        {
+          "id": "c",
+          "text": "Le plan stratégique"
+        },
+        {
+          "id": "d",
+          "text": "Le rapport annuel déposé au registre des entreprises"
+        }
+      ],
+      "answer": "b",
+      "explanation": "L’état des flux de trésorerie montre d’où vient l’argent et où il va. Un organisme peut afficher un excédent et quand même manquer de liquidités."
+    },
+    {
+      "id": "q8",
+      "lesson": "l4",
+      "prompt": "Les liquidités sont serrées, et la DG propose d’utiliser temporairement une subvention de fondation affectée à un programme jeunesse pour payer les salaires. Quelle est la principale préoccupation?",
+      "options": [
+        {
+          "id": "a",
+          "text": "Il n’y a aucun problème si l’argent est remboursé avant la fin de l’exercice"
+        },
+        {
+          "id": "b",
+          "text": "La paie relève de la direction, et le conseil ne devrait pas en discuter"
+        },
+        {
+          "id": "c",
+          "text": "Cela aurait une incidence sur le contingent des versements de l’organisme"
+        },
+        {
+          "id": "d",
+          "text": "Les fonds affectés doivent servir à l’usage prévu. Les détourner peut contrevenir à l’entente de subvention et miner la confiance."
+        }
+      ],
+      "answer": "d",
+      "explanation": "Les fonds affectés comportent des obligations envers le donateur ou le bailleur de fonds. Le conseil devrait envisager d’autres solutions, comme les réserves, une marge de crédit ou une discussion avec le bailleur de fonds."
+    },
+    {
+      "id": "q9",
+      "lesson": "l4",
+      "prompt": "Au Canada, les administrateurs peuvent être personnellement responsables si l’organisme omet de :",
+      "options": [
+        {
+          "id": "a",
+          "text": "Verser aux gouvernements les retenues à la source de ses employés"
+        },
+        {
+          "id": "b",
+          "text": "Atteindre ses objectifs de collecte de fonds"
+        },
+        {
+          "id": "c",
+          "text": "Tenir une retraite du conseil chaque année"
+        },
+        {
+          "id": "d",
+          "text": "Atteindre les objectifs de son plan stratégique"
+        }
+      ],
+      "answer": "a",
+      "explanation": "Les retenues à la source non versées (et les taxes de vente perçues) peuvent engager la responsabilité personnelle des administrateurs. Demandez à chaque réunion la confirmation que les versements sont à jour."
+    },
+    {
+      "id": "q10",
+      "lesson": "l5",
+      "prompt": "Quel énoncé sur les OBNL et les organismes de bienfaisance enregistrés est exact?",
+      "options": [
+        {
+          "id": "a",
+          "text": "Tous les OBNL peuvent délivrer des reçus officiels de dons"
+        },
+        {
+          "id": "b",
+          "text": "Un organisme de bienfaisance enregistré peut appuyer un candidat qui soutient sa cause"
+        },
+        {
+          "id": "c",
+          "text": "Le statut d’organisme de bienfaisance enregistré est accordé par l’ARC. Tous les OBNL ne sont pas des organismes de bienfaisance enregistrés."
+        },
+        {
+          "id": "d",
+          "text": "Les organismes de bienfaisance enregistrés produisent leur déclaration annuelle seulement si l’ARC le demande"
+        }
+      ],
+      "answer": "c",
+      "explanation": "Seuls les organismes de bienfaisance enregistrés et les autres donataires reconnus peuvent délivrer des reçus officiels. Les organismes de bienfaisance ne peuvent pas mener d’activités partisanes, et ils doivent produire la T3010 chaque année."
+    },
+    {
+      "id": "q11",
+      "lesson": "l5",
+      "prompt": "Un organisme de bienfaisance enregistré doit produire sa déclaration de renseignements T3010 :",
+      "options": [
+        {
+          "id": "a",
+          "text": "Dans les six mois suivant la fin de son exercice"
+        },
+        {
+          "id": "b",
+          "text": "Dans les 30 jours suivant son assemblée générale annuelle"
+        },
+        {
+          "id": "c",
+          "text": "Tous les trois ans"
+        },
+        {
+          "id": "d",
+          "text": "Seulement s’il a reçu du financement gouvernemental"
+        }
+      ],
+      "answer": "a",
+      "explanation": "La T3010 doit être produite dans les six mois suivant la fin de l’exercice, partout au Canada, et un retard peut entraîner la révocation. Les dépôts auprès des registres provinciaux ou fédéral, comme les rapports annuels, ont leurs propres échéances."
+    },
+    {
+      "id": "q12",
+      "lesson": "l6",
+      "prompt": "Un membre du personnel vous aborde en privé pour se plaindre des décisions de la DG. La meilleure réaction est de :",
+      "options": [
+        {
+          "id": "a",
+          "text": "Promettre de soulever la question à la prochaine réunion du conseil sans nommer la personne"
+        },
+        {
+          "id": "b",
+          "text": "Écouter avec respect, éviter de prendre parti ou de donner des directives, diriger la personne vers la voie appropriée et informer la présidence"
+        },
+        {
+          "id": "c",
+          "text": "Enquêter vous-même en interrogeant d’autres membres du personnel"
+        },
+        {
+          "id": "d",
+          "text": "Demander à la DG d’annuler ses décisions"
+        }
+      ],
+      "answer": "b",
+      "explanation": "Un administrateur ne doit pas contourner la DG. Les préoccupations doivent passer par les voies prévues, comme les politiques de ressources humaines ou de dénonciation, et la présidence doit en être informée."
+    },
+    {
+      "id": "q13",
+      "lesson": "l6",
+      "prompt": "Laquelle de ces tâches est une responsabilité essentielle du conseil envers la DG?",
+      "options": [
+        {
+          "id": "a",
+          "text": "Approuver chaque embauche faite par la DG"
+        },
+        {
+          "id": "b",
+          "text": "Relire les courriels de la DG pour en assurer la qualité"
+        },
+        {
+          "id": "c",
+          "text": "Superviser l’horaire quotidien de la DG"
+        },
+        {
+          "id": "d",
+          "text": "Mener chaque année une évaluation du rendement juste et documentée, fondée sur des objectifs convenus"
+        }
+      ],
+      "answer": "d",
+      "explanation": "Le conseil embauche la DG, fixe ses objectifs, l’évalue, établit sa rémunération et planifie la relève, et lui laisse la gestion quotidienne."
+    },
+    {
+      "id": "q14",
+      "lesson": "l7",
+      "prompt": "Entre deux réunions, la présidente et le trésorier conviennent au téléphone d’approuver une dépense importante non budgétée qui dépasse le pouvoir de la DG. À moins que ce pouvoir leur ait été officiellement délégué :",
+      "options": [
+        {
+          "id": "a",
+          "text": "La dépense est approuvée, puisque les deux principaux dirigeants sont d’accord"
+        },
+        {
+          "id": "b",
+          "text": "La dépense est approuvée si elle est inscrite au prochain procès-verbal"
+        },
+        {
+          "id": "c",
+          "text": "Le conseil ne l’a pas approuvée. Il faut une réunion du conseil en bonne et due forme ou une résolution écrite conforme aux règlements administratifs."
+        },
+        {
+          "id": "d",
+          "text": "La DG peut l’approuver si la présidente est d’accord"
+        }
+      ],
+      "answer": "c",
+      "explanation": "Le pouvoir appartient au conseil agissant ensemble selon un processus en bonne et due forme. Des administrateurs, même dirigeants, ne peuvent pas engager le conseil sans délégation officielle."
+    },
+    {
+      "id": "q15",
+      "lesson": "l8",
+      "prompt": "Quel est le rôle du conseil dans la gestion des risques?",
+      "options": [
+        {
+          "id": "a",
+          "text": "Éliminer tout risque pour l’organisme"
+        },
+        {
+          "id": "b",
+          "text": "Décider du niveau de risque acceptable et s’assurer que les risques importants sont cernés, suivis et gérés"
+        },
+        {
+          "id": "c",
+          "text": "Laisser entièrement le risque à l’auditeur"
+        },
+        {
+          "id": "d",
+          "text": "Ne parler du risque qu’après un incident"
+        }
+      ],
+      "answer": "b",
+      "explanation": "Le conseil surveille les risques. Il fixe la tolérance au risque, revoit régulièrement un registre des risques et confirme que des protections comme l’assurance responsabilité des administrateurs et dirigeants sont en place."
+    }
+  ]
+}

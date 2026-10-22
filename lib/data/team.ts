@@ -1,6 +1,7 @@
 import "server-only";
 
 import type { TeamData } from "@/lib/types";
+import { getReservedSeatCount } from "@/lib/team/seats";
 import { createClient } from "@/utils/supabase/server";
 
 import { requireMemberContext } from "./member-context";
@@ -29,11 +30,9 @@ export async function getTeamData(): Promise<TeamData> {
           .eq("status", "pending")
           .order("created_at", { ascending: false })
       : Promise.resolve({ data: [], error: null }),
-    canManage
-      ? supabase.rpc("get_team_directory", {
-          target_organization_id: session.organization.id,
-        })
-      : Promise.resolve({ data: [], error: null }),
+    supabase.rpc("get_team_directory", {
+      target_organization_id: session.organization.id,
+    }),
   ]);
 
   if (memberError) throw memberError;
@@ -58,16 +57,20 @@ export async function getTeamData(): Promise<TeamData> {
     joinedAt: member.joined_at,
   }));
   const pendingInvitations = invitations ?? [];
+  const normalizedActiveMemberCount = Math.max(activeMemberCount ?? 0, 1);
+  const reservedSeatCount = getReservedSeatCount(
+    normalizedActiveMemberCount,
+    pendingInvitations.length,
+  );
 
   return {
     currentMember: session.member,
     organization: {
       ...session.organization,
-      seatsUsed: activeMemberCount ?? session.organization.seatsUsed,
+      seatsUsed: normalizedActiveMemberCount,
     },
-    activeMemberCount: activeMemberCount ?? 0,
-    reservedSeatCount:
-      (activeMemberCount ?? 0) + pendingInvitations.length,
+    activeMemberCount: normalizedActiveMemberCount,
+    reservedSeatCount,
     members,
     invitations: pendingInvitations.map((invitation) => ({
       id: invitation.id,

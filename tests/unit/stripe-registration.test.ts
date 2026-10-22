@@ -23,6 +23,7 @@ vi.mock("@/lib/stripe/server", () => ({
       update: stripeMocks.updateSubscription,
     },
   }),
+  isLegacyTestCheckoutSession: () => false,
 }));
 
 vi.mock("@/lib/stripe/subscriptions", () => ({
@@ -72,13 +73,14 @@ function makeSupabaseMock(
       filters.push(args);
       return builder;
     }),
+    in: vi.fn((...args: [string, ...unknown[]]) => {
+      filters.push(args);
+      return builder;
+    }),
     not: vi.fn(() => builder),
     lte: vi.fn(() => builder),
     order: vi.fn(() => builder),
-    limit: vi.fn(async () => ({
-      data: [{ id: "req_123", checkout_session_id: checkoutSessionId }],
-      error: null,
-    })),
+    limit: vi.fn(() => builder),
     update: vi.fn((values: Record<string, unknown>) => {
       updateCalls.push(values);
       return builder;
@@ -107,6 +109,12 @@ function makeSupabaseMock(
 
       return { data: { id: "req_123" }, error: null };
     }),
+    then: vi.fn((resolve, reject) =>
+      Promise.resolve({
+        data: [{ id: "req_123", checkout_session_id: checkoutSessionId }],
+        error: null,
+      }).then(resolve, reject),
+    ),
   };
 
   return {
@@ -127,11 +135,12 @@ describe("Stripe registration recovery", () => {
     vi.clearAllMocks();
     stripeMocks.retrieveCheckoutSession.mockResolvedValue({
       id: "cs_123",
+      status: "complete",
       metadata: {
         provisioning_request_id: "req_123",
         user_id: "user_123",
         plan_id: "seedling",
-        billing_cycle: "monthly",
+        billing_cycle: "quarterly",
       },
       subscription: makeSubscription(),
     });
@@ -178,7 +187,7 @@ describe("Stripe registration recovery", () => {
     const { attemptUserWorkspaceProvisioning } = await import(
       "@/lib/stripe/registration"
     );
-    const { client } = makeSupabaseMock([
+    const { builder, client } = makeSupabaseMock([
       { status: "pending_payment", request_id: "req_123" },
       {
         status: "completed",
@@ -194,9 +203,41 @@ describe("Stripe registration recovery", () => {
     );
 
     expect(result?.status).toBe("completed");
+    expect(client.from).toHaveBeenCalledWith("workspace_provisioning_requests");
+    expect(builder.in).toHaveBeenCalledWith("status", [
+      "pending_verification",
+      "pending_payment",
+      "failed",
+    ]);
+    expect(builder.order).toHaveBeenCalledWith("updated_at", {
+      ascending: false,
+    });
+    expect(builder.limit).toHaveBeenCalledWith(1);
     expect(stripeMocks.retrieveCheckoutSession).toHaveBeenCalledWith("cs_123", {
       expand: ["subscription"],
     });
+  });
+
+  it("leaves an open checkout session pending so the caller can reuse its URL", async () => {
+    stripeMocks.retrieveCheckoutSession.mockResolvedValue({
+      id: "cs_123",
+      status: "open",
+      url: "https://checkout.stripe.com/c/pay/cs_123",
+    });
+    const { attemptUserWorkspaceProvisioning } = await import(
+      "@/lib/stripe/registration"
+    );
+    const { client } = makeSupabaseMock([
+      { status: "pending_payment", request_id: "req_123" },
+    ]);
+
+    const result = await attemptUserWorkspaceProvisioning(
+      client as unknown as SupabaseClient,
+      "user_123",
+    );
+
+    expect(result?.status).toBe("pending_payment");
+    expect(stripeMocks.retrieveSubscription).not.toHaveBeenCalled();
   });
 
   it("repairs missing subscription metadata from checkout session metadata", async () => {
@@ -210,7 +251,7 @@ describe("Stripe registration recovery", () => {
         provisioning_request_id: "req_123",
         user_id: "user_123",
         plan_id: "seedling",
-        billing_cycle: "monthly",
+        billing_cycle: "quarterly",
       },
       subscription: subscriptionWithoutMetadata,
     });
@@ -219,7 +260,7 @@ describe("Stripe registration recovery", () => {
         provisioning_request_id: "req_123",
         user_id: "user_123",
         plan_id: "seedling",
-        billing_cycle: "monthly",
+        billing_cycle: "quarterly",
       }),
     );
     const { client } = makeSupabaseMock([
@@ -241,7 +282,7 @@ describe("Stripe registration recovery", () => {
         provisioning_request_id: "req_123",
         user_id: "user_123",
         plan_id: "seedling",
-        billing_cycle: "monthly",
+        billing_cycle: "quarterly",
       },
     });
   });

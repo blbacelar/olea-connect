@@ -1,64 +1,134 @@
 "use client";
 
-import { Eye, EyeOff } from "lucide-react";
+import { ArrowLeft, ArrowRight } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
 
 import { AuthCard } from "@/components/auth/AuthCard";
+import { FoundingOfferBanner } from "@/components/auth/PublicHeader";
+import { PasswordInput } from "@/components/auth/PasswordInput";
 import { StepIndicator } from "@/components/auth/StepIndicator";
+import { useLocaleContext } from "@/components/i18n/LocaleProvider";
+import { FoundingMemberCodeField } from "@/components/signup/founding-member-code-field";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { captureReferralCodeFromUrl } from "@/lib/referral-capture";
+import { isWellFormedFoundingMemberCode } from "@/lib/founding-member";
 import { useRegistration } from "@/hooks/use-registration";
-import { membershipPlans } from "@/lib/plans";
-import type { MembershipTier } from "@/lib/types";
+import { getAuthFlowCopy } from "@/lib/i18n/auth-flow-copy";
+import { getPublicSiteCopy } from "@/lib/i18n/public-site-copy";
+import { getPlan } from "@/lib/plans";
+import { isSignupTier } from "@/lib/founding-pricing";
+import { formatCad } from "@/lib/pricing";
+import {
+  ACQUISITION_SOURCES,
+  ANNUAL_BUDGET_RANGES,
+  BOARD_SIZE_RANGES,
+  ORGANIZATION_KINDS,
+} from "@/lib/signup-flow";
+import type { ActiveMembershipTier } from "@/lib/types";
+import { emailStringSchema } from "@/lib/validation/schemas";
 
 export default function SignupAccountPage() {
   const router = useRouter();
   const { hydrated, registration, updateRegistration } = useRegistration();
-  const [showPassword, setShowPassword] = useState(false);
-  const [terms, setTerms] = useState(false);
+  const { locale } = useLocaleContext();
+  const authCopy = getAuthFlowCopy(locale);
+  const publicCopy = getPublicSiteCopy(locale);
+  const accountCopy = authCopy.signup.account;
+  const selectedPlan = getPlan(registration.tier);
+  const backToPlan = () => router.push(`/signup?tier=${registration.tier}`);
 
   useEffect(() => {
     if (!hydrated) return;
 
     const searchParams = new URLSearchParams(window.location.search);
-    const tier = searchParams.get("tier") as MembershipTier | null;
-    const billingCycle = searchParams.get("billing");
+    const referralCode = captureReferralCodeFromUrl();
+    const tier = searchParams.get("tier");
+    if (tier && !isSignupTier(tier)) {
+      if (referralCode && !registration.referralCode) {
+        updateRegistration({ referralCode });
+      }
+      router.replace("/signup");
+      return;
+    }
+    const billing = searchParams.get("billing");
+    const code = searchParams.get("code");
     const updates: {
-      tier?: MembershipTier;
-      billingCycle?: "monthly" | "annual";
+      tier?: ActiveMembershipTier;
+      billingCycle?: "annual" | "quarterly";
+      foundingMemberCode?: string;
     } = {};
 
-    if (tier && membershipPlans.some((plan) => plan.id === tier)) {
+    if (tier && isSignupTier(tier)) {
       updates.tier = tier;
     }
-    if (billingCycle === "monthly" || billingCycle === "annual") {
-      updates.billingCycle = billingCycle;
+    if (billing === "annual" || billing === "quarterly") {
+      updates.billingCycle = billing;
     }
-    if (updates.tier || updates.billingCycle) {
+    if (code && isWellFormedFoundingMemberCode(code)) {
+      updates.foundingMemberCode = code.trim().toUpperCase();
+    }
+    if (Object.keys(updates).length > 0) {
       updateRegistration(updates);
     }
-  }, [hydrated, updateRegistration]);
+    if (referralCode && !registration.referralCode) {
+      updateRegistration({ referralCode });
+    }
+  }, [hydrated, registration.referralCode, router, updateRegistration]);
 
   const valid =
     registration.organizationName.trim().length >= 2 &&
     registration.fullName.trim().length >= 2 &&
-    /\S+@\S+\.\S+/.test(registration.email) &&
+    emailStringSchema.safeParse(registration.email).success &&
     registration.password.length >= 8 &&
-    terms;
-
+    registration.organizationKind !== "" &&
+    registration.annualBudgetRange !== "" &&
+    registration.boardSizeRange !== "" &&
+    (!registration.foundingMemberCode ||
+      isWellFormedFoundingMemberCode(registration.foundingMemberCode));
   const strength = Math.min(4, Math.floor(registration.password.length / 3));
 
   return (
     <AuthCard
-      title="Create your account"
-      description="Step 2 of 3 · Your organization workspace starts here."
+      title={accountCopy.title}
+      description={`${authCopy.signup.step(2, 3)} · ${accountCopy.description}`}
+      logo={publicCopy.logo}
+      topBanner={<FoundingOfferBanner showSignupLink={false} />}
     >
       <StepIndicator current={2} />
+      <div className="mt-5 flex flex-wrap items-center justify-between gap-3 rounded-lg border border-olea-green/20 bg-olea-light/40 p-4">
+        <div>
+          <p className="text-xs font-semibold uppercase tracking-wide text-slate-600">
+            {accountCopy.selectedPlan}
+          </p>
+          <p className="mt-1 font-semibold text-slate-900">
+            {publicCopy.pricing.plans[registration.tier].name} · {formatCad(
+              registration.billingCycle === "quarterly"
+                ? selectedPlan.quarterlyPrice
+                : selectedPlan.annualPrice,
+              locale,
+            )}/{registration.billingCycle === "quarterly"
+              ? publicCopy.pricing.perQuarter
+              : publicCopy.pricing.perYear}
+          </p>
+        </div>
+        <Button type="button" variant="outline" onClick={backToPlan}>
+          <ArrowLeft className="size-4" />
+          {accountCopy.changePlan}
+        </Button>
+      </div>
       <div className="mt-7 space-y-5">
         <div className="space-y-2">
-          <Label htmlFor="organization">Organization name *</Label>
+          <Label htmlFor="organization">{accountCopy.organizationName}</Label>
           <Input
             id="organization"
             value={registration.organizationName}
@@ -68,7 +138,7 @@ export default function SignupAccountPage() {
           />
         </div>
         <div className="space-y-2">
-          <Label htmlFor="fullName">Your name *</Label>
+          <Label htmlFor="fullName">{accountCopy.fullName}</Label>
           <Input
             id="fullName"
             value={registration.fullName}
@@ -77,8 +147,86 @@ export default function SignupAccountPage() {
             }
           />
         </div>
+        <div className="grid gap-5 sm:grid-cols-2">
+          <div className="space-y-2">
+            <Label htmlFor="organizationKind">
+              {accountCopy.organizationKind}
+            </Label>
+            <Select
+              value={registration.organizationKind || undefined}
+              onValueChange={(organizationKind) =>
+                updateRegistration({
+                  organizationKind:
+                    organizationKind as typeof registration.organizationKind,
+                })
+              }
+            >
+              <SelectTrigger id="organizationKind" className="bg-white">
+                <SelectValue
+                  placeholder={accountCopy.organizationKindPlaceholder}
+                />
+              </SelectTrigger>
+              <SelectContent>
+                {ORGANIZATION_KINDS.map((kind) => (
+                  <SelectItem key={kind} value={kind}>
+                    {accountCopy.organizationKinds[kind]}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="boardSizeRange">{accountCopy.boardSize}</Label>
+            <Select
+              value={registration.boardSizeRange || undefined}
+              onValueChange={(boardSizeRange) =>
+                updateRegistration({
+                  boardSizeRange:
+                    boardSizeRange as typeof registration.boardSizeRange,
+                })
+              }
+            >
+              <SelectTrigger id="boardSizeRange" className="bg-white">
+                <SelectValue placeholder={accountCopy.boardSizePlaceholder} />
+              </SelectTrigger>
+              <SelectContent>
+                {BOARD_SIZE_RANGES.map((range) => (
+                  <SelectItem key={range} value={range}>
+                    {accountCopy.boardSizes[range]}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+        </div>
         <div className="space-y-2">
-          <Label htmlFor="email">Email address *</Label>
+          <Label htmlFor="annualBudgetRange">{accountCopy.annualBudget}</Label>
+          <Select
+            value={registration.annualBudgetRange || undefined}
+            onValueChange={(annualBudgetRange) =>
+              updateRegistration({
+                annualBudgetRange:
+                  annualBudgetRange as typeof registration.annualBudgetRange,
+              })
+            }
+          >
+            <SelectTrigger id="annualBudgetRange" className="bg-white">
+              <SelectValue placeholder={accountCopy.annualBudgetPlaceholder} />
+            </SelectTrigger>
+            <SelectContent>
+              {ANNUAL_BUDGET_RANGES.map((range) => (
+                <SelectItem key={range} value={range}>
+                  {accountCopy.annualBudgets[range]}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          <p className="text-xs text-slate-500">
+            {accountCopy.annualBudgetHelp}
+          </p>
+        </div>
+        <div className="space-y-2">
+          <Label htmlFor="email">{authCopy.shared.emailAddress} *</Label>
           <Input
             id="email"
             type="email"
@@ -88,31 +236,88 @@ export default function SignupAccountPage() {
             }
           />
         </div>
-        <div className="space-y-2">
-          <Label htmlFor="password">Password *</Label>
-          <div className="relative">
+        <div className="grid gap-5 sm:grid-cols-2">
+          <div className="space-y-2">
+            <Label htmlFor="phone">{accountCopy.phone}</Label>
             <Input
-              id="password"
-              type={showPassword ? "text" : "password"}
-              value={registration.password}
+              id="phone"
+              type="tel"
+              inputMode="tel"
+              autoComplete="tel"
+              placeholder={accountCopy.phonePlaceholder}
+              value={registration.phone}
               onChange={(event) =>
-                updateRegistration({ password: event.target.value })
+                updateRegistration({ phone: event.target.value })
               }
-              className="pr-11"
             />
-            <button
-              type="button"
-              onClick={() => setShowPassword((value) => !value)}
-              className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400"
-              aria-label={showPassword ? "Hide password" : "Show password"}
-            >
-              {showPassword ? (
-                <EyeOff className="size-4" />
-              ) : (
-                <Eye className="size-4" />
-              )}
-            </button>
+            <p className="text-xs text-slate-500">{accountCopy.phoneHelp}</p>
           </div>
+          <div className="space-y-2">
+            <Label htmlFor="acquisitionSource">
+              {accountCopy.acquisitionSource}
+            </Label>
+            <Select
+              value={registration.acquisitionSource || undefined}
+              onValueChange={(acquisitionSource) =>
+                updateRegistration({
+                  acquisitionSource:
+                    acquisitionSource as typeof registration.acquisitionSource,
+                })
+              }
+            >
+              <SelectTrigger id="acquisitionSource" className="bg-white">
+                <SelectValue
+                  placeholder={accountCopy.acquisitionSourcePlaceholder}
+                />
+              </SelectTrigger>
+              <SelectContent>
+                {ACQUISITION_SOURCES.map((source) => (
+                  <SelectItem key={source} value={source}>
+                    {accountCopy.acquisitionSources[source]}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+        </div>
+        <div className="space-y-2 rounded-lg border border-olea-green/20 bg-olea-light/40 p-4">
+          <Label htmlFor="referralCode">{accountCopy.referralCode}</Label>
+          <Input
+            id="referralCode"
+            placeholder={accountCopy.referralCodePlaceholder}
+            maxLength={22}
+            value={registration.referralCode}
+            onChange={(event) =>
+              updateRegistration({
+                referralCode: event.target.value.toUpperCase(),
+              })
+            }
+          />
+          <p className="text-xs leading-5 text-slate-600">
+            {accountCopy.referralCodeHelp}
+          </p>
+        </div>
+        <FoundingMemberCodeField
+          help={accountCopy.foundingMemberCodeHelp}
+          invalidMessage={accountCopy.foundingMemberCodeInvalid}
+          label={accountCopy.foundingMemberCode}
+          placeholder={accountCopy.foundingMemberCodePlaceholder}
+          value={registration.foundingMemberCode}
+          onChange={(foundingMemberCode) =>
+            updateRegistration({ foundingMemberCode })
+          }
+        />
+        <div className="space-y-2">
+          <Label htmlFor="password">{accountCopy.password}</Label>
+          <PasswordInput
+            id="password"
+            value={registration.password}
+            onChange={(event) =>
+              updateRegistration({ password: event.target.value })
+            }
+            hideLabel={authCopy.shared.hidePassword}
+            showLabel={authCopy.shared.showPassword}
+          />
           <div className="grid grid-cols-4 gap-1.5">
             {[1, 2, 3, 4].map((level) => (
               <span
@@ -123,32 +328,25 @@ export default function SignupAccountPage() {
               />
             ))}
           </div>
-          <p className="text-xs text-slate-600">
-            Use at least 8 characters.
-          </p>
+          <p className="text-xs text-slate-600">{accountCopy.passwordHelp}</p>
         </div>
-        <label className="flex items-start gap-2.5 text-sm text-slate-600">
-          <input
-            type="checkbox"
-            checked={terms}
-            onChange={(event) => setTerms(event.target.checked)}
-            className="mt-0.5 size-4 accent-olea-green"
-          />
-          I agree to the Terms of Service and Privacy Policy.
-        </label>
         <Button
           className="w-full"
           disabled={!valid}
           onClick={() => router.push("/signup/payment")}
         >
-          Continue to payment →
+          {accountCopy.continueToPayment}
+          <ArrowRight className="size-4" />
         </Button>
-        <button
-          onClick={() => router.push("/#plans")}
+        <Button
+          type="button"
+          variant="ghost"
+          onClick={backToPlan}
           className="w-full text-sm font-medium text-slate-500"
         >
-          ← Back to plan
-        </button>
+          <ArrowLeft className="size-4" />
+          {accountCopy.backToPlan}
+        </Button>
       </div>
     </AuthCard>
   );

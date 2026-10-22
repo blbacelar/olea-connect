@@ -1,8 +1,6 @@
-import type { MembershipTier, RegistrationState } from "@/lib/types";
+import { apiRoutes } from "@/lib/api-routes";
+import type { RegistrationState } from "@/lib/types";
 import { createClient } from "@/utils/supabase/client";
-
-const wait = (milliseconds = 500) =>
-  new Promise((resolve) => setTimeout(resolve, milliseconds));
 
 function getRedirectUrl(path: string) {
   if (typeof window === "undefined") {
@@ -18,9 +16,7 @@ export async function signUpWithEmail(registration: RegistrationState) {
     email: registration.email.trim().toLowerCase(),
     password: registration.password,
     options: {
-      emailRedirectTo: getRedirectUrl(
-        "/auth/callback",
-      ),
+      emailRedirectTo: getRedirectUrl("/auth/callback"),
       data: {
         full_name: registration.fullName.trim(),
         organization_name: registration.organizationName.trim(),
@@ -40,8 +36,18 @@ export async function signUpWithEmail(registration: RegistrationState) {
   return data;
 }
 
-export async function signIn(email: string, password: string) {
-  const supabase = createClient();
+type SignInOptions = {
+  rememberFor30Days?: boolean;
+};
+
+export async function signIn(
+  email: string,
+  password: string,
+  options?: SignInOptions,
+) {
+  const supabase = createClient({
+    rememberFor30Days: Boolean(options?.rememberFor30Days),
+  });
   const { data, error } = await supabase.auth.signInWithPassword({
     email: email.trim().toLowerCase(),
     password,
@@ -76,9 +82,7 @@ export async function resendVerificationEmail(email: string) {
     type: "signup",
     email: email.trim().toLowerCase(),
     options: {
-      emailRedirectTo: getRedirectUrl(
-        "/auth/callback",
-      ),
+      emailRedirectTo: getRedirectUrl("/auth/callback"),
     },
   });
 
@@ -93,10 +97,8 @@ export async function updatePassword(password: string) {
   return data;
 }
 
-export async function startStripeCheckout(
-  registration: RegistrationState,
-) {
-  const response = await fetch("/api/stripe/checkout", {
+export async function startStripeCheckout(registration: RegistrationState) {
+  const response = await fetch(apiRoutes.stripeCheckout, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({
@@ -105,32 +107,50 @@ export async function startStripeCheckout(
       fullName: registration.fullName,
       organizationName: registration.organizationName,
       province: registration.province,
+      organizationKind: registration.organizationKind,
+      annualBudgetRange: registration.annualBudgetRange,
+      boardSizeRange: registration.boardSizeRange,
+      phone: registration.phone,
+      acquisitionSource: registration.acquisitionSource,
+      referralCode: registration.referralCode,
+      foundingMemberCode: registration.foundingMemberCode,
+      consents: registration.consents,
       tier: registration.tier,
       billingCycle: registration.billingCycle,
     }),
   });
   const contentType = response.headers.get("content-type");
   const result = contentType?.includes("application/json")
-    ? ((await response.json()) as { url?: string; error?: string })
+    ? ((await response.json()) as {
+        code?: string;
+        correlationId?: string;
+        error?: string;
+        nextPath?: string;
+        status?: string;
+        url?: string;
+      })
     : {};
 
+  if (
+    response.ok &&
+    result.status === "verification_required" &&
+    result.nextPath
+  ) {
+    return result.nextPath;
+  }
+
   if (!response.ok || !result.url) {
-    throw new Error(result.error ?? "Unable to start secure checkout.");
+    const reference = result.correlationId
+      ? ` Reference: ${result.correlationId}`
+      : "";
+    const checkoutError = new Error(
+      `${result.error ?? "Unable to start secure checkout."}${reference}`,
+    );
+    if (result.code) {
+      Object.assign(checkoutError, { code: result.code });
+    }
+    throw checkoutError;
   }
 
   return result.url;
-}
-
-export async function triggerNewSubscriptionAutomations({
-  tier,
-}: {
-  tier: MembershipTier;
-}) {
-  await wait(250);
-  return {
-    attio: "contact_created",
-    klaviyo: "welcome_sequence_started",
-    circle: "invite_sent",
-    tier,
-  };
 }

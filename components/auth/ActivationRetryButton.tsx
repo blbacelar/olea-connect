@@ -4,15 +4,21 @@ import { LoaderCircle } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useState, useTransition } from "react";
 
+import { useLocaleContext } from "@/components/i18n/LocaleProvider";
 import { Button } from "@/components/ui/button";
+import { getAuthFlowCopy } from "@/lib/i18n/auth-flow-copy";
+import { retryMembershipActivation } from "@/lib/provisioning/client";
 
-interface RetryResult {
-  status?: string;
-  error?: string;
+function getSafePath(value: string | undefined) {
+  return value?.startsWith("/") && !value.startsWith("//")
+    ? value
+    : "/dashboard";
 }
 
-export function ActivationRetryButton() {
+export function ActivationRetryButton({ label }: { label?: string }) {
   const router = useRouter();
+  const { locale } = useLocaleContext();
+  const copy = getAuthFlowCopy(locale).activationRetry;
   const [error, setError] = useState("");
   const [isPending, startTransition] = useTransition();
 
@@ -20,18 +26,20 @@ export function ActivationRetryButton() {
     startTransition(async () => {
       try {
         setError("");
-        const response = await fetch("/api/provisioning/retry", {
-          method: "POST",
-        });
-        const result = (await response.json()) as RetryResult;
+        const { response, result } = await retryMembershipActivation();
 
         if (response.status === 401) {
           router.push("/login?next=/signup/success?activation=failed");
           return;
         }
 
+        if (result.checkoutUrl) {
+          window.location.assign(result.checkoutUrl);
+          return;
+        }
+
         if (result.status === "completed") {
-          router.push("/onboarding/brand-setup");
+          router.push(getSafePath(result.nextPath));
           router.refresh();
           return;
         }
@@ -39,13 +47,13 @@ export function ActivationRetryButton() {
         setError(
           result.error ??
             (result.status === "pending_verification"
-              ? "Confirm your email address, then retry activation."
+              ? copy.confirmEmail
               : result.status === "pending_payment"
-                ? "Payment is not confirmed for this account yet. If you already paid, sign out and use the email address from checkout, or contact support."
-                : "Payment confirmation is still processing. Try again shortly."),
+                ? copy.pendingPayment
+                : copy.processing),
         );
       } catch {
-        setError("Activation could not be checked. Please try again shortly.");
+        setError(copy.fallbackError);
       }
     });
   };
@@ -54,7 +62,7 @@ export function ActivationRetryButton() {
     <div className="mt-6">
       <Button className="w-full" disabled={isPending} onClick={retry}>
         {isPending ? <LoaderCircle className="size-4 animate-spin" /> : null}
-        {isPending ? "Checking activation..." : "Retry activation"}
+        {isPending ? copy.pending : label ?? copy.submit}
       </Button>
       {error ? (
         <p className="mt-3 rounded-lg bg-red-50 p-3 text-sm text-red-700">

@@ -4,7 +4,7 @@ select plan(7);
 
 select is(
   (select count(*)::integer from public.template_field_types where is_active),
-  19,
+  20,
   'all supported template field types are registered'
 );
 
@@ -64,6 +64,7 @@ select lives_ok(
           {"id":"signature","type":"signature"},
           {"id":"email","type":"email"},
           {"id":"url","type":"url"},
+          {"id":"color","type":"color"},
           {"id":"file","type":"file"},
           {"id":"heading","type":"heading"},
           {"id":"paragraph","type":"paragraph"}
@@ -106,7 +107,7 @@ select is(
       where definitions.resource_id = '10000000-0000-0000-0000-000000000001'
     ) fixture_types
   ),
-  19,
+  20,
   'the fixture exercises every registered field type'
 );
 

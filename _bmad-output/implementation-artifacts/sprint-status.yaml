@@ -1,0 +1,7 @@
+# Synced from GitHub Project 3: Olea Connects Production MVP
+# Source: https://github.com/users/blbacelar/projects/3
+# GitHub Project remains the source of truth; this file exists so BMAD dev-story can run locally.
+last_updated: "2026-06-29"
+project: "Olea Connects Production MVP"
+development_status:
+  issue-18-build-integration-outbox-workers-attio-quickbooks: in-progress

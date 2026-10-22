@@ -1,0 +1,17 @@
+{
+  "duration": 22,
+  "maxStaticSec": 1.8,
+  "assertions": [
+    { "kind": "appearsBy", "selector": "#hero-tree", "bySec": 0.9 },
+    { "kind": "before", "a": "#hero-tree", "b": "#hero-copy .hero-subtitle" },
+    { "kind": "appearsBy", "selector": "#workspace-shell", "bySec": 4.5 },
+    { "kind": "before", "a": "#brand-form-card", "b": "#report-page" },
+    { "kind": "before", "a": "#module-one", "b": "#module-four" },
+    { "kind": "appearsBy", "selector": "#outro-copy h2", "bySec": 19.2 },
+    { "kind": "staysInFrame", "selector": "#module-one" },
+    { "kind": "staysInFrame", "selector": "#module-two" },
+    { "kind": "staysInFrame", "selector": "#module-three" },
+    { "kind": "staysInFrame", "selector": "#module-four" },
+    { "kind": "keepsMoving", "withinSelector": "#root" }
+  ]
+}

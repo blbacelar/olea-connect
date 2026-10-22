@@ -1,9 +1,28 @@
-import { expect, test } from "@playwright/test";
+import { expect, test } from "../fixtures/browser.fixture";
 
 import { createTestIdentity } from "../factories/identity";
 import { SignupPage } from "../pages/signup.page";
 
 test.describe("@smoke @critical membership signup", () => {
+  test("ignores a retired plan in an old signup link", async ({ page }) => {
+    await page.goto("/signup/account?tier=harvest&billing=annual");
+
+    await expect(page).toHaveURL(/\/signup$/);
+    await expect(page.getByRole("heading", { name: "Choose your plan" })).toBeVisible();
+    await expect(page.locator("body")).not.toContainText("Harvest");
+  });
+
+  test("redirects direct payment access back to account details", async ({
+    page,
+  }) => {
+    await page.goto("/signup/payment");
+
+    await expect(page).toHaveURL(/\/signup\/account/);
+    await expect(
+      page.getByRole("heading", { name: "Create your account" }),
+    ).toBeVisible();
+  });
+
   test("keeps payment disabled until valid account details are complete", async ({
     page,
   }, testInfo) => {
@@ -21,43 +40,73 @@ test.describe("@smoke @critical membership signup", () => {
     });
 
     await expect(signup.continueToPayment).toBeEnabled();
-    await signup.continueToPayment.click();
+    await signup.continueToPaymentStep();
+    await signup.expectPaymentStep({
+      billingPeriod: "/year",
+      planHeading: "Seedling",
+      price: "$1,180",
+    });
+  });
 
-    await expect(page).toHaveURL("/signup/payment");
-    await expect(
-      page.getByRole("heading", { name: "Activate your membership" }),
-    ).toBeVisible();
-    await expect(
-      page.getByRole("heading", { name: "🌱 Seedling" }),
-    ).toBeVisible();
-    await expect(page.getByText("$440/year")).toBeVisible();
+  test("accepts a valid email copied with surrounding spaces", async ({
+    page,
+  }, testInfo) => {
+    const signup = new SignupPage(page);
+    const identity = createTestIdentity(testInfo);
+    await signup.openAccount("seedling", "annual");
+
+    await signup.completeAccountDetails({
+      organization: identity.organizationName,
+      fullName: identity.fullName,
+      email: ` ${identity.email} `,
+      password: identity.password,
+    });
+
+    await expect(signup.continueToPayment).toBeEnabled();
   });
 
   test("does not persist the password in browser storage", async ({ page }) => {
     const signup = new SignupPage(page);
     await signup.openAccount();
 
-    await page.getByLabel("Organization name *").fill("Persistent Org");
-    await page.getByLabel("Password *").fill("NeverStoreThis123!");
-    await page.reload();
+    await signup.enterOrganizationName("Persistent Org");
+    await signup.enterPassword("NeverStoreThis123!");
+    await signup.reloadAccountStep();
 
-    await expect(page.getByLabel("Organization name *")).toHaveValue(
-      "Persistent Org",
-    );
-    await expect(page.getByLabel("Password *")).toHaveValue("");
+    await signup.expectOrganizationName("Persistent Org");
+    await signup.expectPasswordCleared();
   });
 
-  test("returns from account creation to landing-page plans", async ({
+  test("filters letters from the phone field as the user types", async ({
     page,
   }) => {
     const signup = new SignupPage(page);
     await signup.openAccount();
 
-    await page.getByRole("button", { name: "← Back to plan" }).click();
+    await signup.enterPhone("+1 (604) 555-0123abc");
 
-    await expect(page).toHaveURL("/#plans");
-    await expect(
-      page.getByRole("heading", { name: "Choose the support that fits today." }),
-    ).toBeVisible();
+    await signup.expectPhone("+1 (604) 555-0123");
+  });
+
+  test("formats a complete phone number when focus leaves the field", async ({
+    page,
+  }) => {
+    const signup = new SignupPage(page);
+    await signup.openAccount();
+
+    await signup.enterPhone("6045550100");
+    await page.getByLabel("Phone number").blur();
+
+    await signup.expectPhone("(604) 555-0100");
+  });
+
+  test("returns from account creation to the signup plan chooser", async ({
+    page,
+  }) => {
+    const signup = new SignupPage(page);
+    await signup.openAccount();
+
+    await signup.goBackToPlans();
+    await signup.expectSignupPlansVisible();
   });
 });
