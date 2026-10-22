@@ -56,10 +56,11 @@ export function SubscriptionDashboard({
   const currentPlanId = isMembershipTier(billing.planId)
     ? billing.planId
     : null;
+  const complimentaryAccess = billing.fundedBySponsor || billing.developerAccess;
   const upgradeSuccessMessage = searchParams?.plan === "upgraded"
     ? getPlanUpgradedMessage(searchParams.tier)
     : undefined;
-  const showPlanUpgrade = !billing.fundedBySponsor && currentPlanId &&
+  const showPlanUpgrade = !complimentaryAccess && currentPlanId &&
     (getUpgradeOptions(currentPlanId).length > 0 || upgradeSuccessMessage);
 
   return (
@@ -72,6 +73,7 @@ export function SubscriptionDashboard({
         accessRestricted={accessRestricted}
         billingUnavailable={billing.billingUnavailable}
         fundedBySponsor={billing.fundedBySponsor}
+        developerAccess={billing.developerAccess}
         status={billing.status}
       />
       <CurrentPlanCard
@@ -106,7 +108,7 @@ export function SubscriptionDashboard({
         />
         <BillingCycleSection billing={billing} />
       </div>
-      {!billing.fundedBySponsor ? <div className="mb-7">
+      {!complimentaryAccess ? <div className="mb-7">
         <BillingManagementControls
           canManage={canManage}
           disabled={!billing.customerId || !billing.subscriptionId}
@@ -122,11 +124,13 @@ function AccessNotice({
   accessRestricted,
   billingUnavailable,
   fundedBySponsor,
+  developerAccess,
   status,
 }: {
   accessRestricted: boolean;
   billingUnavailable: boolean;
   fundedBySponsor?: boolean;
+  developerAccess?: boolean;
   status: BillingSummary["status"];
 }) {
   if (billingUnavailable) {
@@ -166,6 +170,15 @@ function AccessNotice({
       <section className="mb-6 flex gap-3 rounded-xl border border-emerald-200 bg-emerald-50 p-4 text-emerald-950">
         <CheckCircle2 className="mt-0.5 size-5 shrink-0" />
         <p className="text-sm font-semibold">Your membership is funded for one year through an Olea Connects partnership.</p>
+      </section>
+    );
+  }
+
+  if (developerAccess) {
+    return (
+      <section className="mb-6 flex gap-3 rounded-xl border border-emerald-200 bg-emerald-50 p-4 text-emerald-950">
+        <CheckCircle2 className="mt-0.5 size-5 shrink-0" />
+        <p className="text-sm font-semibold">Developer access is active. No payment is due for this membership.</p>
       </section>
     );
   }
@@ -220,7 +233,7 @@ function CurrentPlanColumn({ billing }: { billing: BillingSummary }) {
         {billing.planName}
       </p>
       <p className="mt-1 text-[13.5px] text-slate-500">
-        {billing.fundedBySponsor ? "Funded membership · no payment due from your organization" : (
+        {billing.fundedBySponsor ? "Funded membership · no payment due from your organization" : billing.developerAccess ? "Developer access · no payment due" : (
           <>{formatMoney(billing.amountCents, billing.currency)} / {formatBillingInterval(billing.billingInterval)}</>
         )}
       </p>
@@ -273,7 +286,9 @@ function BillingDateColumn({
   return (
     <div>
       <p className="text-xs font-semibold uppercase tracking-[0.05em] text-slate-400">
-        {billing.fundedBySponsor
+        {billing.developerAccess
+          ? "Access period"
+          : billing.fundedBySponsor
           ? "Funded access ends"
           : billing.cancelAtPeriodEnd
           ? "Access ends"
@@ -282,9 +297,9 @@ function BillingDateColumn({
             : "Next billing date"}
       </p>
       <p className="mt-2 text-base font-semibold">
-        {primaryDate ? formatDate(primaryDate) : "Pending billing confirmation"}
+        {primaryDate ? formatDate(primaryDate) : billing.developerAccess ? "No scheduled end" : "Pending billing confirmation"}
       </p>
-      {!billing.fundedBySponsor ? <p className="mt-1 text-[13px] text-slate-500">
+      {!billing.fundedBySponsor && !billing.developerAccess ? <p className="mt-1 text-[13px] text-slate-500">
         {billing.paymentMethod ?? "Payment method not available"}
       </p> : null}
     </div>
@@ -316,14 +331,14 @@ function SeatUsageSection({
         <SeatMetric label="Available" value={Math.max(totalSeats - billing.seatsReserved, 0)} />
       </dl>
       <p className="mt-4 text-sm leading-6 text-slate-500">
-        {billing.fundedBySponsor ? `${billing.includedSeats} seats are included in this funded membership year. Contact Olea Connects about additional seats.` : <>
+        {billing.fundedBySponsor ? `${billing.includedSeats} seats are included in this funded membership year. Contact Olea Connects about additional seats.` : billing.developerAccess ? `${billing.includedSeats} Canopy seats and ${billing.seatQuantity} additional developer seats are available without payment.` : <>
         {billing.includedSeats} included seat
         {billing.includedSeats === 1 ? "" : "s"} plus {billing.seatQuantity}{" "}
         paid seat add-on{billing.seatQuantity === 1 ? "" : "s"} at{" "}
         {formatPaidSeatPrice()}.
         </>}
       </p>
-      {!billing.fundedBySponsor ? <SeatManagementControls
+      {!billing.fundedBySponsor && !billing.developerAccess ? <SeatManagementControls
         canManage={canManage}
         disabled={!billing.customerId || !billing.subscriptionId || accessRestricted}
         initialSuccessMessage={
