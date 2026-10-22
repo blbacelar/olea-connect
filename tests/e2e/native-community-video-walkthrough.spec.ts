@@ -71,8 +71,8 @@ testWithData.describe("native community authenticated visual walkthrough", () =>
       ).toBeVisible();
       await pauseForReview();
 
-      await expect(page.getByText("# General", { exact: true })).toBeVisible();
-      await expect(page.getByText("# Roots Members", { exact: true })).toBeVisible();
+      await expect(page.getByRole("heading", { name: "# General", exact: true })).toBeVisible();
+      await expect(page.getByRole("button", { name: /^# Roots Members/ })).toBeVisible();
       await expect(
         page.getByText("# Seedling Members", { exact: true }),
       ).toHaveCount(0);
@@ -122,7 +122,7 @@ testWithData.describe("native community authenticated visual walkthrough", () =>
       await page.goto("/community");
       await expect(page).toHaveURL("/subscription?billing=required");
       await expect(
-        page.getByText(/membership needs attention|billing setup is incomplete/i),
+        page.getByTestId("app-main").getByText(/membership needs attention|billing setup is incomplete/i),
       ).toBeVisible();
       await pauseForReview();
     } finally {

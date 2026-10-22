@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 
 import {
   hasClaimedEmailEvent,
@@ -7,6 +7,8 @@ import {
 import { teamInvitationEmail } from "@/lib/email/templates";
 
 describe("transactional email templates", () => {
+  afterEach(() => vi.unstubAllEnvs());
+
   it("renders an accessible team invitation with text fallback", () => {
     const email = teamInvitationEmail({
       organizationName: "Olea Test Society",
@@ -41,6 +43,20 @@ describe("transactional email templates", () => {
     expect(
       resolveEmailRecipient("member@example.com", "preview", "qa@example.com"),
     ).toBe("qa@example.com");
+  });
+
+  it("routes Vercel previews to the test recipient even with a shared production setting", () => {
+    vi.stubEnv("VERCEL_ENV", "preview");
+    vi.stubEnv("EMAIL_ENVIRONMENT", "production");
+    vi.stubEnv("EMAIL_TEST_RECIPIENT", "qa@example.com");
+    expect(resolveEmailRecipient("member@example.com")).toBe("qa@example.com");
+  });
+
+  it("uses the intended recipient in Vercel production", () => {
+    vi.stubEnv("VERCEL_ENV", "production");
+    vi.stubEnv("EMAIL_ENVIRONMENT", "development");
+    vi.stubEnv("EMAIL_TEST_RECIPIENT", "qa@example.com");
+    expect(resolveEmailRecipient("member@example.com")).toBe("member@example.com");
   });
 
   it("treats an empty composite queue result as no claimed event", () => {

@@ -2,7 +2,7 @@ import type { Page } from "@playwright/test";
 import { expect, test } from "@playwright/test";
 
 async function switchToFrench(page: Page) {
-  await page.getByTestId("locale-selector").click();
+  await page.locator('[data-testid="locale-selector"]:visible').click();
   await Promise.all([
     page.waitForResponse(
       (response) => response.url().includes("/api/locale") && response.ok(),
@@ -45,7 +45,7 @@ test.describe("public pricing package", () => {
     await expect(
       page.getByRole("heading", { name: "Board Retreat Facilitation" }),
     ).toBeVisible();
-    await expect(page.locator("#plans").getByText("Circle of generosity"))
+    await expect(page.locator("#plans:visible").getByText("Circle of generosity"))
       .toBeVisible();
     await expect(page.getByText(/15% of its profits to nonprofits as unrestricted donations/).first())
       .toBeVisible();
@@ -56,10 +56,10 @@ test.describe("public pricing package", () => {
     await expect(page.getByText("Organizations with $2M+ annual budget")).toBeVisible();
     await expect(page.getByText("How many seats are included?")).toBeVisible();
     await expect(page.locator("body")).not.toContainText("Harvest");
-    await expect(page.locator("#plans")).not.toContainText("for your whole board");
-    await expect(page.locator("#plans")).not.toContainText("Cancel before renewal");
+    await expect(page.locator("#plans:visible")).not.toContainText("for your whole board");
+    await expect(page.locator("#plans:visible")).not.toContainText("Cancel before renewal");
     await expect(
-      page.locator('#plans a[href^="/signup/account?tier=seedling&billing=annual"]'),
+      page.locator('#plans:visible a[href^="/signup/account?tier=seedling&billing=annual"]'),
     ).toHaveAttribute("href", /\/signup\/account\?tier=seedling&billing=annual/);
   });
 
@@ -68,11 +68,11 @@ test.describe("public pricing package", () => {
   }) => {
     await page.goto("/");
     await expect(page.getByRole("button", { name: "Quarterly" })).toHaveCount(0);
-    await expect(page.locator("#plans")).toContainText("Or pay quarterly:");
-    await expect(page.locator("#plans")).not.toContainText("Cancel before the next renewal");
+    await expect(page.locator("#plans:visible")).toContainText("Or pay quarterly:");
+    await expect(page.locator("#plans:visible")).not.toContainText("Cancel before the next renewal");
     await expect(page.getByRole("link", { name: "Choose Harvest" })).toHaveCount(0);
     await expect(
-      page.locator('#plans a[href^="/signup/account?tier=seedling&billing=annual"]'),
+      page.locator('#plans:visible a[href^="/signup/account?tier=seedling&billing=annual"]'),
     ).toHaveAttribute("href", /\/signup\/account\?tier=seedling&billing=annual/);
   });
 
@@ -90,8 +90,8 @@ test.describe("public pricing package", () => {
       .toHaveAttribute("href", /mailto:hello@olivesocialimpact.com\?subject=/);
     await expect(page.getByText(/15 % de ses bénéfices à des organismes sans but lucratif/).first())
       .toBeVisible();
-    await expect(page.locator("#plans")).not.toContainText("pour tout votre conseil");
-    await expect(page.locator("#plans")).not.toContainText("Annulez avant le renouvellement");
+    await expect(page.locator("#plans:visible")).not.toContainText("pour tout votre conseil");
+    await expect(page.locator("#plans:visible")).not.toContainText("Annulez avant le renouvellement");
     await expect(page.getByText("Organismes avec un budget annuel de 2 M$ et plus")).toBeVisible();
     await expect(page.locator("body")).not.toContainText("Harvest");
   });

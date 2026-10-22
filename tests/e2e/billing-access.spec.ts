@@ -72,7 +72,7 @@ testWithData.describe("@critical billing access states", () => {
     try {
       await page.goto("/subscription");
       await expect(page.getByRole("heading", { name: "Subscription" })).toBeVisible();
-      await expect(page.getByText("Harvest", { exact: true })).toBeVisible();
+      await expect(page.getByTestId("app-main").getByText("Harvest", { exact: true })).toBeVisible();
       await expect(page.getByRole("heading", { name: "Upgrade your plan" })).toHaveCount(0);
     } finally {
       await context.close();
@@ -188,7 +188,7 @@ testWithData.describe("@critical billing access states", () => {
         page.getByRole("heading", { name: "Subscription" }),
       ).toBeVisible();
       await expect(
-        page.getByText("Billing connection needs attention"),
+        page.getByTestId("app-main").getByText("Billing connection needs attention"),
       ).toBeVisible();
       await expect(page.getByText("Billing unverified")).toBeVisible();
       await expect(

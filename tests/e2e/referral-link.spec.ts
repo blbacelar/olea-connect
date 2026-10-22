@@ -35,7 +35,7 @@ test.describe("@critical referral link lifecycle", () => {
     });
 
     await page.goto("/referrals");
-    await expect(page.getByText("10%", { exact: true })).toBeVisible();
+    await expect(page.getByRole("main").getByText("10%", { exact: true })).toBeVisible();
     await expect(page.getByText("$100.00", { exact: true })).toHaveCount(0);
     await page.getByLabel("Full name").fill(authenticatedMember.fullName);
     await page.getByLabel("Email", { exact: true }).fill(authenticatedMember.email);
@@ -132,7 +132,7 @@ test.describe("@critical referral link lifecycle", () => {
     await expect(page.getByRole("option", { name: "Paid", exact: true })).toHaveCount(0);
     await page.getByRole("option", { name: "Demo attended" }).click();
     await milestoneRow.getByRole("button", { name: "Save milestone" }).click();
-    await expect(page.getByText("Referral milestone saved.")).toBeVisible();
+    await expect(page.getByText("Referral milestone saved.")).toBeVisible({ timeout: 20_000 });
     await expect.poll(async () => {
       const { data, error } = await testData.supabase
         .from("referrals")

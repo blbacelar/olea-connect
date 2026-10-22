@@ -23,17 +23,17 @@ export class SubscriptionPage {
       this.page.getByRole("heading", { name: "Subscription" }),
     ).toBeVisible();
     await expect(
-      this.page.getByText(`Manage billing for ${organizationName}.`),
+      this.page.getByTestId("app-main").getByText(`Manage billing for ${organizationName}.`),
     ).toBeVisible();
     await expect(
-      this.page.getByText("Your membership is active and platform access is enabled."),
+      this.page.getByTestId("app-main").getByText("Your membership is active and platform access is enabled."),
     ).toBeVisible();
   }
 
   async expectPastDueRecovery() {
     await expect(this.page).toHaveURL("/subscription?billing=required");
     await expect(this.page.getByTestId("app-main").getByText("Your membership needs attention")).toBeVisible();
-    await expect(this.page.getByText("Past due", { exact: true })).toBeVisible();
+    await expect(this.page.getByTestId("app-main").getByText("Past due", { exact: true })).toBeVisible();
   }
 
   async expectActivationSyncingRecovery() {

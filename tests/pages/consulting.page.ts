@@ -41,10 +41,10 @@ export class ConsultingPage {
     ).toBeVisible();
   }
 
-  async expectHarvestUpgradeMessage() {
+  async expectAdvisoryAccessMessage() {
     await expect(
       this.page.getByRole("heading", {
-        name: "Harvest consulting is not included with this membership",
+        name: "Consulting requests are unavailable for this membership",
       }),
     ).toBeVisible();
     await expect(

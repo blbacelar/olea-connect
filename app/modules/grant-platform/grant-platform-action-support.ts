@@ -275,6 +275,7 @@ async function insertGrantRound(
   admin: SupabaseAdminClient,
   input: ReturnType<typeof parseGrantCreationForm> & { ok: true },
   programId: string,
+  organizationId: string,
 ) {
   const { data, error } = await admin
     .from("grant_rounds")
@@ -282,9 +283,10 @@ async function insertGrantRound(
       award_amount_cents: input.requestedAmountCents,
       available_awards: 1,
       budget_cents: input.requestedAmountCents,
-      closes_at: new Date(`${input.deadline}T23:59:59`).toISOString(),
+      closes_at: new Date(`${input.deadline}T23:59:59Z`).toISOString(),
       name: input.name,
       opens_at: new Date().toISOString(),
+      planning_organization_id: organizationId,
       program_id: programId,
       public_notes: formatGrantPublicNotes(input.funderName, input.notes),
       status: "draft",
@@ -354,7 +356,7 @@ export async function createGrantPlanningEntry({
   }
 
   const admin = createAdminClient();
-  const round = await insertGrantRound(admin, parsed, program.id);
+  const round = await insertGrantRound(admin, parsed, program.id, organization.id);
   if (!round) {
     return { ok: false, message: "The grant could not be created right now." } as const;
   }

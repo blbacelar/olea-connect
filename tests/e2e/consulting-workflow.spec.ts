@@ -106,7 +106,7 @@ test.describe("@critical Harvest consulting workflow", () => {
     try {
       const consulting = new ConsultingPage(page);
       await consulting.open();
-      await consulting.expectHarvestUpgradeMessage();
+      await consulting.expectAdvisoryAccessMessage();
     } finally {
       await context.close();
     }

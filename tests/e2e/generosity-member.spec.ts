@@ -5,7 +5,7 @@ test.describe("@critical Circle of Generosity member experience", () => {
     await page.goto("/dashboard");
 
     await expect(page.getByText("Circle of Generosity").first()).toBeVisible();
-    await expect(page.getByText("15%", { exact: true })).toBeVisible();
+    await expect(page.getByTestId("app-main").getByText("15%", { exact: true })).toBeVisible();
     await expect(page.getByText("of profits flow back to nonprofits")).toBeVisible();
     await expect(page.getByTestId("app-sidebar").getByRole("link", { name: "Grants" }))
       .toHaveCount(0);

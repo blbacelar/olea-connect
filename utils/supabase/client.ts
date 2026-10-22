@@ -67,3 +67,10 @@ export function createClient(options?: CreateClientOptions) {
       : undefined,
   );
 }
+
+// Realtime broadcasts must not reuse (or remove) the page's subscribed channel.
+export function createIsolatedClient() {
+  const rememberFor30Days =
+    parse(document.cookie)[AUTH_REMEMBER_COOKIE_NAME] === "1";
+  return createClient({ rememberFor30Days });
+}

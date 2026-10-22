@@ -54,9 +54,11 @@ test.describe("@critical grant platform persistence", () => {
     const pipelineRow = page.getByRole("row", { name: new RegExp(grantName) });
     await expect(pipelineRow).toContainText("QA Community Foundation");
     await expect(pipelineRow).toContainText("$2,500.00");
+    await expect(pipelineRow).toContainText("May 20, 2027");
     await page.getByRole("tab", { name: "Calendar" }).click();
     await expect(page.getByText(grantName)).toBeVisible();
     await expect(page.getByText("QA Community Foundation")).toBeVisible();
+    await expect(page.getByText("May 20, 2027")).toBeVisible();
 
     await page.getByRole("tab", { name: "Pipeline" }).click();
     await pipelineRow.getByRole("button", { name: `Edit ${grantName}` }).click();
@@ -123,6 +125,7 @@ test.describe("@critical grant platform persistence", () => {
       const memberPage = await memberContext.newPage();
       await memberPage.goto("/modules/grant-platform");
       await expect(memberPage.getByRole("button", { name: "Add Grant" })).toHaveCount(0);
+      await expect(memberPage.getByRole("row", { name: new RegExp(updatedName) })).toContainText("QA Updated Foundation");
       await expect(memberPage.getByRole("button", { name: `Edit ${updatedName}` })).toHaveCount(0);
       await expect(memberPage.getByRole("button", { name: `Delete ${updatedName}` })).toHaveCount(0);
     } finally {

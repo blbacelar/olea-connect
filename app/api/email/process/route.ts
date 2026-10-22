@@ -82,7 +82,26 @@ async function processEmailEvent(
     eventId: event.id,
     eventType: event.event_type,
   };
-  const { email, recipientEmail } = await buildEmail(supabase, event);
+  const built = await buildEmail(supabase, event);
+  if ("skipped" in built) {
+    const { error: updateError } = await supabase
+      .from("integration_events")
+      .update({
+        status: "completed",
+        processing_started_at: null,
+        completed_at: new Date().toISOString(),
+        last_error: null,
+      })
+      .eq("id", event.id);
+    if (updateError) throw updateError;
+    logInfo("Email integration event skipped", {
+      ...eventContext,
+      reason: built.reason,
+    });
+    return false;
+  }
+
+  const { email, recipientEmail } = built;
   const recipient = getEmailRecipient(recipientEmail);
   const { data, error } = await getResend().emails.send({
     from: getEmailSender(),
@@ -117,6 +136,7 @@ async function processEmailEvent(
     ...eventContext,
     providerMessageId: data.id,
   });
+  return true;
 }
 
 async function markEmailEventFailed(
@@ -157,9 +177,9 @@ export async function GET(request: Request) {
   const { event } = claimed;
 
   try {
-    await processEmailEvent(supabase, event, requestContext);
+    const processed = await processEmailEvent(supabase, event, requestContext);
     return NextResponse.json(
-      { processed: true, eventId: event.id },
+      { processed, eventId: event.id },
       { headers: noStoreHeaders },
     );
   } catch (error) {

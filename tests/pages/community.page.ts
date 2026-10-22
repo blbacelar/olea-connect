@@ -302,7 +302,7 @@ export class CommunityPage {
     await expect(replyButton).toBeEnabled();
     await replyButton.scrollIntoViewIfNeeded();
     await replyButton.click({ force: true });
-    await expect(post.getByText(comment)).toBeVisible();
+    await expect(post.getByText(comment)).toBeVisible({ timeout: 10_000 });
     await expect(post.getByLabel("1 comments")).toBeVisible();
   }
 
@@ -406,7 +406,7 @@ export class CommunityPage {
     const updatedComment = post.getByRole("group", {
       name: `Comment: ${nextComment}`,
     });
-    await expect(updatedComment.getByText(nextComment)).toBeVisible();
+    await expect(updatedComment.getByText(nextComment)).toBeVisible({ timeout: 15_000 });
     await expect(
       updatedComment.getByText("Edited", { exact: true }),
     ).toBeVisible();

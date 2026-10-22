@@ -1,6 +1,10 @@
 export function resolveEmailRecipient(
   original: string,
-  environment = process.env.EMAIL_ENVIRONMENT ?? "development",
+  environment = process.env.VERCEL_ENV === "production"
+    ? "production"
+    : process.env.VERCEL_ENV
+      ? "development"
+      : process.env.EMAIL_ENVIRONMENT ?? "development",
   testRecipient = process.env.EMAIL_TEST_RECIPIENT,
 ) {
   if (environment === "production") return original;

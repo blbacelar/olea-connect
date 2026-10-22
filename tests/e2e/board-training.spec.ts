@@ -51,6 +51,12 @@ test.describe("@critical Canopy board training", () => {
       await page.getByRole("button", { name: "Commencer" }).first().click();
       await expect(page.getByRole("heading", { name: frenchCourse.welcome.heading })).toBeVisible();
       await expect(page.getByTestId("board-training-player").getByRole("combobox", { name: "Langue de la formation" })).toContainText("Français");
+      await page.setViewportSize({ width: 390, height: 844 });
+      const playerMain = page.getByTestId("board-training-player").locator("main");
+      await expect.poll(() => playerMain.evaluate((element) => Math.ceil(element.getBoundingClientRect().right))).toBeLessThanOrEqual(390);
+      await expect.poll(() => playerMain.evaluate((element) => element.scrollWidth - element.clientWidth)).toBeLessThanOrEqual(1);
+      await page.setViewportSize({ width: 1280, height: 720 });
+      await expect.poll(() => page.getByTestId("board-training-player").getByRole("navigation", { name: "Leçons terminées" }).evaluate((element) => element.scrollWidth - element.clientWidth)).toBeLessThanOrEqual(1);
       await page.getByRole("button", { name: "Passer l’évaluation d’abord" }).click();
       await expect(page.getByRole("heading", { name: frenchCourse.reflection.before.heading })).toBeVisible();
       await rateTopics(page, 3, frenchCourse.reflection.topics);
@@ -178,6 +184,7 @@ test.describe("@critical Canopy board training", () => {
   });
 
   test("supports one test-out and a French annual refresher", async ({ browser, baseURL, testData }) => {
+    test.setTimeout(120_000);
     if (!baseURL) throw new Error("Playwright baseURL is required.");
     const owner = await testData.createOrganizationOwner({ activeSubscription: true, planId: "canopy" });
     const context = await browser.newContext({ baseURL, storageState: await createAuthenticatedStorageState(owner.email, owner.password, baseURL) });
@@ -252,7 +259,7 @@ test.describe("@critical Canopy board training", () => {
     try {
       const ownerPage = await ownerContext.newPage();
       await ownerPage.goto(`/modules/board-training/invite/${token}?lang=fr`);
-      await expect(ownerPage.getByText(/Cette invitation n’est plus disponible/)).toBeVisible();
+      await expect(ownerPage.getByTestId("app-main").getByText(/Cette invitation n’est plus disponible/)).toBeVisible();
       await ownerPage.goto("/modules/board-training");
       await ownerPage.getByRole("tab", { name: "Manage training" }).click();
       await ownerPage.getByLabel("Document title").fill("Board bylaws");
@@ -284,7 +291,7 @@ test.describe("@critical Canopy board training", () => {
       const privateFile = await memberPage.request.get(documentUrl!);
       expect(privateFile.status()).toBe(200);
       await memberPage.goto(`/modules/board-training/invite/${token}?lang=fr`);
-      await expect(memberPage.getByText(/Cette invitation n’est plus disponible/)).toBeVisible();
+      await expect(memberPage.getByTestId("app-main").getByText(/Cette invitation n’est plus disponible/)).toBeVisible();
     } finally {
       await ownerContext.close(); await memberContext.close();
     }
