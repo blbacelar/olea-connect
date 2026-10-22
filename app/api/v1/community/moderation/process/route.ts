@@ -82,7 +82,9 @@ export async function GET(request: Request) {
     );
 
     if (error) throw error;
-    if (!event) break;
+    // PostgREST serializes an empty composite RPC result as an object whose
+    // fields are all null. Treat it as an empty queue before processing it.
+    if (!event?.id) break;
 
     try {
       await processCommunityModerationEvent(supabase, event);

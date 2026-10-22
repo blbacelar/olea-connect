@@ -9,7 +9,7 @@ import {
   X,
 } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useFormState, useFormStatus } from "react-dom";
 
 import { EmptyPanel } from "@/components/EmptyPanel";
@@ -33,7 +33,7 @@ import type {
   CommunitySpace,
 } from "@/lib/types";
 import { cn } from "@/lib/utils";
-import { createClient } from "@/utils/supabase/client";
+import { createClient, createIsolatedClient } from "@/utils/supabase/client";
 
 import {
   createCommunityComment,
@@ -51,6 +51,7 @@ import {
   broadcastCommunityFeedChange,
   communityFeedBroadcastEvent,
   communityRealtimeRefreshDelayMs,
+  createCommunityPostChangesChannel,
   getCommunityFeedChannelName,
 } from "./realtime";
 
@@ -184,86 +185,83 @@ function useCommunityRealtimeRefresh({
   const refreshTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [isConnected, setIsConnected] = useState(false);
 
+  const scheduleRefresh = useCallback(() => {
+    if (refreshTimeoutRef.current) {
+      clearTimeout(refreshTimeoutRef.current);
+    }
+
+    refreshTimeoutRef.current = setTimeout(() => {
+      router.refresh();
+    }, communityRealtimeRefreshDelayMs);
+  }, [router]);
+
+  useEffect(() => {
+    const supabase = createIsolatedClient();
+    let isActive = true;
+    const channel = supabase
+      .channel(getCommunityFeedChannelName(communityId))
+      .on("broadcast", { event: communityFeedBroadcastEvent }, () => {
+        if (isActive) scheduleRefresh();
+      });
+
+    void (async () => {
+      try {
+        const { data } = await supabase.auth.getSession();
+        if (!isActive) return;
+        if (data.session?.access_token) {
+          await supabase.realtime.setAuth(data.session.access_token);
+        }
+        if (isActive) channel.subscribe();
+      } catch {
+        // Postgres changes remain available if this optional broadcast fails.
+      }
+    })();
+
+    return () => {
+      isActive = false;
+      void Promise.allSettled([
+        supabase.removeChannel(channel),
+        supabase.auth.stopAutoRefresh(),
+      ]);
+    };
+  }, [communityId, scheduleRefresh]);
+
   useEffect(() => {
     const supabase = createClient();
     const subscribedPostIds = postIdsKey ? postIdsKey.split(",") : [];
-    let isMounted = true;
+    let isActive = true;
+    const channel = createCommunityPostChangesChannel(
+      supabase,
+      communityId,
+      subscribedPostIds,
+      () => {
+        if (isActive) scheduleRefresh();
+      },
+    );
 
     setIsConnected(false);
-
-    function scheduleRefresh() {
-      if (refreshTimeoutRef.current) {
-        clearTimeout(refreshTimeoutRef.current);
+    void (async () => {
+      try {
+        const { data } = await supabase.auth.getSession();
+        if (!isActive) return;
+        if (data.session?.access_token) {
+          await supabase.realtime.setAuth(data.session.access_token);
+        }
+        if (!isActive) return;
+        channel.subscribe((status) => {
+          if (isActive) setIsConnected(status === "SUBSCRIBED");
+        });
+      } catch {
+        if (isActive) setIsConnected(false);
       }
-
-      refreshTimeoutRef.current = setTimeout(() => {
-        router.refresh();
-      }, communityRealtimeRefreshDelayMs);
-    }
-
-    const channel = supabase
-      .channel(getCommunityFeedChannelName(communityId))
-      .on("broadcast", { event: communityFeedBroadcastEvent }, scheduleRefresh)
-      .on(
-        "postgres_changes",
-        {
-          event: "*",
-          filter: `community_id=eq.${communityId}`,
-          schema: "public",
-          table: "community_posts",
-        },
-        scheduleRefresh,
-      );
-
-    for (const postId of subscribedPostIds) {
-      channel
-        .on(
-          "postgres_changes",
-          {
-            event: "*",
-            filter: `post_id=eq.${postId}`,
-            schema: "public",
-            table: "community_comments",
-          },
-          scheduleRefresh,
-        )
-        .on(
-          "postgres_changes",
-          {
-            event: "*",
-            filter: `post_id=eq.${postId}`,
-            schema: "public",
-            table: "community_reactions",
-          },
-          scheduleRefresh,
-        );
-    }
-
-    async function subscribeToCommunityChanges() {
-      const { data } = await supabase.auth.getSession();
-
-      if (data.session?.access_token) {
-        supabase.realtime.setAuth(data.session.access_token);
-      }
-
-      channel.subscribe((status) => {
-        if (!isMounted) return;
-        setIsConnected(status === "SUBSCRIBED");
-      });
-    }
-
-    void subscribeToCommunityChanges();
+    })();
 
     return () => {
-      isMounted = false;
-
-      if (refreshTimeoutRef.current) {
-        clearTimeout(refreshTimeoutRef.current);
-      }
-
+      isActive = false;
+      if (refreshTimeoutRef.current) clearTimeout(refreshTimeoutRef.current);
       void supabase.removeChannel(channel);
     };
-  }, [communityId, postIdsKey, router]);
+  }, [communityId, postIdsKey, scheduleRefresh]);
 
   return isConnected;
 }

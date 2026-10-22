@@ -4,7 +4,7 @@ import type { Page } from "@playwright/test";
 async function openUserRow(page: Page, email: string) {
   await page.goto("/settings/users");
   await expect(page.getByRole("heading", { name: "Account registry" })).toBeVisible();
-  const row = page.getByTestId("directory-user-row").filter({ hasText: email });
+  const row = page.locator('[data-testid="directory-user-row"]:visible').filter({ hasText: email });
   for (let pageNumber = 1; pageNumber <= 100; pageNumber += 1) {
     if (await row.count()) return row;
     const next = page.getByRole("link", { name: "Next" });

@@ -3,7 +3,7 @@ import type { Page } from "@playwright/test";
 import { expect, test } from "../fixtures/browser.fixture";
 
 async function switchToFrench(page: Page) {
-  await page.getByTestId("locale-selector").click();
+  await page.locator('[data-testid="locale-selector"]:visible').click();
   await Promise.all([
     page.waitForResponse(
       (response) => response.url().includes("/api/locale") && response.ok(),
@@ -19,7 +19,7 @@ test.describe("@smoke @critical public entry points", () => {
   }) => {
     await page.goto("/");
 
-    const offer = page.getByTestId("founding-offer-banner");
+    const offer = page.locator('[data-testid="founding-offer-banner"]:visible');
     await expect(offer).toContainText("Founding rates for your first two years with OLEAFOUNDING15, limited to the first 50 paid organizations.");
     await expect(offer).toContainText("OLEAFOUNDING15");
     await expect(offer.getByRole("link", { name: "Join now" })).toHaveAttribute("href", "/signup");
@@ -45,7 +45,7 @@ test.describe("@smoke @critical public entry points", () => {
   test("shows the new standard and founding membership pricing", async ({ page }) => {
     await page.goto("/");
 
-    const plans = page.locator("#plans");
+    const plans = page.locator("#plans:visible");
     await expect(plans.getByRole("heading", { name: "Seedling", exact: true })).toBeVisible();
     await expect(plans).toContainText("$1,180 CAD");
     await expect(plans).not.toContainText("Years 1 and 2 with a valid founding code");
@@ -89,7 +89,7 @@ test.describe("@smoke @critical public entry points", () => {
   test("keeps the offer visible while scrolling on mobile without horizontal overflow", async ({ page }) => {
     await page.setViewportSize({ width: 390, height: 844 });
     await page.goto("/");
-    await page.locator("#plans").scrollIntoViewIfNeeded();
+    await page.locator("#plans:visible").scrollIntoViewIfNeeded();
     await expect.poll(() => page.evaluate(() => window.scrollY)).toBeGreaterThan(0);
     await expect.poll(() =>
       page.getByTestId("founding-offer-banner").evaluate((element) => element.getBoundingClientRect().top),
@@ -101,7 +101,7 @@ test.describe("@smoke @critical public entry points", () => {
     await page.goto("/");
     expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(390);
     await page.goto("/signup");
-    await expect(page.getByTestId("founding-offer-banner")).toContainText("OLEAFOUNDING15");
+    await expect(page.locator('[data-testid="founding-offer-banner"]:visible')).toContainText("OLEAFOUNDING15");
     expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(390);
   });
 
@@ -118,7 +118,7 @@ test.describe("@smoke @critical public entry points", () => {
 
   test("keeps the offer code visible where founding members enter it", async ({ page }) => {
     await page.goto("/signup/account");
-    await expect(page.getByTestId("founding-offer-banner")).toContainText("OLEAFOUNDING15");
+    await expect(page.locator('[data-testid="founding-offer-banner"]:visible')).toContainText("OLEAFOUNDING15");
     await expect(page.getByLabel(/founding.member code/i)).toBeVisible();
   });
 
@@ -183,7 +183,7 @@ test.describe("@smoke @critical public entry points", () => {
   }) => {
     await page.goto("/");
 
-    const rootsLink = page.locator('#plans a[href^="/signup/account?tier=roots&billing=annual"]');
+    const rootsLink = page.locator('#plans:visible a[href^="/signup/account?tier=roots&billing=annual"]');
     await expect(rootsLink).toHaveAttribute(
       "href",
       /\/signup\/account\?tier=roots&billing=annual/,

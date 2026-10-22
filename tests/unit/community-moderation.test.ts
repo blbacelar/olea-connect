@@ -1,6 +1,5 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 
-import { brandName } from "@/lib/brand";
 vi.mock("server-only", () => ({}));
 
 import { moderateCommunityPost } from "@/lib/community/moderation";
@@ -92,9 +91,11 @@ describe("community post moderation", () => {
         headers: expect.objectContaining({
           Authorization: "Bearer openrouter-test-key",
           "HTTP-Referer": "https://staging.oleaconnects.com",
-          "X-OpenRouter-Title": brandName,
+          "X-OpenRouter-Title": "Olea Connects",
         }),
       }),
     );
+    const requestHeaders = fetchMock.mock.calls[0]?.[1]?.headers;
+    expect(() => new Headers(requestHeaders)).not.toThrow();
   });
 });

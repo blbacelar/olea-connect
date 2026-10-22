@@ -1,9 +1,19 @@
 import {
-  test,
+  test as authenticatedTest,
   expect,
   createAuthenticatedStorageState,
 } from "../fixtures/authenticated.fixture";
 import { EdReviewPage } from "../pages/ed-review.page";
+
+const test = authenticatedTest.extend({
+  authenticatedMember: async ({ testData }, use) => {
+    const member = await testData.createOrganizationOwner({
+      activeSubscription: true,
+      planId: "canopy",
+    });
+    await use(member);
+  },
+});
 
 test.describe("@critical anonymous ED/CEO review surveys", () => {
   test("creates an open shared-link campaign and submits anonymous staff feedback", async ({
@@ -61,6 +71,7 @@ test.describe("@critical anonymous ED/CEO review surveys", () => {
     if (!baseURL) throw new Error("Playwright baseURL is required.");
     const owner = await testData.createOrganizationOwner({
       activeSubscription: true,
+      planId: "canopy",
     });
     const member = await testData.createOrganizationMember(owner);
     const ownerContext = await browser.newContext({
@@ -114,6 +125,7 @@ test.describe("@critical anonymous ED/CEO review surveys", () => {
     if (!baseURL) throw new Error("Playwright baseURL is required.");
     const owner = await testData.createOrganizationOwner({
       activeSubscription: true,
+      planId: "canopy",
     });
     const member = await testData.createOrganizationMember(owner);
     const ownerContext = await browser.newContext({
@@ -203,6 +215,7 @@ test.describe("@critical anonymous ED/CEO review surveys", () => {
     if (!baseURL) throw new Error("Playwright baseURL is required.");
     const owner = await testData.createOrganizationOwner({
       activeSubscription: true,
+      planId: "canopy",
     });
     const ownerContext = await browser.newContext({
       baseURL,
@@ -242,6 +255,7 @@ test.describe("@critical anonymous ED/CEO review surveys", () => {
     if (!baseURL) throw new Error("Playwright baseURL is required.");
     const owner = await testData.createOrganizationOwner({
       activeSubscription: true,
+      planId: "canopy",
     });
     const member = await testData.createOrganizationMember(owner);
     const ownerContext = await browser.newContext({
@@ -278,6 +292,7 @@ test.describe("@critical anonymous ED/CEO review surveys", () => {
     if (!baseURL) throw new Error("Playwright baseURL is required.");
     const owner = await testData.createOrganizationOwner({
       activeSubscription: true,
+      planId: "canopy",
     });
     const member = await testData.createOrganizationMember(owner);
     const ownerContext = await browser.newContext({

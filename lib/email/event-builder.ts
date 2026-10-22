@@ -18,25 +18,40 @@ type QueuedEmailEvent = {
   payload: unknown;
 };
 
-type BuiltEmail = Promise<{ email: TransactionalEmail; recipientEmail: string }>;
+type BuiltEmail = Promise<
+  | { email: TransactionalEmail; recipientEmail: string }
+  | { skipped: true; reason: string }
+>;
 
 async function buildInvitationEmail(
   supabase: ReturnType<typeof createAdminClient>,
   event: QueuedEmailEvent,
 ): BuiltEmail {
   const payload = event.payload as {
+    invitation_id: string;
     email: string;
     role: string;
     expires_at: string;
     accept_path: string;
-    organization_id: string;
   };
-  const { data: organization, error: organizationError } = await supabase
-    .from("organizations")
-    .select("name")
-    .eq("id", payload.organization_id)
-    .single();
-  if (organizationError) throw organizationError;
+  const { data: invitation, error: invitationError } = await supabase
+    .from("organization_invitations")
+    .select("status, expires_at, organizations(name)")
+    .eq("id", payload.invitation_id)
+    .maybeSingle();
+  if (invitationError) throw invitationError;
+
+  const organization = Array.isArray(invitation?.organizations)
+    ? invitation.organizations[0]
+    : invitation?.organizations;
+  if (
+    !invitation ||
+    invitation.status !== "pending" ||
+    new Date(invitation.expires_at).getTime() <= Date.now() ||
+    !organization
+  ) {
+    return { skipped: true, reason: "Invitation is no longer pending." };
+  }
 
   return {
     recipientEmail: payload.email,

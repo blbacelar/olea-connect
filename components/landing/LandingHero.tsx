@@ -17,7 +17,7 @@ export function LandingHero({ copy }: { copy: LandingHeroCopy }) {
             <span className="size-2 rounded-full bg-olea-orange" />
             {copy.badge}
           </span>
-          <h1 className="mt-6 max-w-2xl text-balance text-4xl font-extrabold leading-[1.05] tracking-[-0.045em] text-slate-900 sm:text-5xl md:text-6xl">
+          <h1 className="mt-6 max-w-2xl text-balance text-4xl font-extrabold leading-[1.05] tracking-[-0.045em] text-slate-900 sm:text-5xl md:text-6xl md:leading-none">
             {copy.title}
           </h1>
           <p className="mt-6 max-w-xl text-lg leading-8 text-slate-600">

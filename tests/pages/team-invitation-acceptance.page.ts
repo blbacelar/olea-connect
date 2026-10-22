@@ -19,14 +19,14 @@ export class TeamInvitationAcceptancePage {
   async createAccount(fullName: string, password: string) {
     await this.page.getByLabel("Full name").fill(fullName);
     await this.page.getByLabel("Create a password").fill(password);
-    const createAccount = this.page.getByTestId("create-invited-account");
+    const createAccount = this.page.locator('[data-testid="create-invited-account"]:visible');
     await expect(createAccount).toBeEnabled();
     await createAccount.click();
   }
 
   async expectCreateAccountDisabled() {
     await expect(
-      this.page.getByTestId("create-invited-account"),
+      this.page.locator('[data-testid="create-invited-account"]:visible'),
     ).toBeDisabled();
   }
 

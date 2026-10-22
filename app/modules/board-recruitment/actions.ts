@@ -683,7 +683,6 @@ export async function createRecruitmentCommittee(formData: FormData) {
   if (error) throw error;
   redirectTab("committees");
 }
-
 export async function updateRecruitmentCommittee(formData: FormData) {
   const { workspace, supabase } = await workspaceFrom(formData);
   const committeeId = idSchema.parse(value(formData, "committeeId"));
@@ -757,5 +756,3 @@ export async function setCommitteeChair(formData: FormData) {
   if (error) throw error;
   redirectTab("committees");
 }
-
-export { redirectTab };

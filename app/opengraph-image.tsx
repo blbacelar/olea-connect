@@ -2,7 +2,6 @@ import { ImageResponse } from "next/og";
 
 import { siteDescription, siteTitle } from "@/lib/site-metadata";
 
-export const runtime = "edge";
 export const alt = "Olea Connects™ governance platform for Canadian nonprofits";
 export const size = {
   width: 1200,

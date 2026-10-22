@@ -7,6 +7,7 @@ import {
 import { AppShellPage } from "../pages/app-shell.page";
 import { CommunityPage } from "../pages/community.page";
 import { createAuthenticatedPage } from "../support/auth-session";
+import type { APIRequestContext, Page } from "@playwright/test";
 
 async function expectCommunityPostHiddenInDatabase({
   authorUserId,
@@ -35,6 +36,50 @@ async function expectCommunityPostHiddenInDatabase({
       { timeout: 10_000 },
     )
     .toBe("hidden");
+}
+
+async function verifyPostModerated({
+  authorUserId,
+  community,
+  page,
+  request,
+  testData,
+  title,
+}: {
+  authorUserId: string;
+  community: CommunityPage;
+  page: Page;
+  request: APIRequestContext;
+  testData: TestDataManager;
+  title: string;
+}) {
+  const { data: post, error: postError } = await testData.supabase
+    .from("community_posts")
+    .select("id")
+    .eq("author_user_id", authorUserId)
+    .eq("title", title)
+    .order("created_at", { ascending: false })
+    .limit(1)
+    .single();
+  expect(postError).toBeNull();
+  expect(post?.id).toBeTruthy();
+
+  const { data: event, error: eventError } = await testData.supabase
+    .from("integration_events")
+    .select("id")
+    .eq("provider", "community_moderation")
+    .contains("payload", { postId: post!.id, targetType: "post" })
+    .order("created_at", { ascending: false })
+    .limit(1)
+    .single();
+  expect(eventError).toBeNull();
+  expect(event?.id).toBeTruthy();
+
+  // Automatic moderation may have completed before the post reaches the feed.
+  await community.processModerationQueue(request, event!.id);
+  await expectCommunityPostHiddenInDatabase({ authorUserId, testData, title });
+  await page.reload();
+  await community.expectPostHidden(title);
 }
 
 base.describe("@critical native community access boundaries", () => {
@@ -922,23 +967,14 @@ testWithData.describe("@critical native community member experience", () => {
         kind: "resource",
         resourceUrl: "https://example.org/downloads/tool.exe",
       });
-      await community.expectPost(
-        "Suspicious download",
-        "Please review this resource before opening it.",
-      );
-      const moderationEventId =
-        await testData.getPendingCommunityPostModerationEventId(
-          member.userId,
-          "Suspicious download",
-        );
-      await community.processModerationQueue(request, moderationEventId);
-      await expectCommunityPostHiddenInDatabase({
+      await verifyPostModerated({
         authorUserId: member.userId,
+        community,
+        page,
+        request,
         testData,
         title: "Suspicious download",
       });
-      await page.reload();
-      await community.expectPostHidden("Suspicious download");
     } finally {
       await context.close();
     }
@@ -971,23 +1007,14 @@ testWithData.describe("@critical native community member experience", () => {
         body: "This is stupid and does not belong in a respectful community.",
         kind: "discussion",
       });
-      await community.expectPost(
-        "A post that should not publish",
-        "This is stupid and does not belong in a respectful community.",
-      );
-      const moderationEventId =
-        await testData.getPendingCommunityPostModerationEventId(
-          member.userId,
-          "A post that should not publish",
-        );
-      await community.processModerationQueue(request, moderationEventId);
-      await expectCommunityPostHiddenInDatabase({
+      await verifyPostModerated({
         authorUserId: member.userId,
+        community,
+        page,
+        request,
         testData,
         title: "A post that should not publish",
       });
-      await page.reload();
-      await community.expectPostHidden("A post that should not publish");
     } finally {
       await context.close();
     }
@@ -1015,7 +1042,7 @@ testWithData.describe("@critical native community member experience", () => {
       await page.goto("/community");
       await expect(page).toHaveURL("/subscription?billing=required");
       await expect(
-        page.getByText(/membership needs attention|billing setup is incomplete/i),
+        page.getByTestId("app-main").getByText(/membership needs attention|billing setup is incomplete/i),
       ).toBeVisible();
     } finally {
       await context.close();
