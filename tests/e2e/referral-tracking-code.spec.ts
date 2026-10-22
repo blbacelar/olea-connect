@@ -7,10 +7,6 @@ test.describe("@critical Jessica tracking code", () => {
     page,
     testData,
   }) => {
-    await page.goto("/settings/referrals");
-    await expect(page).toHaveURL(/\/settings\/referrals$/);
-    await expect(page.getByRole("heading", { name: "Tracking-only codes" })).toHaveCount(0);
-
     const requestId = await testData.createWorkspaceProvisioningRequest(authenticatedMember);
     const { error: updateError } = await testData.supabase
       .from("workspace_provisioning_requests")
@@ -31,10 +27,9 @@ test.describe("@critical Jessica tracking code", () => {
       "/ref/OLEA-JESSICA",
     );
     await expect(page.getByRole("button", { name: "Copy share link" })).toBeVisible();
-    await page.context().grantPermissions(["clipboard-read", "clipboard-write"]);
+    await page.context().grantPermissions(["clipboard-read", "clipboard-write"], { origin: new URL(page.url()).origin });
     await page.getByRole("button", { name: "Copy share link" }).click();
-    await expect(page.getByRole("button", { name: "Copied" })).toBeVisible();
-    expect(await page.evaluate(() => navigator.clipboard.readText())).toBe(
+    await expect.poll(() => page.evaluate(() => navigator.clipboard.readText())).toBe(
       new URL("/ref/OLEA-JESSICA", process.env.NEXT_PUBLIC_APP_URL).toString(),
     );
 

@@ -177,6 +177,14 @@ describe("localized shell and legal copy", () => {
 });
 
 describe("French runtime authenticated UI fallback", () => {
+  it("translates complimentary developer access details", () => {
+    expect(translateFrenchUiText("Developer access · no payment due")).toBe(
+      "Accès de développement · aucun paiement dû",
+    );
+    expect(translateFrenchUiText("15 Canopy seats and 9 additional developer seats are available without payment.")).toBe(
+      "15 sièges Canopy et 9 sièges de développement supplémentaires sont disponibles sans paiement.",
+    );
+  });
   it("translates exact authenticated module strings without changing unknown copy", () => {
     expect(translateFrenchUiText("Board Dashboard")).toBe(
       "Tableau de bord du conseil",

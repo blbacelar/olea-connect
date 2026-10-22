@@ -1,6 +1,6 @@
 import { notFound, redirect } from "next/navigation";
 
-import { getReferralAdminData } from "@/lib/data/referrals";
+import { getReferralAdminData, ReferralAdminAccessError } from "@/lib/data/referrals";
 
 import {
   updateReferralMilestone,
@@ -48,8 +48,9 @@ export default async function ReferralAdminPage(
 
   try {
     data = await getReferralAdminData();
-  } catch {
-    notFound();
+  } catch (error) {
+    if (error instanceof ReferralAdminAccessError) notFound();
+    throw error;
   }
 
   const notice = searchParams.status === "success" || searchParams.status === "error"
