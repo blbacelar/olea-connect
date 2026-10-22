@@ -10,14 +10,13 @@ on:
 
 permissions:
   contents: read
-  packages: read
 
 concurrency:
   group: ci-${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
   cancel-in-progress: true
 
 env:
-  SUPABASE_INTERNAL_IMAGE_REGISTRY: ghcr.io
+  SUPABASE_INTERNAL_IMAGE_REGISTRY: docker.io
 
 jobs:
   quality:
@@ -46,10 +45,6 @@ jobs:
     timeout-minutes: 20
     steps:
       - uses: actions/checkout@v6
-      - name: Authenticate to Supabase image registry
-        env:
-          GHCR_TOKEN: ${{ github.token }}
-        run: echo "$GHCR_TOKEN" | docker login ghcr.io --username "$GITHUB_ACTOR" --password-stdin
       - uses: actions/setup-node@v6
         with:
           node-version: 22
@@ -78,10 +73,6 @@ jobs:
     timeout-minutes: 10
     steps:
       - uses: actions/checkout@v6
-      - name: Authenticate to Supabase image registry
-        env:
-          GHCR_TOKEN: ${{ github.token }}
-        run: echo "$GHCR_TOKEN" | docker login ghcr.io --username "$GITHUB_ACTOR" --password-stdin
       - uses: actions/setup-node@v6
         with:
           node-version: 22
