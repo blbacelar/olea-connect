@@ -1,6 +1,6 @@
 # Production release readiness — 2026-10-22
 
-Target: [PR #78](https://github.com/blbacelar/olea-connect/pull/78), `codex/mnp-production-release` into `main`. PR #75 was merged at its earlier head, but the production domain still serves the previous deployment. Do not promote a Preview deployment: staging uses development Supabase and Stripe test mode.
+Target: [PR #81](https://github.com/blbacelar/olea-connect/pull/81), `codex/borapost-canopy-grant` into `main`. PRs #75 and #78 are merged, but the production domain still serves the previous deployment. Do not promote a Preview deployment: staging uses development Supabase and Stripe test mode.
 
 ## Verified
 
@@ -18,11 +18,11 @@ Target: [PR #78](https://github.com/blbacelar/olea-connect/pull/78), `codex/mnp-
 
 ## Release gates still open
 
-1. Obtain passing CI on the **latest** [PR #78](https://github.com/blbacelar/olea-connect/pull/78) head. All checks passed on the previous head; the Canopy grant, Referrals fix, and Stripe guard require another run after push.
-2. Obtain another contributor's approval. PR #78 is current with `main`, and branch protection requires an approving review by someone other than the author.
+1. Obtain passing CI on the **latest** [PR #81](https://github.com/blbacelar/olea-connect/pull/81) head. PR #78 passed and merged before the Canopy grant, Referrals fix, and Stripe guard were added.
+2. Obtain another contributor's approval. Branch protection requires an approving review by someone other than the author.
 3. Refresh and validate the private production checkpoint immediately before cutover. Apply migrations to production only after the release gates pass; the prior 20-migration sequence passed in an isolated restore, and the two new guarded migrations passed a production transaction rehearsal that was rolled back. Rehearse the complete 22-migration sequence on the refreshed clone.
 4. Merge the protected PR, deploy from the Production environment with production Supabase and Stripe live keys, then run authenticated production smoke for login, dashboard, module access, billing read-only paths, and worker authorization. The Vercel project's configured production branch is still `demo`, so merging into `main` alone does not deploy; use an explicit Production deployment from the merged commit. Inspect logs and verify the domain resolves to it.
 
 ## Cutover sequence
 
-Confirm CI, staging smoke, review, backup, and rehearsal; apply the reviewed additive migrations to production; merge PR #78; deploy with Production variables; verify the deployment and authenticated production paths. Prefer a forward fix for schema/data issues because rolling back application code does not undo migrated data.
+Confirm CI, staging smoke, review, backup, and rehearsal; apply the reviewed additive migrations to production; merge PR #81; deploy with Production variables; verify the deployment and authenticated production paths. Prefer a forward fix for schema/data issues because rolling back application code does not undo migrated data.
