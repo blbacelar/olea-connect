@@ -1,6 +1,14 @@
 # Production release readiness — 2026-10-22
 
-Target: [PR #81](https://github.com/blbacelar/olea-connect/pull/81), `codex/borapost-canopy-grant` into `main`. PRs #75 and #78 are merged, but the production domain still serves the previous deployment. Do not promote a Preview deployment: staging uses development Supabase and Stripe test mode.
+Target: [PR #81](https://github.com/blbacelar/olea-connect/pull/81), `codex/borapost-canopy-grant` into `main`. Before the 2026-10-23 cutover, the production domain still served the previous deployment. Do not promote a Preview deployment: staging uses development Supabase and Stripe test mode.
+
+## Release update — 2026-10-23
+
+PR #81 merged as `f98b0e0`. The owner merged with zero approving GitHub reviews, so the formal reviewer gate was bypassed; independent ECC billing, database, security and diff reviews were completed. A fresh private logical backup was captured before the cutover, restored to an isolated clone, and all 22 pending migrations plus 267 database assertions passed. Storage metadata was unchanged and the five binaries were reused from the previously hash-verified checkpoint.
+
+The same 22 migrations were applied to production Supabase `hldrzrauokzujinemgxv`; a subsequent dry-run was up to date. Read-only production checks found the Referrals table, one active complimentary Canopy developer subscription, no active legacy Harvest subscription, and 24 BoraPost seats. Vercel Production deployment `dpl_7LMyeqmRoVLJjkzvPDm1ye3Shk98` from `f98b0e0` is Ready and aliased to `oleaconnects.com`. The authenticated Bruno session loaded dashboard, Board Training in English and French, Subscription, Referrals, ED Review, Grant Platform, Board Calendar and Community. Unsigned email and moderation workers returned 401, and the unsigned Stripe webhook returned 400. Runtime logs showed no error or fatal entries during the smoke window. Production payment capture and outbound email delivery were not exercised in this release smoke.
+
+The sections below preserve the pre-release evidence and gates as they stood on 2026-10-22.
 
 ## Verified
 
