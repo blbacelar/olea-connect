@@ -58,6 +58,7 @@ export function useWorkbenchDerivedData({
     hasDatedEvents,
     meetingEvents,
     nextEvent,
+    syncedData,
     todayKey,
     upcomingEvents,
     upcomingMeetingEvents,

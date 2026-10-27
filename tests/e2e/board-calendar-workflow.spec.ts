@@ -95,6 +95,53 @@ test.describe("@critical Board Calendar & Operational Workflow", () => {
     await boardCalendar.calendar.expectSelectedDateText("Deletion regression meeting");
   });
 
+  test("opens and updates the generated task clicked on its actual date", async ({ page }) => {
+    const boardCalendar = new BoardCalendarPage(page);
+    const meetingDate = getFutureDateKey(9);
+    const generatedTaskDate = getRelativeDateKey(meetingDate, -2);
+    const manualTaskDate = getFutureDateKey(35);
+    const generatedTitle = "Send save-the-date";
+    const manualTitle = "Reports due";
+
+    await boardCalendar.openNewModuleCalendar();
+    await boardCalendar.chooseWorkspaceView("Setup");
+    await boardCalendar.setup.addTaskRule({
+      label: generatedTitle,
+      days: "2",
+      timing: "Before",
+      appliesTo: "Board Meeting",
+    });
+    await boardCalendar.calendar.selectDate(meetingDate);
+    await boardCalendar.calendar.addMeeting({
+      title: "Calendar date regression meeting",
+      category: "Board Meeting",
+    });
+    await boardCalendar.calendar.addOperationalTask(manualTaskDate, {
+      title: manualTitle,
+      status: "Not Started",
+    });
+
+    await boardCalendar.calendar.selectDate(generatedTaskDate);
+    await boardCalendar.calendar.expectSelectedDateText(generatedTitle);
+    await boardCalendar.calendar.editEntry(new RegExp(`Edit ${generatedTitle}`));
+    await boardCalendar.calendar.expectFieldValue("Title", generatedTitle);
+    await boardCalendar.calendar.expectFieldValue("Entry date", generatedTaskDate);
+    await boardCalendar.calendar.fillField("Notes", "Keep the correct generated task linked.");
+    await boardCalendar.calendar.updateEntry();
+    await boardCalendar.calendar.expectSelectedDateText("Keep the correct generated task linked.");
+
+    await boardCalendar.reload();
+    await boardCalendar.calendar.selectDate(generatedTaskDate);
+    await boardCalendar.calendar.expectSelectedDateText(generatedTitle);
+    await boardCalendar.calendar.expectSelectedDateText("Keep the correct generated task linked.");
+    await boardCalendar.calendar.selectDate(manualTaskDate);
+    await boardCalendar.calendar.expectSelectedDateText(manualTitle);
+    await boardCalendar.calendar.editEntry(new RegExp(`Edit ${manualTitle}`));
+    await boardCalendar.calendar.expectFieldValue("Title", manualTitle);
+    await boardCalendar.calendar.expectFieldValue("Entry date", manualTaskDate);
+    await boardCalendar.calendar.cancelEntryEdit();
+  });
+
   test("covers calendar CRUD, duplicate scheduling, validation, and persistence", async ({
     page,
     authenticatedMember,

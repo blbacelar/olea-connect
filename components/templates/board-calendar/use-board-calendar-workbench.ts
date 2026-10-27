@@ -46,7 +46,7 @@ export function useBoardCalendarWorkbench({
   const todayDate = new Date();
   const {
     boardMeetings, categories, categoryColors, configuredMonth, configuredYear,
-    events, eventsByDate, hasDatedEvents, meetingEvents, nextEvent, todayKey,
+    events, eventsByDate, hasDatedEvents, meetingEvents, nextEvent, syncedData, todayKey,
     upcomingEvents, upcomingMeetingEvents,
   } = useWorkbenchDerivedData({ data, todayDate });
   const [mode, setMode] = useState<CalendarMode>("month");
@@ -61,7 +61,7 @@ export function useBoardCalendarWorkbench({
   const selectedDateEvents = eventsByDate.get(selectedDateKey) ?? [];
   const entry = useBoardCalendarEntryForm({
     categoryColors,
-    data,
+    data: syncedData,
     events,
     selectedDateKey,
     setActiveTab,
@@ -254,13 +254,16 @@ function applyCalendarEntryMutation({
   entryColor: string;
   input: ReturnType<typeof buildCalendarEntryInput>;
 }) {
+  const sourceData = editingEventId?.startsWith("task-")
+    ? syncBoardCalendarGeneratedTasks(currentData)
+    : currentData;
   const mutation = editingEventId
-    ? updateBoardCalendarEntry(currentData, editingEventId, input)
-    : appendBoardCalendarEntry(currentData, input);
+    ? updateBoardCalendarEntry(sourceData, editingEventId, input)
+    : appendBoardCalendarEntry(sourceData, input);
 
   if (!mutation) return currentData;
 
-  const nextData = setValue(currentData, mutation.path, mutation.value);
+  const nextData = setValue(sourceData, mutation.path, mutation.value);
   const colorMutation = upsertBoardCalendarCategoryColor(
     nextData,
     getColorCategoryForInput(input),
