@@ -1,4 +1,8 @@
+import Link from "next/link";
+import { ArrowRight } from "lucide-react";
+
 import { SectionIntro } from "@/components/landing/SectionIntro";
+import { Button } from "@/components/ui/button";
 import type { PublicSiteCopy } from "@/lib/i18n/public-site-copy";
 
 type LandingDemoCopy = PublicSiteCopy["demo"];
@@ -29,6 +33,11 @@ export function LandingDemo({ copy }: { copy: LandingDemoCopy }) {
         <p className="mt-4 text-center text-sm text-slate-600">
           {copy.caption}
         </p>
+        <div className="mt-6 flex justify-center">
+          <Button asChild variant="outline">
+            <Link href="/demos">{copy.allDemosCta}<ArrowRight className="size-4" /></Link>
+          </Button>
+        </div>
       </div>
     </section>
   );

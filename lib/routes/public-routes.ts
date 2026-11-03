@@ -3,6 +3,7 @@ const publicRouteMatchers = [
   (pathname: string) => pathname === "/ref",
   (pathname: string) => pathname.startsWith("/ref/"),
   (pathname: string) => pathname === "/referrals",
+  (pathname: string) => pathname === "/demos",
   (pathname: string) => pathname === "/sponsorship",
   (pathname: string) => pathname === "/login",
   (pathname: string) => pathname === "/reset-password",

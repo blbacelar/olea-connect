@@ -42,6 +42,7 @@ export async function LandingFooter({
           <Link href="/#how-it-works">{footerNav.howItWorks}</Link>
           <Link href="/#plans">{footerNav.pricing}</Link>
           <Link href="/#faq">{footerNav.faq}</Link>
+          <Link href="/demos">{footerNav.demos}</Link>
           <Link href="/sponsorship">{footerNav.sponsorship}</Link>
           <Link href="/referrals">{footerNav.referrals}</Link>
           <Link href="/login">{footerNav.memberLogin}</Link>
