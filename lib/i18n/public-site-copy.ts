@@ -29,6 +29,7 @@ export type PublicSiteCopy = {
     faq: string;
     sponsorship: string;
     referrals: string;
+    demos: string;
     getStarted: string;
   };
   foundingBanner: {
@@ -98,6 +99,7 @@ export type PublicSiteCopy = {
     videoLabel: string;
     videoFallback: string;
     caption: string;
+    allDemosCta: string;
   };
   workflow: {
     eyebrow: string;
@@ -203,6 +205,7 @@ export const publicSiteCopy: Record<Locale, PublicSiteCopy> = {
       faq: "FAQ",
       sponsorship: "Sponsorship",
       referrals: "Referrals",
+      demos: "Demos",
       getStarted: "Get started",
     },
     foundingBanner: {
@@ -328,6 +331,7 @@ export const publicSiteCopy: Record<Locale, PublicSiteCopy> = {
       videoLabel: "Grant Platform demo video",
       videoFallback: "Your browser does not support this video.",
       caption: "1 min 25 sec · English on-screen text · Music and interface sounds, no narration.",
+      allDemosCta: "Explore all demos",
     },
     workflow: {
       eyebrow: "How it works",
@@ -599,6 +603,7 @@ export const publicSiteCopy: Record<Locale, PublicSiteCopy> = {
       faq: "FAQ",
       sponsorship: "Commandites",
       referrals: "Références",
+      demos: "Démos",
       getStarted: "Commencer",
     },
     foundingBanner: {
@@ -736,6 +741,7 @@ export const publicSiteCopy: Record<Locale, PublicSiteCopy> = {
       videoLabel: "Vidéo de démonstration de la plateforme de subventions",
       videoFallback: "Votre navigateur ne prend pas en charge cette vidéo.",
       caption: "1 min 25 s · Texte à l'écran en anglais · Musique et sons d'interface, sans narration.",
+      allDemosCta: "Voir toutes les démos",
     },
     workflow: {
       eyebrow: "Fonctionnement",

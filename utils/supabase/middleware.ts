@@ -19,6 +19,7 @@ import {
 const publicPagePaths = new Set([
   "/",
   "/referrals",
+  "/demos",
   "/sponsorship",
   "/login",
   "/reset-password",

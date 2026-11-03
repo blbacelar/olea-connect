@@ -8,6 +8,7 @@ import {
 describe("middleware public routes", () => {
   it("keeps the referral marketing page public", () => {
     expect(isPublicPath("/referrals")).toBe(true);
+    expect(isPublicPath("/demos")).toBe(true);
   });
 
   it("keeps referral-code redirects public without opening the dashboard", () => {
