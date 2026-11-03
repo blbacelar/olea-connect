@@ -11,12 +11,12 @@ export function BillingCycleSection({ billing }: { billing: BillingSummary }) {
     <section className="rounded-[14px] border bg-white p-[22px] shadow-soft">
       <h2 className="flex items-center gap-2 text-base font-bold text-slate-800">
         <CalendarDays className="size-5 text-olea-green" />
-        {billing.fundedBySponsor ? "Membership period" : "Billing cycle"}
+        {billing.fundedBySponsor || billing.developerAccess ? "Membership period" : "Billing cycle"}
       </h2>
       <dl className="mt-5 grid gap-4 sm:grid-cols-2">
         <BillingCycleMetric
           label="Cycle"
-          value={billing.fundedBySponsor ? "Funded year" : billing.billingInterval === "year" ? "Annual" : "Quarterly"}
+          value={billing.developerAccess ? "Developer access" : billing.fundedBySponsor ? "Funded year" : billing.billingInterval === "year" ? "Annual" : "Quarterly"}
         />
         <BillingCycleMetric
           label="Current period"
@@ -53,6 +53,11 @@ function BillingScheduleNotice({ billing }: { billing: BillingSummary }) {
 }
 
 function getCurrentPeriodLabel(billing: BillingSummary) {
+  if (billing.developerAccess) {
+    return billing.currentPeriodEnd
+      ? `${formatDate(billing.currentPeriodStart ?? billing.currentPeriodEnd)} - ${formatDate(billing.currentPeriodEnd)}`
+      : "No scheduled end";
+  }
   if (billing.billingUnavailable) {
     return "Billing date unavailable";
   }

@@ -12,6 +12,10 @@ function compact(value: string) {
 }
 
 export function createTestIdentity(testInfo: TestInfo, sequence = 0) {
+  const emailDomain = process.env.PLAYWRIGHT_TEST_EMAIL_DOMAIN ?? "example.com";
+  if (!/^[a-z0-9.-]+\.[a-z]{2,}$/i.test(emailDomain)) {
+    throw new Error("PLAYWRIGHT_TEST_EMAIL_DOMAIN must be a valid domain.");
+  }
   const runId =
     process.env.GITHUB_RUN_ID ??
     `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`;
@@ -29,7 +33,7 @@ export function createTestIdentity(testInfo: TestInfo, sequence = 0) {
 
   return {
     marker,
-    email: `${emailLocalPart}@example.com`,
+    email: `${emailLocalPart}@${emailDomain}`,
     fullName: `QA Owner ${testInfo.parallelIndex}`,
     organizationName: `Olea QA ${marker}`,
     password: "StrongPass123!",

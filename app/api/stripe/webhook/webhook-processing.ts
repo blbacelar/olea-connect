@@ -17,6 +17,7 @@ import {
   recordStripeSubscription,
 } from "@/lib/stripe/registration";
 import {
+  isSupersededStripeSubscription,
   syncPaidSeatCheckout,
   syncStripeSubscription,
 } from "@/lib/stripe/subscriptions";
@@ -289,6 +290,11 @@ export async function processStripeWebhookEvent(
 
   const subscription = await getEventSubscription(event);
   if (subscription) {
+    if (await isSupersededStripeSubscription(supabase, subscription)) {
+      await markWebhookProcessed(event);
+      logInfo("Superseded Stripe subscription webhook ignored", eventContext);
+      return { duplicate: false };
+    }
     const provisioningRequestId = await recordStripeSubscription(supabase, subscription);
 
     if (provisioningRequestId) {

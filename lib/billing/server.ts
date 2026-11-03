@@ -2,6 +2,7 @@ import "server-only";
 
 import type Stripe from "stripe";
 
+import { getComplimentaryAccessKind } from "@/lib/billing/complimentary-access";
 import { PAID_SEAT_PRICE_CENTS, PAID_SEAT_CURRENCY } from "@/lib/billing/seat-pricing";
 import { isMissingStripeCustomerError } from "@/lib/billing/stripe-customer";
 import { getStripe } from "@/lib/stripe/server";
@@ -35,6 +36,7 @@ export interface BillingSummary {
   subscriptionId: string | null;
   billingUnavailable: boolean;
   fundedBySponsor?: boolean;
+  developerAccess?: boolean;
   localSubscriptionId: string;
   amountCents: number;
   currency: string;
@@ -146,13 +148,16 @@ export async function getBillingSummary(): Promise<BillingSummary | null> {
   const membershipItem = activeItems.find(
     (item) => item.item_type === "membership" && item.active,
   );
-  const fundedBySponsor = subscription.provider === "manual" &&
-    Boolean(subscription.metadata && typeof subscription.metadata === "object" &&
-      (subscription.metadata as Record<string, unknown>).funding_source === "sponsorship");
+  const complimentaryKind = getComplimentaryAccessKind(
+    subscription.provider,
+    subscription.metadata,
+  );
+  const fundedBySponsor = complimentaryKind === "sponsorship";
+  const developerAccess = complimentaryKind === "developer";
   // The legacy DB column is named monthly_price_cents, but current plans bill
   // quarterly or annually. Until the storage column is renamed, month means
   // the quarterly upfront catalog price.
-  const amountCents = fundedBySponsor ? 0 : (
+  const amountCents = fundedBySponsor || developerAccess ? 0 : (
     membershipItem?.unit_amount_cents ??
     (subscription.billing_interval === "year"
       ? (plan?.annual_price_cents ?? 0)
@@ -243,6 +248,7 @@ export async function getBillingSummary(): Promise<BillingSummary | null> {
     subscriptionId: billingUnavailable ? null : subscription.provider_subscription_id,
     billingUnavailable,
     fundedBySponsor,
+    developerAccess,
     localSubscriptionId: subscription.id,
     amountCents,
     currency: plan?.currency ?? "CAD",

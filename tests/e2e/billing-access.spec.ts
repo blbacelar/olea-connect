@@ -79,6 +79,51 @@ testWithData.describe("@critical billing access states", () => {
     }
   });
 
+  testWithData("shows complimentary developer Canopy access without billing controls", async ({
+    browser,
+    testData,
+    baseURL,
+  }) => {
+    if (!baseURL) throw new Error("Playwright baseURL is required.");
+    const member = await testData.createOrganizationOwner({
+      activeSubscription: true,
+      planId: "canopy",
+    });
+    const { error } = await testData.supabase
+      .from("subscriptions")
+      .update({
+        billing_interval: "year",
+        current_period_end: null,
+        metadata: { funding_source: "developer", e2e_marker: member.marker },
+      })
+      .eq("id", member.subscriptionId);
+    if (error) throw error;
+
+    const { context, page } = await createAuthenticatedPage(
+      browser,
+      baseURL,
+      member.email,
+      member.password,
+    );
+
+    try {
+      await page.goto("/subscription");
+      const main = page.getByTestId("app-main");
+      await expect(main.getByText("Developer access is active. No payment is due for this membership.")).toBeVisible();
+      await expect(main.getByText("Canopy", { exact: true })).toBeVisible();
+      await expect(main.getByText("No scheduled end").first()).toBeVisible();
+      await expect(main.getByRole("button", { name: "Open portal" })).toHaveCount(0);
+      await expect(main.getByRole("heading", { name: "Upgrade your plan" })).toHaveCount(0);
+      await page.screenshot({ path: "test-results/developer-canopy-subscription.png" });
+
+      await page.goto("/modules/board-training");
+      await expect(page.getByTestId("app-main").getByRole("heading", { name: "Board Training" })).toBeVisible();
+      await expect(page.getByTestId("app-main").getByText("An active Canopy membership or Board Training add-on is required")).toHaveCount(0);
+    } finally {
+      await context.close();
+    }
+  });
+
   testWithData("shows recovery guidance for a past-due membership", async ({
     browser,
     testData,

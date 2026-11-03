@@ -16,7 +16,7 @@ concurrency:
   cancel-in-progress: true
 
 env:
-  SUPABASE_INTERNAL_IMAGE_REGISTRY: ghcr.io
+  SUPABASE_INTERNAL_IMAGE_REGISTRY: docker.io
 
 jobs:
   quality:
@@ -70,7 +70,7 @@ jobs:
   browser:
     name: Browser Smoke
     runs-on: ubuntu-latest
-    timeout-minutes: 10
+    timeout-minutes: 25
     steps:
       - uses: actions/checkout@v6
       - uses: actions/setup-node@v6
