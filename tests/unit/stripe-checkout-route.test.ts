@@ -5,6 +5,7 @@ const routeMocks = vi.hoisted(() => ({
   createPublicServerClient: vi.fn(),
   deleteUser: vi.fn(),
   prepareCheckoutRegistration: vi.fn(),
+  sendSignupSlackAlert: vi.fn(),
   signUp: vi.fn(),
   storeSignupConsents: vi.fn(),
   validateFoundingMemberCode: vi.fn(),
@@ -23,6 +24,10 @@ vi.mock("@/lib/stripe/registration", () => ({
 vi.mock("@/utils/supabase/admin", () => ({
   createAdminClient: routeMocks.createAdminClient,
   createPublicServerClient: routeMocks.createPublicServerClient,
+}));
+
+vi.mock("@/lib/slack/signup-alert", () => ({
+  sendSignupSlackAlert: routeMocks.sendSignupSlackAlert,
 }));
 
 const checkoutPayload = {
@@ -95,6 +100,7 @@ describe("Stripe signup checkout route", () => {
       foundingDiscountIdentifier: null,
     });
     routeMocks.storeSignupConsents.mockResolvedValue(undefined);
+    routeMocks.sendSignupSlackAlert.mockResolvedValue({ status: "sent" });
     routeMocks.validateFoundingMemberCode.mockReturnValue(null);
     routeMocks.validateSignupReferralCode.mockResolvedValue(null);
     routeMocks.deleteUser.mockResolvedValue({ error: null });
@@ -124,6 +130,13 @@ describe("Stripe signup checkout route", () => {
         password: checkoutPayload.password,
       }),
     );
+    expect(routeMocks.sendSignupSlackAlert).toHaveBeenCalledWith({
+      email: checkoutPayload.email,
+      fullName: checkoutPayload.fullName,
+      organizationName: checkoutPayload.organizationName,
+      tier: checkoutPayload.tier,
+      referralCode: "",
+    });
   });
 
   it("does not test passwords before recording signup activation", async () => {
@@ -155,6 +168,7 @@ describe("Stripe signup checkout route", () => {
     });
     expect(routeMocks.prepareCheckoutRegistration).not.toHaveBeenCalled();
     expect(routeMocks.storeSignupConsents).not.toHaveBeenCalled();
+    expect(routeMocks.sendSignupSlackAlert).not.toHaveBeenCalled();
   });
 
   it("validates referral codes before signup so account state cannot change the response", async () => {
@@ -222,6 +236,43 @@ describe("Stripe signup checkout route", () => {
 
     expect(response.status).toBe(500);
     expect(routeMocks.deleteUser).toHaveBeenCalledWith("user_new");
+    expect(routeMocks.sendSignupSlackAlert).not.toHaveBeenCalled();
+  });
+
+  it("keeps signup successful when Slack delivery fails", async () => {
+    mockNewSignupUser();
+    routeMocks.sendSignupSlackAlert.mockRejectedValue(new Error("slack_timeout"));
+    const consoleError = vi.spyOn(console, "error").mockImplementation(() => undefined);
+    const { POST } = await import("@/app/api/stripe/checkout/route");
+
+    const response = await POST(makeRequest());
+
+    expect(response.status).toBe(200);
+    expect(routeMocks.deleteUser).not.toHaveBeenCalled();
+    expect(routeMocks.sendSignupSlackAlert).toHaveBeenCalledTimes(1);
+    expect(getLastErrorLog(consoleError)).toEqual(expect.objectContaining({
+      message: "Unable to send signup Slack alert",
+      userId: "user_new",
+    }));
+    consoleError.mockRestore();
+  });
+
+  it("uses the validated referral code in the alert", async () => {
+    mockNewSignupUser();
+    routeMocks.prepareCheckoutRegistration.mockResolvedValue({
+      requestId: "request_123",
+      referralCode: "OLEA-JESSICA",
+      foundingMemberEligible: false,
+      foundingDiscountIdentifier: null,
+    });
+    const { POST } = await import("@/app/api/stripe/checkout/route");
+
+    const response = await POST(makeRequest({ referralCode: "olea-jessica" }));
+
+    expect(response.status).toBe(200);
+    expect(routeMocks.sendSignupSlackAlert).toHaveBeenCalledWith(
+      expect.objectContaining({ referralCode: "OLEA-JESSICA" }),
+    );
   });
 
   it("returns the existing validation response for a completed workspace", async () => {
