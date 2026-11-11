@@ -159,7 +159,9 @@ export class AppShellPage {
   }
 
   async expectText(text: string | RegExp) {
-    await expect(this.page.getByText(text)).toBeVisible();
+    await expect(
+      this.page.getByTestId("app-main").getByText(text).filter({ visible: true }).first(),
+    ).toBeVisible();
   }
 
   async expectNoServerError() {
