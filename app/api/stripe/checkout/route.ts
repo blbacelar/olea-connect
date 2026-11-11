@@ -18,8 +18,9 @@ import {
   CheckoutRateLimitError,
   getCheckoutErrorResponse,
 } from "@/lib/stripe/checkout-errors";
-import { logError } from "@/lib/observability/logger";
+import { logError, logWarn } from "@/lib/observability/logger";
 import { getSiteUrl } from "@/lib/site-metadata";
+import { sendSignupSlackAlert } from "@/lib/slack/signup-alert";
 import {
   createAdminClient,
   createPublicServerClient,
@@ -208,8 +209,9 @@ async function createSignupActivationRequest({
     return;
   }
 
+  let referralCode = "";
   try {
-    await prepareSignupRegistration({
+    referralCode = await prepareSignupRegistration({
       body,
       setStage,
       supabase,
@@ -231,6 +233,23 @@ async function createSignupActivationRequest({
       });
     }
     throw error;
+  }
+
+  try {
+    const alert = await sendSignupSlackAlert({
+      email: body.email,
+      fullName: body.fullName,
+      organizationName: body.organizationName,
+      tier: body.tier,
+      referralCode,
+    });
+    if (alert.status === "not_configured") {
+      logWarn("Signup Slack alert is not configured", { userId: signupUser.userId });
+    }
+  } catch (alertError) {
+    logError("Unable to send signup Slack alert", alertError, {
+      userId: signupUser.userId,
+    });
   }
 }
 
@@ -257,4 +276,5 @@ async function prepareSignupRegistration({
     { ...body, userId, referralCode: prepared.referralCode ?? "" },
     prepared.requestId,
   );
+  return prepared.referralCode ?? "";
 }
