@@ -69,7 +69,8 @@ jobs:
 
   browser:
     name: Browser Smoke
-    runs-on: ubuntu-latest
+    # Playwright 1.60 does not install Chromium on the Ubuntu 26.04 runner.
+    runs-on: ubuntu-24.04
     timeout-minutes: 25
     steps:
       - uses: actions/checkout@v6
