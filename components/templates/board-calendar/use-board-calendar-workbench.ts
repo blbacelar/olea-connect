@@ -2,7 +2,9 @@ import { useState } from "react";
 
 import {
   appendBoardCalendarEntry,
+  appendBoardCalendarMeetingSeries,
   deleteBoardCalendarEntry,
+  ensureBoardCalendarPreparationRules,
   getBoardCalendarEntryIdentity,
   syncBoardCalendarGeneratedTasks,
   updateBoardCalendarEntry,
@@ -109,6 +111,7 @@ export function useBoardCalendarWorkbench({
         currentData,
         editingEventId: entry.editingEventId,
         entryColor: entry.entryColor,
+        repeatCount: Number(entry.entryRepeat) as 1 | 3 | 6 | 12,
         input,
       }),
     );
@@ -188,6 +191,9 @@ export function useBoardCalendarWorkbench({
     editCalendarEntry: entry.editCalendarEntry, editingEvent: entry.editingEvent,
     editingEventId: entry.editingEventId, entryCategory: entry.entryCategory,
     entryColor: entry.entryColor, entryConfirmed: entry.entryConfirmed,
+    entryRepeat: entry.entryRepeat,
+    entryGeneratePrepTasks: entry.entryGeneratePrepTasks,
+    entryNotifyMode: entry.entryNotifyMode,
     entryDone: entry.entryDone, entryLeadContact: entry.entryLeadContact,
     entryLocation: entry.entryLocation, entryNotes: entry.entryNotes,
     entryRelatedMeeting: entry.entryRelatedMeeting,
@@ -203,6 +209,9 @@ export function useBoardCalendarWorkbench({
     openMeetingComposer: entry.openMeetingComposer, selectedDateEvents,
     selectedDateKey, setActiveTab, setEntryColor: entry.setEntryColor,
     setEntryConfirmed: entry.setEntryConfirmed, setEntryDone: entry.setEntryDone,
+    setEntryRepeat: entry.setEntryRepeat,
+    setEntryGeneratePrepTasks: entry.setEntryGeneratePrepTasks,
+    setEntryNotifyMode: entry.setEntryNotifyMode,
     setEntryLeadContact: entry.setEntryLeadContact,
     setEntryLocation: entry.setEntryLocation, setEntryNotes: entry.setEntryNotes,
     setEntryRelatedMeeting: entry.setEntryRelatedMeeting,
@@ -240,6 +249,8 @@ function buildCalendarEntryInput(
     title: entry.entryTitle,
     type: entry.entryType,
     virtualLink: entry.entryVirtualLink,
+    generatePrepTasks: entry.entryGeneratePrepTasks,
+    notifyMode: entry.entryNotifyMode,
   };
 }
 
@@ -247,16 +258,20 @@ function applyCalendarEntryMutation({
   currentData,
   editingEventId,
   entryColor,
+  repeatCount,
   input,
 }: {
   currentData: TemplateFormData;
   editingEventId: string | null;
   entryColor: string;
+  repeatCount: 1 | 3 | 6 | 12;
   input: ReturnType<typeof buildCalendarEntryInput>;
 }) {
   const mutation = editingEventId
     ? updateBoardCalendarEntry(currentData, editingEventId, input)
-    : appendBoardCalendarEntry(currentData, input);
+    : input.type === "meeting"
+      ? appendBoardCalendarMeetingSeries(currentData, input, repeatCount)
+      : appendBoardCalendarEntry(currentData, input);
 
   if (!mutation) return currentData;
 
@@ -271,7 +286,7 @@ function applyCalendarEntryMutation({
     : nextData;
 
   return input.type === "meeting"
-    ? syncBoardCalendarGeneratedTasks(nextDataWithColor)
+    ? syncBoardCalendarGeneratedTasks(ensureBoardCalendarPreparationRules(nextDataWithColor))
     : nextDataWithColor;
 }
 

@@ -2,15 +2,17 @@ import { generateBoardMeetingDocumentPdf } from "@/app/modules/board-calendar/bo
 import type { MeetingDocumentKind } from "@/lib/template-renderer/board-calendar-meeting-documents";
 
 export async function fetchMeetingDocumentPdf({
+  acknowledged = false,
   kind,
   meetingId,
   templateInstanceId,
 }: {
+  acknowledged?: boolean;
   kind: MeetingDocumentKind;
   meetingId: string;
   templateInstanceId: string;
 }) {
-  const result = await generateBoardMeetingDocumentPdf({ kind, meetingId, templateInstanceId });
+  const result = await generateBoardMeetingDocumentPdf({ acknowledged, kind, meetingId, templateInstanceId });
   if (!result.ok) throw new Error(result.error);
   const bytes = Uint8Array.from(atob(result.data.base64), (character) => character.charCodeAt(0));
   return { bytes, fileName: result.data.fileName };

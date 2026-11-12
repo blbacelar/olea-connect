@@ -38,6 +38,7 @@ export function BoardPackagesPanel({
   onDataChange,
   templateInstanceId,
   canSend,
+  canManage,
   saveState,
   workspaceMembers,
 }: {
@@ -48,6 +49,7 @@ export function BoardPackagesPanel({
   ) => void;
   templateInstanceId: string;
   canSend: boolean;
+  canManage: boolean;
   saveState: "saved" | "saving" | "unsaved" | "error";
   workspaceMembers: WorkspaceMemberOption[];
 }) {
@@ -128,8 +130,8 @@ export function BoardPackagesPanel({
             <BoardPackageMeetingCard
               key={meeting.id}
               meeting={meeting}
-              onAddFile={() => upload.openMeetingUpload(meeting)}
-              onDeleteDocument={documents.setDeleteTarget}
+              onAddFile={canManage ? () => upload.openMeetingUpload(meeting) : undefined}
+              onDeleteDocument={canManage ? documents.setDeleteTarget : undefined}
               onDownloadDocument={(document) =>
                 documents.requestDocumentDownload(document, meeting)
               }
@@ -160,16 +162,16 @@ export function BoardPackagesPanel({
               not tied to one meeting.
             </p>
           </div>
-          <Button type="button" variant="outline" onClick={upload.openGeneralUpload}>
+          {canManage ? <Button type="button" variant="outline" onClick={upload.openGeneralUpload}>
             <Plus className="mr-2 size-4" />
             Add file
-          </Button>
+          </Button> : null}
         </div>
 
         <DocumentList
           documents={generalDocuments}
           emptyLabel="No general documents yet."
-          onDeleteDocument={documents.setDeleteTarget}
+          onDeleteDocument={canManage ? documents.setDeleteTarget : undefined}
           onDownloadDocument={documents.requestDocumentDownload}
         />
       </section>

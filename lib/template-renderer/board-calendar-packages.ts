@@ -1,6 +1,6 @@
 import { createTemplateRecordId } from "@/lib/template-renderer/create-id";
 import type { TemplateFormData } from "@/lib/template-renderer/types";
-import { getMeetingDocuments, type MeetingDocumentKind } from "./board-calendar-meeting-documents";
+import { getMeetingDocuments, meetingDocumentTitles, type MeetingDocumentKind } from "./board-calendar-meeting-documents";
 
 type TemplateRecord = Record<string, unknown>;
 
@@ -160,7 +160,7 @@ export function buildBoardPackageMeetings(
         fileName: `${document.kind.replace(/_/g, "-")}.pdf`,
         id: `${id}:${document.kind}`,
         meetingId: id,
-        name: document.kind === "consent_agenda" ? "Consent agenda" : "Board minutes",
+        name: meetingDocumentTitles[document.kind],
         size: 0,
         sizeLabel: "Generated PDF",
         storagePath: "",

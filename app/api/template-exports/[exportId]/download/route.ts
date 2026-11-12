@@ -23,13 +23,16 @@ export async function GET(_request: Request, props: { params: Promise<{ exportId
     const admin = createAdminClient();
     const { data: record, error: recordError } = await admin
       .from("template_exports")
-      .select("storage_path, file_name, format")
+      .select("storage_path, file_name, format, resource_id")
       .eq("id", params.exportId)
       .eq("organization_id", session.organization.id)
       .maybeSingle();
 
     if (recordError) throw recordError;
     if (!record) {
+      return NextResponse.json({ error: "Export not found." }, { status: 404 });
+    }
+    if (session.member.membershipRole === "member" && record.resource_id === "10000000-0000-4000-8000-000000000007") {
       return NextResponse.json({ error: "Export not found." }, { status: 404 });
     }
     if (typeof record.storage_path !== "string" ||

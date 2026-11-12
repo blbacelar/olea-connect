@@ -16,6 +16,7 @@ import {
   isBoardCalendarSchema,
 } from "@/lib/template-renderer/board-calendar-report-html";
 import { normalizeBoardCalendarMemberAssignments } from "@/lib/template-renderer/board-calendar-chairs";
+import { getBoardCalendarContacts } from "@/lib/template-renderer/board-calendar-contacts";
 import {
   assertMeetingDocumentWriteAccess,
   assertMeetingDocumentMembers,
@@ -74,6 +75,9 @@ export async function saveDynamicTemplateSession(
     .single();
   if (resourceError || !resource) throw new Error("This template resource is unavailable.");
   const isBoardCalendar = resource.slug === "board-calendar-operational-workflow";
+  if (isBoardCalendar && member.membershipRole === "member") {
+    throw new Error("Board members can view the calendar and respond to RSVPs. Only an organization administrator can edit it.");
+  }
   const calendarData = isBoardCalendar
     ? await normalizeBoardCalendarMemberFormData({
         formData: payload.formData,
@@ -84,6 +88,11 @@ export async function saveDynamicTemplateSession(
     : null;
   const formData = calendarData?.formData ?? payload.formData;
   if (isBoardCalendar) {
+    const contacts = getBoardCalendarContacts(formData);
+    const previousContacts = previousFormData ? getBoardCalendarContacts(previousFormData) : [];
+    if (member.membershipRole === "member" && JSON.stringify(contacts) !== JSON.stringify(previousContacts)) {
+      throw new Error("Only an organization administrator can change the board contact directory.");
+    }
     const after = validateMeetingDocuments(formData);
     const before = previousFormData ? validateMeetingDocuments(previousFormData) : [];
     assertMeetingDocumentWriteAccess({
@@ -208,6 +217,9 @@ export async function generateTemplateExport({
   const resource = Array.isArray(instance.resources)
     ? instance.resources[0]
     : instance.resources;
+  if (member.membershipRole === "member" && instance.resource_id === "10000000-0000-4000-8000-000000000007") {
+    throw new Error("Only an organization administrator can export the full board calendar report.");
+  }
   const definition = Array.isArray(resource?.template_definitions)
     ? resource.template_definitions[0]
     : resource?.template_definitions;
@@ -343,16 +355,19 @@ async function renderPdfExportBuffer({
 }
 
 export async function createTemplateExportDownloadUrl(exportId: string) {
-  const { organization } = await requireMemberContext();
+  const { member, organization } = await requireMemberContext();
   const supabase = await createClient();
   const { data: exportRecord, error: exportError } = await supabase
     .from("template_exports")
-    .select("id")
+    .select("id,resource_id")
     .eq("id", exportId)
     .eq("organization_id", organization.id)
     .single();
 
   if (exportError) throw exportError;
+  if (member.membershipRole === "member" && exportRecord.resource_id === "10000000-0000-4000-8000-000000000007") {
+    throw new Error("Only an organization administrator can download full board calendar reports.");
+  }
 
   return `/api/template-exports/${exportRecord.id}/download`;
 }

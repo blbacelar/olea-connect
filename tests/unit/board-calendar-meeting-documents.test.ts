@@ -5,6 +5,7 @@ import {
   assertMeetingDocumentMembers,
   createMeetingDocument,
   getMeetingDocuments,
+  meetingDocumentKindsFor,
   upsertMeetingDocument,
   validateMeetingDocuments,
 } from "@/lib/template-renderer/board-calendar-meeting-documents";
@@ -16,6 +17,22 @@ const meeting = { id: "meeting-1", type: "Board Meeting", committee: "Board revi
 const base: TemplateFormData = { meetings: [meeting], documents: [] };
 
 describe("board meeting documents", () => {
+  it("uses committee templates for committee meetings and brands confidential PDFs", () => {
+    expect(meetingDocumentKindsFor("Finance Committee")).toEqual(["committee_agenda", "committee_minutes"]);
+    expect(meetingDocumentKindsFor("Board Meeting")).toEqual(["consent_agenda", "board_minutes"]);
+    const agenda = createMeetingDocument("committee-1", "committee_agenda", []);
+    const approved = { ...agenda, status: "approved" as const, sections: { ...agenda.sections, agenda: "Approve finance review" } };
+    const data: TemplateFormData = { meetings: [{ id: "committee-1", type: "Finance Committee", date: "2026-11-20" }], meeting_documents: [approved] };
+    expect(validateMeetingDocuments(data)).toHaveLength(1);
+    expect(buildBoardPackageMeetings(data)[0].documents[0].name).toBe("Committee agenda");
+    const html = buildMeetingDocumentHtml({ document: approved,
+      meeting: { title: "Finance Committee", date: "2026-11-20", time: "", location: "" },
+      memberNames: new Map(), organizationName: "Example Org", primaryColor: "#123456", secondaryColor: "#abcdef", readerName: "Alex" });
+    expect(html).toContain("Committee agenda");
+    expect(html).toContain("#123456");
+    expect(html).toContain("#abcdef");
+    expect(html).toContain("Prepared for Alex");
+  });
   it("keeps drafts out of packages and includes only approved documents", () => {
     const agenda = createMeetingDocument(meeting.id, "consent_agenda", ["member-1"]);
     const draftData = upsertMeetingDocument(base, { ...agenda, sections: { ...agenda.sections, consent: "Approve the prior minutes" } });

@@ -89,6 +89,21 @@ function getLatestInvoiceId(subscription: Stripe.Subscription) {
     : subscription.latest_invoice?.id;
 }
 
+export async function isSupersededStripeSubscription(
+  supabase: SupabaseClient,
+  subscription: Stripe.Subscription,
+) {
+  const { data, error } = await supabase
+    .from("subscriptions")
+    .select("metadata")
+    .eq("provider", "stripe")
+    .eq("provider_subscription_id", subscription.id)
+    .maybeSingle();
+
+  if (error) throw error;
+  return Boolean(data?.metadata?.superseded_by_internal_grant);
+}
+
 async function findLocalSubscription(
   supabase: SupabaseClient,
   subscription: Stripe.Subscription,
@@ -227,6 +242,9 @@ export async function syncStripeSubscription(
     supabase,
     subscription,
   );
+  if (existingSubscription.metadata?.superseded_by_internal_grant) {
+    return existingSubscription.id;
+  }
   const localSubscription = await updateLocalSubscription(
     supabase,
     subscription,

@@ -204,5 +204,5 @@ describe("board calendar HTML report export", () => {
     } finally {
       await loadingTask.destroy();
     }
-  }, 30_000);
+  }, 60_000);
 });

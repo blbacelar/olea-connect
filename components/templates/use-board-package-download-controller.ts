@@ -46,6 +46,7 @@ export function useBoardPackageDownloadController({
         templateInstanceId,
       });
       await downloadBoardPackageZip({
+        acknowledged: packageAcknowledged,
         brand,
         meeting: downloadablePackage,
         templateInstanceId,

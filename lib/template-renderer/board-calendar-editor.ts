@@ -36,6 +36,8 @@ export interface BoardCalendarEntryInput {
   virtualLink?: string;
   weeksBefore?: number;
   daysBeforeAgm?: number;
+  generatePrepTasks?: boolean;
+  notifyMode?: "review" | "auto" | "none";
 }
 
 export interface BoardCalendarEntryMutation {
@@ -208,6 +210,26 @@ export function buildBoardCalendarSetup(data: TemplateFormData): BoardCalendarSe
   };
 }
 
+const prototypePreparationRules = [
+  { label: "Send save-the-date", days_before: 21, applies_to: "Any meeting", responsible: "Administrator" },
+  { label: "Request agenda items", days_before: 14, applies_to: "Any meeting", responsible: "Administrator" },
+  { label: "Committee reports due", days_before: 10, applies_to: "Any meeting", responsible: "Administrator" },
+  { label: "Compile board package", days_before: 7, applies_to: "Any meeting", responsible: "Administrator" },
+  { label: "Distribute board package", days_before: 5, applies_to: "Any meeting", responsible: "Administrator" },
+  { label: "Confirm quorum / RSVPs", days_before: 1, applies_to: "Any meeting", responsible: "Administrator" },
+];
+
+export function ensureBoardCalendarPreparationRules(data: TemplateFormData): TemplateFormData {
+  if (data.operational_task_rules_initialized || getRows(data, "operational_task_rules").length) {
+    return data;
+  }
+  return {
+    ...data,
+    operational_task_rules: prototypePreparationRules.map((rule) => ({ ...rule })),
+    operational_task_rules_initialized: true,
+  };
+}
+
 function getTopLevelString(data: TemplateFormData, key: string) {
   const value = data[key];
   return typeof value === "string" ? value.trim() : "";
@@ -235,6 +257,7 @@ export function buildGeneratedStaffTasks(
   );
 
   return getRows(data, "meetings").flatMap((meeting) => {
+    if (meeting.generate_prep_tasks === false) return [];
     const date = parseDateKey(meeting.date);
     if (!date) return [];
 
@@ -338,8 +361,38 @@ export function createBoardCalendarEntryRow(input: BoardCalendarEntryInput) {
         lead_contact: input.leadContact?.trim() ?? "",
         notes,
         confirmed: input.confirmed || "",
+        ...(input.generatePrepTasks === undefined ? {} : { generate_prep_tasks: input.generatePrepTasks }),
+        ...(input.notifyMode === undefined ? {} : { notify_mode: input.notifyMode, notified: false }),
       };
   }
+}
+
+/** The first occurrence is the chosen date; later dates keep its day when possible. */
+export function getMonthlyMeetingDates(firstDateKey: string, count: 1 | 3 | 6 | 12): string[] {
+  const first = parseDateKey(firstDateKey);
+  if (!first) return [];
+  return Array.from({ length: count }, (_, offset) => {
+    const year = first.getFullYear();
+    const month = first.getMonth() + offset;
+    const lastDay = new Date(year, month + 1, 0).getDate();
+    return toDateKey(new Date(year, month, Math.min(first.getDate(), lastDay)));
+  });
+}
+
+export function appendBoardCalendarMeetingSeries(
+  data: TemplateFormData,
+  input: BoardCalendarEntryInput,
+  count: 1 | 3 | 6 | 12,
+): BoardCalendarEntryMutation {
+  return {
+    path: ["meetings"],
+    value: [
+      ...getRows(data, "meetings"),
+      ...getMonthlyMeetingDates(input.dateKey, count).map((dateKey) =>
+        createBoardCalendarEntryRow({ ...input, type: "meeting", dateKey }),
+      ),
+    ],
+  };
 }
 
 export function getBoardCalendarEntryPath(type: BoardCalendarEntryType): FieldPath {
@@ -511,6 +564,8 @@ export function getBoardCalendarEntryInput(
         leadContact: getString(row, "lead_contact"),
         notes: getString(row, "notes"),
         confirmed: getString(row, "confirmed"),
+        ...(typeof row.generate_prep_tasks === "boolean" ? { generatePrepTasks: row.generate_prep_tasks } : {}),
+        ...(getString(row, "notify_mode") ? { notifyMode: getString(row, "notify_mode") as "review" | "auto" | "none" } : {}),
       };
   }
 }
@@ -556,6 +611,14 @@ function createUpdatedBoardCalendarEntryRow(
   return {
     ...nextRow,
     id: getString(existingRow, "id") || createTemplateRecordId("meeting"),
+    ...(input.notifyMode === undefined ? {} : {
+      notified: getString(existingRow, "date") === input.dateKey &&
+        getString(existingRow, "time") === (input.time?.trim() ?? "") &&
+        getString(existingRow, "location") === (input.location?.trim() ?? "") &&
+        (getString(existingRow, "notify_mode") || "review") === input.notifyMode
+          ? existingRow.notified === true
+          : false,
+    }),
   };
 }
 

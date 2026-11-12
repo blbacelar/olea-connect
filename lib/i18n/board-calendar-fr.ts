@@ -1,4 +1,16 @@
 export const boardCalendarExactTranslations: Array<[string, string]> = [
+  ["Board portal", "Portail du conseil"],
+  ["For:", "Pour :"],
+  ["saved", "enregistré"],
+  ["saving", "enregistrement"],
+  ["Send save-the-date", "Envoyer le préavis"],
+  ["Request agenda items", "Demander les points à l'ordre du jour"],
+  ["Committee reports due", "Échéance des rapports des comités"],
+  ["Compile board package", "Préparer le dossier du conseil"],
+  ["Distribute board package", "Distribuer le dossier du conseil"],
+  ["Confirm quorum / RSVPs", "Confirmer le quorum et les réponses"],
+  ["Loading meeting RSVPs before saving attendance...", "Chargement des réponses avant l'enregistrement des présences..."],
+  ["Loading audit log...", "Chargement du journal d'audit..."],
   ["Meeting documents", "Documents de réunion"],
   ["Consent agenda", "Ordre du jour de consentement"],
   ["Board minutes", "Procès-verbal du conseil"],
@@ -76,6 +88,7 @@ export const boardCalendarExactTranslations: Array<[string, string]> = [
 ];
 
 export const boardCalendarPhraseTranslations: Array<[RegExp, string]> = [
+  [/^For: (.+)$/, "Pour : $1"],
   [/^Meeting documents: (.+)$/, "Documents de réunion : $1"],
   [/^Open documents for (.+)$/, "Ouvrir les documents de $1"],
   [/^Attendance for (.+)$/, "Présence de $1"],

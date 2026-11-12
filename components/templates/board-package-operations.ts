@@ -63,16 +63,19 @@ export function validateBoardPackageDocumentForm({
 }
 
 export async function getBoardPackageDocumentOpenUrl({
+  acknowledged = false,
   document,
   meeting,
   templateInstanceId,
 }: {
+  acknowledged?: boolean;
   document: BoardPackageDocument;
   meeting?: BoardPackageMeeting;
   templateInstanceId: string;
 }) {
   if (document.storagePath) {
     return getStoredBoardPackageDocumentUrl({
+      acknowledged,
       document,
       meeting,
       templateInstanceId,
@@ -147,17 +150,19 @@ export function getDocumentMeetingContext(
 }
 
 async function getStoredBoardPackageDocumentUrl({
+  acknowledged,
   document,
   meeting,
   templateInstanceId,
 }: {
+  acknowledged: boolean;
   document: BoardPackageDocument;
   meeting?: BoardPackageMeeting;
   templateInstanceId: string;
 }) {
   const documentUrlResult = await createBoardPackageDocumentDownloadUrl({
+    acknowledged,
     documentId: document.id,
-    documentName: document.name,
     fileName: document.fileName || document.name,
     storagePath: document.storagePath,
     templateInstanceId,

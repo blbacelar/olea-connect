@@ -80,7 +80,10 @@ function makeSubscription({
   } as unknown as Stripe.Subscription;
 }
 
-function makeSupabaseMock(existingPauseStart: string | null) {
+function makeSupabaseMock(
+  existingPauseStart: string | null,
+  existingMetadata: Record<string, unknown> = {},
+) {
   const subscriptionUpdates: Array<Record<string, unknown>> = [];
   const subscriptionItemMutations: Array<Record<string, unknown>> = [];
 
@@ -106,7 +109,7 @@ function makeSupabaseMock(existingPauseStart: string | null) {
           return {
             data: {
               id: "local_sub_123",
-              metadata: {},
+              metadata: existingMetadata,
               pause_starts_at: existingPauseStart,
             },
             error: null,
@@ -238,6 +241,23 @@ function makePaidSeatCheckoutSession(
 describe("Stripe subscription synchronization", () => {
   beforeEach(() => {
     stripeMocks.retrieveCheckoutSession.mockReset();
+  });
+
+  it("does not reactivate a Stripe subscription replaced by an internal grant", async () => {
+    const { syncStripeSubscription } = await import("@/lib/stripe/subscriptions");
+    const { client, subscriptionUpdates, subscriptionItemMutations } = makeSupabaseMock(
+      null,
+      { superseded_by_internal_grant: "borapost-developer-canopy-2026-10-22" },
+    );
+
+    const id = await syncStripeSubscription(
+      client as unknown as SupabaseClient,
+      makeSubscription({ pauseCollection: null }),
+    );
+
+    expect(id).toBe("local_sub_123");
+    expect(subscriptionUpdates).toEqual([]);
+    expect(subscriptionItemMutations).toEqual([]);
   });
 
   it("preserves an existing pause start when a paused subscription is re-synced", async () => {

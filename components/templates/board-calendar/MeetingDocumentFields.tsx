@@ -35,7 +35,7 @@ export function MeetingDocumentFields({
     <div className="space-y-5">
       <section className="space-y-3">
         <h3 className="text-sm font-semibold text-slate-950">
-          {document.kind === "board_minutes" ? "Attendance" : "Roll call and quorum"}
+          {document.kind.endsWith("minutes") ? "Attendance" : "Roll call and quorum"}
         </h3>
         <p className="text-sm text-slate-500">Choose each member&apos;s attendance for this meeting.</p>
         {members.length ? members.map((member) => {
@@ -84,7 +84,7 @@ export function MeetingDocumentFields({
         </div>
       ))}
 
-      {document.kind === "board_minutes" ? (
+      {document.kind.endsWith("minutes") ? (
         <>
           <MotionsEditor document={document} members={members} nameById={nameById} onChange={onChange} />
           <ActionsEditor document={document} members={members} onChange={onChange} />

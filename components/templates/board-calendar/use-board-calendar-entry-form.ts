@@ -29,6 +29,9 @@ type EntryFormState = {
   type: BoardCalendarEntryType;
   virtualLink: string;
   weeksBefore: string;
+  repeat: "1" | "3" | "6" | "12";
+  generatePrepTasks: boolean;
+  notifyMode: "review" | "auto" | "none";
 };
 
 type EntryFormField = keyof EntryFormState;
@@ -152,6 +155,9 @@ export function useBoardCalendarEntryForm({
     entryType: form.type,
     entryVirtualLink: form.virtualLink,
     entryWeeksBefore: form.weeksBefore,
+    entryRepeat: form.repeat,
+    entryGeneratePrepTasks: form.generatePrepTasks,
+    entryNotifyMode: form.notifyMode,
     isEntryModalOpen,
     isEntryReady,
     isSelectedDateInPast,
@@ -171,6 +177,9 @@ export function useBoardCalendarEntryForm({
     setEntryTitle: (value: string) => setEntryField("title", value),
     setEntryVirtualLink: (value: string) => setEntryField("virtualLink", value),
     setEntryWeeksBefore: (value: string) => setEntryField("weeksBefore", value),
+    setEntryRepeat: (value: "1" | "3" | "6" | "12") => setEntryField("repeat", value),
+    setEntryGeneratePrepTasks: (value: boolean) => setEntryField("generatePrepTasks", value),
+    setEntryNotifyMode: (value: "review" | "auto" | "none") => setEntryField("notifyMode", value),
     updateEntryCategory,
     updateEntryStatus,
     updateEntryType,
@@ -196,6 +205,9 @@ function createEmptyEntryForm(
     type,
     virtualLink: "",
     weeksBefore: "",
+    repeat: "1",
+    generatePrepTasks: true,
+    notifyMode: "review",
   };
 }
 
@@ -219,6 +231,9 @@ function createEntryFormFromInput(
     type: input.type,
     virtualLink: input.virtualLink ?? "",
     weeksBefore: getEntryWeeksBefore(input),
+    repeat: "1",
+    generatePrepTasks: input.generatePrepTasks ?? true,
+    notifyMode: input.notifyMode ?? "review",
   };
 }
 

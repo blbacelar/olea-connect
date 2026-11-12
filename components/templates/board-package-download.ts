@@ -18,16 +18,19 @@ type IncludedPackageFile = {
 };
 
 export async function downloadBoardPackageZip({
+  acknowledged,
   brand,
   meeting,
   templateInstanceId,
 }: {
+  acknowledged: boolean;
   brand: BrandProfile;
   meeting: BoardPackageMeeting;
   templateInstanceId: string;
 }) {
   const zip = new JSZip();
   const includedFiles = await collectPackageFiles({
+    acknowledged,
     documentsFolder: zip.folder("documents"),
     meeting,
     templateInstanceId,
@@ -49,10 +52,12 @@ export async function downloadBoardPackageZip({
 }
 
 async function collectPackageFiles({
+  acknowledged,
   documentsFolder,
   meeting,
   templateInstanceId,
 }: {
+  acknowledged: boolean;
   documentsFolder: JSZip | null;
   meeting: BoardPackageMeeting;
   templateInstanceId: string;
@@ -62,6 +67,7 @@ async function collectPackageFiles({
   for (const packageDocument of meeting.documents) {
     includedFiles.push(
       await resolvePackageFile({
+        acknowledged,
         documentsFolder,
         meeting,
         packageDocument,
@@ -74,11 +80,13 @@ async function collectPackageFiles({
 }
 
 async function resolvePackageFile({
+  acknowledged,
   documentsFolder,
   meeting,
   packageDocument,
   templateInstanceId,
 }: {
+  acknowledged: boolean;
   documentsFolder: JSZip | null;
   meeting: BoardPackageMeeting;
   packageDocument: BoardPackageDocument;
@@ -86,6 +94,7 @@ async function resolvePackageFile({
 }): Promise<IncludedPackageFile> {
   if (packageDocument.generatedKind) {
     const pdf = await fetchMeetingDocumentPdf({
+      acknowledged,
       kind: packageDocument.generatedKind,
       meetingId: meeting.id,
       templateInstanceId,
@@ -102,6 +111,7 @@ async function resolvePackageFile({
   }
 
   return downloadPrivatePackageFile({
+    acknowledged,
     documentsFolder,
     meeting,
     packageDocument,
@@ -110,19 +120,21 @@ async function resolvePackageFile({
 }
 
 async function downloadPrivatePackageFile({
+  acknowledged,
   documentsFolder,
   meeting,
   packageDocument,
   templateInstanceId,
 }: {
+  acknowledged: boolean;
   documentsFolder: JSZip | null;
   meeting: BoardPackageMeeting;
   packageDocument: BoardPackageDocument;
   templateInstanceId: string;
 }): Promise<IncludedPackageFile> {
   const documentUrlResult = await createBoardPackageDocumentDownloadUrl({
+    acknowledged,
     documentId: packageDocument.id,
-    documentName: packageDocument.name,
     fileName: packageDocument.fileName || packageDocument.name,
     meetingId: meeting.id,
     meetingTitle: meeting.title,

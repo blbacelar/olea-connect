@@ -72,10 +72,12 @@ export const getReferralProgramSettings = cache(async () => {
   return mapSettings(data);
 });
 
+export class ReferralAdminAccessError extends Error {}
+
 export async function requireReferralAdmin() {
   const session = await requireMemberContext();
   if (!(session.platformRoles ?? []).includes("super_admin")) {
-    throw new Error("Only platform administrators can manage referrals.");
+    throw new ReferralAdminAccessError("Only platform administrators can manage referrals.");
   }
   return session;
 }
