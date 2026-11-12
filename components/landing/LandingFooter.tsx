@@ -1,6 +1,7 @@
 import Link from "next/link";
 
 import { Logo } from "@/components/Logo";
+import { PublicLegalLinks } from "@/components/landing/PublicLegalLinks";
 import { getPublicSiteCopy } from "@/lib/i18n/public-site-copy";
 import type { PublicSiteCopy } from "@/lib/i18n/public-site-copy";
 import { getRequestLocale } from "@/lib/i18n/server";
@@ -43,10 +44,14 @@ export async function LandingFooter({
           <Link href="/#plans">{footerNav.pricing}</Link>
           <Link href="/#faq">{footerNav.faq}</Link>
           <Link href="/demos">{footerNav.demos}</Link>
+          <a href="https://www.youtube.com/@OliveinGoodCompany" target="_blank" rel="noopener noreferrer">{footerNav.podcast}</a>
           <Link href="/sponsorship">{footerNav.sponsorship}</Link>
           <Link href="/referrals">{footerNav.referrals}</Link>
           <Link href="/login">{footerNav.memberLogin}</Link>
         </nav>
+      </div>
+      <div className="mx-auto mt-8 max-w-7xl border-t pt-6">
+        <PublicLegalLinks />
       </div>
       <div className="mx-auto mt-8 flex max-w-7xl flex-col gap-2 border-t pt-6 text-xs text-slate-600 sm:flex-row sm:justify-between">
         <span>{footerCopy.copyright}</span>

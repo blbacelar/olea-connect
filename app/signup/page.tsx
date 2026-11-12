@@ -6,6 +6,7 @@ import { useEffect } from "react";
 
 import { useLocaleContext } from "@/components/i18n/LocaleProvider";
 import { PublicHeader } from "@/components/auth/PublicHeader";
+import { PublicLegalLinks } from "@/components/landing/PublicLegalLinks";
 import { StepIndicator } from "@/components/auth/StepIndicator";
 import { Button } from "@/components/ui/button";
 import { useRegistration } from "@/hooks/use-registration";
@@ -120,6 +121,7 @@ export default function SignupPlanPage() {
           </Button>
         </div>
       </main>
+      <footer className="px-4 pb-8"><PublicLegalLinks compact /></footer>
     </div>
   );
 }

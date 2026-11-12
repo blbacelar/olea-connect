@@ -4,10 +4,12 @@ test("@smoke opens and plays the Grant Platform demo on mobile in both languages
   await page.setViewportSize({ width: 390, height: 844 });
   await page.goto("/");
 
-  await page.getByRole("link", { name: "Watch the demo" }).click();
-  const demo = page.locator("#demo");
-  await expect(demo).toBeInViewport();
-  await expect(demo.getByRole("heading", { name: "See the Grant Platform in action." })).toBeVisible();
+  await page.getByRole("link", { name: "Watch module demos" }).click();
+  await expect(page).toHaveURL(/\/demos$/);
+  const demo = page.locator("#grant-platform");
+  await expect(page.getByRole("heading", { name: "See how Olea Connects works" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Board Calendar" })).toBeVisible();
+  await expect(demo.getByRole("heading", { name: "Grant Platform" })).toBeVisible();
 
   const video = demo.locator("video");
   await expect(video).toHaveAttribute("controls", "");
@@ -28,6 +30,6 @@ test("@smoke opens and plays the Grant Platform demo on mobile in both languages
     page.getByRole("option", { name: "Français" }).click(),
   ]);
   await expect(page.locator("html")).toHaveAttribute("lang", "fr-CA");
-  await expect(demo.getByRole("heading", { name: "Découvrez la plateforme de subventions en action." })).toBeVisible();
+  await expect(demo.getByRole("heading", { name: "Plateforme de subventions" })).toBeVisible();
   await expect(demo).toContainText("Texte à l'écran en anglais");
 });
