@@ -73,13 +73,14 @@ export function PublicHeader({
           </div>
         ) : (
           <>
-            <nav className="mr-5 hidden items-center gap-6 text-sm font-medium text-slate-600 md:flex">
+            <nav className="mr-5 hidden items-center gap-3 text-xs font-medium text-slate-600 lg:flex xl:gap-5 xl:text-sm">
               <Link href="/#features">{copy.nav.whatYouGet}</Link>
               <Link href="/#how-it-works">{copy.nav.howItWorks}</Link>
               <Link href="/#plans">{copy.nav.pricing}</Link>
               <Link href="/#faq">{copy.nav.faq}</Link>
               <Link href="/sponsorship">{copy.nav.sponsorship}</Link>
               <Link href="/referrals">{copy.nav.referrals}</Link>
+              <a href="https://www.youtube.com/@OliveinGoodCompany" target="_blank" rel="noopener noreferrer">{copy.nav.podcast}</a>
               <Link href="/login">{copy.nav.login}</Link>
             </nav>
             <div className="mr-0 sm:mr-3">

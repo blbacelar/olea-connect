@@ -5,14 +5,14 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 
 import { SectionIntro } from "@/components/landing/SectionIntro";
+import { LandingPlanComparison } from "@/components/landing/LandingPlanComparison";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import type { Locale } from "@/lib/i18n/locales";
 import type { PublicSiteCopy } from "@/lib/i18n/public-site-copy";
 import { signupMembershipPlans } from "@/lib/plans";
-import { getFoundingPrice, getFoundingSavings, isSignupTier } from "@/lib/founding-pricing";
+import { getFoundingPrice, isSignupTier } from "@/lib/founding-pricing";
 import { fixedPriceOffers, formatCad } from "@/lib/pricing";
-import { cn } from "@/lib/utils";
 
 type LandingPricingCopy = PublicSiteCopy["pricing"];
 
@@ -64,6 +64,23 @@ export function LandingPricing({
           description={copy.description}
           centered
         />
+        <div className="mx-auto mt-7 grid max-w-5xl gap-3 sm:grid-cols-2 lg:grid-cols-4">
+          {(locale === "fr-CA" ? [
+            { label: "Nous ne vendons pas vos données", href: "/legal/privacy" },
+            { label: "Données de carte traitées par notre fournisseur de paiement", href: "/legal/privacy" },
+            { label: "Vos données vous appartiennent", href: "/legal/data-ownership" },
+            { label: "15 % des bénéfices sont versés à des organismes", href: "/sponsorship" },
+          ] : [
+            { label: "We do not sell your data", href: "/legal/privacy" },
+            { label: "Card details handled by our payment provider", href: "/legal/privacy" },
+            { label: "Your organization owns its data", href: "/legal/data-ownership" },
+            { label: "15% of profits go to nonprofits", href: "/sponsorship" },
+          ]).map((signal) => (
+            <Link key={signal.label} href={signal.href} className="rounded-xl border border-olea-green/20 bg-white p-4 text-center text-xs font-semibold leading-5 text-olea-dark underline-offset-4 hover:underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-olea-green">
+              {signal.label}
+            </Link>
+          ))}
+        </div>
         {foundingAvailable ? (
           <div className="mx-auto mt-6 max-w-3xl rounded-2xl border border-olea-green/20 bg-white p-4 text-center text-sm leading-6 text-slate-600 shadow-sm">
             <strong className="text-olea-dark">{copy.foundingLabel}</strong>{" "}
@@ -76,21 +93,11 @@ export function LandingPricing({
             if (!isSignupTier(plan.id)) return null;
             const annual = getFoundingPrice(plan.id, "annual");
             const quarterly = getFoundingPrice(plan.id, "quarterly");
-            const featured = plan.id === "roots";
             return (
               <Card
                 key={plan.id}
-                className={cn(
-                  "relative flex flex-col p-6 shadow-none",
-                  featured &&
-                    "border-2 border-olea-green shadow-[0_16px_45px_rgba(74,124,89,0.13)]",
-                )}
+                className="relative flex flex-col p-6 shadow-none"
               >
-                {featured ? (
-                  <span className="absolute -top-3 left-1/2 -translate-x-1/2 whitespace-nowrap rounded-full bg-[#B54708] px-3 py-1 text-[10px] font-bold uppercase tracking-wider text-white">
-                    {copy.recommended}
-                  </span>
-                ) : null}
                 <p className="text-sm font-semibold text-slate-500">
                   {planCopy.audience}
                 </p>
@@ -109,7 +116,7 @@ export function LandingPricing({
                   <>
                     <p className="mt-1 text-sm font-semibold text-olea-green">{copy.foundingRate}</p>
                     <p className="mt-1 text-sm text-slate-600">{copy.monthlyEquivalent.replace("{amount}", formatCad(annual.founding / 12, locale))}</p>
-                    <p className="mt-3 text-sm text-slate-600">{copy.standardRate} {formatCad(annual.standard, locale)} · {copy.saveTwoYears.replace("{amount}", formatCad(getFoundingSavings(plan.id), locale))}</p>
+                    <p className="mt-3 text-sm text-slate-600">{copy.standardRate} {formatCad(annual.standard, locale)} · {copy.savePerYear.replace("{amount}", formatCad(annual.standard - annual.founding, locale))}</p>
                     <p className="mt-1 text-sm font-medium text-slate-700">{copy.foundingCode}</p>
                   </>
                 ) : null}
@@ -136,18 +143,19 @@ export function LandingPricing({
                 <Button
                   asChild
                   className="mt-7 w-full"
-                  variant={featured ? "default" : "outline"}
+                  variant="outline"
                 >
                   <Link
                     href={`/signup/account?tier=${plan.id}&billing=annual${foundingAvailable ? "&code=OLEAFOUNDING15" : ""}`}
                   >
-                    {foundingAvailable ? copy.foundingRate : `${copy.choosePlan} ${planCopy.name}`}
+                    {copy.choosePlan} {planCopy.name}
                   </Link>
                 </Button>
               </Card>
             );
           })}
         </div>
+        <LandingPlanComparison copy={copy} locale={locale} />
         <div className="mt-7 grid gap-4 text-sm text-slate-600 md:grid-cols-3">
           {copy.policies.map((policy) => (
             <p

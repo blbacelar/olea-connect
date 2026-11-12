@@ -85,7 +85,7 @@ export class SignupFlowPage {
   async expectLegalDocumentsVisible() {
     for (const document of legalDocuments) {
       await expect(
-        this.page.getByRole("link", { name: document, exact: true }),
+        this.page.locator("main").getByRole("link", { name: document, exact: true }),
       ).toBeVisible();
     }
   }

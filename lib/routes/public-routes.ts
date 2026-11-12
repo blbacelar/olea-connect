@@ -5,6 +5,7 @@ const publicRouteMatchers = [
   (pathname: string) => pathname === "/referrals",
   (pathname: string) => pathname === "/demos",
   (pathname: string) => pathname === "/sponsorship",
+  (pathname: string) => pathname === "/accessibility",
   (pathname: string) => pathname === "/login",
   (pathname: string) => pathname === "/reset-password",
   (pathname: string) => pathname === "/update-password",

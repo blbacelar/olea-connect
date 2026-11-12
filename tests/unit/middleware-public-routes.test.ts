@@ -16,6 +16,12 @@ describe("middleware public routes", () => {
     expect(isPublicPath("/verify/training/OLEA-2026-ABCDEF123456")).toBe(true);
     expect(isPublicPath("/referrals/dashboard")).toBe(false);
   });
+
+  it("opens the accessibility statement without opening member routes", () => {
+    expect(isPublicPath("/accessibility")).toBe(true);
+    expect(isPublicPath("/dashboard")).toBe(false);
+    expect(isPublicPath("/subscription")).toBe(false);
+  });
 });
 
 describe("middleware locale headers", () => {

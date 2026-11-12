@@ -21,6 +21,7 @@ const publicPagePaths = new Set([
   "/referrals",
   "/demos",
   "/sponsorship",
+  "/accessibility",
   "/login",
   "/reset-password",
   "/opengraph-image",

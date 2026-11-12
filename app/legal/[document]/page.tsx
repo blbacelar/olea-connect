@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import { PublicLegalLinks } from "@/components/landing/PublicLegalLinks";
 
 import {
   getLegalDocumentCopy,
@@ -105,6 +106,7 @@ export default async function LegalDocumentPage(
             .
           </footer>
         </article>
+        <footer className="mt-8 border-t pt-5"><PublicLegalLinks compact /></footer>
       </div>
     </main>
   );

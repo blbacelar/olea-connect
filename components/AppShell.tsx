@@ -11,6 +11,7 @@ import {
 import { Breadcrumbs } from "@/components/Breadcrumbs";
 import { Header } from "@/components/Header";
 import { FrenchRuntimeTranslator } from "@/components/i18n/FrenchRuntimeTranslator";
+import { PublicLegalLinks } from "@/components/landing/PublicLegalLinks";
 import { Sidebar } from "@/components/Sidebar";
 import { isPublicRoute } from "@/lib/routes/public-routes";
 import { cn } from "@/lib/utils";
@@ -66,6 +67,9 @@ export function AppShell({ children }: { children: ReactNode }) {
           >
             <div className="mx-auto max-w-[1280px] p-4 md:p-8">{children}</div>
           </main>
+          <footer className="border-t bg-white px-4 py-5">
+            <PublicLegalLinks compact />
+          </footer>
         </div>
       </div>
     </FrenchRuntimeTranslator>

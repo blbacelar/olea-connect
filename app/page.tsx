@@ -6,6 +6,7 @@ import { LandingFeatures } from "@/components/landing/LandingFeatures";
 import { LandingFooter } from "@/components/landing/LandingFooter";
 import { LandingHero } from "@/components/landing/LandingHero";
 import { LandingPricing } from "@/components/landing/LandingPricing";
+import { LandingPodcast } from "@/components/landing/LandingPodcast";
 import { LandingTrust } from "@/components/landing/LandingTrust";
 import { LandingTransformation } from "@/components/landing/LandingTransformation";
 import { LandingWorkflow } from "@/components/landing/LandingWorkflow";
@@ -25,6 +26,7 @@ export default async function HomePage() {
         <LandingHero copy={copy.hero} />
         <LandingTransformation copy={copy.transformation} />
         <LandingFeatures copy={copy.features} />
+        <LandingPodcast locale={locale} />
         <LandingTrust copy={copy.trust} />
         <LandingDemo copy={copy.demo} />
         <LandingWorkflow copy={copy.workflow} />

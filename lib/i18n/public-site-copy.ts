@@ -30,6 +30,7 @@ export type PublicSiteCopy = {
     sponsorship: string;
     referrals: string;
     demos: string;
+    podcast: string;
     getStarted: string;
   };
   foundingBanner: {
@@ -123,7 +124,7 @@ export type PublicSiteCopy = {
     mostPopular: string;
     recommended: string;
     standardRate: string;
-    saveTwoYears: string;
+    savePerYear: string;
     foundingRate: string;
     foundingCode: string;
     quarterlyOption: string;
@@ -206,6 +207,7 @@ export const publicSiteCopy: Record<Locale, PublicSiteCopy> = {
       sponsorship: "Sponsorship",
       referrals: "Referrals",
       demos: "Demos",
+      podcast: "Podcast",
       getStarted: "Get started",
     },
     foundingBanner: {
@@ -220,7 +222,7 @@ export const publicSiteCopy: Record<Locale, PublicSiteCopy> = {
       description:
         "Create board-ready documents in your own brand, learn from sector experts, manage funding opportunities, and connect with nonprofit leaders who understand the work.",
       primaryCta: "Join Olea Connects™",
-      secondaryCta: "Watch the demo",
+      secondaryCta: "Watch module demos",
       youtubeCta: "Our YouTube channel",
       assurances: [
         "Join in about 5 minutes",
@@ -228,7 +230,7 @@ export const publicSiteCopy: Record<Locale, PublicSiteCopy> = {
         "Annual billing",
       ],
       quote:
-        "Whatever stage your organization is at, there is a place for you here.",
+        "Built for Canadian nonprofit boards, from small volunteer teams to growing organizations.",
       quoteLabel: "The Olea Connects™ promise",
       preview: {
         nav: ["Dashboard", "Board Calendar", "Webinars", "Community"],
@@ -320,7 +322,7 @@ export const publicSiteCopy: Record<Locale, PublicSiteCopy> = {
           label: "flow back to nonprofits as unrestricted donations",
         },
         { value: "English + French", label: "core governance resources" },
-        { value: "WCAG 2.1 AA", label: "accessibility standard" },
+        { value: "Accessibility", label: "feedback and assistance available" },
       ],
     },
     demo: {
@@ -363,14 +365,14 @@ export const publicSiteCopy: Record<Locale, PublicSiteCopy> = {
         "Choose annual or quarterly billing. The first 50 paid organizations using the founding code keep their founding rate for 2 years.",
       foundingLabel: "Founding member offer:",
       foundingNotice:
-        "Save up to $2,120 over your first 2 years with code OLEAFOUNDING15. Your exact total is confirmed before payment.",
+        "Annual savings with code OLEAFOUNDING15: Seedling $180, Roots $530, Canopy $1,060. Your exact total is confirmed before payment.",
       quarterly: "Quarterly",
       annual: "Annual",
       annualBadge: "Best for renewal planning",
       mostPopular: "Most popular",
       recommended: "Recommended",
       standardRate: "Standard rate",
-      saveTwoYears: "Save {amount} over 2 years",
+      savePerYear: "Save {amount} per year for 2 years",
       foundingRate: "Founding member rate",
       foundingCode: "Use code OLEAFOUNDING15 at checkout.",
       quarterlyOption: "Or pay quarterly: {amount}.",
@@ -383,7 +385,7 @@ export const publicSiteCopy: Record<Locale, PublicSiteCopy> = {
       optionalSupportEyebrow: "Optional support",
       optionalSupportTitle: "Add capacity when your team needs it.",
       optionalSupportDescription:
-        "Add single modules to a smaller package. Board facilitation and 1:1 impact coaching are available by quote. Impact Accelerator is coming soon.",
+        "Add single modules to a smaller package. Board facilitation and 1:1 impact coaching are available by quote.",
       retreatTitle: "Board Retreat Facilitation",
       retreatDescription:
         "Professional facilitation for annual board retreats and strategic planning sessions.",
@@ -529,7 +531,11 @@ export const publicSiteCopy: Record<Locale, PublicSiteCopy> = {
         {
           question: "What is the founding-member offer?",
           answer:
-            "Use OLEAFOUNDING15 during signup. The first 50 paid organizations receive the fixed founding rate for 2 years (2 annual or 8 quarterly payments). After that, the standard rate applies.",
+            "Use OLEAFOUNDING15 during signup. The first 50 paid organizations receive the fixed founding rate for 2 years (2 annual or 8 quarterly payments). On annual billing, Seedling saves $180, Roots $530, and Canopy $1,060 per year. Quarterly savings differ. After 2 years, the standard rate applies.",
+        },
+        {
+          question: "Can we speak with someone before joining?",
+          answer: "Yes. Use the Book a call link in the footer to request a free discovery call with Olive Social Impact in Kelowna, BC. You can also email hello@olivesocialimpact.com.",
         },
         {
           question: "How many seats are included?",
@@ -604,6 +610,7 @@ export const publicSiteCopy: Record<Locale, PublicSiteCopy> = {
       sponsorship: "Commandites",
       referrals: "Références",
       demos: "Démos",
+      podcast: "Balado",
       getStarted: "Commencer",
     },
     foundingBanner: {
@@ -618,7 +625,7 @@ export const publicSiteCopy: Record<Locale, PublicSiteCopy> = {
       description:
         "Créez des documents prêts pour le conseil dans votre propre marque, apprenez auprès d'experts du secteur, trouvez des occasions de subvention et échangez avec des leaders qui comprennent votre réalité.",
       primaryCta: "Rejoindre Olea Connects™",
-      secondaryCta: "Voir la démo",
+      secondaryCta: "Voir les démos des modules",
       youtubeCta: "Notre chaîne YouTube",
       assurances: [
         "Inscription en environ 5 minutes",
@@ -626,7 +633,7 @@ export const publicSiteCopy: Record<Locale, PublicSiteCopy> = {
         "Facturation annuelle",
       ],
       quote:
-        "Peu importe l'étape où se trouve votre organisme, il y a une place pour vous ici.",
+        "Conçu pour les conseils d'organismes canadiens, des petites équipes bénévoles aux organismes en croissance.",
       quoteLabel: "La promesse Olea Connects™",
       preview: {
         nav: [
@@ -730,7 +737,7 @@ export const publicSiteCopy: Record<Locale, PublicSiteCopy> = {
           value: "Anglais + français",
           label: "ressources de gouvernance essentielles",
         },
-        { value: "WCAG 2.1 AA", label: "norme d'accessibilité" },
+        { value: "Accessibilité", label: "commentaires et aide possibles" },
       ],
     },
     demo: {
@@ -774,14 +781,14 @@ export const publicSiteCopy: Record<Locale, PublicSiteCopy> = {
         "Choisissez une facturation annuelle ou trimestrielle. Les 50 premiers organismes payants utilisant le code fondateur conservent leur tarif fondateur pendant 2 ans.",
       foundingLabel: "Offre membre fondateur :",
       foundingNotice:
-        "Économisez jusqu'à 2 120 $ sur vos deux premières années avec le code OLEAFOUNDING15. Le montant exact est confirmé avant le paiement.",
+        "Économies annuelles avec OLEAFOUNDING15 : Seedling 180 $, Roots 530 $, Canopy 1 060 $. Le montant exact est confirmé avant le paiement.",
       quarterly: "Trimestriel",
       annual: "Annuel",
       annualBadge: "Idéal pour planifier le renouvellement",
       mostPopular: "Le plus populaire",
       recommended: "Recommandé",
       standardRate: "Tarif standard",
-      saveTwoYears: "Économisez {amount} sur 2 ans",
+      savePerYear: "Économisez {amount} par an pendant 2 ans",
       foundingRate: "Tarif membre fondateur",
       foundingCode: "Utilisez le code OLEAFOUNDING15 à la caisse.",
       quarterlyOption: "Ou payez chaque trimestre : {amount}.",
@@ -795,7 +802,7 @@ export const publicSiteCopy: Record<Locale, PublicSiteCopy> = {
       optionalSupportTitle:
         "Ajoutez de la capacité quand votre équipe en a besoin.",
       optionalSupportDescription:
-        "Ajoutez des modules à un forfait plus petit. L'animation du conseil et l'accompagnement individuel en impact sont offerts sur devis. L'Accélérateur d'impact arrive bientôt.",
+        "Ajoutez des modules à un forfait plus petit. L'animation du conseil et l'accompagnement individuel en impact sont offerts sur devis.",
       retreatTitle: "Animation de retraite du conseil",
       retreatDescription:
         "Animation professionnelle pour les retraites annuelles du conseil et les séances de planification stratégique.",
@@ -942,7 +949,11 @@ export const publicSiteCopy: Record<Locale, PublicSiteCopy> = {
         {
           question: "Qu'est-ce que l'offre membre fondateur?",
           answer:
-            "Utilisez OLEAFOUNDING15 pendant l'inscription. Les 50 premiers organismes payants bénéficient du tarif fondateur fixe pendant 2 ans (2 paiements annuels ou 8 paiements trimestriels). Ensuite, le tarif standard s'applique.",
+            "Utilisez OLEAFOUNDING15 pendant l'inscription. Les 50 premiers organismes payants bénéficient du tarif fondateur fixe pendant 2 ans (2 paiements annuels ou 8 paiements trimestriels). Avec la facturation annuelle, Seedling économise 180 $, Roots 530 $ et Canopy 1 060 $ par an. Les économies trimestrielles diffèrent. Après 2 ans, le tarif standard s'applique.",
+        },
+        {
+          question: "Pouvons-nous parler à quelqu'un avant d'adhérer?",
+          answer: "Oui. Utilisez le lien Réserver un appel dans le pied de page pour demander un appel découverte gratuit avec Olive Social Impact à Kelowna (C.-B.). Vous pouvez aussi écrire à hello@olivesocialimpact.com.",
         },
         {
           question: "Combien de sièges sont inclus?",
