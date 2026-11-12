@@ -2,7 +2,9 @@
 
 import { AlertTriangle } from "lucide-react";
 
+import { useLocaleContext } from "@/components/i18n/LocaleProvider";
 import { Button } from "@/components/ui/button";
+import { getErrorBoundaryCopy } from "@/lib/i18n/error-boundary-copy";
 
 export default function AppError({
   reset,
@@ -10,18 +12,20 @@ export default function AppError({
   error: Error & { digest?: string };
   reset: () => void;
 }) {
+  const { locale } = useLocaleContext();
+  const copy = getErrorBoundaryCopy(locale);
+
   return (
-    <div className="rounded-xl border border-red-200 bg-white p-8 shadow-soft">
+    <div role="alert" className="rounded-xl border border-red-200 bg-white p-8 shadow-soft">
       <AlertTriangle className="size-8 text-red-600" />
       <h1 className="mt-4 text-xl font-bold text-slate-800">
-        We could not load this workspace
+        {copy.workspace.title}
       </h1>
       <p className="mt-2 max-w-xl text-sm leading-6 text-slate-600">
-        The data request failed or your account no longer has access. Try the
-        request again. If the problem continues, sign out and contact support.
+        {copy.workspace.description}
       </p>
-      <Button className="mt-5" onClick={reset}>
-        Try again
+      <Button className="mt-5" onClick={reset} type="button">
+        {copy.retry}
       </Button>
     </div>
   );

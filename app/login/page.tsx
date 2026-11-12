@@ -20,6 +20,7 @@ import {
 import { getAuthFlowCopy } from "@/lib/i18n/auth-flow-copy";
 import { getPublicSiteCopy } from "@/lib/i18n/public-site-copy";
 import { retryMembershipActivation } from "@/lib/provisioning/client";
+import { emailStringSchema } from "@/lib/validation/schemas";
 
 export default function LoginPage() {
   const router = useRouter();
@@ -34,7 +35,10 @@ export default function LoginPage() {
   const [message, setMessage] = useState("");
   const [nextPath, setNextPath] = useState("");
   const [rememberFor30Days, setRememberFor30Days] = useState(false);
+  const [attempted, setAttempted] = useState(false);
   const [isPending, startTransition] = useTransition();
+  const validEmail = emailStringSchema.safeParse(email).success;
+  const validPassword = password.length > 0;
 
   useEffect(() => {
     const searchParams = new URLSearchParams(window.location.search);
@@ -56,6 +60,9 @@ export default function LoginPage() {
   ]);
 
   const handleLogin = () => {
+    setAttempted(true);
+    if (!validEmail || !validPassword || isPending) return;
+
     startTransition(async () => {
       try {
         setError("");
@@ -106,9 +113,23 @@ export default function LoginPage() {
           <Input
             id="loginEmail"
             type="email"
+            autoComplete="email"
+            aria-describedby={attempted && !validEmail ? "loginEmailHelp loginEmailError" : "loginEmailHelp"}
+            aria-invalid={attempted && !validEmail}
             value={email}
-            onChange={(event) => setEmail(event.target.value)}
+            onChange={(event) => {
+              setEmail(event.target.value);
+              setError("");
+            }}
           />
+          <p id="loginEmailHelp" className="text-xs text-slate-600">
+            {authCopy.shared.emailGuidance}
+          </p>
+          {attempted && !validEmail ? (
+            <p id="loginEmailError" className="text-sm text-red-700">
+              {authCopy.shared.emailInvalid}
+            </p>
+          ) : null}
         </div>
         <div className="space-y-2">
           <div className="flex items-center justify-between">
@@ -122,22 +143,33 @@ export default function LoginPage() {
           </div>
           <PasswordInput
             id="loginPassword"
+            autoComplete="current-password"
+            aria-describedby={attempted && !validPassword ? "loginPasswordError" : undefined}
+            aria-invalid={attempted && !validPassword}
             value={password}
             hideLabel={authCopy.shared.hidePassword}
-            onChange={(event) => setPassword(event.target.value)}
+            onChange={(event) => {
+              setPassword(event.target.value);
+              setError("");
+            }}
             onKeyDown={(event) => {
               if (event.key === "Enter") handleLogin();
             }}
             showLabel={authCopy.shared.showPassword}
           />
+          {attempted && !validPassword ? (
+            <p id="loginPasswordError" className="text-sm text-red-700">
+              {loginCopy.passwordRequired}
+            </p>
+          ) : null}
         </div>
         {error ? (
-          <p className="rounded-lg bg-red-50 p-3 text-sm text-red-700">
+          <p role="alert" className="rounded-lg bg-red-50 p-3 text-sm text-red-700">
             {error}
           </p>
         ) : null}
         {message ? (
-          <p className="rounded-lg bg-emerald-50 p-3 text-sm text-emerald-800">
+          <p role="status" className="rounded-lg bg-emerald-50 p-3 text-sm text-emerald-800">
             {message}
           </p>
         ) : null}

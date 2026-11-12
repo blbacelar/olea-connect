@@ -9,6 +9,7 @@ import { PageHeader } from "@/components/PageHeader";
 import { Badge } from "@/components/ui/badge";
 import type { getBillingSummary } from "@/lib/billing/server";
 import { formatPaidSeatPrice } from "@/lib/billing/seat-pricing";
+import type { Locale } from "@/lib/i18n/locales";
 
 import {
   BillingManagementControls,
@@ -39,9 +40,11 @@ type SubscriptionSearchParams = {
 
 export function SubscriptionDashboard({
   billing,
+  locale,
   searchParams,
 }: {
   billing: BillingSummary;
+  locale: Locale;
   searchParams?: SubscriptionSearchParams;
 }) {
   const canManage = billing.role === "owner" || billing.role === "admin";
@@ -78,6 +81,7 @@ export function SubscriptionDashboard({
         accessRestricted={accessRestricted}
         billing={billing}
         isPaused={isPaused}
+        locale={locale}
         primaryDate={primaryDate}
       />
       {showPlanUpgrade && currentPlanId ? (
@@ -104,7 +108,7 @@ export function SubscriptionDashboard({
           searchParams={searchParams}
           totalSeats={totalSeats}
         />
-        <BillingCycleSection billing={billing} />
+        <BillingCycleSection billing={billing} locale={locale} />
       </div>
       {!billing.fundedBySponsor ? <div className="mb-7">
         <BillingManagementControls
@@ -113,7 +117,7 @@ export function SubscriptionDashboard({
           isPaused={isPaused}
         />
       </div> : null}
-      <BillingHistory billing={billing} />
+      <BillingHistory billing={billing} locale={locale} />
     </div>
   );
 }
@@ -184,17 +188,19 @@ function CurrentPlanCard({
   accessRestricted,
   billing,
   isPaused,
+  locale,
   primaryDate,
 }: {
   accessRestricted: boolean;
   billing: BillingSummary;
   isPaused: boolean;
+  locale: Locale;
   primaryDate: string | null;
 }) {
   return (
     <section className="mb-7 rounded-[14px] border bg-white p-[26px] shadow-soft">
       <div className="grid gap-6 md:grid-cols-3">
-        <CurrentPlanColumn billing={billing} />
+        <CurrentPlanColumn billing={billing} locale={locale} />
         <PlanStatusColumn
           accessRestricted={accessRestricted}
           billing={billing}
@@ -202,6 +208,7 @@ function CurrentPlanCard({
         <BillingDateColumn
           billing={billing}
           isPaused={isPaused}
+          locale={locale}
           primaryDate={primaryDate}
         />
       </div>
@@ -209,7 +216,7 @@ function CurrentPlanCard({
   );
 }
 
-function CurrentPlanColumn({ billing }: { billing: BillingSummary }) {
+function CurrentPlanColumn({ billing, locale }: { billing: BillingSummary; locale: Locale }) {
   return (
     <div>
       <p className="text-xs font-semibold uppercase tracking-[0.05em] text-slate-400">
@@ -221,7 +228,7 @@ function CurrentPlanColumn({ billing }: { billing: BillingSummary }) {
       </p>
       <p className="mt-1 text-[13.5px] text-slate-500">
         {billing.fundedBySponsor ? "Funded membership · no payment due from your organization" : (
-          <>{formatMoney(billing.amountCents, billing.currency)} / {formatBillingInterval(billing.billingInterval)}</>
+          <>{formatMoney(billing.amountCents, billing.currency, locale)} / {formatBillingInterval(billing.billingInterval)}</>
         )}
       </p>
     </div>
@@ -264,10 +271,12 @@ function PlanStatusColumn({
 function BillingDateColumn({
   billing,
   isPaused,
+  locale,
   primaryDate,
 }: {
   billing: BillingSummary;
   isPaused: boolean;
+  locale: Locale;
   primaryDate: string | null;
 }) {
   return (
@@ -282,7 +291,7 @@ function BillingDateColumn({
             : "Next billing date"}
       </p>
       <p className="mt-2 text-base font-semibold">
-        {primaryDate ? formatDate(primaryDate) : "Pending billing confirmation"}
+        {primaryDate ? formatDate(primaryDate, locale) : "Pending billing confirmation"}
       </p>
       {!billing.fundedBySponsor ? <p className="mt-1 text-[13px] text-slate-500">
         {billing.paymentMethod ?? "Payment method not available"}

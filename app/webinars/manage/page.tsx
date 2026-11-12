@@ -8,6 +8,8 @@ import { SectionHeading } from "@/components/SectionHeading";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { canCurrentUserManageEvents, getWebinarCatalog } from "@/lib/data/webinars";
+import type { Locale } from "@/lib/i18n/locales";
+import { getRequestLocale } from "@/lib/i18n/server";
 import type { Webinar } from "@/lib/types";
 
 import {
@@ -32,9 +34,11 @@ function WebinarStatusBadge({ status }: { status: Webinar["status"] }) {
 }
 
 function WebinarAdminRow({
+  locale,
   now,
   webinar,
 }: {
+  locale: Locale;
   now: number;
   webinar: Webinar;
 }) {
@@ -53,8 +57,8 @@ function WebinarAdminRow({
           <WebinarStatusBadge status={webinar.status} />
         </div>
         <p className="mt-1 text-[13px] text-slate-500">
-          {formatEventType(webinar.type)} · {formatEventDate(webinar.startsAt)} to{" "}
-          {formatEventDate(webinar.endsAt)}
+          {formatEventType(webinar.type)} · {formatEventDate(webinar.startsAt, locale)} {locale === "fr-CA" ? "au" : "to"}{" "}
+          {formatEventDate(webinar.endsAt, locale)}
         </p>
         <p className="mt-1 text-xs font-semibold uppercase tracking-[0.16em] text-slate-400">
           Plans: {formatPlanList(webinar.allowedPlanIds)}
@@ -77,12 +81,14 @@ function WebinarAdminRow({
 function WebinarAdminSection({
   emptyDescription,
   emptyTitle,
+  locale,
   now,
   title,
   webinars,
 }: {
   emptyDescription: string;
   emptyTitle: string;
+  locale: Locale;
   now: number;
   title: string;
   webinars: Webinar[];
@@ -93,7 +99,7 @@ function WebinarAdminSection({
       {webinars.length ? (
         <div className="overflow-hidden rounded-xl border bg-white shadow-soft">
           {webinars.map((webinar) => (
-            <WebinarAdminRow key={webinar.id} now={now} webinar={webinar} />
+            <WebinarAdminRow key={webinar.id} locale={locale} now={now} webinar={webinar} />
           ))}
         </div>
       ) : (
@@ -108,6 +114,7 @@ function WebinarAdminSection({
 }
 
 export default async function ManageWebinarsPage() {
+  const locale = await getRequestLocale();
   const canManageEvents = await canCurrentUserManageEvents();
 
   if (!canManageEvents) notFound();
@@ -155,6 +162,7 @@ export default async function ManageWebinarsPage() {
 
       <div className="grid gap-7">
         <WebinarAdminSection
+          locale={locale}
           title="Upcoming and active"
           webinars={upcoming}
           now={now}
@@ -162,6 +170,7 @@ export default async function ManageWebinarsPage() {
           emptyDescription="Create a webinar to make it available to members."
         />
         <WebinarAdminSection
+          locale={locale}
           title="Past and canceled webinars"
           webinars={past}
           now={now}
@@ -169,6 +178,7 @@ export default async function ManageWebinarsPage() {
           emptyDescription="Old or canceled webinars will appear here."
         />
         <WebinarAdminSection
+          locale={locale}
           title="Archived"
           webinars={archived}
           now={now}

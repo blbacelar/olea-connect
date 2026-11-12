@@ -4,6 +4,7 @@ import { Check, FileText } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useMemo, useState, useTransition } from "react";
 
+import { useLocaleContext } from "@/components/i18n/LocaleProvider";
 import { OnboardingHeader } from "@/components/onboarding/OnboardingHeader";
 import { Button } from "@/components/ui/button";
 import type { Template } from "@/lib/types";
@@ -11,15 +12,13 @@ import { cn } from "@/lib/utils";
 
 import { saveTemplateSelections } from "./actions";
 
-const dateFormatter = new Intl.DateTimeFormat("en-CA", {
-  month: "short",
-  day: "numeric",
-  year: "numeric",
-});
-
-function formatTemplateDate(value?: string | null) {
+function formatTemplateDate(value: string | null | undefined, locale: "en-CA" | "fr-CA") {
   if (!value) return null;
-  return dateFormatter.format(new Date(value));
+  return new Intl.DateTimeFormat(locale, {
+    month: "short",
+    day: "numeric",
+    year: "numeric",
+  }).format(new Date(value));
 }
 
 function isTemplateLocked(value?: string | null) {
@@ -256,10 +255,11 @@ function TemplateSelectionCard({
 }
 
 function TemplateAvailabilityList({ template }: { template: Template }) {
+  const { locale } = useLocaleContext();
   const dates = [
-    ["Available", formatTemplateDate(template.availableAt)],
-    ["Selected", formatTemplateDate(template.selectedAt)],
-    ["Locked until", formatTemplateDate(template.lockedUntil)],
+    ["Available", formatTemplateDate(template.availableAt, locale)],
+    ["Selected", formatTemplateDate(template.selectedAt, locale)],
+    ["Locked until", formatTemplateDate(template.lockedUntil, locale)],
   ].filter((entry): entry is [string, string] => Boolean(entry[1]));
 
   return (

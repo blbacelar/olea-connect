@@ -4,6 +4,7 @@ import { BarChart3, Download, Filter, PieChart, TrendingUp } from "lucide-react"
 import { useMemo, useState } from "react";
 
 import { Badge } from "@/components/ui/badge";
+import { useLocaleContext } from "@/components/i18n/LocaleProvider";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
@@ -29,6 +30,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import type { GrantPlatformWorkspaceData } from "@/lib/data/grant-platform";
+import type { Locale } from "@/lib/i18n/locales";
 
 type Application = GrantPlatformWorkspaceData["applications"][number];
 type Funder = GrantPlatformWorkspaceData["partners"][number];
@@ -49,8 +51,8 @@ type FunderReportRow = {
 
 const unassignedFunder = "Unassigned funder";
 
-function formatCurrency(cents: number) {
-  return new Intl.NumberFormat("en-CA", {
+function formatCurrency(cents: number, locale: Locale) {
+  return new Intl.NumberFormat(locale, {
     currency: "CAD",
     maximumFractionDigits: 0,
     style: "currency",
@@ -177,6 +179,7 @@ export function GrantFunderReportsPanel({
 }: {
   data: GrantPlatformWorkspaceData;
 }) {
+  const { locale } = useLocaleContext();
   const [selectedFunder, setSelectedFunder] = useState("all");
   const [selectedGrantId, setSelectedGrantId] = useState("all");
   const [reportMode, setReportMode] = useState<ReportMode>(null);
@@ -275,7 +278,7 @@ export function GrantFunderReportsPanel({
         <MetricCard label="Applications" value={String(totals.applications)} />
         <MetricCard label="Active grants" value={String(totals.active)} />
         <MetricCard label="Awarded" value={String(totals.awarded)} />
-        <MetricCard label="Requested" value={formatCurrency(totals.requested)} />
+        <MetricCard label="Requested" value={formatCurrency(totals.requested, locale)} />
       </div>
 
       <Card className="shadow-soft">
@@ -322,7 +325,7 @@ export function GrantFunderReportsPanel({
                   <TableCell>
                     <Badge variant="outline">{row.successRate}%</Badge>
                   </TableCell>
-                  <TableCell>{formatCurrency(row.requestedAmountCents)}</TableCell>
+                  <TableCell>{formatCurrency(row.requestedAmountCents, locale)}</TableCell>
                   <TableCell>{row.openFollowUps}</TableCell>
                   <TableCell className="min-w-72 text-slate-600">
                     <p className="line-clamp-2">{row.latestNote}</p>
@@ -391,6 +394,7 @@ function ReportDialogContent({
     requested: number;
   };
 }) {
+  const { locale } = useLocaleContext();
   if (mode === "success") {
     return (
       <div className="space-y-3">
@@ -419,7 +423,7 @@ function ReportDialogContent({
             <p className="font-semibold text-slate-900">{row.name}</p>
             <p className="mt-1 text-sm text-slate-600">
               {row.activeCount} active grants, {row.openFollowUps} open follow-ups, and{" "}
-              {formatCurrency(row.requestedAmountCents)} requested.
+              {formatCurrency(row.requestedAmountCents, locale)} requested.
             </p>
             <p className="mt-2 text-xs text-slate-500">{row.nextAction}</p>
           </div>
