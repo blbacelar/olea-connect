@@ -57,6 +57,7 @@ export function downloadBoardCalendarIcs({
     "PRODID:-//Olea Connects™//Board Calendar//EN",
     `X-WR-CALNAME:${escapeIcsText(organizationName)} Board Calendar`,
   ];
+  const exportedAt = new Date().toISOString().replace(/[-:]/g, "").replace(/\.\d{3}Z$/, "Z");
 
   datedEvents.forEach((event) => {
     const startsAt = formatIcsDate(event.dateKey, event.time);
@@ -64,6 +65,7 @@ export function downloadBoardCalendarIcs({
     calendarLines.push(
       "BEGIN:VEVENT",
       `UID:${event.id}@olea-connects`,
+      `DTSTAMP:${exportedAt}`,
       `DTSTART:${startsAt}`,
       `DTEND:${endsAt}`,
       `SUMMARY:${escapeIcsText(event.title)}`,

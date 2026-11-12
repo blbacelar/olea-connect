@@ -76,7 +76,7 @@ export function BoardCalendarWorkbench({
     dashboard: french ? "Tableau de bord" : "Dashboard", calendar: french ? "Calendrier" : "Calendar",
     meetings: french ? "Réunions" : "Meetings", workflows: french ? "Tâches" : "Workflows",
     packages: french ? "Dossiers du conseil" : "Board Packages", directory: french ? "Répertoire" : "Directory",
-    audit_log: french ? "Journal d’audit" : "Audit Log", integrations: french ? "Intégrations" : "Integrations",
+    audit_log: french ? "Journal d’audit" : "Audit Log",
     settings: french ? "Paramètres" : "Settings", branding: french ? "Identité visuelle" : "Branding",
   };
   const localizedTabs = visibleTabs.map((tab) => ({ ...tab, label: tabLabels[tab.value] }));
@@ -136,12 +136,21 @@ export function BoardCalendarWorkbench({
             onClick={workbench.addToCalendarFile}
           >
             <Download className="size-4" />
-            {french ? "Ajouter au calendrier" : "Add to calendar"}
+            {french ? "Exporter le calendrier (.ics)" : "Export calendar (.ics)"}
           </Button>
           {membershipRole !== "member" ? <Button type="button" variant="outline" className="w-full sm:w-auto" onClick={downloadBackup}>
             <Download className="size-4" />{french ? "Télécharger une sauvegarde JSON" : "Download JSON backup"}
           </Button> : null}
         </div>
+        <p className="mt-2 text-sm text-slate-600">
+          {workbench.hasDatedEvents
+            ? (french
+              ? "Téléchargez le fichier pour l’importer dans Google Agenda ou Outlook."
+              : "Download the file to import it into Google Calendar or Outlook.")
+            : (french
+              ? "Ajoutez une entrée datée pour pouvoir exporter le calendrier."
+              : "Add a dated entry to export the calendar.")}
+        </p>
         {workbench.exportError ? (
           <p
             role="alert"
@@ -300,15 +309,6 @@ function SecondaryTabs({
       </TabsContent>
       <TabsContent value="audit_log" className="mt-0">
         <BoardPackageAuditLogPanel data={data} templateInstanceId={templateInstanceId ?? ""} />
-      </TabsContent>
-      <TabsContent value="integrations" className="mt-0">
-        <section className="space-y-3 rounded-xl border bg-white p-5 shadow-sm">
-          <h3 className="text-lg font-semibold">{french ? "Calendriers et courriels" : "Calendars and email"}</h3>
-          <p className="text-sm text-slate-600">{french
-            ? "Le fichier de calendrier fonctionne dès maintenant. La synchronisation automatique avec Google et Outlook attend la configuration des applications OAuth; aucun compte n’est connecté pour le moment."
-            : "The calendar file works now. Automatic Google and Outlook sync awaits OAuth app configuration; no calendar account is connected yet."}</p>
-          <Button asChild variant="outline"><Link href="/settings/integrations">{french ? "Voir les paramètres d’intégration" : "View integration settings"}</Link></Button>
-        </section>
       </TabsContent>
       <TabsContent value="settings" className="mt-0 space-y-5">
         <BoardCalendarSetupPanel
