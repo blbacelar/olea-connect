@@ -73,23 +73,31 @@ test.describe("@critical Stripe promotion checkout", () => {
       const sessionId = pending.checkout_session_id;
       if (!sessionId) throw new Error("Stripe Checkout session was not recorded.");
       expect(sessionId).toMatch(/^cs_test_/);
-      testData.registerCleanup({
-        label: `promotion checkout session ${sessionId}`,
-        run: async () => {
-          const stripe = new Stripe(stripeKey);
-          const session = await stripe.checkout.sessions.retrieve(sessionId);
-          if (session.status === "open") {
-            await stripe.checkout.sessions.expire(sessionId);
-          }
-        },
-      });
+      const checkoutPage = await context.newPage();
+      await checkoutPage.goto(result.checkoutUrl);
+      await expect(checkoutPage.getByRole("textbox", { name: "Add promotion code" })).toBeVisible();
 
-      const stripe = new Stripe(stripeKey);
-      const session = await stripe.checkout.sessions.retrieve(sessionId);
-      expect(session.allow_promotion_codes).toBe(true);
-      expect(session.mode).toBe("subscription");
-      expect(session.customer_email).toBe(owner.email);
-      expect(session.amount_total).toBe(706000);
+      // Staging owns its own Stripe test key; the local CLI key cannot retrieve
+      // or expire sessions in that account. Its sessions expire automatically.
+      if (["localhost", "127.0.0.1"].includes(new URL(baseURL).hostname)) {
+        testData.registerCleanup({
+          label: `promotion checkout session ${sessionId}`,
+          run: async () => {
+            const stripe = new Stripe(stripeKey);
+            const session = await stripe.checkout.sessions.retrieve(sessionId);
+            if (session.status === "open") {
+              await stripe.checkout.sessions.expire(sessionId);
+            }
+          },
+        });
+
+        const stripe = new Stripe(stripeKey);
+        const session = await stripe.checkout.sessions.retrieve(sessionId);
+        expect(session.allow_promotion_codes).toBe(true);
+        expect(session.mode).toBe("subscription");
+        expect(session.customer_email).toBe(owner.email);
+        expect(session.amount_total).toBe(706000);
+      }
     } finally {
       await context.close();
     }
