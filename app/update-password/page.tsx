@@ -50,17 +50,26 @@ export default function UpdatePasswordPage() {
           <Label htmlFor="newPassword">{updateCopy.newPassword}</Label>
           <PasswordInput
             id="newPassword"
+            autoComplete="new-password"
+            aria-describedby="newPasswordHelp"
+            aria-invalid={password.length > 0 && password.length < 8}
             value={password}
             onChange={(event) => setPassword(event.target.value)}
             hideLabel={authCopy.shared.hidePassword}
             showLabel={authCopy.shared.showPassword}
           />
+          <p id="newPasswordHelp" className="text-xs text-slate-600">
+            {updateCopy.passwordTooShort}
+          </p>
         </div>
         <div className="space-y-2">
           <Label htmlFor="confirmPassword">{updateCopy.confirmPassword}</Label>
           <Input
             id="confirmPassword"
             type="password"
+            autoComplete="new-password"
+            aria-describedby={confirmation && password !== confirmation ? "confirmPasswordError" : undefined}
+            aria-invalid={Boolean(confirmation && password !== confirmation)}
             value={confirmation}
             onChange={(event) => setConfirmation(event.target.value)}
             onKeyDown={(event) => {
@@ -69,10 +78,12 @@ export default function UpdatePasswordPage() {
           />
         </div>
         {confirmation && password !== confirmation ? (
-          <p className="text-sm text-red-600">{updateCopy.mismatch}</p>
+          <p id="confirmPasswordError" className="text-sm text-red-700">
+            {updateCopy.mismatch}
+          </p>
         ) : null}
         {error ? (
-          <p className="rounded-lg bg-red-50 p-3 text-sm text-red-700">
+          <p role="alert" className="rounded-lg bg-red-50 p-3 text-sm text-red-700">
             {error}
           </p>
         ) : null}

@@ -5,6 +5,7 @@ import { useFormState, useFormStatus } from "react-dom";
 import { useSearchParams } from "next/navigation";
 
 import { SectionHeading } from "@/components/SectionHeading";
+import { useLocaleContext } from "@/components/i18n/LocaleProvider";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -20,6 +21,7 @@ import type {
   SponsorableOrganization,
 } from "@/lib/data/sponsor-funding";
 import type { SponsorReport, SponsorshipPackageSummary } from "@/lib/types";
+import type { Locale } from "@/lib/i18n/locales";
 
 import {
   saveSponsorContribution,
@@ -34,8 +36,8 @@ const initialSponsorActionState: SponsorActionState = {
   status: "idle",
 };
 
-function formatMoney(amountCents: number) {
-  return new Intl.NumberFormat("en-CA", {
+function formatMoney(amountCents: number, locale: Locale) {
+  return new Intl.NumberFormat(locale, {
     currency: "CAD",
     maximumFractionDigits: 0,
     style: "currency",
@@ -241,6 +243,7 @@ function SponsorshipTermsForm({
   packages: SponsorshipPackageSummary[];
   reports: SponsorReport[];
 }) {
+  const { locale } = useLocaleContext();
   const [state, formAction] = useFormState(
     saveSponsorshipTerm,
     initialSponsorActionState,
@@ -273,7 +276,7 @@ function SponsorshipTermsForm({
             required
             placeholder="Choose package"
             options={packages.map((item) => ({
-              label: `${item.name} · ${formatMoney(item.annualPriceCents)}`,
+              label: `${item.name} · ${formatMoney(item.annualPriceCents, locale)}`,
               value: item.id,
             }))}
           />

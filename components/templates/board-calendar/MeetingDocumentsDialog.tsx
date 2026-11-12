@@ -68,6 +68,20 @@ export function MeetingDocumentsDialog({
     setDirty(false);
   }
 
+  function requestClose() {
+    if (dirty) {
+      setError("Save or discard your changes before closing this document.");
+      return;
+    }
+    onClose();
+  }
+
+  function discardChanges() {
+    setDraft(loadDocument(kind));
+    setDirty(false);
+    setError("");
+  }
+
   function persist(status: MeetingDocument["status"]) {
     const next = { ...draft, status, updatedAt: new Date().toISOString() };
     if (status === "approved" && !hasApprovalContent(next)) {
@@ -102,7 +116,7 @@ export function MeetingDocumentsDialog({
   const readOnly = draft.status === "approved" && !canApprove;
 
   return (
-    <Dialog open onOpenChange={(open) => !open && onClose()}>
+    <Dialog open onOpenChange={(open) => !open && requestClose()}>
       <DialogContent className="max-h-[90vh] max-w-4xl overflow-y-auto">
         <DialogHeader>
           <DialogTitle>Meeting documents: {meeting.title}</DialogTitle>
@@ -127,7 +141,8 @@ export function MeetingDocumentsDialog({
         {error ? <p role="alert" className="text-sm font-medium text-red-700">{error}</p> : null}
         {saveState === "error" ? <p role="alert" className="text-sm font-medium text-red-700">The calendar could not save this document. Keep this dialog open and try again.</p> : null}
         <DialogFooter className="sm:flex-wrap">
-          <Button type="button" variant="outline" onClick={onClose}>Close</Button>
+          <Button type="button" variant="outline" onClick={requestClose}>Close</Button>
+          {dirty ? <Button type="button" variant="outline" onClick={discardChanges}>Discard changes</Button> : null}
           <Button type="button" variant="outline" disabled={dirty || saveState !== "saved" || !templateInstanceId || isExporting || !getMeetingDocuments(data).some((item) => item.meetingId === meeting.id && item.kind === kind)} onClick={() => void exportPdf()}>
             {isExporting ? <LoaderCircle className="size-4 animate-spin" /> : <Download className="size-4" />} Export PDF
           </Button>

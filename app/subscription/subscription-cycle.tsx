@@ -1,12 +1,13 @@
 import { CalendarDays } from "lucide-react";
 
 import type { getBillingSummary } from "@/lib/billing/server";
+import type { Locale } from "@/lib/i18n/locales";
 
 import { formatDate } from "./subscription-format";
 
 type BillingSummary = NonNullable<Awaited<ReturnType<typeof getBillingSummary>>>;
 
-export function BillingCycleSection({ billing }: { billing: BillingSummary }) {
+export function BillingCycleSection({ billing, locale }: { billing: BillingSummary; locale: Locale }) {
   return (
     <section className="rounded-[14px] border bg-white p-[22px] shadow-soft">
       <h2 className="flex items-center gap-2 text-base font-bold text-slate-800">
@@ -20,10 +21,10 @@ export function BillingCycleSection({ billing }: { billing: BillingSummary }) {
         />
         <BillingCycleMetric
           label="Current period"
-          value={getCurrentPeriodLabel(billing)}
+          value={getCurrentPeriodLabel(billing, locale)}
         />
       </dl>
-      <BillingScheduleNotice billing={billing} />
+      <BillingScheduleNotice billing={billing} locale={locale} />
     </section>
   );
 }
@@ -41,8 +42,8 @@ function BillingCycleMetric({ label, value }: { label: string; value: string }) 
   );
 }
 
-function BillingScheduleNotice({ billing }: { billing: BillingSummary }) {
-  const notice = getBillingScheduleNotice(billing);
+function BillingScheduleNotice({ billing, locale }: { billing: BillingSummary; locale: Locale }) {
+  const notice = getBillingScheduleNotice(billing, locale);
   if (!notice) return null;
 
   return (
@@ -52,38 +53,44 @@ function BillingScheduleNotice({ billing }: { billing: BillingSummary }) {
   );
 }
 
-function getCurrentPeriodLabel(billing: BillingSummary) {
+function getCurrentPeriodLabel(billing: BillingSummary, locale: Locale) {
   if (billing.developerAccess) {
     return billing.currentPeriodEnd
-      ? `${formatDate(billing.currentPeriodStart ?? billing.currentPeriodEnd)} - ${formatDate(billing.currentPeriodEnd)}`
-      : "No scheduled end";
+      ? `${formatDate(billing.currentPeriodStart ?? billing.currentPeriodEnd, locale)} – ${formatDate(billing.currentPeriodEnd, locale)}`
+      : locale === "fr-CA" ? "Aucune fin prévue" : "No scheduled end";
   }
   if (billing.billingUnavailable) {
-    return "Billing date unavailable";
+    return locale === "fr-CA" ? "Date de facturation indisponible" : "Billing date unavailable";
   }
 
   if (!billing.currentPeriodStart || !billing.currentPeriodEnd) {
-    return "Pending billing confirmation";
+    return locale === "fr-CA" ? "Confirmation de facturation en attente" : "Pending billing confirmation";
   }
 
-  return `${formatDate(billing.currentPeriodStart)} - ${formatDate(
-    billing.currentPeriodEnd,
+  return `${formatDate(billing.currentPeriodStart, locale)} – ${formatDate(
+    billing.currentPeriodEnd, locale,
   )}`;
 }
 
-function getBillingScheduleNotice(billing: BillingSummary) {
+function getBillingScheduleNotice(billing: BillingSummary, locale: Locale) {
   if (billing.fundedBySponsor && billing.currentPeriodEnd) {
-    return `Your funded year ends on ${formatDate(billing.currentPeriodEnd)}. Contact Olea Connects to discuss continued access.`;
+    const date = formatDate(billing.currentPeriodEnd, locale);
+    return locale === "fr-CA"
+      ? `Votre année financée se termine le ${date}. Communiquez avec Olea Connects pour discuter de la poursuite de l’accès.`
+      : `Your funded year ends on ${date}. Contact Olea Connects to discuss continued access.`;
   }
   if (billing.pauseStartsAt && billing.pauseEndsAt) {
-    return `Paused from ${formatDate(billing.pauseStartsAt)} until ${formatDate(
-      billing.pauseEndsAt,
-    )}.`;
+    const start = formatDate(billing.pauseStartsAt, locale);
+    const end = formatDate(billing.pauseEndsAt, locale);
+    return locale === "fr-CA" ? `En pause du ${start} au ${end}.` : `Paused from ${start} until ${end}.`;
   }
 
   if (billing.cancelAtPeriodEnd && billing.currentPeriodEnd) {
-    return `Cancellation is scheduled for ${formatDate(billing.currentPeriodEnd)}.`;
+    const date = formatDate(billing.currentPeriodEnd, locale);
+    return locale === "fr-CA" ? `L’annulation est prévue pour le ${date}.` : `Cancellation is scheduled for ${date}.`;
   }
 
-  return billing.canceledAt ? `Canceled on ${formatDate(billing.canceledAt)}.` : null;
+  if (!billing.canceledAt) return null;
+  const date = formatDate(billing.canceledAt, locale);
+  return locale === "fr-CA" ? `Annulé le ${date}.` : `Canceled on ${date}.`;
 }

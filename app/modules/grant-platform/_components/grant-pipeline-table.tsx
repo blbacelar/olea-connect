@@ -10,6 +10,7 @@ import { GrantRowActions } from "@/app/modules/grant-platform/_components/grant-
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { useLocaleContext } from "@/components/i18n/LocaleProvider";
 import {
   Select,
   SelectContent,
@@ -27,6 +28,7 @@ import {
 } from "@/components/ui/table";
 import type { GrantPlatformWorkspaceData } from "@/lib/data/grant-platform";
 import { filterGrantApplications, isGrantApplicationPastDue } from "@/lib/grants/pipeline";
+import type { Locale } from "@/lib/i18n/locales";
 
 interface GrantPipelineTableProps {
   canDeleteGrants: boolean;
@@ -43,6 +45,7 @@ export function GrantPipelineTable({
   data,
   onSwitchTab,
 }: GrantPipelineTableProps) {
+  const { locale } = useLocaleContext();
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
   const statuses = [...new Set(data.applications.map((application) => application.status))];
@@ -121,9 +124,9 @@ export function GrantPipelineTable({
                 </TableCell>
                 <TableCell>{application.funderName}</TableCell>
                 <TableCell><Badge variant="outline">{formatStatus(application.status)}</Badge></TableCell>
-                <TableCell>{formatCurrency(application.requestedAmountCents)}</TableCell>
+                <TableCell>{formatCurrency(application.requestedAmountCents, locale)}</TableCell>
                 <TableCell>
-                  {formatDeadline(application.deadlineAt)}
+                  {formatDeadline(application.deadlineAt, locale)}
                   {isGrantApplicationPastDue(application) ? <span className="block text-xs font-semibold text-red-700">Past due</span> : null}
                 </TableCell>
                 <TableCell className="min-w-52 text-slate-600">{application.nextMilestone}</TableCell>
@@ -150,14 +153,14 @@ function formatStatus(value: string) {
   return value.replace(/_/g, " ").replace(/\b\w/g, (letter) => letter.toUpperCase());
 }
 
-function formatCurrency(cents: number) {
-  return new Intl.NumberFormat("en-CA", { style: "currency", currency: "CAD" }).format(cents / 100);
+function formatCurrency(cents: number, locale: Locale) {
+  return new Intl.NumberFormat(locale, { style: "currency", currency: "CAD" }).format(cents / 100);
 }
 
-function formatDeadline(value: string | null) {
-  if (!value) return "Not set";
+function formatDeadline(value: string | null, locale: Locale) {
+  if (!value) return locale === "fr-CA" ? "Non définie" : "Not set";
   const date = new Date(value);
   return Number.isNaN(date.getTime())
-    ? "Not set"
-    : date.toLocaleDateString("en-CA", { year: "numeric", month: "short", day: "numeric", timeZone: "UTC" });
+    ? locale === "fr-CA" ? "Non définie" : "Not set"
+    : date.toLocaleDateString(locale, { year: "numeric", month: "short", day: "numeric", timeZone: "UTC" });
 }

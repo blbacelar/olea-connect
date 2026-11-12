@@ -13,6 +13,8 @@ export type AuthFlowCopy = {
   shared: {
     backToLogin: string;
     emailAddress: string;
+    emailGuidance: string;
+    emailInvalid: string;
     hidePassword: string;
     showPassword: string;
   };
@@ -140,6 +142,7 @@ export type AuthFlowCopy = {
   login: {
     title: string;
     password: string;
+    passwordRequired: string;
     forgotPassword: string;
     paymentVerifyMessage: string;
     paymentSuccessMessage: string;
@@ -176,6 +179,7 @@ export type AuthFlowCopy = {
     title: string;
     description: string;
     newPassword: string;
+    passwordTooShort: string;
     confirmPassword: string;
     mismatch: string;
     pending: string;
@@ -226,6 +230,8 @@ export const authFlowCopy: Record<Locale, AuthFlowCopy> = {
     shared: {
       backToLogin: "Back to login",
       emailAddress: "Email address",
+      emailGuidance: "Use the email address for your Olea Connects account.",
+      emailInvalid: "Enter a valid email address, such as name@example.org.",
       hidePassword: "Hide password",
       showPassword: "Show password",
     },
@@ -407,12 +413,14 @@ export const authFlowCopy: Record<Locale, AuthFlowCopy> = {
     login: {
       title: "Welcome back",
       password: "Password",
+      passwordRequired: "Enter your password.",
       forgotPassword: "Forgot password?",
       paymentVerifyMessage:
         "Check your inbox for a confirmation email from Olea Connects™, confirm your address, then sign in.",
       paymentSuccessMessage:
         "Payment received. Sign in to finish setting up your membership.",
-      fallbackError: "Unable to sign in.",
+      fallbackError:
+        "We could not sign you in. Check your email and password, or reset your password and try again.",
       remember: "Remember me for 30 days",
       pending: "Signing in...",
       submit: "Sign in",
@@ -448,6 +456,7 @@ export const authFlowCopy: Record<Locale, AuthFlowCopy> = {
       title: "Choose a new password",
       description: "Use at least 8 characters for your new password.",
       newPassword: "New password",
+      passwordTooShort: "Use at least 8 characters.",
       confirmPassword: "Confirm password",
       mismatch: "Passwords do not match.",
       pending: "Updating...",
@@ -505,6 +514,8 @@ export const authFlowCopy: Record<Locale, AuthFlowCopy> = {
     shared: {
       backToLogin: "Retour à la connexion",
       emailAddress: "Adresse courriel",
+      emailGuidance: "Utilisez l’adresse courriel de votre compte Olea Connects.",
+      emailInvalid: "Entrez une adresse courriel valide, par exemple nom@exemple.org.",
       hidePassword: "Masquer le mot de passe",
       showPassword: "Afficher le mot de passe",
     },
@@ -692,12 +703,14 @@ export const authFlowCopy: Record<Locale, AuthFlowCopy> = {
     login: {
       title: "Bon retour",
       password: "Mot de passe",
+      passwordRequired: "Entrez votre mot de passe.",
       forgotPassword: "Mot de passe oublié?",
       paymentVerifyMessage:
         "Vérifiez votre boîte de réception pour un courriel de confirmation d'Olea Connects™, confirmez votre adresse, puis connectez-vous.",
       paymentSuccessMessage:
         "Paiement reçu. Connectez-vous pour terminer la configuration de votre adhésion.",
-      fallbackError: "Impossible de vous connecter.",
+      fallbackError:
+        "Connexion impossible. Vérifiez votre adresse courriel et votre mot de passe, ou réinitialisez votre mot de passe avant de réessayer.",
       remember: "Se souvenir de moi pendant 30 jours",
       pending: "Connexion en cours...",
       submit: "Se connecter",
@@ -737,6 +750,7 @@ export const authFlowCopy: Record<Locale, AuthFlowCopy> = {
       description:
         "Utilisez au moins 8 caractères pour votre nouveau mot de passe.",
       newPassword: "Nouveau mot de passe",
+      passwordTooShort: "Utilisez au moins 8 caractères.",
       confirmPassword: "Confirmer le mot de passe",
       mismatch: "Les mots de passe ne correspondent pas.",
       pending: "Mise à jour en cours...",

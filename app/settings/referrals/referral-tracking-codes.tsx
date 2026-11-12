@@ -5,8 +5,10 @@ import { Button } from "@/components/ui/button";
 import { ReferralLinkCopy } from "@/app/referrals/dashboard/referral-link-copy";
 import type { ReferralAdminData } from "@/lib/data/referrals";
 import { getAppUrl } from "@/lib/email/server";
+import { getRequestLocale } from "@/lib/i18n/server";
 
-export function ReferralTrackingCodes({ data }: { data: ReferralAdminData }) {
+export async function ReferralTrackingCodes({ data }: { data: ReferralAdminData }) {
+  const locale = await getRequestLocale();
   if (data.trackingCodes.length === 0) return null;
 
   return (
@@ -51,7 +53,7 @@ export function ReferralTrackingCodes({ data }: { data: ReferralAdminData }) {
                         <td className="py-2 font-medium text-slate-800">{signup.organizationName}</td>
                         <td className="py-2 text-slate-600">{signup.email}</td>
                         <td className="py-2 text-slate-600">{signup.status.replaceAll("_", " ")}</td>
-                        <td className="py-2 text-slate-600">{new Intl.DateTimeFormat("en-CA", { dateStyle: "medium" }).format(new Date(signup.createdAt))}</td>
+                        <td className="py-2 text-slate-600">{new Intl.DateTimeFormat(locale, { dateStyle: "medium" }).format(new Date(signup.createdAt))}</td>
                       </tr>
                     ))}
                   </tbody>

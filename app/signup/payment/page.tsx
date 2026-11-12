@@ -4,6 +4,7 @@ import { useRouter } from "next/navigation";
 import { useEffect, useState, useTransition } from "react";
 
 import { PublicHeader } from "@/components/auth/PublicHeader";
+import { PublicLegalLinks } from "@/components/landing/PublicLegalLinks";
 import { StepIndicator } from "@/components/auth/StepIndicator";
 import { useLocaleContext } from "@/components/i18n/LocaleProvider";
 import { useRegistration } from "@/hooks/use-registration";
@@ -119,6 +120,7 @@ export default function SignupPaymentPage() {
           />
         </div>
       </main>
+      <footer className="px-4 pb-8"><PublicLegalLinks compact /></footer>
     </div>
   );
 }

@@ -20,6 +20,8 @@ test.describe("@signup @critical approved signup flow", () => {
 
     await signup.expectLegalDocumentsVisible();
     await expect(signup.secureCheckoutButton).toBeDisabled();
+    await expect(page.locator("main").getByRole("link", { name: /Privacy Policy/ })).toHaveAttribute("target", "_blank");
+    await expect(page.getByRole("navigation", { name: "Legal and contact links" })).toBeVisible();
 
     await signup.acceptAllLegalDocuments();
     await expect(signup.secureCheckoutButton).toBeEnabled();

@@ -3,6 +3,7 @@
 import { Save } from "lucide-react";
 import {
   type Dispatch,
+  type FormEvent,
   type MutableRefObject,
   type SetStateAction,
   useEffect,
@@ -17,6 +18,7 @@ import {
 } from "@/app/modules/accreditation/actions";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
+import { useLocaleContext } from "@/components/i18n/LocaleProvider";
 import {
   emptyResponse,
   mergeResponse,
@@ -48,6 +50,18 @@ export function EditorTab({
   template: AccreditationTemplateDefinition;
   templates: AccreditationTemplateDefinition[];
 }) {
+  const { locale } = useLocaleContext();
+  const validationCopy = locale === "fr-CA" ? {
+    evidenceName: "Le nom du document est requis si vous possédez ou téléversez ce document.",
+    evidenceLocation: "Ajoutez l’emplacement du document ou téléversez le fichier justificatif.",
+    textDraft: "Ajoutez au moins 10 caractères au brouillon.",
+    summary: "Vérifiez les champs indiqués et réessayez.",
+  } : {
+    evidenceName: "Document name is required when you already have or upload this document.",
+    evidenceLocation: "Add a document location or upload the evidence file.",
+    textDraft: "Add at least 10 characters to the working draft.",
+    summary: "Check the highlighted fields and try again.",
+  };
   const [draft, setDraft] = useState(response);
   const draftRef = useRef(response);
   const dirtyRef = useRef(false);
@@ -72,6 +86,29 @@ export function EditorTab({
     setDraft(response);
     setState({ ok: true });
   }, [response]);
+
+  function validateBeforeSubmit(event: FormEvent<HTMLFormElement>) {
+    const currentDraft = draftRef.current;
+    const upload = new FormData(event.currentTarget).get("evidenceFile");
+    const hasUpload = upload instanceof File && upload.size > 0;
+    const fieldErrors: Record<string, string[]> = {};
+
+    if (currentDraft.documentMode === "have") {
+      if (!currentDraft.evidenceName.trim() && !hasUpload) {
+        fieldErrors.evidenceName = [validationCopy.evidenceName];
+      }
+      if (!currentDraft.evidenceLocation.trim() && !currentDraft.evidenceFile && !hasUpload) {
+        fieldErrors.evidenceLocation = [validationCopy.evidenceLocation];
+      }
+    }
+    if (currentDraft.documentMode === "create" && currentDraft.textDraft.trim().length < 10) {
+      fieldErrors.textDraft = [validationCopy.textDraft];
+    }
+    if (Object.keys(fieldErrors).length > 0) {
+      event.preventDefault();
+      setState({ error: validationCopy.summary, fieldErrors, ok: false });
+    }
+  }
 
   function submit(formData: FormData) {
     const currentDraft = draftRef.current;
@@ -101,7 +138,7 @@ export function EditorTab({
             template={template}
             templates={templates}
           />
-          <form action={submit} className="mt-6 space-y-5">
+          <form action={submit} onSubmit={validateBeforeSubmit} className="mt-6 space-y-5" noValidate>
             <input name="templateId" type="hidden" value={template.code} />
             <StatusFields
               draft={draft}

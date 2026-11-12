@@ -10,6 +10,7 @@ import {
   saveGrantPlatformPartner,
 } from "@/app/modules/grant-platform/actions";
 import { Badge } from "@/components/ui/badge";
+import { useLocaleContext } from "@/components/i18n/LocaleProvider";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
@@ -39,6 +40,7 @@ import {
 } from "@/components/ui/table";
 import { Textarea } from "@/components/ui/textarea";
 import type { GrantPlatformWorkspaceData } from "@/lib/data/grant-platform";
+import type { Locale } from "@/lib/i18n/locales";
 
 type Partner = GrantPlatformWorkspaceData["partners"][number];
 type Interaction = Partner["interactions"][number];
@@ -46,8 +48,8 @@ type Interaction = Partner["interactions"][number];
 const partnerType = "Government Agency";
 const partnerStatus = "Active Collaborator";
 
-function formatCurrency(cents: number) {
-  return new Intl.NumberFormat("en-CA", {
+function formatCurrency(cents: number, locale: Locale) {
+  return new Intl.NumberFormat(locale, {
     currency: "CAD",
     maximumFractionDigits: 0,
     style: "currency",
@@ -400,6 +402,7 @@ export function GrantFundersPanel({
   canEditOrgProfile: boolean;
   data: GrantPlatformWorkspaceData;
 }) {
+  const { locale } = useLocaleContext();
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
   const [addFunderOpen, setAddFunderOpen] = useState(false);
@@ -554,7 +557,7 @@ export function GrantFundersPanel({
                                   </p>
                                   <p className="text-xs text-slate-500">
                                     {application.status} -{" "}
-                                    {formatCurrency(application.requestedAmountCents)}
+                                    {formatCurrency(application.requestedAmountCents, locale)}
                                   </p>
                                 </div>
                               ))}

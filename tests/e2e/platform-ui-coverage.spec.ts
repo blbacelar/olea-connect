@@ -571,10 +571,15 @@ test.describe("@smoke @critical platform UI coverage gate", () => {
       page.getByRole("heading", { name: "Sponsors & Olea's Circle of Generosity", level: 1 }),
     ).toBeVisible();
 
-    const financeAdministration = page.getByText("Finance administration", {
-      exact: true,
-    });
-    const memberDirectory = page.getByText("Sponsor directory", { exact: true });
+    const main = page.getByTestId("app-main");
+    const financeAdministration = main
+      .getByRole("heading", { name: "Finance administration", exact: true })
+      .filter({ visible: true })
+      .first();
+    const memberDirectory = main
+      .getByText("Sponsor directory", { exact: true })
+      .filter({ visible: true })
+      .first();
 
     await expect(financeAdministration).toBeVisible();
     await expect(memberDirectory).toBeVisible();

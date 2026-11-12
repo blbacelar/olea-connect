@@ -33,6 +33,11 @@ test.describe("@critical Board Calendar meeting documents", () => {
     await dialog.getByRole("button", { name: "Approve for package" }).click();
     await expect(dialog.getByRole("alert")).toContainText("Add consent or regular agenda items");
     await dialog.getByLabel("Consent agenda", { exact: true }).fill("Approve prior minutes and receive the finance report.");
+    await dialog.getByRole("button", { name: "Close" }).first().click();
+    await expect(dialog.getByRole("alert")).toContainText("Save or discard your changes before closing");
+    await dialog.getByRole("button", { name: "Discard changes" }).click();
+    await expect(dialog.getByLabel("Consent agenda", { exact: true })).toHaveValue("");
+    await dialog.getByLabel("Consent agenda", { exact: true }).fill("Approve prior minutes and receive the finance report.");
     await dialog.getByRole("button", { name: "Save draft" }).click();
     await boardCalendar.waitForSaved();
     await dialog.getByRole("button", { name: "Close" }).first().click();

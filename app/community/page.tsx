@@ -16,8 +16,8 @@ import { getRequestLocale } from "@/lib/i18n/server";
 
 import { CommunityFeed } from "./community-feed";
 
-function formatEventDate(value: string) {
-  return new Intl.DateTimeFormat("en-CA", {
+function formatEventDate(value: string, locale: "en-CA" | "fr-CA") {
+  return new Intl.DateTimeFormat(locale, {
     dateStyle: "medium",
     timeStyle: "short",
   }).format(new Date(value));
@@ -25,7 +25,8 @@ function formatEventDate(value: string) {
 
 export default async function CommunityPage() {
   const community = await getCommunityHome();
-  const isFrench = (await getRequestLocale()) === "fr-CA";
+  const locale = await getRequestLocale();
+  const isFrench = locale === "fr-CA";
 
   if (!community) {
     return (
@@ -112,7 +113,7 @@ export default async function CommunityPage() {
                   {event.title}
                 </h3>
                 <p className="mt-1 text-[13px] text-slate-500">
-                  {formatEventDate(event.startsAt)} · {event.timezone}
+                  {formatEventDate(event.startsAt, locale)} · {event.timezone}
                 </p>
                 <p className="mt-2 text-sm leading-6 text-slate-600">
                   {event.summary}

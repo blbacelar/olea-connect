@@ -8,12 +8,19 @@ import {
 describe("middleware public routes", () => {
   it("keeps the referral marketing page public", () => {
     expect(isPublicPath("/referrals")).toBe(true);
+    expect(isPublicPath("/demos")).toBe(true);
   });
 
   it("keeps referral-code redirects public without opening the dashboard", () => {
     expect(isPublicPath("/ref/ABC123")).toBe(true);
     expect(isPublicPath("/verify/training/OLEA-2026-ABCDEF123456")).toBe(true);
     expect(isPublicPath("/referrals/dashboard")).toBe(false);
+  });
+
+  it("opens the accessibility statement without opening member routes", () => {
+    expect(isPublicPath("/accessibility")).toBe(true);
+    expect(isPublicPath("/dashboard")).toBe(false);
+    expect(isPublicPath("/subscription")).toBe(false);
   });
 });
 

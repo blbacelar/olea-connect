@@ -48,7 +48,7 @@ test.describe("@critical Board Recruitment Toolkit", () => {
       const page = await context.newPage();
       await page.goto("/modules/board-recruitment");
       await expect(
-        page.getByRole("heading", { name: "We could not load this workspace" }),
+        page.getByRole("heading", { name: "We could not load this page" }),
       ).toBeVisible();
     } finally {
       await context.close();

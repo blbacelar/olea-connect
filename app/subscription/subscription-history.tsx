@@ -1,12 +1,13 @@
 import { Download } from "lucide-react";
 
 import type { getBillingSummary } from "@/lib/billing/server";
+import type { Locale } from "@/lib/i18n/locales";
 
 import { formatDate, formatMoney } from "./subscription-format";
 
 type BillingSummary = NonNullable<Awaited<ReturnType<typeof getBillingSummary>>>;
 
-export function BillingHistory({ billing }: { billing: BillingSummary }) {
+export function BillingHistory({ billing, locale }: { billing: BillingSummary; locale: Locale }) {
   return (
     <>
       <h2 className="mb-3 text-base font-bold text-slate-800">
@@ -21,7 +22,7 @@ export function BillingHistory({ billing }: { billing: BillingSummary }) {
         </div>
         {billing.invoices.length ? (
           billing.invoices.map((invoice) => (
-            <InvoiceRow key={invoice.id} invoice={invoice} />
+            <InvoiceRow key={invoice.id} invoice={invoice} locale={locale} />
           ))
         ) : (
           <p className="px-[22px] py-8 text-center text-sm text-slate-500">
@@ -33,15 +34,15 @@ export function BillingHistory({ billing }: { billing: BillingSummary }) {
   );
 }
 
-function InvoiceRow({ invoice }: { invoice: BillingSummary["invoices"][number] }) {
+function InvoiceRow({ invoice, locale }: { invoice: BillingSummary["invoices"][number]; locale: Locale }) {
   return (
     <div className="grid gap-2 border-t border-slate-100 px-[22px] py-[15px] text-sm first:border-t-0 md:grid-cols-[1fr_1fr_120px_100px] md:items-center">
-      <span>{formatDate(invoice.createdAt)}</span>
+      <span>{formatDate(invoice.createdAt, locale)}</span>
       <span className="capitalize text-slate-500">
         {invoice.status ?? "pending"}
       </span>
       <span className="font-mono">
-        {formatMoney(invoice.amountCents, invoice.currency)}
+        {formatMoney(invoice.amountCents, invoice.currency, locale)}
       </span>
       {invoice.hostedUrl || invoice.pdfUrl ? (
         <a

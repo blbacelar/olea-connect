@@ -112,17 +112,17 @@ function FundedBoardProgress({
   );
 }
 
-function formatMoney(amountCents: number) {
-  return new Intl.NumberFormat("en-CA", {
+function formatMoney(amountCents: number, isFrench: boolean) {
+  return new Intl.NumberFormat(isFrench ? "fr-CA" : "en-CA", {
     currency: "CAD",
     maximumFractionDigits: 0,
     style: "currency",
   }).format(amountCents / 100);
 }
 
-function formatDate(value: string | null) {
-  if (!value) return "Not set";
-  return new Intl.DateTimeFormat("en-CA", {
+function formatDate(value: string | null, isFrench: boolean) {
+  if (!value) return isFrench ? "Non définie" : "Not set";
+  return new Intl.DateTimeFormat(isFrench ? "fr-CA" : "en-CA", {
     dateStyle: "medium",
   }).format(new Date(value));
 }
@@ -273,8 +273,8 @@ async function SponsorshipReportCard({
             {sponsorship.packageName}
           </p>
           <p className="mt-1 text-sm text-slate-500">
-            {formatDate(sponsorship.startsOn)} to{" "}
-            {formatDate(sponsorship.endsOn)}
+            {formatDate(sponsorship.startsOn, isFrench)} {isFrench ? "au" : "to"}{" "}
+            {formatDate(sponsorship.endsOn, isFrench)}
           </p>
           {recognitionName ? (
             <p className="mt-1 text-sm text-slate-500">
@@ -290,17 +290,17 @@ async function SponsorshipReportCard({
       <div className="mt-4 grid gap-3 md:grid-cols-2">
         <Metric
           label="Contract"
-          value={formatMoney(sponsorship.contractAmountCents)}
+          value={formatMoney(sponsorship.contractAmountCents, isFrench)}
         />
         <Metric
           label="Recorded contributions"
-          value={formatMoney(sponsorship.contributionAmountCents)}
+          value={formatMoney(sponsorship.contributionAmountCents, isFrench)}
         />
       </div>
 
       {sponsorship.committedContributionCents > 0 || sponsorship.allocatedAmountCents > 0 ? (
         <div className="mt-3 rounded-lg border bg-white p-3 text-sm text-slate-600">
-          {isFrench ? "Anciens dossiers de subventions" : "Legacy grant records"}: {formatMoney(sponsorship.committedContributionCents)} {isFrench ? "engagés" : "committed"}; {formatMoney(sponsorship.allocatedAmountCents)} {isFrench ? "attribués" : "allocated"}.
+          {isFrench ? "Anciens dossiers de subventions" : "Legacy grant records"}: {formatMoney(sponsorship.committedContributionCents, isFrench)} {isFrench ? "engagés" : "committed"}; {formatMoney(sponsorship.allocatedAmountCents, isFrench)} {isFrench ? "attribués" : "allocated"}.
         </div>
       ) : null}
 
@@ -343,8 +343,8 @@ async function SponsorshipReportCard({
                       {contribution.status}
                     </Badge>
                   </TableCell>
-                  <TableCell>{formatMoney(contribution.amountCents)}</TableCell>
-                  <TableCell>{formatDate(contribution.pledgedOn)}</TableCell>
+                  <TableCell>{formatMoney(contribution.amountCents, isFrench)}</TableCell>
+                  <TableCell>{formatDate(contribution.pledgedOn, isFrench)}</TableCell>
                   <TableCell>
                     {contribution.allocations.length
                       ? contribution.allocations
@@ -354,7 +354,7 @@ async function SponsorshipReportCard({
                                 allocation.grantRoundName
                                   ? ` · ${allocation.grantRoundName}`
                                   : ""
-                              }: ${formatMoney(allocation.amountCents)}`,
+                              }: ${formatMoney(allocation.amountCents, isFrench)}`,
                           )
                           .join("; ")
                       : "—"}

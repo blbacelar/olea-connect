@@ -2,6 +2,7 @@
 
 import { Check, Send, UserPlus } from "lucide-react";
 
+import { useLocaleContext } from "@/components/i18n/LocaleProvider";
 import { SectionHeading } from "@/components/SectionHeading";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -133,6 +134,7 @@ function PendingInviteRow({
   isPending: boolean;
   onCancelInvitation: (inviteId: string) => void;
 }) {
+  const { locale } = useLocaleContext();
   return (
     <div
       role="group"
@@ -147,8 +149,10 @@ function PendingInviteRow({
           </Badge>
         </div>
         <p className="mt-0.5 text-[12.5px] text-slate-400">
-          Invited {formatInviteDate(invite.createdAt)} · expires{" "}
-          {formatInviteDate(invite.expiresAt)}
+          {locale === "fr-CA" ? "Invitation envoyée le" : "Invited"}{" "}
+          {formatInviteDate(invite.createdAt, locale)} ·{" "}
+          {locale === "fr-CA" ? "expire le" : "expires"}{" "}
+          {formatInviteDate(invite.expiresAt, locale)}
         </p>
       </div>
       <Button
@@ -164,8 +168,8 @@ function PendingInviteRow({
   );
 }
 
-function formatInviteDate(value: string) {
-  return new Intl.DateTimeFormat("en-CA", { dateStyle: "medium" }).format(
+function formatInviteDate(value: string, locale: "en-CA" | "fr-CA") {
+  return new Intl.DateTimeFormat(locale, { dateStyle: "medium" }).format(
     new Date(value),
   );
 }
