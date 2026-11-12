@@ -22,6 +22,12 @@ export type ReferralPageCopy = {
     title: string;
     body: string;
   }[];
+  referrerPolicy: {
+    nonprofitTitle: string;
+    nonprofitBody: string;
+    transparencyTitle: string;
+    transparencyBody: string;
+  };
   closingTitle: (amount: string) => string;
   closingBody: string;
   faqs: {

@@ -154,8 +154,9 @@ describe("provisioning retry route", () => {
     );
 
     expect(response.status).toBe(200);
-    expect(routeMocks.createSession.mock.calls[0][0]).not.toHaveProperty(
+    expect(routeMocks.createSession.mock.calls[0][0]).toHaveProperty(
       "allow_promotion_codes",
+      true,
     );
     expect(routeMocks.createSession).toHaveBeenCalledWith(
       expect.objectContaining({
