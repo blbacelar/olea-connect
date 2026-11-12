@@ -4,6 +4,7 @@ import { CheckCircle2, LoaderCircle, TrendingUp } from "lucide-react";
 import { useState, useTransition } from "react";
 
 import { Button } from "@/components/ui/button";
+import { useLocaleContext } from "@/components/i18n/LocaleProvider";
 import {
   Dialog,
   DialogContent,
@@ -20,6 +21,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import type { MembershipTier } from "@/lib/types";
+import type { Locale } from "@/lib/i18n/locales";
 
 import {
   type BillingInterval,
@@ -46,6 +48,7 @@ export function PlanUpgradeControls({
   disabled = false,
   initialSuccessMessage = "",
 }: PlanUpgradeControlsProps) {
+  const { locale } = useLocaleContext();
   const upgradeOptions = getUpgradeOptions(currentPlanId);
   const [error, setError] = useState("");
   const [successMessage, setSuccessMessage] = useState(initialSuccessMessage);
@@ -57,7 +60,7 @@ export function PlanUpgradeControls({
   const unavailable = disabled || isPending || !canManage || !upgradeOptions.length;
   const selectedPlan = getMembershipPlan(targetPlanId);
   const selectedPlanPriceLabel = selectedPlan
-    ? getPlanPriceLabel(selectedPlan.id, billingInterval)
+    ? getPlanPriceLabel(selectedPlan.id, billingInterval, locale)
     : "";
 
   function openUpgradeConfirmation() {
@@ -88,6 +91,7 @@ export function PlanUpgradeControls({
             billingInterval={billingInterval}
             disabled={unavailable}
             isPending={isPending}
+            locale={locale}
             onConfirm={openUpgradeConfirmation}
             onPlanChange={setTargetPlanId}
             options={upgradeOptions}
@@ -149,6 +153,7 @@ function PlanUpgradeSelector({
   billingInterval,
   disabled,
   isPending,
+  locale,
   onConfirm,
   onPlanChange,
   options,
@@ -157,6 +162,7 @@ function PlanUpgradeSelector({
   billingInterval: BillingInterval;
   disabled: boolean;
   isPending: boolean;
+  locale: Locale;
   onConfirm: () => void;
   onPlanChange: (value: MembershipTier) => void;
   options: MembershipPlanOption[];
@@ -175,7 +181,7 @@ function PlanUpgradeSelector({
         <SelectContent>
           {options.map((plan) => (
             <SelectItem key={plan.id} value={plan.id}>
-              {plan.name} - {getPlanPriceLabel(plan.id, billingInterval)} /{" "}
+              {plan.name} - {getPlanPriceLabel(plan.id, billingInterval, locale)} /{" "}
               {getBillingIntervalLabel(billingInterval)}
             </SelectItem>
           ))}

@@ -1,5 +1,6 @@
 import type { BillingStatus } from "@/lib/billing/server";
 import type { MembershipTier } from "@/lib/types";
+import type { Locale } from "@/lib/i18n/locales";
 import {
   PAID_SEAT_QUANTITY_MAX,
   PAID_SEAT_QUANTITY_MIN,
@@ -22,15 +23,15 @@ const membershipTierIds = new Set<MembershipTier>([
   "harvest",
 ]);
 
-export function formatMoney(amountCents: number, currency: string) {
-  return new Intl.NumberFormat("en-CA", {
+export function formatMoney(amountCents: number, currency: string, locale: Locale) {
+  return new Intl.NumberFormat(locale, {
     style: "currency",
     currency,
   }).format(amountCents / 100);
 }
 
-export function formatDate(value: string) {
-  return new Intl.DateTimeFormat("en-CA", {
+export function formatDate(value: string, locale: Locale) {
+  return new Intl.DateTimeFormat(locale, {
     dateStyle: "medium",
   }).format(new Date(value));
 }

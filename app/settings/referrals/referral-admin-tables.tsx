@@ -5,6 +5,7 @@ import { SubmitButton } from "@/components/ui/submit-button";
 import { Textarea } from "@/components/ui/textarea";
 import type { getReferralAdminData } from "@/lib/data/referrals";
 import { getRequestLocale } from "@/lib/i18n/server";
+import type { Locale } from "@/lib/i18n/locales";
 import {
   formatReferralMoney,
   manualReferralStatuses,
@@ -35,9 +36,9 @@ const payoutStatusOptions = referralPayoutStatuses.map((status) => ({
   value: status,
 }));
 
-function formatDateTime(value: string | null) {
-  if (!value) return "Not set";
-  return new Intl.DateTimeFormat("en-CA", {
+function formatDateTime(value: string | null, locale: Locale) {
+  if (!value) return locale === "fr-CA" ? "Non défini" : "Not set";
+  return new Intl.DateTimeFormat(locale, {
     dateStyle: "medium",
     timeStyle: "short",
   }).format(new Date(value));
@@ -120,13 +121,14 @@ function ReferrersTable({
   );
 }
 
-function ReferrerRow({
+async function ReferrerRow({
   referrer,
   saveReferrerStatus,
 }: {
   referrer: ReferralAdminData["referrers"][number];
   saveReferrerStatus: (formData: FormData) => Promise<void>;
 }) {
+  const locale = await getRequestLocale();
   return (
     <tr className="align-top">
       <td className="px-4 py-4">
@@ -152,7 +154,7 @@ function ReferrerRow({
       <td className="px-4 py-4 text-slate-600">
         <p className="max-w-sm">{referrer.relationshipToOlea}</p>
         <p className="mt-2 text-xs">
-          Applied {formatDateTime(referrer.createdAt)}
+          Applied {formatDateTime(referrer.createdAt, locale)}
         </p>
       </td>
       <td className="px-4 py-4">
@@ -207,13 +209,14 @@ function ReferralMilestonesTable({
   );
 }
 
-function ReferralMilestoneRow({
+async function ReferralMilestoneRow({
   referral,
   saveReferralMilestone,
 }: {
   referral: ReferralAdminData["referrals"][number];
   saveReferralMilestone: (formData: FormData) => Promise<void>;
 }) {
+  const locale = await getRequestLocale();
   return (
     <tr className="align-top">
       <td className="px-4 py-4">
@@ -233,7 +236,7 @@ function ReferralMilestoneRow({
         </Badge>
       </td>
       <td className="px-4 py-4 text-slate-600">
-        {formatDateTime(referral.lastMilestoneAt)}
+        {formatDateTime(referral.lastMilestoneAt, locale)}
       </td>
       <td className="px-4 py-4">
         {manualReferralStatuses.some((status) => status === referral.status) ? (
@@ -332,8 +335,8 @@ async function ReferralPayoutRow({
           {payoutStatusLabels[payout.status]}
         </Badge>
       </td>
-      <td className="px-4 py-4 text-slate-600">{formatDateTime(payout.dueAt)}</td>
-      <td className="px-4 py-4 text-slate-600">{formatDateTime(payout.paidAt)}</td>
+      <td className="px-4 py-4 text-slate-600">{formatDateTime(payout.dueAt, locale)}</td>
+      <td className="px-4 py-4 text-slate-600">{formatDateTime(payout.paidAt, locale)}</td>
       <td className="px-4 py-4">
         {payout.milestone === "first_payment" ? <form action={saveReferralPayout} className="space-y-2">
           <input type="hidden" name="payoutId" value={payout.id} />

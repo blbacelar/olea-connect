@@ -11,6 +11,7 @@ import { Label } from "@/components/ui/label";
 import { requestPasswordReset } from "@/lib/auth";
 import { getAuthFlowCopy } from "@/lib/i18n/auth-flow-copy";
 import { getPublicSiteCopy } from "@/lib/i18n/public-site-copy";
+import { emailStringSchema } from "@/lib/validation/schemas";
 
 export default function ResetPasswordPage() {
   const { locale } = useLocaleContext();
@@ -20,13 +21,18 @@ export default function ResetPasswordPage() {
   const [email, setEmail] = useState("");
   const [sent, setSent] = useState(false);
   const [error, setError] = useState("");
+  const [emailTouched, setEmailTouched] = useState(false);
   const [isPending, startTransition] = useTransition();
+  const validEmail = emailStringSchema.safeParse(email).success;
 
   const submit = () => {
+    setEmailTouched(true);
+    if (!validEmail || isPending) return;
+
     startTransition(async () => {
       try {
         setError("");
-        await requestPasswordReset(email);
+        await requestPasswordReset(email.trim().toLowerCase());
         setSent(true);
       } catch {
         setError(resetCopy.fallbackError);
@@ -63,20 +69,32 @@ export default function ResetPasswordPage() {
             <Input
               id="resetEmail"
               type="email"
+              autoComplete="email"
+              aria-describedby={emailTouched && !validEmail ? "resetEmailHelp resetEmailError" : "resetEmailHelp"}
+              aria-invalid={emailTouched && !validEmail}
               value={email}
               onChange={(event) => setEmail(event.target.value)}
+              onBlur={() => setEmailTouched(true)}
             />
+            <p id="resetEmailHelp" className="text-xs text-slate-600">
+              {authCopy.shared.emailGuidance}
+            </p>
+            {emailTouched && !validEmail ? (
+              <p id="resetEmailError" className="text-sm text-red-700">
+                {authCopy.shared.emailInvalid}
+              </p>
+            ) : null}
           </div>
           <Button
             data-testid="send-reset-link"
             className="w-full"
-            disabled={!/\S+@\S+\.\S+/.test(email) || isPending}
+            disabled={!validEmail || isPending}
             onClick={submit}
           >
             {isPending ? resetCopy.pending : resetCopy.submit}
           </Button>
           {error ? (
-            <p className="rounded-lg bg-red-50 p-3 text-sm text-red-700">
+            <p role="alert" className="rounded-lg bg-red-50 p-3 text-sm text-red-700">
               {error}
             </p>
           ) : null}

@@ -12,6 +12,8 @@ export const boardCalendarExactTranslations: Array<[string, string]> = [
   ["Add consent or regular agenda items, or minutes content, before approval.", "Ajoutez des points à l'ordre du jour ou du contenu au procès-verbal avant l'approbation."],
   ["Check required motion and action descriptions, dates, and vote counts.", "Vérifiez les descriptions des motions et des actions, les dates et les résultats du vote."],
   ["Save or discard your changes before switching documents.", "Enregistrez ou annulez vos modifications avant de changer de document."],
+  ["Save or discard your changes before closing this document.", "Enregistrez ou annulez vos modifications avant de fermer ce document."],
+  ["Discard changes", "Annuler les modifications"],
   ["The calendar could not save this document. Keep this dialog open and try again.", "Le calendrier n'a pas pu enregistrer ce document. Gardez cette fenêtre ouverte et réessayez."],
   ["Roll call and quorum", "Présences et quorum"],
   ["Attendance", "Présences"],

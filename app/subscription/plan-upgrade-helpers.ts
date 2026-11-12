@@ -1,6 +1,7 @@
 import { apiRoutes } from "@/lib/api-routes";
 import { membershipPlans } from "@/lib/plans";
 import type { MembershipTier } from "@/lib/types";
+import type { Locale } from "@/lib/i18n/locales";
 
 import { createBillingUpdateIdempotencyKey } from "./billing-action-utils";
 
@@ -24,12 +25,12 @@ export function getMembershipPlan(planId: MembershipTier) {
   return membershipPlans.find((plan) => plan.id === planId);
 }
 
-export function getPlanPriceLabel(planId: MembershipTier, interval: BillingInterval) {
+export function getPlanPriceLabel(planId: MembershipTier, interval: BillingInterval, locale: Locale) {
   const plan = membershipPlans.find((item) => item.id === planId);
   if (!plan) return "";
 
   const amount = interval === "year" ? plan.annualPrice : plan.quarterlyPrice;
-  return new Intl.NumberFormat("en-CA", {
+  return new Intl.NumberFormat(locale, {
     currency: "CAD",
     style: "currency",
   }).format(amount);

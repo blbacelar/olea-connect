@@ -5,6 +5,7 @@ import {
   type IntegrationEventStatus,
   type getIntegrationOperations,
 } from "@/lib/data/integration-events";
+import type { Locale } from "@/lib/i18n/locales";
 
 import { ReplayIntegrationEventForm } from "./replay-integration-event-form";
 
@@ -18,9 +19,9 @@ const statusStyles: Record<IntegrationEventStatus, string> = {
   processing: "border-slate-200 bg-slate-50 text-slate-700",
 };
 
-function formatDateTime(value: string | null) {
+function formatDateTime(value: string | null, locale: Locale) {
   if (!value) return "N/A";
-  return new Intl.DateTimeFormat("en-CA", {
+  return new Intl.DateTimeFormat(locale, {
     dateStyle: "medium",
     timeStyle: "short",
   }).format(new Date(value));
@@ -28,8 +29,10 @@ function formatDateTime(value: string | null) {
 
 export function WebhookEvents({
   events,
+  locale,
 }: {
   events: IntegrationOperations["webhookEvents"];
+  locale: Locale;
 }) {
   return (
     <>
@@ -51,8 +54,8 @@ export function WebhookEvents({
               <EventMetadata
                 items={[
                   { label: "Attempts", value: String(event.attempts) },
-                  { label: "Received", value: formatDateTime(event.receivedAt) },
-                  { label: "Processed", value: formatDateTime(event.processedAt) },
+                  { label: "Received", value: formatDateTime(event.receivedAt, locale) },
+                  { label: "Processed", value: formatDateTime(event.processedAt, locale) },
                 ]}
               />
               {event.processingError ? (
@@ -76,8 +79,10 @@ export function WebhookEvents({
 
 export function ProviderEvents({
   events,
+  locale,
 }: {
   events: IntegrationOperations["events"];
+  locale: Locale;
 }) {
   return (
     <>
@@ -109,8 +114,8 @@ export function ProviderEvents({
               <EventMetadata
                 items={[
                   { label: "Attempts", value: String(event.attempts) },
-                  { label: "Available", value: formatDateTime(event.availableAt) },
-                  { label: "Completed", value: formatDateTime(event.completedAt) },
+                  { label: "Available", value: formatDateTime(event.availableAt, locale) },
+                  { label: "Completed", value: formatDateTime(event.completedAt, locale) },
                 ]}
               />
               {event.lastError ? <EventError message={event.lastError} /> : null}

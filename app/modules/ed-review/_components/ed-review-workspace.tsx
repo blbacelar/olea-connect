@@ -1,6 +1,7 @@
 "use client";
 
 import * as React from "react";
+import { useLocaleContext } from "@/components/i18n/LocaleProvider";
 import {
   Check,
   ClipboardCopy,
@@ -64,12 +65,12 @@ import { localDateTimeToIso } from "@/lib/ed-review/schedule";
 type Tab = "overview" | "campaigns" | "summary" | "access";
 const validTabs: Tab[] = ["overview", "campaigns", "summary", "access"];
 
-function formatDate(value: string | null) {
+function formatDate(value: string | null, locale: "en-CA" | "fr-CA") {
   return value
-    ? new Intl.DateTimeFormat("en-CA", { dateStyle: "medium" }).format(
+    ? new Intl.DateTimeFormat(locale, { dateStyle: "medium" }).format(
         new Date(value),
       )
-    : "No close date";
+    : locale === "fr-CA" ? "Aucune date de clôture" : "No close date";
 }
 
 export function EdReviewWorkspace({
@@ -85,6 +86,7 @@ export function EdReviewWorkspace({
   compileFailed?: boolean;
   newCampaignLink?: string;
 }) {
+  const { locale } = useLocaleContext();
   const [tab, setTab] = React.useState<Tab>(
     validTabs.includes(activeTab as Tab) ? (activeTab as Tab) : "overview",
   );
@@ -252,9 +254,9 @@ export function EdReviewWorkspace({
                             <Badge variant="outline">{campaign.status}</Badge>
                           </td>
                           <td className="p-4">
-                            {formatDate(campaign.opensAt)}
+                            {formatDate(campaign.opensAt, locale)}
                             <span className="block text-slate-500">
-                              {formatDate(campaign.closesAt)}
+                              {formatDate(campaign.closesAt, locale)}
                             </span>
                           </td>
                           <td className="p-4 font-semibold">
@@ -456,7 +458,7 @@ export function EdReviewWorkspace({
                       {event.eventType.replaceAll("_", " ")}
                     </p>
                     <p className="text-sm text-slate-500">
-                      {formatDate(event.createdAt)}
+                      {formatDate(event.createdAt, locale)}
                     </p>
                   </div>
                 ))}
@@ -484,6 +486,7 @@ function CompilationCard({
   compilation: EdReviewData["compilations"][number];
   canManage: boolean;
 }) {
+  const { locale } = useLocaleContext();
   const summary = summaryFromCompilation(compilation.summary);
   return (
     <article className="rounded-lg border p-5">
@@ -492,7 +495,7 @@ function CompilationCard({
           <p className="font-semibold">Version {compilation.version}</p>
           <p className="text-sm text-slate-600">
             {compilation.responseCount} responses ·{" "}
-            {formatDate(compilation.createdAt)}
+            {formatDate(compilation.createdAt, locale)}
           </p>
         </div>
         <div className="flex flex-wrap gap-2">
