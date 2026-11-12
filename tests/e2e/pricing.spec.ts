@@ -106,4 +106,18 @@ test.describe("public pricing package", () => {
       .toHaveCount(0);
     await expect(page.getByText(/Lorsqu'elle reste/)).toHaveCount(0);
   });
+
+  test("explains nonprofit rewards and referral disclosure in both languages", async ({ page }) => {
+    await page.goto("/referrals");
+    await expect(page.getByRole("heading", { name: "Nonprofit referrers" })).toBeVisible();
+    await expect(page.getByText(/never paid to individual staff or board members/)).toBeVisible();
+    await expect(page.getByRole("heading", { name: "Transparency" })).toBeVisible();
+    await expect(page.getByText(/receive a referral reward if that organization joins/)).toBeVisible();
+
+    await switchToFrench(page);
+    await expect(page.getByRole("heading", { name: "Organismes sans but lucratif qui recommandent Olea" })).toBeVisible();
+    await expect(page.getByText(/jamais versée à un membre du personnel ou du conseil/)).toBeVisible();
+    await expect(page.getByRole("heading", { name: "Transparence" })).toBeVisible();
+    await expect(page.getByText(/reçoivent une récompense si ces organismes adhèrent/)).toBeVisible();
+  });
 });

@@ -29,7 +29,15 @@ export const referralPageCopyFr: ReferralPageCopy = {
       body: "Consultez le statut des références et les commissions vérifiées dans votre tableau de bord. Les versements sont examinés avant paiement.",
     },
   ],
-  closingTitle: (amount) => `Une première adhésion payée. Jusqu'à ${amount} pour vous.`,
+  referrerPolicy: {
+    nonprofitTitle: "Organismes sans but lucratif qui recommandent Olea",
+    nonprofitBody:
+      "Lorsqu’un organisme sans but lucratif recommande un pair, la récompense est versée à l’organisme ou, selon son choix, appliquée en crédit à son adhésion à Olea Connects™. Elle n’est jamais versée à un membre du personnel ou du conseil d’administration à titre personnel.",
+    transparencyTitle: "Transparence",
+    transparencyBody:
+      "Nous demandons à toutes les personnes référentes d’informer les organismes qu’elles présentent qu’elles reçoivent une récompense si ces organismes adhèrent à Olea Connects™.",
+  },
+  closingTitle: (amount) => `Une première adhésion payée. Jusqu'à ${amount} pour la personne ou l’organisme référent.`,
   closingBody:
     "Partagez votre lien aussi largement que vous le souhaitez. Il n'y a aucune limite au nombre de pairs qualifiés que vous pouvez référer.",
   faqs: [
@@ -60,9 +68,9 @@ export const referralPageCopyFr: ReferralPageCopy = {
       "Par exemple : je conseille des DG d'organismes, je siège à des conseils ou je travaille avec des organismes communautaires.",
     payoutContact: "Meilleur contact pour le paiement",
     payoutPlaceholder:
-      "Courriel de paiement préféré et notes pour le contact financier.",
+      "Courriel pour le versement ou contact financier de l’organisme; indiquez ici si vous préférez un crédit d’adhésion.",
     termsAccepted:
-      "J'accepte qu'Olea vérifie l'admissibilité des références et des paiements, et que les auto-références ou crédits en double puissent être refusés.",
+      "J’informerai les organismes présentés de la récompense de référence. Si je recommande Olea au nom d’un organisme sans but lucratif, sa récompense sera versée à l’organisme ou appliquée à son adhésion, jamais à une personne. Olea vérifie l’admissibilité et les versements; les auto-références et les crédits en double peuvent être refusés.",
     pending: "Soumission...",
     submit: "Soumettre la demande de référence",
   },
