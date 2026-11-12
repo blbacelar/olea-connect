@@ -4,7 +4,6 @@ import {
   LayoutDashboard,
   PackageOpen,
   ScrollText,
-  PlugZap,
   Palette,
   Settings,
   Users,
@@ -23,7 +22,6 @@ export type BoardCalendarModuleTab =
   | "packages"
   | "directory"
   | "audit_log"
-  | "integrations"
   | "settings"
   | "branding";
 
@@ -46,7 +44,6 @@ export const moduleTabs: Array<{
   { icon: PackageOpen, label: "Board Packages", value: "packages" },
   { icon: Users, label: "Directory", value: "directory" },
   { icon: ScrollText, label: "Audit Log", value: "audit_log" },
-  { icon: PlugZap, label: "Integrations", value: "integrations" },
   { icon: Settings, label: "Settings", value: "settings" },
   { icon: Palette, label: "Branding", value: "branding" },
 ];
