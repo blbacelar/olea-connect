@@ -2,8 +2,21 @@ import { z } from "zod";
 
 import type { TemplateFormData } from "./types";
 
-export const meetingDocumentKinds = ["consent_agenda", "board_minutes"] as const;
+export const meetingDocumentKinds = ["consent_agenda", "board_minutes", "committee_agenda", "committee_minutes"] as const;
 export type MeetingDocumentKind = (typeof meetingDocumentKinds)[number];
+
+export const meetingDocumentTitles: Record<MeetingDocumentKind, string> = {
+  consent_agenda: "Consent agenda",
+  board_minutes: "Board minutes",
+  committee_agenda: "Committee agenda",
+  committee_minutes: "Committee minutes",
+};
+
+export function meetingDocumentKindsFor(type: string): MeetingDocumentKind[] {
+  return /committee/i.test(type)
+    ? ["committee_agenda", "committee_minutes"]
+    : ["consent_agenda", "board_minutes"];
+}
 
 const attendanceSchema = z.object({
   memberId: z.string().min(1).max(200),
@@ -58,6 +71,16 @@ export const meetingDocumentSections: Record<
     { id: "prior", label: "Approval of prior minutes", placeholder: "Record the approval or changes requested." },
     { id: "discussion", label: "Discussion summary", placeholder: "Summarize key deliberations without a verbatim transcript." },
     { id: "adjourn", label: "Adjournment and next meeting", placeholder: "Record adjournment time and the next meeting date." },
+  ],
+  committee_agenda: [
+    { id: "call", label: "Call to order", placeholder: "Confirm the committee and quorum." },
+    { id: "review", label: "Review of open action items", placeholder: "Record progress on actions from the last meeting." },
+    { id: "agenda", label: "Agenda items", placeholder: "List items in discussion order." },
+    { id: "next", label: "Next steps and recommendations to the board", placeholder: "Record what the committee recommends." },
+  ],
+  committee_minutes: [
+    { id: "summary", label: "Summary of discussion", placeholder: "Summarize key deliberations." },
+    { id: "next", label: "Next meeting", placeholder: "Record the next meeting date and time." },
   ],
 };
 
@@ -184,8 +207,10 @@ export function assertMeetingDocumentMembers({
 }
 
 export function hasApprovalContent(document: MeetingDocument): boolean {
-  if (document.kind === "consent_agenda") {
-    return Boolean(document.sections.consent?.trim() || document.sections.regular?.trim());
+  if (document.kind === "consent_agenda" || document.kind === "committee_agenda") {
+    return document.kind === "consent_agenda"
+      ? Boolean(document.sections.consent?.trim() || document.sections.regular?.trim())
+      : Boolean(document.sections.agenda?.trim() || document.sections.next?.trim());
   }
   return Boolean(
     document.sections.discussion?.trim() || document.motions.length || document.actions.length,

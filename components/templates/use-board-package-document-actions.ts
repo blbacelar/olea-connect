@@ -40,12 +40,14 @@ export function useBoardPackageDocumentActions({
   async function openDocument(
     document: BoardPackageDocument,
     meeting?: BoardPackageMeeting,
+    acknowledged = false,
   ) {
     setDownloadError("");
 
     try {
       if (document.generatedKind && meeting) {
         const pdf = await fetchMeetingDocumentPdf({
+          acknowledged,
           kind: document.generatedKind,
           meetingId: meeting.id,
           templateInstanceId,
@@ -55,6 +57,7 @@ export function useBoardPackageDocumentActions({
         return;
       }
       const documentUrl = await getBoardPackageDocumentOpenUrl({
+        acknowledged,
         document,
         meeting,
         templateInstanceId,
@@ -85,7 +88,7 @@ export function useBoardPackageDocumentActions({
   function confirmConfidentialDownload() {
     if (!downloadTarget) return;
     const meeting = getDocumentMeeting(downloadTarget);
-    void openDocument(downloadTarget, meeting);
+    void openDocument(downloadTarget, meeting, true);
     setDownloadTarget(null);
   }
 

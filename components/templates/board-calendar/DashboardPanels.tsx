@@ -1,4 +1,4 @@
-import { CalendarDays, FileText, Pencil } from "lucide-react";
+import { CalendarDays, Eye, FileText, Pencil } from "lucide-react";
 
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -34,11 +34,13 @@ export function SummaryCard({
 }
 
 export function MeetingsTablePanel({
+  canEdit = true,
   meetings,
   upcomingMeetingCount,
   onEditEvent,
   onOpenDocuments,
 }: {
+  canEdit?: boolean;
   meetings: CalendarViewEvent[];
   upcomingMeetingCount: number;
   onEditEvent: (event: CalendarViewEvent) => void;
@@ -111,10 +113,10 @@ export function MeetingsTablePanel({
                     type="button"
                     variant="outline"
                     size="icon"
-                    aria-label={`Edit meeting ${meeting.title}`}
+                    aria-label={`${canEdit ? "Edit" : "View"} meeting ${meeting.title}`}
                     onClick={() => onEditEvent(meeting)}
                   >
-                    <Pencil className="size-3.5" />
+                    {canEdit ? <Pencil className="size-3.5" /> : <Eye className="size-3.5" />}
                   </Button>
                 </div>
               </div>

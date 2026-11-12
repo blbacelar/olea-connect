@@ -96,7 +96,8 @@ export async function sendBoardPackage(
 }
 
 export async function getBoardPackageAuditEvents(templateInstanceId: string) {
-  const { organization } = await requireMemberContext();
+  const { member, organization } = await requireMemberContext();
+  if (member.membershipRole === "member") throw new Error("Only organization administrators can view the package audit log.");
   if (!z.string().uuid().safeParse(templateInstanceId).success) return [];
   await assertTemplateInstanceAccess(templateInstanceId, organization.id);
   const admin = createAdminClient();

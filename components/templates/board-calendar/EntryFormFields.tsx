@@ -40,6 +40,9 @@ export function EntryFormFields({
   entryType,
   entryVirtualLink,
   entryWeeksBefore,
+  entryRepeat,
+  entryGeneratePrepTasks,
+  entryNotifyMode,
   isSelectedDateInPast,
   selectedDateKey,
   selectedColorCategory,
@@ -61,6 +64,9 @@ export function EntryFormFields({
   onTitleChange,
   onVirtualLinkChange,
   onWeeksBeforeChange,
+  setEntryRepeat,
+  setEntryGeneratePrepTasks,
+  setEntryNotifyMode,
 }: EntryFormFieldsProps) {
   const isMeeting = entryType === "meeting";
   const isAnnualHighlight = entryType === "annual_highlight";
@@ -197,6 +203,7 @@ export function EntryFormFields({
         />
       </div>
       {isMeeting ? (
+        <>
         <MeetingFields
           entryConfirmed={entryConfirmed}
           entryLeadContact={entryLeadContact}
@@ -209,6 +216,36 @@ export function EntryFormFields({
           onTimeChange={onTimeChange}
           onVirtualLinkChange={onVirtualLinkChange}
         />
+        {!editingEventId ? <div className="space-y-2">
+          <Label htmlFor="calendar-entry-repeat">Repeat monthly</Label>
+          <Select value={entryRepeat} onValueChange={(value) => setEntryRepeat(value as "1" | "3" | "6" | "12")}>
+            <SelectTrigger id="calendar-entry-repeat"><SelectValue /></SelectTrigger>
+            <SelectContent>
+              <SelectItem value="1">Does not repeat</SelectItem>
+              <SelectItem value="3">3 meetings</SelectItem>
+              <SelectItem value="6">6 meetings</SelectItem>
+              <SelectItem value="12">12 meetings</SelectItem>
+            </SelectContent>
+          </Select>
+          <p className="text-xs text-slate-500">The first meeting uses the selected date; later meetings use the same day each month.</p>
+        </div> : null}
+        <div className="flex items-start gap-2 rounded-lg border bg-slate-50 p-3 md:col-span-2">
+          <Checkbox id="calendar-entry-generate-prep" checked={entryGeneratePrepTasks} onChange={(event) => setEntryGeneratePrepTasks(event.target.checked)} />
+          <div><Label htmlFor="calendar-entry-generate-prep">Auto-generate prep workflow</Label><p className="text-xs text-slate-500">Create staff tasks from your meeting preparation rules.</p></div>
+        </div>
+        <div className="space-y-2 md:col-span-2">
+          <Label htmlFor="calendar-entry-notify">Email board members about the date</Label>
+          <Select value={entryNotifyMode} onValueChange={(value) => setEntryNotifyMode(value as "review" | "auto" | "none")}>
+            <SelectTrigger id="calendar-entry-notify"><SelectValue /></SelectTrigger>
+            <SelectContent>
+              <SelectItem value="review">Queue for my review</SelectItem>
+              <SelectItem value="auto">Send automatically after saving</SelectItem>
+              <SelectItem value="none">Do not email</SelectItem>
+            </SelectContent>
+          </Select>
+          <p className="text-xs text-slate-500">Only meeting date, time, and location are shared. Internal workflow tasks stay private.</p>
+        </div>
+        </>
       ) : null}
       {isStaffTask ? (
         <OwnerFields
@@ -271,6 +308,9 @@ interface EntryFormFieldsProps {
   entryType: BoardCalendarEntryType;
   entryVirtualLink: string;
   entryWeeksBefore: string;
+  entryRepeat: "1" | "3" | "6" | "12";
+  entryGeneratePrepTasks: boolean;
+  entryNotifyMode: "review" | "auto" | "none";
   isSelectedDateInPast: boolean;
   selectedColorCategory: string;
   selectedDateKey: string;
@@ -292,4 +332,7 @@ interface EntryFormFieldsProps {
   onTitleChange: (value: string) => void;
   onVirtualLinkChange: (value: string) => void;
   onWeeksBeforeChange: (value: string) => void;
+  setEntryRepeat: (value: "1" | "3" | "6" | "12") => void;
+  setEntryGeneratePrepTasks: (value: boolean) => void;
+  setEntryNotifyMode: (value: "review" | "auto" | "none") => void;
 }

@@ -1,10 +1,12 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Download, FileCheck2, LoaderCircle, Save } from "lucide-react";
 
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
+import { getBoardCalendarRsvpRoster } from "@/app/modules/board-calendar/board-rsvp-actions";
 import {
   Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle,
 } from "@/components/ui/dialog";
@@ -13,7 +15,9 @@ import {
   createMeetingDocument,
   getMeetingDocuments,
   hasApprovalContent,
+  meetingDocumentKindsFor,
   meetingDocumentSchema,
+  meetingDocumentTitles,
   upsertMeetingDocument,
   type MeetingDocument,
   type MeetingDocumentKind,
@@ -45,16 +49,36 @@ export function MeetingDocumentsDialog({
   saveState: "saved" | "saving" | "unsaved" | "error";
   templateInstanceId?: string;
 }) {
-  const [kind, setKind] = useState<MeetingDocumentKind>("consent_agenda");
-  const [draft, setDraft] = useState<MeetingDocument>(() => loadDocument("consent_agenda"));
+  const availableKinds = meetingDocumentKindsFor(meeting.type);
+  const [kind, setKind] = useState<MeetingDocumentKind>(availableKinds[0]);
+  const [rsvpRoster, setRsvpRoster] = useState<Array<{ userId: string; response: string }>>([]);
+  const [draft, setDraft] = useState<MeetingDocument>(() => loadDocument(availableKinds[0]));
   const [error, setError] = useState("");
   const [dirty, setDirty] = useState(false);
   const [isExporting, setIsExporting] = useState(false);
+  const [acknowledged, setAcknowledged] = useState(false);
+  const [rsvpLoading, setRsvpLoading] = useState(Boolean(canApprove && templateInstanceId));
+  const attendanceEdited = useRef(false);
+
+  useEffect(() => {
+    if (!canApprove || !templateInstanceId) return;
+    let cancelled = false;
+    void getBoardCalendarRsvpRoster(templateInstanceId, meeting.id).then((rows) => {
+      if (cancelled) return;
+      setRsvpRoster(rows);
+      if (!attendanceEdited.current) {
+        setDraft((current) => current.status === "approved" ? current : seedAttendance(current, rows));
+      }
+    }).catch(() => { /* Attendance remains editable when the roster is unavailable. */ })
+      .finally(() => { if (!cancelled) setRsvpLoading(false); });
+    return () => { cancelled = true; };
+  }, [canApprove, data, meeting.id, templateInstanceId]);
 
   function loadDocument(nextKind: MeetingDocumentKind) {
-    return getMeetingDocuments(data).find((document) =>
+    const existing = getMeetingDocuments(data).find((document) =>
       document.meetingId === meeting.id && document.kind === nextKind,
-    ) ?? createMeetingDocument(meeting.id, nextKind, members.map((member) => member.id));
+    );
+    return existing ?? seedAttendance(createMeetingDocument(meeting.id, nextKind, members.map((member) => member.id)), rsvpRoster);
   }
 
   function selectKind(nextKind: MeetingDocumentKind) {
@@ -104,7 +128,7 @@ export function MeetingDocumentsDialog({
     setIsExporting(true);
     setError("");
     try {
-      const pdf = await fetchMeetingDocumentPdf({ kind, meetingId: meeting.id, templateInstanceId });
+      const pdf = await fetchMeetingDocumentPdf({ acknowledged, kind, meetingId: meeting.id, templateInstanceId });
       downloadMeetingDocumentPdf(pdf.bytes, pdf.fileName);
     } catch (caught) {
       setError(caught instanceof Error ? caught.message : "Unable to export this document.");
@@ -113,7 +137,7 @@ export function MeetingDocumentsDialog({
     }
   }
 
-  const readOnly = draft.status === "approved" && !canApprove;
+  const readOnly = !canApprove;
 
   return (
     <Dialog open onOpenChange={(open) => !open && requestClose()}>
@@ -126,33 +150,53 @@ export function MeetingDocumentsDialog({
         </DialogHeader>
         <Tabs value={kind} onValueChange={(value) => selectKind(value as MeetingDocumentKind)}>
           <TabsList className="grid w-full grid-cols-2">
-            <TabsTrigger value="consent_agenda">Consent agenda</TabsTrigger>
-            <TabsTrigger value="board_minutes">Board minutes</TabsTrigger>
+            {availableKinds.map((value) => <TabsTrigger key={value} value={value}>{meetingDocumentTitles[value]}</TabsTrigger>)}
           </TabsList>
         </Tabs>
         <div className="flex items-center gap-2 text-sm">
           <Badge variant="outline">{draft.status === "approved" ? "Approved" : "Draft"}</Badge>
           {draft.status === "approved" ? <span className="text-slate-500">Included in this meeting&apos;s board package.</span> : null}
         </div>
-        {readOnly ? <p className="rounded-lg border border-amber-200 bg-amber-50 p-3 text-sm text-amber-900">Only an organization owner or administrator can change an approved document.</p> : null}
+        {readOnly ? <p className="rounded-lg border border-amber-200 bg-amber-50 p-3 text-sm text-amber-900">Only an organization owner or administrator can change meeting documents.</p> : null}
         <fieldset disabled={readOnly}>
-          <MeetingDocumentFields document={draft} members={members} onChange={(next) => { setDraft(next); setDirty(true); }} />
+          <MeetingDocumentFields document={draft} members={members} onChange={(next) => {
+            if (next.attendance.some((row, index) => row.status !== draft.attendance[index]?.status)) {
+              attendanceEdited.current = true;
+            }
+            setDraft(next);
+            setDirty(true);
+          }} />
         </fieldset>
         {error ? <p role="alert" className="text-sm font-medium text-red-700">{error}</p> : null}
+        {rsvpLoading ? <p role="status" className="text-sm text-slate-600">Loading meeting RSVPs before saving attendance...</p> : null}
         {saveState === "error" ? <p role="alert" className="text-sm font-medium text-red-700">The calendar could not save this document. Keep this dialog open and try again.</p> : null}
+        {draft.status === "approved" ? <div className="flex items-start gap-2 rounded-lg border p-3">
+          <Checkbox id="meeting-document-ack" checked={acknowledged} onChange={(event) => setAcknowledged(event.target.checked)} />
+          <label htmlFor="meeting-document-ack" className="text-sm leading-5">I acknowledge that this board document is confidential before exporting it.</label>
+        </div> : null}
         <DialogFooter className="sm:flex-wrap">
           <Button type="button" variant="outline" onClick={requestClose}>Close</Button>
           {dirty ? <Button type="button" variant="outline" onClick={discardChanges}>Discard changes</Button> : null}
-          <Button type="button" variant="outline" disabled={dirty || saveState !== "saved" || !templateInstanceId || isExporting || !getMeetingDocuments(data).some((item) => item.meetingId === meeting.id && item.kind === kind)} onClick={() => void exportPdf()}>
+          <Button type="button" variant="outline" disabled={dirty || saveState !== "saved" || !templateInstanceId || isExporting || (draft.status === "approved" && !acknowledged) || !getMeetingDocuments(data).some((item) => item.meetingId === meeting.id && item.kind === kind)} onClick={() => void exportPdf()}>
             {isExporting ? <LoaderCircle className="size-4 animate-spin" /> : <Download className="size-4" />} Export PDF
           </Button>
-          {!readOnly ? <Button type="button" variant="outline" disabled={saveState === "saving" || saveState === "unsaved"} onClick={() => persist("draft")}>
+          {!readOnly ? <Button type="button" variant="outline" disabled={rsvpLoading || saveState === "saving" || saveState === "unsaved"} onClick={() => persist("draft")}>
             {saveState === "saving" || saveState === "unsaved" ? <LoaderCircle className="size-4 animate-spin" /> : <Save className="size-4" />}
             {saveState === "saving" || saveState === "unsaved" ? "Saving..." : "Save draft"}
           </Button> : null}
-          {canApprove && draft.status !== "approved" ? <Button type="button" disabled={saveState === "saving" || saveState === "unsaved"} onClick={() => persist("approved")}><FileCheck2 className="size-4" /> Approve for package</Button> : null}
+          {canApprove && draft.status !== "approved" ? <Button type="button" disabled={rsvpLoading || saveState === "saving" || saveState === "unsaved"} onClick={() => persist("approved")}><FileCheck2 className="size-4" /> Approve for package</Button> : null}
         </DialogFooter>
       </DialogContent>
     </Dialog>
   );
+}
+
+function seedAttendance(document: MeetingDocument, roster: Array<{ userId: string; response: string }>): MeetingDocument {
+  const byMember = new Map(roster.map((row) => [row.userId, row.response]));
+  return { ...document, attendance: document.attendance.map((row) => ({
+    ...row,
+    status: row.status !== "not_recorded" ? row.status
+      : byMember.get(row.memberId) === "attending" ? "present"
+      : byMember.get(row.memberId) === "not_attending" ? "absent" : row.status,
+  })) };
 }

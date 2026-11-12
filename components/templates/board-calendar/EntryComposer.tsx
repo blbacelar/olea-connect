@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { Pencil, Plus, Trash2, X } from "lucide-react";
+import { Eye, Pencil, Plus, Trash2, X } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -42,6 +42,7 @@ export function CalendarEntryComposer(props: CalendarEntryComposerProps) {
   return (
     <div className="rounded-xl border bg-slate-50 p-3 sm:p-4">
       <SelectedDatePanel
+        readOnly={props.readOnly}
         editingEventId={props.editingEventId}
         events={props.selectedDateEvents}
         selectedDateKey={props.selectedDateKey}
@@ -65,22 +66,24 @@ export function CalendarEntryComposer(props: CalendarEntryComposerProps) {
               </div>
               <div>
                 <DialogTitle className="text-base">
-                  {props.editingEventId ? "Edit calendar entry" : "Add calendar entry"}
+                  {props.readOnly ? "Calendar entry" : props.editingEventId ? "Edit calendar entry" : "Add calendar entry"}
                 </DialogTitle>
                 <DialogDescription>
-                  {props.editingEventId
+                  {props.readOnly ? "View this calendar item and its details." : props.editingEventId
                     ? "Update this calendar item without leaving the calendar."
                     : "This creates the matching workbook record automatically."}
                 </DialogDescription>
               </div>
             </div>
           </DialogHeader>
-          <EntryFormFields
+          <fieldset disabled={props.readOnly}><EntryFormFields
             {...props}
             selectedColorCategory={selectedColorCategory}
             titleInputRef={titleInputRef}
-          />
+          /></fieldset>
           <div className="mt-4 grid gap-2 sm:flex sm:flex-wrap">
+            {props.readOnly ? <Button type="button" variant="outline" onClick={props.onCancelEdit}>Close</Button> : null}
+            {!props.readOnly ? <>
             <Button
               type="button"
               className="w-full sm:w-auto"
@@ -116,6 +119,7 @@ export function CalendarEntryComposer(props: CalendarEntryComposerProps) {
                 </Button>
               </>
             ) : null}
+            </> : null}
           </div>
         </DialogContent>
       </Dialog>
@@ -130,12 +134,14 @@ export function CalendarEntryComposer(props: CalendarEntryComposerProps) {
 }
 
 function SelectedDatePanel({
+  readOnly,
   editingEventId,
   events,
   selectedDateKey,
   onEditEvent,
   onPendingDeleteChange,
 }: {
+  readOnly?: boolean;
   editingEventId: string | null;
   events: CalendarViewEvent[];
   selectedDateKey: string;
@@ -173,9 +179,10 @@ function SelectedDatePanel({
                   className="h-8 justify-start px-2 text-xs sm:justify-center"
                   onClick={() => onEditEvent(event)}
                 >
-                  <Pencil className="size-3.5" />
-                  Edit entry
+                  {readOnly ? <Eye className="size-3.5" /> : <Pencil className="size-3.5" />}
+                  {readOnly ? "View entry" : "Edit entry"}
                 </Button>
+                {!readOnly ?
                 <Button
                   type="button"
                   size="sm"
@@ -185,7 +192,7 @@ function SelectedDatePanel({
                 >
                   <Trash2 className="size-3.5" />
                   Delete entry
-                </Button>
+                </Button> : null}
               </div>
             </div>
           ))
@@ -201,6 +208,7 @@ function SelectedDatePanel({
 }
 
 interface CalendarEntryComposerProps {
+  readOnly?: boolean;
   editingEvent: CalendarViewEvent | null;
   editingEventId: string | null;
   entryCategory: string;
@@ -218,6 +226,9 @@ interface CalendarEntryComposerProps {
   entryType: BoardCalendarEntryType;
   entryVirtualLink: string;
   entryWeeksBefore: string;
+  entryRepeat: "1" | "3" | "6" | "12";
+  entryGeneratePrepTasks: boolean;
+  entryNotifyMode: "review" | "auto" | "none";
   isEntryModalOpen: boolean;
   isEntryReady: boolean;
   isSelectedDateInPast: boolean;
@@ -244,4 +255,7 @@ interface CalendarEntryComposerProps {
   onTitleChange: (value: string) => void;
   onVirtualLinkChange: (value: string) => void;
   onWeeksBeforeChange: (value: string) => void;
+  setEntryRepeat: (value: "1" | "3" | "6" | "12") => void;
+  setEntryGeneratePrepTasks: (value: boolean) => void;
+  setEntryNotifyMode: (value: "review" | "auto" | "none") => void;
 }

@@ -56,7 +56,9 @@ export function BoardPackageAuditLogPanel({
         </p>
       </div>
       {loadError ? <p role="alert" className="mt-3 text-sm text-red-700">{loadError}</p> : null}
-      {logs.length ? (
+      {remoteLogs === null && !loadError && templateInstanceId ? (
+        <p role="status" className="mt-5 rounded-lg border p-4 text-sm text-slate-600">Loading audit log...</p>
+      ) : logs.length ? (
         <div className="mt-5 overflow-x-auto rounded-xl border">
           <Table className="min-w-[720px]">
             <TableHeader>
@@ -109,8 +111,8 @@ export function BoardPackageMeetingCard({
   isReady,
 }: {
   meeting: BoardPackageMeeting;
-  onAddFile: () => void;
-  onDeleteDocument: (document: BoardPackageDocument) => void;
+  onAddFile?: () => void;
+  onDeleteDocument?: (document: BoardPackageDocument) => void;
   onDownloadDocument: (document: BoardPackageDocument) => void;
   onDownloadPackage: () => void;
   onSendPackage?: () => void;
@@ -137,10 +139,10 @@ export function BoardPackageMeetingCard({
         </div>
         <div className="flex flex-wrap gap-2">
           {onSendPackage ? <Button type="button" variant="outline" onClick={onSendPackage} disabled={!meeting.documents.length}><Send className="mr-2 size-4" />Send package</Button> : null}
-          <Button type="button" variant="outline" onClick={onAddFile}>
+          {onAddFile ? <Button type="button" variant="outline" onClick={onAddFile}>
             <Plus className="mr-2 size-4" />
             Add file
-          </Button>
+          </Button> : null}
           <Button type="button" variant="outline" onClick={onViewFiles} aria-expanded={isOpen} disabled={!isReady}>
             <Eye className="mr-2 size-4" />{isOpen ? "Hide files" : "View files"}
           </Button>
@@ -175,7 +177,7 @@ export function DocumentList({
   documents: BoardPackageDocument[];
   emptyLabel: string;
   meeting?: BoardPackageMeeting;
-  onDeleteDocument: (document: BoardPackageDocument) => void;
+  onDeleteDocument?: (document: BoardPackageDocument) => void;
   onDownloadDocument: (document: BoardPackageDocument) => void;
 }) {
   if (!documents.length) {
@@ -261,7 +263,7 @@ function DocumentRow({
   onDownloadDocument,
 }: {
   document: BoardPackageDocument;
-  onDeleteDocument: (document: BoardPackageDocument) => void;
+  onDeleteDocument?: (document: BoardPackageDocument) => void;
   onDownloadDocument: (document: BoardPackageDocument) => void;
 }) {
   return (
@@ -313,7 +315,7 @@ function DocumentRow({
               <LinkIcon className="size-4" />
             )}
           </Button>
-          {!document.generatedKind ? (
+          {!document.generatedKind && onDeleteDocument ? (
             <Button
               type="button"
               variant="outline"

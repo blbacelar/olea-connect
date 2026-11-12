@@ -40,6 +40,8 @@ const publicPathPrefixes = [
   "/legal",
   "/verify/training",
   "/modules/board-recruitment/survey",
+  "/board-evaluation/annual",
+  "/board-evaluation/meeting",
   "/team/invitations/accept",
 ];
 
