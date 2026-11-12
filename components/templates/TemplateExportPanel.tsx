@@ -3,6 +3,7 @@
 import { Download, FileText, LoaderCircle } from "lucide-react";
 import { useState, useTransition } from "react";
 
+import { useLocaleContext } from "@/components/i18n/LocaleProvider";
 import { Button } from "@/components/ui/button";
 import type {
   TemplateExportFormat,
@@ -27,6 +28,7 @@ export function TemplateExportPanel({
   }) => Promise<TemplateExportRecord>;
   createDownloadUrl: (exportId: string) => Promise<string>;
 }) {
+  const { locale } = useLocaleContext();
   const [exports, setExports] = useState(initialExports);
   const [error, setError] = useState("");
   const [activeFormat, setActiveFormat] = useState<TemplateExportFormat | null>(
@@ -138,7 +140,7 @@ export function TemplateExportPanel({
                 <p className="font-medium text-slate-900">{item.fileName}</p>
                 <p className="mt-1 text-sm text-slate-600">
                   {item.format.toUpperCase()} ·{" "}
-                  {new Intl.DateTimeFormat("en-CA", {
+                  {new Intl.DateTimeFormat(locale, {
                     dateStyle: "medium",
                     timeStyle: "short",
                   }).format(new Date(item.generatedAt))}

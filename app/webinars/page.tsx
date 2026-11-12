@@ -6,6 +6,7 @@ import { EmptyPanel } from "@/components/EmptyPanel";
 import { PageHeader } from "@/components/PageHeader";
 import { SectionHeading } from "@/components/SectionHeading";
 import { getWebinarCatalog } from "@/lib/data/webinars";
+import { getRequestLocale } from "@/lib/i18n/server";
 import {
   EventAction,
   RecordingAction,
@@ -16,6 +17,7 @@ import {
 } from "./webinar-ui";
 
 export default async function WebinarsPage() {
+  const locale = await getRequestLocale();
   const { canManageEvents, webinars } = await getWebinarCatalog();
   const now = Date.now();
   const upcoming = webinars.filter((webinar) =>
@@ -66,7 +68,7 @@ export default async function WebinarsPage() {
               <div className="min-w-[220px] flex-1">
                 <h2 className="text-lg font-semibold">{webinar.title}</h2>
                 <p className="mt-1.5 text-[13.5px] text-slate-500">
-                  {formatEventType(webinar.type)} · {formatEventDate(webinar.startsAt)} ·{" "}
+                  {formatEventType(webinar.type)} · {formatEventDate(webinar.startsAt, locale)} ·{" "}
                   {webinar.timezone}
                 </p>
                 <p className="mt-2 text-sm text-slate-600">
@@ -105,7 +107,7 @@ export default async function WebinarsPage() {
               <div>
                 <h3 className="text-[15px] font-semibold">{webinar.title}</h3>
                 <p className="mt-0.5 text-[13px] text-slate-400">
-                  {formatEventType(webinar.type)} · {formatEventDate(webinar.startsAt)}
+                  {formatEventType(webinar.type)} · {formatEventDate(webinar.startsAt, locale)}
                 </p>
               </div>
               <div className="flex flex-wrap items-center justify-end gap-2">

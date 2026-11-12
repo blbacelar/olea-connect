@@ -5,6 +5,7 @@ import { notFound } from "next/navigation";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { getWebinarBySlug } from "@/lib/data/webinars";
+import { getRequestLocale } from "@/lib/i18n/server";
 
 import {
   EventAction,
@@ -21,6 +22,7 @@ export default async function WebinarDetailPage(
   }
 ) {
   const params = await props.params;
+  const locale = await getRequestLocale();
   const webinar = await getWebinarBySlug(params.slug);
 
   if (!webinar) notFound();
@@ -63,7 +65,7 @@ export default async function WebinarDetailPage(
               Starts
             </p>
             <p className="mt-1 text-sm font-semibold text-slate-800">
-              {formatEventDate(webinar.startsAt)}
+              {formatEventDate(webinar.startsAt, locale)}
             </p>
           </div>
           <div>
@@ -71,7 +73,7 @@ export default async function WebinarDetailPage(
               Ends
             </p>
             <p className="mt-1 text-sm font-semibold text-slate-800">
-              {formatEventDate(webinar.endsAt)}
+              {formatEventDate(webinar.endsAt, locale)}
             </p>
           </div>
           <div>

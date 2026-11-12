@@ -2,6 +2,7 @@ import { Lock, Play, Video } from "lucide-react";
 
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import type { Locale } from "@/lib/i18n/locales";
 import type { Webinar } from "@/lib/types";
 
 import {
@@ -9,8 +10,8 @@ import {
   registerForEvent,
 } from "./actions";
 
-export function formatEventDate(value: string) {
-  return new Intl.DateTimeFormat("en-CA", {
+export function formatEventDate(value: string, locale: Locale) {
+  return new Intl.DateTimeFormat(locale, {
     dateStyle: "long",
     timeStyle: "short",
   }).format(new Date(value));

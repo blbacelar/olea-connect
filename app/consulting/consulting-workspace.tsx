@@ -13,6 +13,7 @@ import {
 } from "lucide-react";
 
 import { Badge } from "@/components/ui/badge";
+import { useLocaleContext } from "@/components/i18n/LocaleProvider";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -78,17 +79,17 @@ const statusOptions: Array<{ value: ConsultingRequestStatus; label: string }> = 
   { value: "canceled", label: "Canceled" },
 ];
 
-function formatDate(value: string | null) {
-  if (!value) return "Not set";
-  return new Intl.DateTimeFormat("en-CA", {
+function formatDate(value: string | null, locale: "en-CA" | "fr-CA") {
+  if (!value) return locale === "fr-CA" ? "Non définie" : "Not set";
+  return new Intl.DateTimeFormat(locale, {
     dateStyle: "medium",
     timeStyle: "short",
   }).format(new Date(value));
 }
 
-function formatDateOnly(value: string | null) {
-  if (!value) return "Not set";
-  return new Intl.DateTimeFormat("en-CA", {
+function formatDateOnly(value: string | null, locale: "en-CA" | "fr-CA") {
+  if (!value) return locale === "fr-CA" ? "Non définie" : "Not set";
+  return new Intl.DateTimeFormat(locale, {
     dateStyle: "medium",
   }).format(new Date(value));
 }
@@ -286,6 +287,7 @@ function RequestForm() {
 }
 
 function RequestCard({ request }: { request: ConsultingRequest }) {
+  const { locale } = useLocaleContext();
   const totalMinutes = request.timeEntries.reduce(
     (total, entry) => total + entry.minutes,
     0,
@@ -301,7 +303,7 @@ function RequestCard({ request }: { request: ConsultingRequest }) {
             </Badge>
             <Badge variant="outline">{request.urgency}</Badge>
             <span className="text-xs text-slate-400">
-              Updated {formatDate(request.updatedAt)}
+              {locale === "fr-CA" ? "Mis à jour le" : "Updated"}{" "}{formatDate(request.updatedAt, locale)}
             </span>
           </div>
           <h3 className="mt-3 text-lg font-bold text-slate-900">{request.title}</h3>
@@ -317,7 +319,7 @@ function RequestCard({ request }: { request: ConsultingRequest }) {
             Scheduled
           </dt>
           <dd className="mt-1 font-semibold text-slate-700">
-            {formatDate(request.scheduledAt)}
+            {formatDate(request.scheduledAt, locale)}
           </dd>
         </div>
         <div className="rounded-lg bg-slate-50 p-3">
@@ -382,7 +384,7 @@ function RequestCard({ request }: { request: ConsultingRequest }) {
               <span>
                 {activity.message ?? activity.eventType}{" "}
                 <span className="text-slate-400">
-                  {formatDate(activity.createdAt)}
+                  {formatDate(activity.createdAt, locale)}
                 </span>
               </span>
             </li>
@@ -723,6 +725,7 @@ export function ConsultingWorkspace({
   staffRequests: ConsultingRequest[];
   staffUsers: Array<{ id: string; name: string }>;
 }) {
+  const { locale } = useLocaleContext();
   const purchasedAndIncluded =
     hourSummary.includedMinutes + hourSummary.purchasedMinutes;
 
@@ -743,8 +746,9 @@ export function ConsultingWorkspace({
             </p>
             <p className="mt-4 flex items-center gap-2 text-sm text-emerald-50">
               <CalendarClock className="size-4" />
-              Current period: {formatDateOnly(hourSummary.periodStart)} to{" "}
-              {formatDateOnly(hourSummary.periodEnd)}
+              {locale === "fr-CA" ? "Période actuelle" : "Current period"}: {formatDateOnly(hourSummary.periodStart, locale)}{" "}
+              {locale === "fr-CA" ? "au" : "to"}{" "}
+              {formatDateOnly(hourSummary.periodEnd, locale)}
             </p>
           </section>
 

@@ -4,6 +4,7 @@ import { PageHeader } from "@/components/PageHeader";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { type getIntegrationOperations } from "@/lib/data/integration-events";
+import { getRequestLocale } from "@/lib/i18n/server";
 
 import { ProviderEvents, WebhookEvents } from "./integration-event-lists";
 
@@ -45,7 +46,7 @@ function filterHref({
     : "/settings/integrations";
 }
 
-export function IntegrationOperationsView({
+export async function IntegrationOperationsView({
   operations,
   provider,
   query,
@@ -56,6 +57,7 @@ export function IntegrationOperationsView({
   query: string;
   status: string;
 }) {
+  const locale = await getRequestLocale();
   return (
     <div>
       <PageHeader
@@ -64,8 +66,8 @@ export function IntegrationOperationsView({
       />
       <IntegrationFilters provider={provider} query={query} status={status} />
       <StatusCards counts={operations.counts} />
-      <WebhookEvents events={operations.webhookEvents} />
-      <ProviderEvents events={operations.events} />
+      <WebhookEvents events={operations.webhookEvents} locale={locale} />
+      <ProviderEvents events={operations.events} locale={locale} />
     </div>
   );
 }

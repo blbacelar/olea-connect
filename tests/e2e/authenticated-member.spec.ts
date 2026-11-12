@@ -13,6 +13,7 @@ test.describe("@critical @member authenticated access", () => {
     await page.setViewportSize({ width: 640, height: 844 });
     await app.openDashboard();
     await app.expectCompactHeader();
+    await expect(page.getByRole("navigation", { name: "Legal and contact links" })).toBeVisible();
   });
 
   test("opens protected pages with an API-created session", async ({

@@ -53,7 +53,7 @@ export function AddGrantDialog() {
       if (nextOpen) setMessage(null);
     }}>
       <DialogTrigger asChild>
-        <Button type="button" variant="outline" className="gap-2">
+        <Button type="button" className="gap-2">
           <Plus className="size-4" />
           Add Grant
         </Button>

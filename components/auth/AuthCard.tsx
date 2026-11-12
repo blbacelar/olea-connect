@@ -1,6 +1,7 @@
 import type { ReactNode } from "react";
 
 import { Logo } from "@/components/Logo";
+import { PublicLegalLinks } from "@/components/landing/PublicLegalLinks";
 
 export function AuthCard({
   title,
@@ -36,6 +37,9 @@ export function AuthCard({
         ) : null}
         <div className="mt-7">{children}</div>
       </div>
+      <footer className="mx-auto mt-8 max-w-3xl border-t pt-5">
+        <PublicLegalLinks compact />
+      </footer>
       </main>
     </>
   );

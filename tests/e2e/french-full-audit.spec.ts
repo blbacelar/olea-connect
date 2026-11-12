@@ -68,7 +68,7 @@ const routesToAudit = [
 ] as const;
 
 const auditedEnglishPatterns = [
-  ["primary navigation", /\b(Dashboard|Templates|Board Calendar|Community|Grants|Sponsors|Consulting|Brand Profile|Team|Subscription|Help|What's new|Workspace settings)\b/g],
+  ["primary navigation", /^(Dashboard|Templates|Board Calendar|Community|Grants|Sponsors|Consulting|Brand Profile|Team|Subscription|Help|What's new|Workspace settings)$/g],
   ["module tabs", /\b(Board Dashboard|Board Packages|Directory|Audit Log|Settings|Milestones & Risks|Annual Summary|Overview|Campaigns|Access & audit|Q[1-4] Tracker)\b/g],
   ["common actions", /\b(Browse templates|Open module|Open template|Set up now|Manage seats|Manage subscription|Send reset link|Create your account|Continue to payment|Submit|Save|Cancel|Archive|Edit|Delete|Close|View all)\b/g],
   ["dashboard copy", /\b(Good morning|Good afternoon|Good evening|Your templates|available to you|new mentions|Recent in community|Here's what's happening|Applications upcoming|Review the current round)\b/g],

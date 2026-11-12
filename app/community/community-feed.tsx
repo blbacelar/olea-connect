@@ -12,6 +12,7 @@ import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useFormState, useFormStatus } from "react-dom";
 
+import { useLocaleContext } from "@/components/i18n/LocaleProvider";
 import { EmptyPanel } from "@/components/EmptyPanel";
 import { SectionHeading } from "@/components/SectionHeading";
 import { Badge } from "@/components/ui/badge";
@@ -64,8 +65,8 @@ const selectedSpaceStorageKey = "olea-community-selected-space";
 
 type CreatedCommentState = NonNullable<CommunityActionState["createdComment"]>;
 
-function formatRelativeDate(value: string) {
-  return new Intl.DateTimeFormat("en-CA", {
+function formatRelativeDate(value: string, locale: "en-CA" | "fr-CA") {
+  return new Intl.DateTimeFormat(locale, {
     dateStyle: "medium",
     timeStyle: "short",
   }).format(new Date(value));
@@ -869,6 +870,7 @@ function CommentItem({
   mentionCandidates: CommunityMentionCandidate[];
   onDeleted?: (commentId: string) => void;
 }) {
+  const { locale } = useLocaleContext();
   const [isEditing, setIsEditing] = useState(false);
   const canEdit = comment.authorUserId === currentUserId;
   const authorLabel = authorAttribution(comment);
@@ -885,7 +887,7 @@ function CommentItem({
       >
         {authorLabel}
         <span className="ml-2 font-normal text-slate-400">
-          {formatRelativeDate(comment.createdAt)}
+          {formatRelativeDate(comment.createdAt, locale)}
         </span>
         {isEdited(comment.createdAt, comment.updatedAt) ? (
           <Badge variant="outline" className="ml-2">
@@ -946,6 +948,7 @@ function PostCard({
   onDeleted?: (postId: string) => void;
   post: CommunityPost;
 }) {
+  const { locale } = useLocaleContext();
   const [isEditing, setIsEditing] = useState(false);
   const [optimisticComments, setOptimisticComments] = useState<
     CommunityPostComment[]
@@ -1013,7 +1016,7 @@ function PostCard({
           aria-label={`Post author ${authorLabel}`}
           className="text-xs text-slate-400"
         >
-          {authorLabel} · {formatRelativeDate(post.createdAt)}
+          {authorLabel} · {formatRelativeDate(post.createdAt, locale)}
         </span>
         {isEdited(post.createdAt, post.updatedAt) ? (
           <Badge variant="outline">Edited</Badge>
