@@ -127,6 +127,25 @@ export default async function ReferralProgramPage(
           </div>
         </section>
 
+        <section className="mx-auto grid max-w-7xl gap-4 px-4 py-14 md:grid-cols-2 md:px-8">
+          <article className="rounded-2xl border bg-white p-6 shadow-soft">
+            <h2 className="text-xl font-bold text-slate-950">
+              {copy.referrerPolicy.nonprofitTitle}
+            </h2>
+            <p className="mt-3 text-sm leading-6 text-slate-700">
+              {copy.referrerPolicy.nonprofitBody}
+            </p>
+          </article>
+          <article className="rounded-2xl border bg-white p-6 shadow-soft">
+            <h2 className="text-xl font-bold text-slate-950">
+              {copy.referrerPolicy.transparencyTitle}
+            </h2>
+            <p className="mt-3 text-sm leading-6 text-slate-700">
+              {copy.referrerPolicy.transparencyBody}
+            </p>
+          </article>
+        </section>
+
         <section className="mx-auto max-w-7xl px-4 py-14 md:px-8">
           <div className="rounded-3xl bg-olea-green p-8 text-white shadow-soft md:p-10">
             <div className="grid gap-8 md:grid-cols-[0.9fr_1.1fr] md:items-center">

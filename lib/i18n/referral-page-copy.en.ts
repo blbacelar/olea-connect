@@ -29,7 +29,15 @@ export const referralPageCopyEn: ReferralPageCopy = {
       body: "See referral status and any verified commission in your dashboard. Payouts are reviewed before payment.",
     },
   ],
-  closingTitle: (amount) => `One first paid membership. Up to ${amount} for you.`,
+  referrerPolicy: {
+    nonprofitTitle: "Nonprofit referrers",
+    nonprofitBody:
+      "When a nonprofit organization refers a peer, the reward is paid to the organization or, at its choice, applied as a credit toward its Olea Connects™ membership. It is never paid to individual staff or board members.",
+    transparencyTitle: "Transparency",
+    transparencyBody:
+      "We ask all referrers to tell the organizations they introduce that they receive a referral reward if that organization joins Olea Connects™.",
+  },
+  closingTitle: (amount) => `One first paid membership. Up to ${amount} for the referrer.`,
   closingBody:
     "Share your link as widely as you like. There is no cap on how many qualified peers you can refer.",
   faqs: [
@@ -60,9 +68,9 @@ export const referralPageCopyEn: ReferralPageCopy = {
       "For example: I advise nonprofit EDs, serve on boards, or work with community organizations.",
     payoutContact: "Best payout contact",
     payoutPlaceholder:
-      "Preferred payout email and any finance contact notes.",
+      "Preferred payout email or nonprofit finance contact; mention a membership credit here if preferred.",
     termsAccepted:
-      "I agree that referral eligibility and payouts are reviewed by Olea, and that self-referrals or duplicate credits can be rejected.",
+      "I will disclose the referral reward to organizations I introduce. If referring for a nonprofit, I will direct its reward to the organization or its membership credit, never to an individual. Olea reviews eligibility and payouts; self-referrals and duplicate credits can be rejected.",
     pending: "Submitting...",
     submit: "Submit referral application",
   },
