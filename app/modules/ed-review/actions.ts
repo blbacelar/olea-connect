@@ -381,6 +381,7 @@ function extractSurveySubmission(
   formData: FormData,
   kind: "staff" | "partner",
 ) {
+  const instrumentVersion = Number(formValue(formData, "instrumentVersion") || "1");
   const ratings: Record<string, number> = {};
   const comments: Record<string, string> = {};
   for (const [key, value] of formData.entries()) {
@@ -397,6 +398,7 @@ function extractSurveySubmission(
   }
   return validateAnonymousSurveySubmission({
     kind,
+    instrumentVersion,
     idempotencyKey: formValue(formData, "idempotencyKey"),
     ratings,
     comments,
@@ -405,8 +407,20 @@ function extractSurveySubmission(
       important_change: formValue(formData, "importantChange"),
       additional_comments: formValue(formData, "additionalComments"),
     },
-    context:
-      kind === "partner" && formValue(formData, "relationshipType")
+    meta: instrumentVersion === 2
+      ? { review_period: formValue(formData, "reviewPeriod"),
+          reply_by: formValue(formData, "replyBy") }
+      : undefined,
+    context: kind !== "partner" ? undefined : instrumentVersion === 2
+      ? (["sectorType", "engagementLength", "engagementNature"] as const)
+          .some((key) => formValue(formData, key))
+          ? {
+              sector_type: formValue(formData, "sectorType"),
+              engagement_length: formValue(formData, "engagementLength"),
+              engagement_nature: formValue(formData, "engagementNature"),
+            }
+          : undefined
+      : formValue(formData, "relationshipType")
         ? { relationship_type: formValue(formData, "relationshipType") }
         : undefined,
   });
@@ -418,7 +432,30 @@ export async function submitAnonymousSurveyAction(formData: FormData) {
   if (!campaign) redirect("/modules/ed-review/survey/unavailable");
 
   const answers = extractSurveySubmission(formData, campaign.kind);
+  if (answers.instrumentVersion !== campaign.instrumentVersion) {
+    throw new Error("This survey has changed. Reload the page before submitting.");
+  }
   await submitEdReviewResponse({ token, answers });
 
   redirect(`/modules/ed-review/survey/${token}?submitted=1`);
+}
+
+export async function submitSourceSurveyAction(
+  previousState: { errorCode: string; revision: number },
+  formData: FormData,
+): Promise<{ errorCode: string; revision: number }> {
+  const token = formValue(formData, "token");
+  const revision = previousState.revision + 1;
+  try {
+    const campaign = await getPublicEdReviewCampaign(token);
+    if (!campaign) return { errorCode: "unavailable", revision };
+    const answers = extractSurveySubmission(formData, campaign.kind);
+    if (answers.instrumentVersion !== campaign.instrumentVersion) {
+      return { errorCode: "changed", revision };
+    }
+    await submitEdReviewResponse({ token, answers });
+  } catch {
+    return { errorCode: "failed", revision };
+  }
+  redirect(`/modules/ed-review/survey/${token}?submitted=1&at=${encodeURIComponent(new Date().toISOString())}`);
 }

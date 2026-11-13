@@ -17,13 +17,13 @@ import type {
   EdReviewCampaignKind,
   EdReviewCampaignStatus,
   EdReviewReviewerRole,
+  SurveyInstrumentVersion,
   SurveyResponseForAggregation,
 } from "@/lib/ed-review/domain";
 import { allowPublicSurveyRequest } from "@/lib/ed-review/public-rate-limit";
 import { hasGovernanceFeature } from "@/lib/governance-growth/entitlements";
 import {
   createAdminClient,
-  createPublicServerClient,
 } from "@/utils/supabase/admin";
 
 export type EdReviewCampaign = {
@@ -34,6 +34,7 @@ export type EdReviewCampaign = {
   opensAt: string;
   closesAt: string | null;
   responseCount: number;
+  instrumentVersion: SurveyInstrumentVersion;
 };
 
 export type EdReviewCampaignDelivery = {
@@ -297,7 +298,7 @@ export async function getEdReviewData(): Promise<EdReviewData> {
     await Promise.all([
       supabase
         .from("ed_review_campaigns")
-        .select("id, kind, title, status, opens_at, closes_at")
+        .select("id, kind, title, status, opens_at, closes_at, instrument_version")
         .eq("cycle_id", cycle.id)
         .order("created_at"),
       supabase
@@ -384,6 +385,7 @@ export async function getEdReviewData(): Promise<EdReviewData> {
       opensAt: campaign.opens_at,
       closesAt: campaign.closes_at,
       responseCount: responseCounts.get(campaign.id) ?? 0,
+      instrumentVersion: campaign.instrument_version as SurveyInstrumentVersion,
     })),
     reviewers: (reviewersResult.data ?? []).map((reviewer) => ({
       id: reviewer.id,
@@ -642,6 +644,7 @@ export async function createEdReviewCampaign(input: {
       status: cycle.status === "open" ? "open" : "draft",
       opens_at: input.opensAt,
       closes_at: input.closesAt ?? null,
+      instrument_version: 2,
       created_by: session.member.id,
     })
     .select("id")
@@ -788,7 +791,7 @@ export async function getPublicEdReviewCampaign(token: string) {
   const { data, error } = await supabase
     .from("ed_review_campaigns")
     .select(
-      "id, kind, title, status, opens_at, closes_at, ed_review_cycles!inner(title, status, organization_id)",
+      "id, kind, title, status, opens_at, closes_at, instrument_version, ed_review_cycles!inner(title, review_year, status, organization_id, organizations(name))",
     )
     .eq("token_hash", hashValue(token))
     .maybeSingle();
@@ -810,10 +813,27 @@ export async function getPublicEdReviewCampaign(token: string) {
   // A public token does not bypass the organization's current entitlement.
   // Previously issued links remain usable while Canopy or the add-on is active.
   if (!(await hasEdReviewMembership(supabase, review.organization_id))) return null;
+  const { data: brand, error: brandError } = await supabase
+    .from("organization_brand_profiles")
+    .select("display_name, primary_color")
+    .eq("organization_id", review.organization_id)
+    .maybeSingle();
+  if (brandError) throw brandError;
+  const organization = Array.isArray(review.organizations)
+    ? review.organizations[0]
+    : review.organizations;
+  const primaryColor = brand?.primary_color ?? "";
   return {
     kind: data.kind as EdReviewCampaignKind,
     title: data.title,
     reviewTitle: review.title,
+    reviewYear: review.review_year,
+    closesAt: data.closes_at,
+    organizationName: brand?.display_name?.trim() || organization?.name || "Organisation",
+    brandPrimaryColor: /^#[0-9a-f]{6}$/i.test(primaryColor)
+      ? primaryColor
+      : "#2F6E5B",
+    instrumentVersion: (data.instrument_version ?? 1) as SurveyInstrumentVersion,
   };
 }
 
@@ -836,7 +856,12 @@ export async function submitEdReviewResponse(input: {
   if (!campaign) {
     throw new Error("This survey link is unavailable.");
   }
-  const supabase = createPublicServerClient();
+  if (input.answers.instrumentVersion !== campaign.instrumentVersion) {
+    throw new Error("This survey has changed. Reload the page before submitting.");
+  }
+  // Submission goes through server validation and de-identification first.
+  // Direct anonymous RPC access would bypass those privacy checks.
+  const supabase = createAdminClient({ noStore: true });
   const { error } = await supabase.rpc("submit_ed_review_response", {
     p_token_hash: tokenHash,
     p_idempotency_hash: createHash("sha256")
@@ -846,7 +871,9 @@ export async function submitEdReviewResponse(input: {
       ratings: input.answers.ratings,
       comments: input.answers.comments,
       overall: input.answers.overall,
+      ...(campaign.instrumentVersion === 2 ? { instrument_version: 2 } : {}),
       ...(input.answers.context ? { context: input.answers.context } : {}),
+      ...(input.answers.meta ? { meta: input.answers.meta } : {}),
     },
   });
   if (error) {
@@ -860,7 +887,7 @@ export async function getResponsesForCompilation(cycleId: string) {
     throw new Error("That review cycle is unavailable.");
   const { data: campaigns, error: campaignsError } = await supabase
     .from("ed_review_campaigns")
-    .select("id, kind")
+    .select("id, kind, instrument_version")
     .eq("cycle_id", cycle.id)
     .neq("status", "archived");
   if (campaignsError) throw campaignsError;
@@ -879,10 +906,11 @@ export async function getResponsesForCompilation(cycleId: string) {
     .select("campaign_id, answers")
     .in("campaign_id", campaignIds);
   if (responsesError) throw responsesError;
-  const kindByCampaignId = new Map(
+  const campaignById = new Map(
     (campaigns ?? []).map((campaign) => [
       campaign.id,
-      campaign.kind as EdReviewCampaignKind,
+      { kind: campaign.kind as EdReviewCampaignKind,
+        version: campaign.instrument_version as SurveyInstrumentVersion },
     ]),
   );
   const responseGroups = new Map<
@@ -893,10 +921,13 @@ export async function getResponsesForCompilation(cycleId: string) {
     ["partner", []],
   ]);
   for (const response of responses ?? []) {
-    const kind = kindByCampaignId.get(response.campaign_id);
-    if (!kind) continue;
-    responseGroups.get(kind)?.push({
-      answers: response.answers as SurveyResponseForAggregation["answers"],
+    const campaign = campaignById.get(response.campaign_id);
+    if (!campaign) continue;
+    responseGroups.get(campaign.kind)?.push({
+      answers: {
+        ...(response.answers as SurveyResponseForAggregation["answers"]),
+        instrumentVersion: campaign.version,
+      },
     });
   }
   return { cycle, campaigns: campaigns ?? [], responseGroups };

@@ -111,7 +111,7 @@ function CommitteeCard({
         </div>
         <CardDescription>
           {committee.chairId
-            ? `${french ? "Présidence" : "Chair"} : ${activeMembers.find((member) => member.id === committee.chairId)?.fullName ?? (french ? "Inconnue" : "Unknown")}`
+            ? `${french ? "Présidence :" : "Chair:"} ${activeMembers.find((member) => member.id === committee.chairId)?.fullName ?? (french ? "Inconnue" : "Unknown")}`
             : "Assign members and choose a chair."}
         </CardDescription>
         {termRisk.length > 0 ? (

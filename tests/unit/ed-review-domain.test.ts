@@ -49,6 +49,84 @@ describe("anonymous ED review survey domain", () => {
     ).toThrow(/cannot include partner context/i);
   });
 
+  it("validates the source survey's period and reply-by date", () => {
+    const current = {
+      ...base,
+      instrumentVersion: 2 as const,
+      meta: { review_period: "2026–2027", reply_by: "2026-12-01" },
+    };
+    expect(validateAnonymousSurveySubmission(current).meta).toEqual(current.meta);
+    expect(() => validateAnonymousSurveySubmission({
+      ...current,
+      meta: { ...current.meta, reply_by: "2026-02-30" },
+    })).toThrow();
+    expect(() => validateAnonymousSurveySubmission({
+      ...current,
+      meta: { ...current.meta, review_period: "next year" },
+    })).toThrow();
+  });
+
+  it("accepts the source partner context and strips direct identifiers", () => {
+    const submitted = validateAnonymousSurveySubmission({
+      ...base,
+      kind: "partner",
+      instrumentVersion: 2,
+      ratings: { A1: 4, C4: 5 },
+      comments: { A: "A useful partnership." },
+      context: {
+        sector_type: "Funder, jane@example.com",
+        engagement_length: "1–2 years",
+        engagement_nature: "Advisory",
+      },
+      meta: { review_period: "2026–2027", reply_by: "2026-12-15" },
+    });
+    expect(submitted.context).toMatchObject({
+      sector_type: "Funder, [email removed]",
+      engagement_length: "1–2 years",
+      engagement_nature: "Advisory",
+    });
+    expect(submitted.meta).toEqual({
+      review_period: "2026–2027",
+      reply_by: "2026-12-15",
+    });
+    expect(() => validateAnonymousSurveySubmission({
+      ...base,
+      kind: "partner",
+      instrumentVersion: 2,
+      ratings: { A1: 4 },
+      comments: {},
+      context: { relationship_type: "funder" },
+    })).toThrow(/questionnaire version/i);
+    expect(() => validateAnonymousSurveySubmission({
+      ...base,
+      instrumentVersion: 1,
+      meta: { review_period: "2026–2027" },
+    })).toThrow(/metadata requires/i);
+  });
+
+  it("keeps prior and source survey scales separate in mixed compilations", () => {
+    const oldResponse = validateAnonymousSurveySubmission(base);
+    const sourceResponse = validateAnonymousSurveySubmission({
+      ...base,
+      instrumentVersion: 2,
+      ratings: { S1a: 1 },
+    });
+    const result = aggregateSurveyResponses("staff", [
+      { answers: oldResponse }, { answers: sourceResponse },
+    ]);
+    expect(result.responseCount).toBe(2);
+    expect(result.questionAverages.find((item) => item.questionId === "v1:S1a"))
+      .toMatchObject({ average: 5, responseCount: 1, instrumentVersion: 1 });
+    expect(result.questionAverages.find((item) => item.questionId === "v2:S1a"))
+      .toMatchObject({ average: 1, responseCount: 1, instrumentVersion: 2 });
+    expect(result.sectionAverages.map((item) => item.instrumentVersion))
+      .toContain(2);
+    expect(calculateMeaningfulGaps([
+      { sectionId: "old", sectionLabel: "Previous scale", average: 5, responseCount: 1, instrumentVersion: 1 },
+      { sectionId: "new", sectionLabel: "Current scale", average: 1, responseCount: 1, instrumentVersion: 2 },
+    ])).toEqual([]);
+  });
+
   it("calculates averages from submitted ratings and excludes blanks", () => {
     const aggregate = aggregateSurveyResponses("staff", [
       { answers: validateAnonymousSurveySubmission(base) },

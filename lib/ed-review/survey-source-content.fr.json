@@ -1,0 +1,417 @@
+{
+  "staff": {
+    "organizationPlaceholder": "[Nom de l’organisme]",
+    "reviewPeriodLabel": "Période d’évaluation",
+    "reviewPeriodPlaceholder": "p. ex. 2025–2026",
+    "deadlineLabel": "À remettre avant le",
+    "deadlinePlaceholder": "Date limite",
+    "anonymousLabel": "Anonyme",
+    "ratingScale": [
+      {
+        "value": 1,
+        "label": "Faible",
+        "description": "Préoccupations importantes"
+      },
+      {
+        "value": 2,
+        "label": "En deçà",
+        "description": "Amélioration nécessaire"
+      },
+      {
+        "value": 3,
+        "label": "Conforme",
+        "description": "Solide et constant"
+      },
+      {
+        "value": 4,
+        "label": "Dépasse",
+        "description": "Au-dessus des attentes"
+      },
+      {
+        "value": 5,
+        "label": "Excep.",
+        "description": "Remarquable"
+      }
+    ],
+    "overallTitle": "Commentaires généraux",
+    "kind": "staff",
+    "label": "Sondage de rétroaction du personnel",
+    "eyebrow": "Rétroaction du personnel",
+    "title": "Évaluation annuelle de la direction générale / PDG — Rétroaction du personnel",
+    "durationLabel": "Environ 8 minutes",
+    "summaryLabel": "18 évaluations rapides et commentaires facultatifs",
+    "description": "Vos commentaires font partie de l’évaluation annuelle de la direction générale / PDG et donnent au conseil une perspective plus complète sur le leadership au sein de l’équipe — une perspective unique que vous pouvez apporter. Ce sondage est anonyme. Votre nom n’est pas recueilli, les réponses sont examinées ensemble (sans attribution individuelle) et vos réponses individuelles ne sont pas communiquées à la direction générale / PDG. Il n’y a pas de bonnes ou de mauvaises réponses : des commentaires honnêtes et précis sont les plus utiles.",
+    "sections": [
+      {
+        "id": "vision",
+        "sourceId": "S1",
+        "commentId": "S1",
+        "label": "Vision et leadership stratégique",
+        "description": "Comment la direction générale / PDG communique l’orientation, prend des décisions et exerce son leadership stratégique.",
+        "commentPrompt": "Une chose que la direction générale / PDG pourrait faire pour renforcer l’orientation de l’organisme",
+        "questions": [
+          {
+            "id": "S1a",
+            "sourceId": "S1a",
+            "label": "Communique une vision claire et inspirante.",
+            "subtext": "Je comprends où nous allons et pourquoi"
+          },
+          {
+            "id": "S1b",
+            "sourceId": "S1b",
+            "label": "Prend de bonnes décisions dans des situations incertaines ou complexes.",
+            "subtext": "Jugement dans l’ambiguïté"
+          },
+          {
+            "id": "S1c",
+            "sourceId": "S1c",
+            "label": "Accorde la priorité à ce qui compte le plus et s’adapte lorsque les choses changent.",
+            "subtext": "Concentration, souplesse et résilience"
+          }
+        ]
+      },
+      {
+        "id": "culture",
+        "sourceId": "S2",
+        "commentId": "S2",
+        "label": "Leadership des personnes et culture",
+        "description": "Comment la direction générale / PDG dirige l’équipe, bâtit la culture et soutient le développement des personnes.",
+        "commentPrompt": "Une chose que la direction générale / PDG fait bien comme leader des personnes et un aspect à développer",
+        "questions": [
+          {
+            "id": "S2a",
+            "sourceId": "S2a",
+            "label": "Crée un environnement positif et inclusif.",
+            "subtext": "Sécurité psychologique, appartenance et respect"
+          },
+          {
+            "id": "S2b",
+            "sourceId": "S2b",
+            "label": "Reconnaît et valorise les contributions des membres de l’équipe.",
+            "subtext": "Appréciation et reconnaissance"
+          },
+          {
+            "id": "S2c",
+            "sourceId": "S2c",
+            "label": "Traite les problèmes équitablement et incarne les valeurs de l’organisme.",
+            "subtext": "Responsabilité et cohérence entre paroles et gestes"
+          }
+        ]
+      },
+      {
+        "id": "communications",
+        "sourceId": "S3",
+        "commentId": "S3",
+        "label": "Communication et transparence",
+        "description": "Comment la direction générale / PDG communique avec l’équipe et entretient l’ouverture.",
+        "commentPrompt": "Un aspect de la communication de la direction générale / PDG que vous aimeriez voir changer",
+        "questions": [
+          {
+            "id": "S3a",
+            "sourceId": "S3a",
+            "label": "Communique les renseignements importants clairement et en temps opportun.",
+            "subtext": "Tenir les personnes informées"
+          },
+          {
+            "id": "S3b",
+            "sourceId": "S3b",
+            "label": "Est accessible et écoute sincèrement.",
+            "subtext": "Ouverture et écoute active"
+          },
+          {
+            "id": "S3c",
+            "sourceId": "S3c",
+            "label": "Fait preuve de transparence au sujet des décisions et des changements, même difficiles.",
+            "subtext": "Honnêteté sur les sujets délicats"
+          }
+        ]
+      },
+      {
+        "id": "operations",
+        "sourceId": "S4",
+        "commentId": "S4",
+        "label": "Efficacité opérationnelle",
+        "description": "Comment la direction générale / PDG gère l’organisme au quotidien.",
+        "commentPrompt": "Quel aspect du leadership opérationnel fonctionne le mieux et qu’est-ce qui pourrait être amélioré?",
+        "questions": [
+          {
+            "id": "S4a",
+            "sourceId": "S4a",
+            "label": "Est organisée et respecte ses engagements.",
+            "subtext": "Fiabilité et exécution"
+          },
+          {
+            "id": "S4b",
+            "sourceId": "S4b",
+            "label": "Gère les ressources et le budget de façon responsable.",
+            "subtext": "Gestion financière et opérationnelle"
+          },
+          {
+            "id": "S4c",
+            "sourceId": "S4c",
+            "label": "Met en place des systèmes et des processus qui aident l’équipe à bien travailler.",
+            "subtext": "Infrastructure et efficacité"
+          }
+        ]
+      },
+      {
+        "id": "innovation",
+        "sourceId": "S5",
+        "commentId": "S5",
+        "label": "Innovation et capacité d’adaptation",
+        "description": "Comment la direction générale / PDG encourage les nouvelles idées et fait progresser les initiatives.",
+        "commentPrompt": "Un exemple précis où la direction générale / PDG a fait preuve d’innovation ou de capacité d’adaptation",
+        "questions": [
+          {
+            "id": "S5a",
+            "sourceId": "S5a",
+            "label": "Encourage la pensée créative et innovante.",
+            "subtext": "Ouverture aux idées et aux approches nouvelles"
+          },
+          {
+            "id": "S5b",
+            "sourceId": "S5b",
+            "label": "Prend des risques appropriés et calculés pour faire avancer les choses.",
+            "subtext": "Courage et jugement"
+          },
+          {
+            "id": "S5c",
+            "sourceId": "S5c",
+            "label": "Mène les initiatives de l’idée à la mise en œuvre.",
+            "subtext": "Suivi et exécution"
+          }
+        ]
+      },
+      {
+        "id": "partnership",
+        "sourceId": "S6",
+        "commentId": "S6",
+        "label": "Partenariats et représentation externe",
+        "description": "Comment la direction générale / PDG bâtit des relations et représente l’organisme à l’externe.",
+        "commentPrompt": "Ce que vous observez dans l’approche de la direction générale / PDG envers les partenariats",
+        "questions": [
+          {
+            "id": "S6a",
+            "sourceId": "S6a",
+            "label": "Bâtit la confiance avec les partenaires et les parties prenantes externes.",
+            "subtext": "Crédibilité et qualité des relations"
+          },
+          {
+            "id": "S6b",
+            "sourceId": "S6b",
+            "label": "Représente bien l’organisme à l’externe.",
+            "subtext": "Professionnalisme, présence et communication"
+          },
+          {
+            "id": "S6c",
+            "sourceId": "S6c",
+            "label": "Favorise une inclusion véritable dans les échanges.",
+            "subtext": "Équité et représentation"
+          }
+        ]
+      }
+    ],
+    "overallPrompts": {
+      "greatestStrength": "Que fait le mieux la direction générale / PDG? Sa plus grande force comme leader",
+      "importantChange": "La chose la plus importante qu’elle pourrait faire autrement pour être plus efficace",
+      "additionalComments": "Y a-t-il autre chose que vous aimeriez communiquer à la présidence du conseil?"
+    },
+    "commentPlaceholder": "Un exemple ou une observation précise est particulièrement utile.",
+    "closingTitle": "Merci d’avoir pris le temps de répondre",
+    "closingDescription": "Vos commentaires sont précieux et seront utilisés de façon constructive pour soutenir le développement de la direction générale / PDG et l’évaluation du conseil.",
+    "footerNotice": "Outil de rétroaction confidentiel · Fourni par Olea Connects · Distribution réservée aux membres actifs."
+  },
+  "partner": {
+    "organizationPlaceholder": "[Nom de l’organisme]",
+    "reviewPeriodLabel": "Période d’évaluation",
+    "reviewPeriodPlaceholder": "p. ex. 2025–2026",
+    "deadlineLabel": "À remettre avant le",
+    "deadlinePlaceholder": "Date limite",
+    "anonymousLabel": "Anonyme",
+    "ratingScale": [
+      {
+        "value": 1,
+        "label": "Faible",
+        "description": "Préoccupations importantes"
+      },
+      {
+        "value": 2,
+        "label": "En deçà",
+        "description": "Amélioration nécessaire"
+      },
+      {
+        "value": 3,
+        "label": "Conforme",
+        "description": "Solide et constant"
+      },
+      {
+        "value": 4,
+        "label": "Dépasse",
+        "description": "Au-dessus des attentes"
+      },
+      {
+        "value": 5,
+        "label": "Excep.",
+        "description": "Remarquable"
+      }
+    ],
+    "overallTitle": "Commentaires généraux",
+    "kind": "partner",
+    "label": "Sondage de rétroaction des partenaires et parties prenantes",
+    "eyebrow": "Rétroaction des partenaires et parties prenantes",
+    "title": "Évaluation annuelle de la direction générale / PDG — Rétroaction externe",
+    "durationLabel": "Environ 6 minutes",
+    "summaryLabel": "15 évaluations rapides et commentaires facultatifs",
+    "description": "Le travail de votre organisme repose sur des relations de confiance. Comme personne ayant collaboré avec l’organisme et sa direction générale / PDG, votre point de vue sur cette relation et sur son leadership aide le conseil à soutenir une direction solide et responsable. Ce sondage est anonyme : votre nom et celui de votre organisme ne sont pas recueillis, sauf si vous choisissez de les communiquer, et les réponses sont examinées uniquement par la présidence du conseil. Les commentaires écrits sont facultatifs, mais particulièrement utiles; un exemple précis peut faire toute la différence.",
+    "sections": [
+      {
+        "id": "relationship",
+        "sourceId": "A",
+        "commentId": "A",
+        "label": "Qualité des relations et confiance",
+        "description": "La qualité de la relation que vous avez vécue avec la direction générale / PDG et l’organisme.",
+        "commentPrompt": "Qu’est-ce que la direction générale / PDG a bien fait pour bâtir ou maintenir la relation, et qu’est-ce qui pourrait être amélioré?",
+        "questions": [
+          {
+            "id": "A1",
+            "sourceId": "A0",
+            "label": "A bâti une relation authentique et productive avec mon organisme.",
+            "subtext": "Qualité et authenticité du partenariat"
+          },
+          {
+            "id": "A2",
+            "sourceId": "A1",
+            "label": "Est fiable et respecte ses engagements.",
+            "subtext": "Confiance et suivi des engagements"
+          },
+          {
+            "id": "A3",
+            "sourceId": "A2",
+            "label": "Communique de façon professionnelle et réactive.",
+            "subtext": "Qualité de la communication et rapidité de réponse"
+          },
+          {
+            "id": "A4",
+            "sourceId": "A3",
+            "label": "Représente équitablement les intérêts des partenaires et de la communauté.",
+            "subtext": "Intégrité et équité dans les relations"
+          }
+        ]
+      },
+      {
+        "id": "strategy",
+        "sourceId": "B",
+        "commentId": "B",
+        "label": "Présence stratégique et leadership externe",
+        "description": "Comment la direction générale / PDG représente l’organisme à l’externe et contribue à l’écosystème élargi.",
+        "commentPrompt": "Comment le leadership de la direction générale / PDG a-t-il contribué à la collaboration ou au progrès dans votre secteur ou votre communauté?",
+        "questions": [
+          {
+            "id": "B1",
+            "sourceId": "B0",
+            "label": "Exprime clairement la raison d’être et la valeur de l’organisme.",
+            "subtext": "Clarté de la mission et de la vision à l’externe"
+          },
+          {
+            "id": "B2",
+            "sourceId": "B1",
+            "label": "Démontre une compréhension crédible du secteur.",
+            "subtext": "Connaissance du secteur et crédibilité"
+          },
+          {
+            "id": "B3",
+            "sourceId": "B2",
+            "label": "Rassemble efficacement les bonnes personnes.",
+            "subtext": "Création de réseaux et animation"
+          },
+          {
+            "id": "B4",
+            "sourceId": "B3",
+            "label": "Contribue positivement à l’écosystème élargi.",
+            "subtext": "Impact et leadership dans le secteur"
+          }
+        ]
+      },
+      {
+        "id": "inclusion",
+        "sourceId": "C",
+        "commentId": "C",
+        "label": "Inclusion et engagement communautaire",
+        "description": "Comment la direction générale / PDG aborde l’inclusion, l’équité et la mobilisation des communautés desservies.",
+        "commentPrompt": "Dans quelle mesure l’organisme fait-il progresser l’inclusion et la mobilisation, et qu’est-ce qui pourrait être renforcé?",
+        "questions": [
+          {
+            "id": "C1",
+            "sourceId": "C0",
+            "label": "Inclut activement les communautés sous-représentées et mal desservies.",
+            "subtext": "Équité et représentation dans la mobilisation"
+          },
+          {
+            "id": "C2",
+            "sourceId": "C1",
+            "label": "Le travail de l’organisme reflète les besoins des communautés qu’il dessert.",
+            "subtext": "Approche centrée sur la communauté"
+          },
+          {
+            "id": "C3",
+            "sourceId": "C2",
+            "label": "Crée de véritables occasions pour que la communauté s’exprime et participe.",
+            "subtext": "Inclusion authentique, sans geste symbolique"
+          },
+          {
+            "id": "C4",
+            "sourceId": "C3",
+            "label": "Mon organisme ou ma communauté est considéré comme un véritable partenaire.",
+            "subtext": "Équité du partenariat"
+          }
+        ]
+      },
+      {
+        "id": "impact",
+        "sourceId": "D",
+        "commentId": "D",
+        "label": "Impact et recommandation",
+        "description": "Les résultats de l’organisme et le rôle de la direction générale / PDG dans leur réalisation.",
+        "commentPrompt": "Pouvez-vous décrire un exemple précis où le leadership de la direction générale / PDG a contribué à un résultat important?",
+        "questions": [
+          {
+            "id": "D1",
+            "sourceId": "D0",
+            "label": "Démontre un engagement sincère envers l’innovation et l’amélioration.",
+            "subtext": "Esprit d’innovation et volonté d’agir"
+          },
+          {
+            "id": "D2",
+            "sourceId": "D1",
+            "label": "Le travail de l’organisme produit des résultats concrets et significatifs.",
+            "subtext": "Impact"
+          },
+          {
+            "id": "D3",
+            "sourceId": "D2",
+            "label": "Je recommanderais de collaborer avec cet organisme et sa direction générale / PDG.",
+            "subtext": "Recommandation"
+          }
+        ]
+      }
+    ],
+    "context": {
+      "title": "Votre relation avec l’organisme (facultatif)",
+      "sectorTypeLabel": "Votre secteur / type",
+      "sectorTypePlaceholder": "p. ex. bailleur de fonds, gouvernement",
+      "lengthLabel": "Durée de la relation",
+      "lengthPlaceholder": "p. ex. 1 à 2 ans",
+      "natureLabel": "Nature de la relation",
+      "naturePlaceholder": "p. ex. partenariat, conseil"
+    },
+    "overallPrompts": {
+      "greatestStrength": "La plus grande force de la direction générale / PDG, selon vous",
+      "importantChange": "La chose sur laquelle vous souhaiteriez le plus qu’elle se concentre l’année prochaine",
+      "additionalComments": "Y a-t-il autre chose que vous aimeriez communiquer au conseil?"
+    },
+    "commentPlaceholder": "Un exemple précis est particulièrement utile.",
+    "closingTitle": "Merci de votre temps et de votre collaboration",
+    "closingDescription": "Vos commentaires soutiennent un leadership solide et responsable. Veuillez répondre avant la date limite indiquée ci-dessus.",
+    "footerNotice": "Outil de rétroaction confidentiel · Fourni par Olea Connects · Distribution réservée aux membres actifs."
+  }
+}

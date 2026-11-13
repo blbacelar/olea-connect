@@ -1,4 +1,5 @@
 import * as z from "zod";
+import { getSourceSurveyDefinition } from "@/lib/ed-review/survey-source-content";
 
 export const campaignKinds = ["staff", "partner"] as const;
 export type EdReviewCampaignKind = (typeof campaignKinds)[number];
@@ -21,12 +22,15 @@ export type EdReviewReviewerRole = (typeof reviewerRoles)[number];
 export type SurveyQuestion = {
   id: string;
   label: string;
+  subtext?: string;
 };
 
 export type SurveySection = {
   id: string;
   commentId: string;
   label: string;
+  description?: string;
+  commentPrompt?: string;
   questions: readonly SurveyQuestion[];
 };
 
@@ -36,6 +40,8 @@ export type SurveyDefinition = {
   description: string;
   sections: readonly SurveySection[];
 };
+
+export type SurveyInstrumentVersion = 1 | 2;
 
 const staffSections = [
   {
@@ -187,18 +193,23 @@ export const surveyDefinitions: Record<EdReviewCampaignKind, SurveyDefinition> =
     },
   };
 
-export function getSurveyDefinition(kind: EdReviewCampaignKind) {
-  return surveyDefinitions[kind];
+export function getSurveyDefinition(
+  kind: EdReviewCampaignKind,
+  version: SurveyInstrumentVersion = 1,
+) {
+  return version === 2
+    ? getSourceSurveyDefinition(kind, "en-CA")
+    : surveyDefinitions[kind];
 }
 
-export function getQuestionIds(kind: EdReviewCampaignKind) {
-  return getSurveyDefinition(kind).sections.flatMap((section) =>
+export function getQuestionIds(kind: EdReviewCampaignKind, version: SurveyInstrumentVersion = 1) {
+  return getSurveyDefinition(kind, version).sections.flatMap((section) =>
     section.questions.map((question) => question.id),
   );
 }
 
-export function getCommentIds(kind: EdReviewCampaignKind) {
-  return getSurveyDefinition(kind).sections.map((section) => section.commentId);
+export function getCommentIds(kind: EdReviewCampaignKind, version: SurveyInstrumentVersion = 1) {
+  return getSurveyDefinition(kind, version).sections.map((section) => section.commentId);
 }
 
 const ratingSchema = z.coerce.number().int().min(1).max(5);
@@ -207,6 +218,7 @@ const commentSchema = z.string().trim().max(2000);
 export const anonymousSurveySubmissionSchema = z
   .object({
     kind: z.enum(campaignKinds),
+    instrumentVersion: z.union([z.literal(1), z.literal(2)]).default(1),
     idempotencyKey: z.string().uuid(),
     ratings: z.record(z.string(), ratingSchema),
     comments: z.record(z.string(), commentSchema),
@@ -217,18 +229,29 @@ export const anonymousSurveySubmissionSchema = z
         additional_comments: commentSchema.default(""),
       })
       .strict(),
-    context: z
-      .object({
+    meta: z.object({
+      review_period: z.string().trim().max(9).refine(
+        (value) => !value || /^\d{4}(?:[–-]\d{4})?$/.test(value),
+        "Use YYYY or YYYY–YYYY for the review period.",
+      ).optional(),
+      reply_by: z.string().trim().max(10).refine(
+        (value) => !value || /^\d{4}-\d{2}-\d{2}$/.test(value) &&
+          Number.isFinite(Date.parse(value)) && new Date(value).toISOString().slice(0, 10) === value,
+        "Use a valid YYYY-MM-DD reply-by date.",
+      ).optional(),
+    }).strict().optional(),
+    context: z.union([
+      z.object({
         relationship_type: z.enum([
-          "funder",
-          "partner",
-          "community_member",
-          "other",
-          "prefer_not_to_say",
+          "funder", "partner", "community_member", "other", "prefer_not_to_say",
         ]),
-      })
-      .strict()
-      .optional(),
+      }).strict(),
+      z.object({
+        sector_type: z.string().trim().max(80).optional(),
+        engagement_length: z.string().trim().max(60).optional(),
+        engagement_nature: z.string().trim().max(80).optional(),
+      }).strict(),
+    ]).optional(),
   })
   .strict();
 
@@ -240,8 +263,8 @@ export function validateAnonymousSurveySubmission(
   input: unknown,
 ): AnonymousSurveySubmission {
   const parsed = anonymousSurveySubmissionSchema.parse(input);
-  const allowedQuestionIds = new Set(getQuestionIds(parsed.kind));
-  const allowedCommentIds = new Set(getCommentIds(parsed.kind));
+  const allowedQuestionIds = new Set(getQuestionIds(parsed.kind, parsed.instrumentVersion));
+  const allowedCommentIds = new Set(getCommentIds(parsed.kind, parsed.instrumentVersion));
 
   for (const questionId of Object.keys(parsed.ratings)) {
     if (!allowedQuestionIds.has(questionId)) {
@@ -263,11 +286,26 @@ export function validateAnonymousSurveySubmission(
   if (parsed.kind === "staff" && parsed.context) {
     throw new Error("Staff survey responses cannot include partner context.");
   }
+  if (parsed.context) {
+    const legacy = "relationship_type" in parsed.context;
+    if ((parsed.instrumentVersion === 1) !== legacy) {
+      throw new Error("The survey context does not match the questionnaire version.");
+    }
+  }
+  if (parsed.meta && parsed.instrumentVersion !== 2) {
+    throw new Error("Review metadata requires the current questionnaire version.");
+  }
 
   // Anonymous survey content must be de-identified before it reaches storage,
   // not only when it is later sent to an AI summarizer.
   return {
     ...parsed,
+    context: parsed.context && parsed.instrumentVersion === 2
+      ? Object.fromEntries(Object.entries(parsed.context).map(([key, value]) => [
+          key, deidentifySurveyComment(value ?? ""),
+        ])) as typeof parsed.context
+      : parsed.context,
+    meta: parsed.meta,
     comments: Object.fromEntries(
       Object.entries(parsed.comments).map(([id, comment]) => [
         id,
@@ -296,6 +334,7 @@ export type SurveyQuestionAverage = {
   questionId: string;
   average: number | null;
   responseCount: number;
+  instrumentVersion?: SurveyInstrumentVersion;
 };
 
 export type SurveySectionAverage = {
@@ -303,6 +342,7 @@ export type SurveySectionAverage = {
   sectionLabel: string;
   average: number | null;
   responseCount: number;
+  instrumentVersion?: SurveyInstrumentVersion;
 };
 
 export type SurveyAggregate = {
@@ -343,39 +383,44 @@ export function aggregateSurveyResponses(
   kind: EdReviewCampaignKind,
   responses: readonly SurveyResponseForAggregation[],
 ): SurveyAggregate {
-  const definition = getSurveyDefinition(kind);
-  const questionAverages = definition.sections.flatMap((section) =>
-    section.questions.map((question) => {
-      const values = responses
-        .map((response) => response.answers.ratings[question.id])
-        .filter((value): value is number => typeof value === "number");
-      return {
-        questionId: question.id,
-        average: roundedAverage(values),
-        responseCount: values.length,
-      };
-    }),
+  const versions = ([1, 2] as const).filter((version) =>
+    responses.some((response) => (response.answers.instrumentVersion ?? 1) === version),
   );
-  const averageByQuestionId = new Map(
-    questionAverages.map((average) => [average.questionId, average]),
-  );
-  const sectionAverages = definition.sections.map((section) => {
-    const sectionValues = section.questions.flatMap((question) =>
-      responses
-        .map((response) => response.answers.ratings[question.id])
-        .filter((value): value is number => typeof value === "number"),
+  // Empty campaigns still expose the current questionnaire structure.
+  if (!versions.length) versions.push(2);
+  const mixed = versions.length > 1;
+  const questionAverages: SurveyQuestionAverage[] = [];
+  const sectionAverages: SurveySectionAverage[] = [];
+  for (const version of versions) {
+    const definition = getSurveyDefinition(kind, version);
+    const sameVersion = responses.filter(
+      (response) => (response.answers.instrumentVersion ?? 1) === version,
     );
-    return {
-      sectionId: section.id,
-      sectionLabel: section.label,
-      average: roundedAverage(sectionValues),
-      responseCount: section.questions.reduce(
-        (count, question) =>
-          count + (averageByQuestionId.get(question.id)?.responseCount ?? 0),
-        0,
-      ),
-    };
-  });
+    for (const section of definition.sections) {
+      const sectionValues: number[] = [];
+      for (const question of section.questions) {
+        const values = sameVersion
+          .map((response) => response.answers.ratings[question.id])
+          .filter((value): value is number => typeof value === "number");
+        sectionValues.push(...values);
+        questionAverages.push({
+          questionId: mixed ? `v${version}:${question.id}` : question.id,
+          average: roundedAverage(values),
+          responseCount: values.length,
+          instrumentVersion: version,
+        });
+      }
+      sectionAverages.push({
+        sectionId: mixed ? `v${version}:${section.id}` : section.id,
+        sectionLabel: mixed
+          ? `${version === 1 ? "Previous agreement scale" : "HTML performance scale"} · ${section.label}`
+          : section.label,
+        average: roundedAverage(sectionValues),
+        responseCount: sectionValues.length,
+        instrumentVersion: version,
+      });
+    }
+  }
 
   const deidentifiedComments = responses.flatMap((response) => {
     const freeText = [
@@ -437,12 +482,13 @@ export function calculateMeaningfulGaps(
   sections: readonly SurveySectionAverage[],
   threshold = 0.7,
 ) {
-  const scored = sections.filter(
-    (section): section is SurveySectionAverage & { average: number } =>
-      section.average !== null,
-  );
-  if (scored.length < 2) return [];
-
-  const top = Math.max(...scored.map((section) => section.average));
-  return scored.filter((section) => top - section.average >= threshold);
+  return ([1, 2] as const).flatMap((version) => {
+    const scored = sections.filter(
+      (section): section is SurveySectionAverage & { average: number } =>
+        (section.instrumentVersion ?? 1) === version && section.average !== null,
+    );
+    if (scored.length < 2) return [];
+    const top = Math.max(...scored.map((section) => section.average));
+    return scored.filter((section) => top - section.average >= threshold);
+  });
 }

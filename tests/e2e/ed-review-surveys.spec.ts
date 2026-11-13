@@ -1,3 +1,7 @@
+import { createHash } from "node:crypto";
+import { readFile } from "node:fs/promises";
+import { createClient } from "@supabase/supabase-js";
+
 import {
   test as authenticatedTest,
   expect,
@@ -19,7 +23,7 @@ test.describe("@critical anonymous ED/CEO review surveys", () => {
   test.setTimeout(120_000);
   test("creates the partner survey from the overview and accepts anonymous feedback", async ({
     page, browser, baseURL,
-  }) => {
+  }, testInfo) => {
     if (!baseURL) throw new Error("Playwright baseURL is required.");
     const reviewer = new EdReviewPage(page);
     await reviewer.open();
@@ -40,11 +44,85 @@ test.describe("@critical anonymous ED/CEO review surveys", () => {
       const survey = await publicContext.newPage();
       const surveyUrl = new URL(await linkInput.inputValue());
       await survey.goto(`${new URL(page.url()).origin}${surveyUrl.pathname}${surveyUrl.search}`);
-      await expect(survey.getByText("Anonymous feedback", { exact: true }).first()).toBeVisible();
+      await expect(survey.getByRole("heading", { name: "Relationship Quality & Trust" })).toBeVisible();
+      const direct = createClient(
+        process.env.TEST_SUPABASE_URL!,
+        process.env.TEST_SUPABASE_PUBLISHABLE_KEY!,
+        { auth: { persistSession: false } },
+      );
+      const { error: directSubmitError } = await direct.rpc("submit_ed_review_response", {
+        p_token_hash: "0".repeat(64),
+        p_idempotency_hash: "1".repeat(64),
+        p_answers: { ratings: { A1: 4 }, comments: {}, overall: {} },
+      });
+      expect(directSubmitError?.code).toBe("42501");
+      await expect(survey.getByRole("radiogroup")).toHaveCount(15);
+      await expect(survey.getByText("1 · Poor").first()).toBeVisible();
+      await survey.screenshot({ path: testInfo.outputPath("partner-desktop.png") });
+      await survey.setViewportSize({ width: 390, height: 844 });
+      await survey.screenshot({ path: testInfo.outputPath("partner-mobile.png") });
+      expect(await survey.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(390);
+      await survey.setViewportSize({ width: 1280, height: 720 });
+      await survey.getByRole("button", { name: "Submit survey" }).first().click();
+      await expect(survey.locator('p[role="alert"]')).toContainText("Please answer at least one rating");
+      await survey.getByLabel("Your sector / type (optional)").fill("Funder");
+      await survey.getByLabel("Length of engagement (optional)").fill("1–2 years");
+      await survey.getByLabel("Nature of engagement (optional)").fill("Partner");
+      await survey.getByLabel("Review period").fill("2026–2027");
+      await survey.getByLabel("Please return by").fill("2026-12-01");
       await survey.getByRole("radiogroup").first().getByLabel("4").check({ force: true });
-      await survey.getByRole("button", { name: "Submit anonymous feedback" }).click();
-      await survey.getByRole("button", { name: "Submit response" }).click();
-      await expect(survey.getByRole("heading", { name: "Thank you for your feedback" })).toBeVisible();
+      await expect(survey.getByText("4.0", { exact: true }).first()).toBeVisible();
+      await expect(survey.getByText(/saved on this device/i).first()).toBeVisible();
+      await survey.reload();
+      await expect(survey.getByLabel("Your sector / type (optional)")).toHaveValue("Funder");
+      await expect(survey.getByRole("radiogroup").first().getByLabel("4")).toBeChecked();
+      await survey.getByTestId("locale-selector").click();
+      await survey.getByRole("option", { name: "Français" }).click();
+      await expect(survey.getByRole("heading", { name: "Qualité des relations et confiance" })).toBeVisible();
+      await expect(survey.getByRole("radiogroup").first().getByLabel(/4/)).toBeChecked();
+      await survey.getByTestId("locale-selector").click();
+      await survey.getByRole("option", { name: "English" }).click();
+      const downloadPromise = survey.waitForEvent("download");
+      await survey.getByRole("button", { name: "Download" }).click();
+      const download = await downloadPromise;
+      expect(download.suggestedFilename()).toBe("Partner-Feedback-Response.json");
+      const downloaded = JSON.parse(await readFile((await download.path())!, "utf8")) as { store: Record<string, string> };
+      expect(downloaded.store["rate.A0"]).toBe("4");
+      expect(downloaded.store["about.role"]).toBe("Funder");
+      expect(downloaded.store["about.length"]).toBe("1–2 years");
+      expect(downloaded.store["about.nature"]).toBe("Partner");
+      expect(downloaded.store["meta.period"]).toBe("2026–2027");
+      expect(downloaded.store["meta.deadline"]).toBe("2026-12-01");
+      await survey.evaluate(() => { window.print = () => { document.body.dataset.printRequested = "yes"; }; });
+      await survey.getByRole("button", { name: "Print / PDF" }).click();
+      await expect(survey.locator("body")).toHaveAttribute("data-print-requested", "yes");
+      const admin = createClient(
+        process.env.TEST_SUPABASE_URL!,
+        process.env.TEST_SUPABASE_SERVICE_ROLE_KEY!,
+        { auth: { persistSession: false } },
+      );
+      const tokenHash = createHash("sha256")
+        .update(surveyUrl.pathname.split("/").at(-1)!)
+        .digest("hex");
+      try {
+        const closed = await admin.from("ed_review_campaigns")
+          .update({ status: "closed" })
+          .eq("token_hash", tokenHash);
+        expect(closed.error).toBeNull();
+        await survey.getByRole("button", { name: "Submit survey" }).last().click();
+        await expect(survey.locator('p[role="alert"]')).toContainText("no longer accepting responses");
+        await expect(survey.getByRole("radiogroup").first().getByLabel("4")).toBeChecked();
+      } finally {
+        const reopened = await admin.from("ed_review_campaigns")
+          .update({ status: "open" })
+          .eq("token_hash", tokenHash);
+        expect(reopened.error).toBeNull();
+      }
+      await survey.getByRole("button", { name: "Submit survey" }).last().click();
+      await expect(survey.getByRole("heading", { name: "Thank you" })).toBeVisible();
+      await expect(survey.getByText(/^Submitted /)).toBeVisible();
+      await survey.getByRole("button", { name: "Start a new response" }).click();
+      await expect(survey.getByRole("radiogroup").first().getByLabel("4")).not.toBeChecked();
     } finally {
       await publicContext.close();
     }
@@ -71,19 +149,17 @@ test.describe("@critical anonymous ED/CEO review surveys", () => {
       const survey = await publicContext.newPage();
       await survey.goto(surveyUrl);
       await expect(
-        survey.getByText("Anonymous feedback", { exact: true }).first(),
+        survey.getByRole("heading", { name: "Vision & Strategic Leadership" }),
       ).toBeVisible();
+      await expect(survey.getByRole("radiogroup")).toHaveCount(18);
       await survey
         .getByRole("radiogroup")
         .first()
         .getByLabel("5")
         .check({ force: true });
-      await survey
-        .getByRole("button", { name: "Submit anonymous feedback" })
-        .click();
-      await survey.getByRole("button", { name: "Submit response" }).click();
+      await survey.getByRole("button", { name: "Submit survey" }).last().click();
       await expect(
-        survey.getByRole("heading", { name: "Thank you for your feedback" }),
+        survey.getByRole("heading", { name: "Thank you" }),
       ).toBeVisible();
     } finally {
       await publicContext.close();
@@ -144,6 +220,7 @@ test.describe("@critical anonymous ED/CEO review surveys", () => {
       await expect(
         memberPage.getByRole("heading", { name: "ED/CEO annual review" }),
       ).toBeVisible();
+      await expect(memberPage.getByTestId("app-sidebar").getByRole("link", { name: "ED Review" })).toBeVisible();
       await memberPage.getByRole("tab", { name: "Campaigns" }).click();
       await expect(
         memberPage.getByRole("button", { name: "Create campaign" }),

@@ -39,6 +39,10 @@ describe("application navigation", () => {
     expect(navigationLabelsFor([], "admin")).toContain("Board Recruitment");
   });
 
+  it("keeps ED Review discoverable for an assigned Board Chair who is a regular member", () => {
+    expect(navigationLabelsFor([], "member")).toContain("ED Review");
+  });
+
   it("shows the users directory but hides operator navigation from regular members", () => {
     expect(navigationLabelsFor([])).not.toContain("Operations");
     expect(navigationLabelsFor([])).toContain("Users Directory");

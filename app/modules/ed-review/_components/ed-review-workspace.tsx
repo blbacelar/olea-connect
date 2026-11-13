@@ -287,6 +287,16 @@ export function EdReviewWorkspace({
                                 ? "Staff feedback"
                                 : "Partner feedback"}
                             </p>
+                            {campaign.instrumentVersion === 1 ? (
+                              <p className="mt-2 max-w-xs text-xs text-amber-800">
+                                <Badge variant="outline" className="mr-2 border-amber-300 text-amber-800">
+                                  {locale === "fr-CA" ? "Ancien questionnaire" : "Previous questionnaire"}
+                                </Badge>
+                                {locale === "fr-CA"
+                                  ? "Les réponses précédentes conservent leur échelle. Créez une nouvelle campagne pour utiliser le questionnaire du HTML."
+                                  : "Earlier responses keep their original scale. Create a new campaign to use the HTML questionnaire."}
+                              </p>
+                            ) : null}
                           </td>
                           <td className="p-4">
                             <Badge variant="outline">{campaign.status}</Badge>

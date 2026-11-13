@@ -1,0 +1,55 @@
+@font-face {
+  font-family: "Olea Survey Newsreader";
+  src: url("/fonts/newsreader-latin.woff2") format("woff2");
+  font-style: normal;
+  font-weight: 400 700;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Olea Survey Public Sans";
+  src: url("/fonts/public-sans-latin.woff2") format("woff2");
+  font-style: normal;
+  font-weight: 400 700;
+  font-display: swap;
+}
+
+.source-survey {
+  background: #f6f2eb;
+  color: #26231e;
+  font-family: "Olea Survey Public Sans", system-ui, sans-serif;
+  font-size: 14px;
+}
+
+.source-survey h3 {
+  font-family: "Olea Survey Newsreader", Georgia, serif;
+  font-weight: 500;
+  letter-spacing: normal;
+  line-height: 1.18;
+}
+
+.source-survey .survey-card {
+  border-color: #e5ddcf;
+  border-radius: 16px;
+  box-shadow: 0 1px 2px rgb(40 35 25 / 4%);
+}
+
+.source-survey input:not([type="hidden"]):not([type="radio"]),
+.source-survey textarea {
+  background: #fbf9f4;
+  border-color: #e5ddcf;
+}
+
+.source-survey .survey-primary {
+  background: var(--survey-accent);
+  color: #fff;
+}
+
+.source-survey .survey-primary:hover {
+  filter: brightness(1.08);
+}
+
+@media print {
+  .source-survey { background: white; }
+  .source-survey .survey-card { box-shadow: none; }
+}
