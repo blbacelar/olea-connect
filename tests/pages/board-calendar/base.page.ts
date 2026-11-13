@@ -74,7 +74,7 @@ export class BoardCalendarBasePage {
       this.page.getByRole("button", { name: /^(Export PDF|Print \/ save PDF)$/ }),
     ).toBeVisible();
     await expect(
-      this.page.getByRole("button", { name: "Add to calendar" }),
+      this.page.getByRole("button", { name: "Export calendar (.ics)" }),
     ).toBeVisible();
   }
 

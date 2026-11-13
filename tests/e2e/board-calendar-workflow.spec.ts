@@ -1,3 +1,7 @@
+import { readFile } from "node:fs/promises";
+
+import { localeCookieName } from "@/lib/i18n/locales";
+
 import { expect, test } from "../fixtures/authenticated.fixture";
 import {
   BoardCalendarPage,
@@ -55,6 +59,43 @@ test.describe("@critical Board Calendar & Operational Workflow", () => {
     await boardCalendar.calendar.expectMonthGridFitsViewport();
     await boardCalendar.calendar.selectDate(eventDate);
     await boardCalendar.calendar.expectSelectedDateText(eventDate);
+  });
+
+  test("exports a calendar file for manual import", async ({ page }) => {
+    const boardCalendar = new BoardCalendarPage(page);
+    const meetingDate = getFutureDateKey(7);
+
+    await boardCalendar.openNewModuleCalendar();
+    await expect(page.getByRole("tab", { name: "Integrations" })).toHaveCount(0);
+    await expect(page.getByText("Add a dated entry to export the calendar.")).toBeVisible();
+    await boardCalendar.calendar.selectDate(meetingDate);
+    await boardCalendar.calendar.addMeeting({
+      title: "Manual calendar import review",
+      category: "Board Meeting",
+    });
+    await expect(page.getByText("Download the file to import it into Google Calendar or Outlook.")).toBeVisible();
+
+    const [download] = await Promise.all([
+      page.waitForEvent("download"),
+      page.getByRole("button", { name: "Export calendar (.ics)" }).click(),
+    ]);
+    expect(download.suggestedFilename()).toMatch(/\.ics$/);
+    const contents = await readFile(await download.path(), "utf8");
+    expect(contents).toContain("BEGIN:VCALENDAR\r\n");
+    expect(contents).toContain("SUMMARY:Manual calendar import review");
+    expect(contents).toContain(`DTSTART:${meetingDate.replaceAll("-", "")}T`);
+    expect(contents).toMatch(/DTSTAMP:\d{8}T\d{6}Z/);
+    expect(contents).toContain("END:VCALENDAR");
+
+    await page.context().addCookies([{
+      name: localeCookieName,
+      value: "fr-CA",
+      url: page.url(),
+    }]);
+    await page.reload();
+    await expect(page.getByRole("button", { name: "Exporter le calendrier (.ics)" })).toBeVisible();
+    await expect(page.getByText("Téléchargez le fichier pour l’importer dans Google Agenda ou Outlook.")).toBeVisible();
+    await expect(page.getByRole("tab", { name: "Intégrations" })).toHaveCount(0);
   });
 
   test("removes a generated task from the calendar immediately and after reload", async ({ page }) => {

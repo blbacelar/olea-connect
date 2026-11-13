@@ -12,6 +12,8 @@ const publicRouteMatchers = [
   (pathname: string) => pathname.startsWith("/signup"),
   (pathname: string) => pathname === "/verify-email",
   (pathname: string) => pathname.startsWith("/verify/training/"),
+  (pathname: string) => pathname.startsWith("/board-evaluation/annual/"),
+  (pathname: string) => pathname.startsWith("/board-evaluation/meeting/"),
   (pathname: string) => pathname.startsWith("/auth"),
   (pathname: string) => pathname.startsWith("/onboarding"),
   (pathname: string) => pathname.startsWith("/legal"),

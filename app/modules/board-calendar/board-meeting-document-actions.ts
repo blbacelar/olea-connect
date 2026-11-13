@@ -3,10 +3,12 @@
 import { z } from "zod";
 
 import { requireMemberContext } from "@/lib/data/member-context";
+import { createBrandingSnapshot } from "@/lib/data/brand-assets";
 import { buildMeetingDocumentHtml } from "@/lib/template-renderer/board-calendar-meeting-document-html";
-import { getMeetingDocuments } from "@/lib/template-renderer/board-calendar-meeting-documents";
+import { getMeetingDocuments, meetingDocumentKinds, meetingDocumentTitles } from "@/lib/template-renderer/board-calendar-meeting-documents";
 import { renderHtmlToPdfBuffer } from "@/lib/template-renderer/html-pdf-export";
 import type { TemplateFormData } from "@/lib/template-renderer/types";
+import { createAdminClient } from "@/utils/supabase/admin";
 import { createClient } from "@/utils/supabase/server";
 
 import { writeBoardPackageAuditLog } from "./board-calendar-action-support";
@@ -14,9 +16,10 @@ import { getBoardPackageActionError } from "./board-package-action-utils";
 import type { BoardPackageActionResult } from "./actions";
 
 const meetingPdfInputSchema = z.object({
+  acknowledged: z.boolean().default(false),
   templateInstanceId: z.string().uuid(),
   meetingId: z.string().min(1).max(200),
-  kind: z.enum(["consent_agenda", "board_minutes"]),
+  kind: z.enum(meetingDocumentKinds),
 });
 
 export async function generateBoardMeetingDocumentPdf(
@@ -25,10 +28,11 @@ export async function generateBoardMeetingDocumentPdf(
   try {
     const parsed = meetingPdfInputSchema.parse(input);
     const { member, organization } = await requireMemberContext();
-    const supabase = await createClient();
-    const { data: instance, error } = await supabase.from("template_instances")
-      .select("form_data").eq("id", parsed.templateInstanceId)
-      .eq("organization_id", organization.id).single();
+    const admin = createAdminClient();
+    const { data: instance, error } = await admin.from("template_instances")
+      .select("form_data,resources!inner(slug)").eq("id", parsed.templateInstanceId)
+      .eq("organization_id", organization.id)
+      .eq("resources.slug", "board-calendar-operational-workflow").single();
     if (error || !instance) throw new Error("This board calendar is not available to your workspace.");
 
     const formData = instance.form_data as TemplateFormData;
@@ -43,7 +47,14 @@ export async function generateBoardMeetingDocumentPdf(
     if (!document || !meeting || typeof meeting !== "object") {
       throw new Error("This meeting document is not available.");
     }
+    if (member.membershipRole === "member" && document.status !== "approved") {
+      throw new Error("Only approved meeting documents are available to board members.");
+    }
+    if (document.status === "approved" && !parsed.acknowledged) {
+      throw new Error("Acknowledge confidentiality before downloading this document.");
+    }
 
+    const supabase = await createClient();
     const { data: members, error: membersError } = await supabase.rpc("get_team_directory", {
       target_organization_id: organization.id,
     });
@@ -58,6 +69,7 @@ export async function generateBoardMeetingDocumentPdf(
       ("type" in meeting && meeting.type) ||
       "Meeting",
     );
+    const brand = await createBrandingSnapshot(createAdminClient(), organization.brand);
     const html = buildMeetingDocumentHtml({
       document,
       meeting: {
@@ -67,13 +79,17 @@ export async function generateBoardMeetingDocumentPdf(
         location: String("location" in meeting ? meeting.location || "" : ""),
       },
       memberNames,
-      organizationName: organization.name,
+      organizationName: brand.organizationName,
+      primaryColor: brand.primaryColor,
+      secondaryColor: brand.secondaryColor,
+      logoUrl: brand.logoUrl,
+      readerName: member.name,
     });
     const pdf = await renderHtmlToPdfBuffer(html);
     await writeBoardPackageAuditLog({
       action: "document_downloaded",
       documentId: `${parsed.meetingId}:${parsed.kind}`,
-      documentName: parsed.kind === "consent_agenda" ? "Consent agenda" : "Board minutes",
+      documentName: meetingDocumentTitles[parsed.kind],
       meetingId: parsed.meetingId,
       meetingTitle: title,
       memberId: member.id,

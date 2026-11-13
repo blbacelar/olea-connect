@@ -102,7 +102,10 @@ export function BoardCalendarSetupPanel({
   function updateTaskRules(nextRules: TemplateRecord[]) {
     onDataChange((currentData) =>
       syncBoardCalendarGeneratedTasks(
-        setValue(currentData, ["operational_task_rules"], nextRules),
+        {
+          ...setValue(currentData, ["operational_task_rules"], nextRules),
+          operational_task_rules_initialized: true,
+        },
       ),
     );
   }
@@ -111,13 +114,14 @@ export function BoardCalendarSetupPanel({
     updater: (currentRules: TemplateRecord[]) => TemplateRecord[],
   ) {
     onDataChange((currentData) =>
-      syncBoardCalendarGeneratedTasks(
-        setValue(
+      syncBoardCalendarGeneratedTasks({
+        ...setValue(
           currentData,
           ["operational_task_rules"],
           updater(getRows(currentData, "operational_task_rules")),
         ),
-      ),
+        operational_task_rules_initialized: true,
+      }),
     );
   }
 

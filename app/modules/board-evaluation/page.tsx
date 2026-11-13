@@ -1,6 +1,6 @@
-import { getBoardEvaluationData } from "@/lib/data/board-evaluation";
+import { getBoardEvaluationPrototypeData } from "@/lib/data/board-evaluation-prototype";
 
-import { BoardEvaluationWorkspace } from "./board-evaluation-workspace";
+import { BoardEvaluationPrototypeWorkspace } from "./prototype-workspace";
 
 export const dynamic = "force-dynamic";
 
@@ -10,6 +10,6 @@ export default async function BoardEvaluationPage({
   searchParams?: Promise<{ cycle?: string }>;
 }) {
   const params = await searchParams;
-  const data = await getBoardEvaluationData(params?.cycle);
-  return <BoardEvaluationWorkspace data={data} />;
+  const data = await getBoardEvaluationPrototypeData(params?.cycle);
+  return <BoardEvaluationPrototypeWorkspace data={data} />;
 }

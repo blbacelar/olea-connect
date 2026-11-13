@@ -1,7 +1,6 @@
 import "server-only";
 
 import { createAdminClient } from "@/utils/supabase/admin";
-import { createClient } from "@/utils/supabase/server";
 
 import type { BoardPackageAuditPayload } from "./actions";
 
@@ -9,12 +8,12 @@ export async function assertTemplateInstanceAccess(
   templateInstanceId: string,
   organizationId: string,
 ) {
-  const supabase = await createClient();
-  const { error } = await supabase
+  const { error } = await createAdminClient()
     .from("template_instances")
-    .select("id")
+    .select("id,resources!inner(slug)")
     .eq("id", templateInstanceId)
     .eq("organization_id", organizationId)
+    .eq("resources.slug", "board-calendar-operational-workflow")
     .single();
 
   if (error) throw new Error("This board calendar is not available to your workspace.");

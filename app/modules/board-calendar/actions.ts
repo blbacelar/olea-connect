@@ -1,6 +1,6 @@
 "use server";
 
-import { buildBoardPackageMeetings } from "@/lib/template-renderer/board-calendar-packages";
+import { buildBoardPackageMeetings, getBoardPackageDocuments } from "@/lib/template-renderer/board-calendar-packages";
 import type { TemplateFormData } from "@/lib/template-renderer/types";
 import {
   BOARD_PACKAGE_DOCUMENTS_BUCKET,
@@ -9,7 +9,6 @@ import {
 } from "@/lib/template-renderer/board-calendar-storage";
 import { requireMemberContext } from "@/lib/data/member-context";
 import { createAdminClient } from "@/utils/supabase/admin";
-import { createClient } from "@/utils/supabase/server";
 import { assertTemplateInstanceAccess, writeBoardPackageAuditLog } from "./board-calendar-action-support";
 import {
   assertBoardPackageAuditAction,
@@ -55,7 +54,8 @@ export async function uploadBoardPackageDocument(
   formData: FormData,
 ): Promise<BoardPackageActionResult<BoardPackageUploadedDocument>> {
   try {
-    const { organization } = await requireMemberContext();
+    const { member, organization } = await requireMemberContext();
+    if (member.membershipRole === "member") throw new Error("Only an organization administrator can upload board package files.");
     const templateInstanceId = getRequiredFormValue(
       formData,
       "templateInstanceId",
@@ -101,16 +101,16 @@ export async function uploadBoardPackageDocument(
 }
 
 export async function createBoardPackageDocumentDownloadUrl({
+  acknowledged = false,
   documentId,
-  documentName,
   fileName,
   meetingId,
   meetingTitle,
   storagePath,
   templateInstanceId,
 }: {
+  acknowledged?: boolean;
   documentId?: string;
-  documentName?: string;
   fileName: string;
   meetingId?: string;
   meetingTitle?: string;
@@ -131,20 +131,31 @@ export async function createBoardPackageDocumentDownloadUrl({
     }
 
     await assertTemplateInstanceAccess(templateInstanceId, organization.id);
+    const { data: instance, error: instanceError } = await createAdminClient()
+      .from("template_instances").select("form_data,resources!inner(slug)")
+      .eq("id", templateInstanceId).eq("organization_id", organization.id)
+      .eq("resources.slug", "board-calendar-operational-workflow").single();
+    if (instanceError || !instance) throw new Error("This board calendar is unavailable.");
+    const document = getBoardPackageDocuments(instance.form_data as TemplateFormData)
+      .find((item) => item.storagePath === storagePath && item.id === documentId);
+    if (!document) throw new Error("This file is not in the board calendar.");
+    if (document.confidential && !acknowledged) {
+      throw new Error("Acknowledge confidentiality before downloading this file.");
+    }
 
     const { data, error } = await createAdminClient()
       .storage.from(BOARD_PACKAGE_DOCUMENTS_BUCKET)
       .createSignedUrl(storagePath, 60, {
-        download: fileName || true,
+        download: document.fileName || fileName || true,
       });
 
     if (error) throw error;
 
     await writeBoardPackageAuditLog({
       action: "document_downloaded",
-      documentId,
-      documentName: documentName || fileName,
-      meetingId,
+      documentId: document.id,
+      documentName: document.name,
+      meetingId: document.meetingId || meetingId,
       meetingTitle,
       memberId: member.id,
       organizationId: organization.id,
@@ -180,6 +191,7 @@ export async function deleteBoardPackageDocumentFile({
 }): Promise<BoardPackageActionResult> {
   try {
     const { member, organization } = await requireMemberContext();
+    if (member.membershipRole === "member") throw new Error("Only an organization administrator can delete board package files.");
 
     if (
       !isBoardPackageStoragePathForSession({
@@ -225,9 +237,12 @@ export async function recordBoardPackageAuditEvent(
   try {
     const { member, organization } = await requireMemberContext();
     assertBoardPackageAuditAction(payload.action);
+    if (member.membershipRole === "member" && payload.action === "document_deleted") {
+      throw new Error("Only an organization administrator can delete board package documents.");
+    }
     await assertTemplateInstanceAccess(payload.templateInstanceId, organization.id);
     if (payload.action === "package_opened") {
-      const { data: instance, error } = await (await createClient())
+      const { data: instance, error } = await createAdminClient()
         .from("template_instances")
         .select("form_data")
         .eq("id", payload.templateInstanceId)

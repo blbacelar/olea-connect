@@ -4,6 +4,7 @@ import {
   LayoutDashboard,
   PackageOpen,
   ScrollText,
+  Palette,
   Settings,
   Users,
   Workflow,
@@ -11,7 +12,7 @@ import {
 
 import type { BoardCalendarEntryType } from "@/lib/template-renderer/board-calendar-editor";
 
-export type CalendarMode = "month" | "week" | "year";
+export type CalendarMode = "month" | "week" | "year" | "list";
 
 export type BoardCalendarModuleTab =
   | "dashboard"
@@ -21,12 +22,14 @@ export type BoardCalendarModuleTab =
   | "packages"
   | "directory"
   | "audit_log"
-  | "settings";
+  | "settings"
+  | "branding";
 
 export const viewOptions: Array<{ label: string; value: CalendarMode }> = [
   { label: "Month", value: "month" },
   { label: "Week", value: "week" },
   { label: "Annual", value: "year" },
+  { label: "List", value: "list" },
 ];
 
 export const moduleTabs: Array<{
@@ -42,6 +45,7 @@ export const moduleTabs: Array<{
   { icon: Users, label: "Directory", value: "directory" },
   { icon: ScrollText, label: "Audit Log", value: "audit_log" },
   { icon: Settings, label: "Settings", value: "settings" },
+  { icon: Palette, label: "Branding", value: "branding" },
 ];
 
 export const entryTypes: Array<{

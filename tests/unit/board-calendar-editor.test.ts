@@ -2,12 +2,15 @@ import { describe, expect, it } from "vitest";
 
 import {
   appendBoardCalendarEntry,
+  appendBoardCalendarMeetingSeries,
   buildBoardCalendarSetup,
   buildGeneratedStaffTasks,
   calculateAgmMilestoneDate,
   createBoardCalendarEntryRow,
   deleteBoardCalendarEntry,
+  ensureBoardCalendarPreparationRules,
   getBoardCalendarEntryInput,
+  getMonthlyMeetingDates,
   syncBoardCalendarGeneratedTasks,
   updateBoardCalendarEntry,
   upsertBoardCalendarCategoryColor,
@@ -16,6 +19,32 @@ import { buildCalendarEvents } from "@/lib/template-renderer/calendar-view";
 import type { TemplateFormData } from "@/lib/template-renderer/types";
 
 describe("board calendar editor helpers", () => {
+  it("starts new calendars with the six prototype preparation rules and respects an emptied setup", () => {
+    const prepared = ensureBoardCalendarPreparationRules({ operational_task_rules: [] });
+    expect(prepared.operational_task_rules).toHaveLength(6);
+    expect(prepared.operational_task_rules_initialized).toBe(true);
+    expect(ensureBoardCalendarPreparationRules({ operational_task_rules: [], operational_task_rules_initialized: true }).operational_task_rules).toEqual([]);
+  });
+  it("creates the selected number of monthly meetings and clamps month-end dates", () => {
+    expect(getMonthlyMeetingDates("2027-01-31", 3)).toEqual([
+      "2027-01-31", "2027-02-28", "2027-03-31",
+    ]);
+    const mutation = appendBoardCalendarMeetingSeries({ meetings: [] }, {
+      type: "meeting", dateKey: "2027-01-31", title: "Board meeting",
+      category: "Board Meeting", generatePrepTasks: false, notifyMode: "none",
+    }, 3);
+    expect(mutation.path).toEqual(["meetings"]);
+    expect((mutation.value as Array<Record<string, unknown>>).map((row) => row.date))
+      .toEqual(["2027-01-31", "2027-02-28", "2027-03-31"]);
+    expect((mutation.value as Array<Record<string, unknown>>).map((row) => row.id))
+      .toEqual([expect.any(String), expect.any(String), expect.any(String)]);
+    expect(new Set((mutation.value as Array<Record<string, unknown>>).map((row) => row.id)).size).toBe(3);
+    const synced = syncBoardCalendarGeneratedTasks({
+      meetings: mutation.value, operational_task_rules: [{ label: "Agenda", days_before: 7, applies_to: "Any meeting" }],
+    });
+    expect(synced.tasks).toEqual([]);
+  });
+
   it("normalizes setup details, committees, responsible options, and task rules", () => {
     expect(
       buildBoardCalendarSetup({

@@ -3,8 +3,8 @@
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
 
-import { canCloseBoardEvaluation, canManageBoardEvaluationActions, evaluationQuestions, minimumEvaluationResponses, parseEvaluationScores } from "@/lib/board-evaluation/domain";
-import { getGovernanceGrowthContext, requireGovernanceGrowthManager } from "@/lib/governance-growth/access";
+import { canManageBoardEvaluationActions } from "@/lib/board-evaluation/domain";
+import { requireGovernanceGrowthManager } from "@/lib/governance-growth/access";
 
 const path = "/modules/board-evaluation";
 const date = z.iso.date();
@@ -56,15 +56,6 @@ export async function closeBoardEvaluation(
   try {
     const context = await requireGovernanceGrowthManager("board_evaluation");
     const cycleId = z.uuid().parse(value(form, "cycleId"));
-    const { count, error: countError } = await context.admin
-      .from("board_evaluation_responses")
-      .select("id", { count: "exact", head: true })
-      .eq("cycle_id", cycleId)
-      .eq("organization_id", context.session.organization.id);
-    if (countError) throw countError;
-    if (!canCloseBoardEvaluation(count ?? 0)) {
-      throw new Error(`At least ${minimumEvaluationResponses} board members must respond before you can close the evaluation.`);
-    }
     const { data, error } = await context.admin.from("board_evaluation_cycles")
       .update({ status: "closed", closed_at: new Date().toISOString() })
       .eq("id", cycleId)
@@ -106,38 +97,9 @@ export async function extendBoardEvaluationDeadline(
 
 export async function submitBoardEvaluation(
   _state: EvaluationActionState,
-  form: FormData,
+  _form: FormData,
 ): Promise<EvaluationActionState> {
-  try {
-    const context = await getGovernanceGrowthContext("board_evaluation");
-    if (!context.hasAccess) throw new Error("An active Roots or Canopy membership is required.");
-    const cycleId = z.uuid().parse(value(form, "cycleId"));
-    const { data: cycle, error: cycleError } = await context.admin
-      .from("board_evaluation_cycles")
-      .select("id, status, closes_on")
-      .eq("id", cycleId)
-      .eq("organization_id", context.session.organization.id)
-      .maybeSingle();
-    if (cycleError) throw cycleError;
-    if (!cycle || cycle.status !== "open" ||
-      (cycle.closes_on && cycle.closes_on < new Date().toISOString().slice(0, 10))) {
-      throw new Error("This board evaluation is closed.");
-    }
-    const scores = parseEvaluationScores(Object.fromEntries(
-      evaluationQuestions.map((question) => [question.id, value(form, question.id)]),
-    ));
-    const { error } = await context.admin.from("board_evaluation_responses")
-      .upsert({
-        cycle_id: cycle.id,
-        organization_id: context.session.organization.id,
-        respondent_id: context.session.member.id,
-        scores,
-        submitted_at: new Date().toISOString(),
-      }, { onConflict: "cycle_id,respondent_id" });
-    if (error) throw error;
-    revalidatePath(path);
-    return { status: "success", message: "Your ratings were saved. Individual responses stay private." };
-  } catch (error) { return fail(error); }
+  return { status: "error", message: "This form has been replaced by the anonymous Board Evaluation survey. Open the shared survey link from the module." };
 }
 
 export async function saveBoardEvaluationAction(

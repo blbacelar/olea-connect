@@ -1,6 +1,7 @@
 import "server-only";
 
 import { normalizeTemplateSchema } from "@/lib/template-renderer/schema";
+import { projectBoardCalendarForMember } from "@/lib/template-renderer/board-calendar-member-view";
 import type {
   DynamicTemplateEditorData,
   DynamicTemplateSession,
@@ -10,6 +11,7 @@ import type {
   WorkspaceMemberOption,
 } from "@/lib/template-renderer/types";
 import { createClient } from "@/utils/supabase/server";
+import { createAdminClient } from "@/utils/supabase/admin";
 
 import {
   fetchSelectedInstance,
@@ -212,20 +214,38 @@ export async function getDynamicTemplateEditorData(
   if (!resolved) return null;
 
   const { definition, schema } = resolved;
-  const instances = await fetchTemplateInstances(
-    supabase,
-    organization.id,
-    resource.id,
-  );
+  const memberCalendar = resource.slug === "board-calendar-operational-workflow" && member.membershipRole === "member";
+  const admin = memberCalendar ? createAdminClient() : null;
+  const memberInstances = admin
+    ? await admin.from("template_instances")
+        .select("id,title,status,completion_percent,last_saved_at,updated_at")
+        .eq("organization_id", organization.id)
+        .eq("resource_id", resource.id)
+        .order("updated_at", { ascending: false }).limit(25)
+    : null;
+  if (memberInstances?.error) throw memberInstances.error;
+  const instances = admin
+    ? memberInstances?.data ?? []
+    : await fetchTemplateInstances(supabase, organization.id, resource.id);
   const selectedSessionId = resolveSelectedSessionId(sessionId, instances);
-  const existing = await fetchSelectedInstance({
+  const memberExisting = admin && selectedSessionId
+    ? await admin.from("template_instances")
+        .select("id,title,status,form_data,branding_snapshot,definition_version,schema_snapshot,completion_percent,last_saved_at,updated_at")
+        .eq("id", selectedSessionId)
+        .eq("organization_id", organization.id)
+        .eq("resource_id", resource.id)
+        .maybeSingle()
+    : null;
+  if (memberExisting?.error) throw memberExisting.error;
+  const existing = admin ? memberExisting?.data ?? null : await fetchSelectedInstance({
     supabase,
     selectedSessionId,
     organizationId: organization.id,
     resourceId: resource.id,
   });
 
-  const formData = buildFormData(definition, existing, member);
+  const fullFormData = buildFormData(definition, existing, member);
+  const formData = memberCalendar ? projectBoardCalendarForMember(fullFormData) : fullFormData;
   const schemaSnapshot = normalizeTemplateSchema(existing?.schema_snapshot) ?? schema;
   const session = buildDynamicSession({
     resource,
@@ -238,7 +258,7 @@ export async function getDynamicTemplateEditorData(
   });
   const [directory, exports] = await Promise.all([
     fetchWorkspaceDirectory({ supabase, organizationId: organization.id, schemaSnapshot }),
-    fetchTemplateExports(supabase, session.id, organization.id),
+    memberCalendar ? Promise.resolve([]) : fetchTemplateExports(supabase, session.id, organization.id),
   ]);
 
   return {
