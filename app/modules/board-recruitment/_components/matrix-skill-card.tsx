@@ -5,9 +5,11 @@ import { Trash2 } from "lucide-react";
 import { deleteRecruitmentSkill } from "@/app/modules/board-recruitment/actions";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { useLocaleContext } from "@/components/i18n/LocaleProvider";
 import { coverageLevel } from "@/lib/board-recruitment/domain";
 import { responseFor } from "@/lib/board-recruitment/metrics";
 import type { RecruitmentData } from "@/lib/board-recruitment/types";
+import { translateRecruitmentCoverageLevel } from "@/lib/i18n/board-recruitment-fr";
 import { cn } from "@/lib/utils";
 
 import { ConfirmAction, HiddenWorkspace } from "./shared";
@@ -53,7 +55,7 @@ function SkillCardDetails({
   return (
     <div>
       <div className="flex items-center justify-between gap-3">
-        <p className="font-semibold">{skill.name}</p>
+        <p className="font-semibold" data-no-translate={skill.isCustom ? "true" : undefined}>{skill.name}</p>
         {holders.length === 1 && <SingleHolderRisk skillId={skill.id} />}
         {skill.isCustom && <DeleteSkillAction data={data} skill={skill} />}
       </div>
@@ -142,6 +144,7 @@ function SkillCoverageMeter({
   level: ReturnType<typeof coverageLevel>;
   totalDirectors: number;
 }) {
+  const french = useLocaleContext().locale === "fr-CA";
   return (
     <div className="flex items-center gap-3">
       <div className="h-2 flex-1 rounded-full bg-slate-100">
@@ -162,7 +165,7 @@ function SkillCoverageMeter({
         {holderCount}/{totalDirectors}
       </span>
       <Badge variant="outline" className="w-20 justify-center">
-        {level}
+        {french ? translateRecruitmentCoverageLevel(level) : level}
       </Badge>
     </div>
   );

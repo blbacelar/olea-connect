@@ -118,6 +118,7 @@ export function Overview({
                   {gaps.slice(0, 7).map((skill) => (
                     <Badge
                       key={skill.id}
+                      data-no-translate={skill.isCustom ? "true" : undefined}
                       variant="outline"
                       className="border-red-200 bg-red-50 text-red-800"
                     >

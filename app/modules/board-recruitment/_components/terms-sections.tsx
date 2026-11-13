@@ -138,7 +138,7 @@ export function TermSummaryCard({
           tone="success"
         />
         <StatCard
-          label={`Standing at ${data.workspace.upcomingAgmYear}`}
+          label={french ? `En réélection à l'AGA ${data.workspace.upcomingAgmYear}` : `Standing at ${data.workspace.upcomingAgmYear}`}
           value={standing.length}
         />
         <StatCard label="Term-limited" value={limited.length} tone="danger" />
@@ -256,6 +256,7 @@ function RosterRow({
   data: RecruitmentData;
   member: RecruitmentMember;
 }) {
+  const french = useLocaleContext().locale === "fr-CA";
   const term = calculateTerm(member, data.workspace);
 
   return (
@@ -270,7 +271,7 @@ function RosterRow({
         <MemberTypeCell member={member} />
       </TableCell>
       <TableCell>{member.dateJoined || "—"}</TableCell>
-      <TableCell>{getTermLabel(term)}</TableCell>
+      <TableCell>{getTermLabel(term, french)}</TableCell>
       <TableCell>
         <Badge variant="outline" className={getStatusClassName(member.active)}>
           {getRosterStatusLabel(member.active, term.status)}
@@ -301,9 +302,11 @@ function getOfficerStatusLabel(hasHolder: boolean, status: string | undefined) {
   return status === "standing" ? "Plan succession" : "Serving";
 }
 
-function getTermLabel(term: ReturnType<typeof calculateTerm>) {
+function getTermLabel(term: ReturnType<typeof calculateTerm>, french: boolean) {
   if (term.status === "staff") return "Committees only";
-  return term.endYear ? `Term ${term.termNumber} · ends ${term.endYear}` : "Add join date";
+  return term.endYear
+    ? french ? `Mandat ${term.termNumber} · se termine en ${term.endYear}` : `Term ${term.termNumber} · ends ${term.endYear}`
+    : "Add join date";
 }
 
 function getStatusClassName(active: boolean) {

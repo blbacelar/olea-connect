@@ -1,6 +1,7 @@
 "use client";
 
 import { Checkbox } from "@/components/ui/checkbox";
+import { useLocaleContext } from "@/components/i18n/LocaleProvider";
 import type {
   RecruitmentData,
   RecruitmentMemberType,
@@ -19,6 +20,7 @@ export function MemberSkillsField({
   selectedSkillIds: string[];
   skillsByCategory: SkillsByCategory;
 }) {
+  const french = useLocaleContext().locale === "fr-CA";
   if (memberType !== "director") {
     return (
       <div className="rounded-xl border border-dashed bg-slate-50 p-4 text-sm text-slate-600">
@@ -51,8 +53,9 @@ export function MemberSkillsField({
         ))}
       </div>
       <p className="text-xs font-medium text-slate-500">
-        {selectedSkillIds.length} skill
-        {selectedSkillIds.length === 1 ? "" : "s"} selected
+        {selectedSkillIds.length} {french
+          ? selectedSkillIds.length === 1 ? "compétence sélectionnée" : "compétences sélectionnées"
+          : selectedSkillIds.length === 1 ? "skill selected" : "skills selected"}
       </p>
     </fieldset>
   );
@@ -82,6 +85,7 @@ function SkillCategoryChoices({
             onToggle={() => onToggleSkill(skill.id)}
             skillId={skill.id}
             skillName={skill.name}
+            isCustom={skill.isCustom}
           />
         ))}
       </div>
@@ -94,11 +98,13 @@ function SkillChoice({
   onToggle,
   skillId,
   skillName,
+  isCustom,
 }: {
   checked: boolean;
   onToggle: () => void;
   skillId: string;
   skillName: string;
+  isCustom: boolean;
 }) {
   return (
     <label className="flex cursor-pointer items-start gap-2 rounded-lg border bg-white px-3 py-2 text-sm font-medium text-slate-700 transition-colors hover:border-olea-green">
@@ -109,7 +115,7 @@ function SkillChoice({
         onChange={onToggle}
         className="mt-0.5"
       />
-      <span>{skillName}</span>
+      <span data-no-translate={isCustom ? "true" : undefined}>{skillName}</span>
     </label>
   );
 }

@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { BookOpen, Download, Printer, Save } from "lucide-react";
 
@@ -8,6 +9,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
+import { MobileSectionSelect } from "@/components/ui/mobile-section-select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { workbookModules, type WorkbookValues } from "@/lib/strategic-planning/workbook";
 import type { WorkbookAction } from "@/lib/strategic-planning/action-tracker";
@@ -72,6 +74,7 @@ function Guidance({ module, size, equityOn }: {
 }
 
 export function StrategicWorkbook({ data }: { data: Data }) {
+  const router = useRouter();
   const [values, setValues] = useState<WorkbookValues>(data.values);
   const [actions, setActions] = useState<WorkbookAction[]>(data.actions);
   const [revision, setRevision] = useState(data.revision);
@@ -91,6 +94,27 @@ export function StrategicWorkbook({ data }: { data: Data }) {
   const selectedModules = (values["start.use"] || "").split("|").filter(Boolean);
   const title = activeView === "module" ? module.title : activeView === "plan" ? "Your strategic plan" : activeView === "tracker" ? "Action tracker" :
     activeView === "budget" ? "Plan budget" : "Board dashboard";
+  const sectionOptions = [
+    ...workbookModules.map((item) => ({ value: `module:${item.id}`, label: `${item.num}. ${item.short}` })),
+    { value: "plan", label: "Your strategic plan" }, { value: "tracker", label: "Action tracker" },
+    { value: "budget", label: "Plan budget" }, { value: "board", label: "Board dashboard" },
+    { value: "surveys", label: "Stakeholder surveys" },
+  ];
+
+  function navigateSection(value: string) {
+    if (value === "surveys") {
+      router.push("/modules/strategic-planning/surveys");
+      return;
+    }
+    if (value.startsWith("module:")) {
+      const index = workbookModules.findIndex((item) => item.id === value.slice(7));
+      if (index >= 0) { setActiveView("module"); setModuleIndex(index); setTab("guidance"); }
+      return;
+    }
+    if (["plan", "tracker", "budget", "board"].includes(value)) {
+      setActiveView(value as "plan" | "tracker" | "budget" | "board");
+    }
+  }
 
   function setValue(key: string, value: string) {
     if (key === "set.horizon" && actions.some((action) => action.year > Number(value))) {
@@ -247,7 +271,12 @@ export function StrategicWorkbook({ data }: { data: Data }) {
     </div>
     {message ? <p role="status" className="rounded-lg border bg-white p-3 text-sm">{message}</p> : null}
     <div className="grid min-w-0 grid-cols-[minmax(0,1fr)] gap-5 lg:grid-cols-[230px_minmax(0,1fr)]">
-      <nav aria-label="Workbook modules" className="flex min-w-0 flex-col gap-1 self-start rounded-xl border bg-white p-2 lg:sticky lg:top-5">
+      <div className="min-w-0 lg:hidden">
+        <MobileSectionSelect label="Workbook section" hideAt="lg" variant="dialog"
+          value={activeView === "module" ? `module:${module.id}` : activeView}
+          options={sectionOptions} onValueChange={navigateSection} />
+      </div>
+      <nav aria-label="Workbook modules" className="hidden min-w-0 flex-col gap-1 self-start rounded-xl border bg-white p-2 lg:sticky lg:top-5 lg:flex">
         {workbookModules.map((item, index) => <Button key={item.id} type="button"
           variant={activeView === "module" && moduleIndex === index ? "secondary" : "ghost"}
           className={`justify-start whitespace-normal text-left ${index > 0 && selectedModules.length &&

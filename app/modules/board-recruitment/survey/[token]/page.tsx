@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { getPublicRecruitmentSurvey } from "@/lib/data/board-recruitment-survey";
 import { getRequestLocale } from "@/lib/i18n/server";
 import type { Locale } from "@/lib/i18n/locales";
+import { translateRecruitmentReferenceName } from "@/lib/i18n/board-recruitment-fr";
 
 export const dynamic = "force-dynamic";
 
@@ -155,7 +156,7 @@ export default async function BoardRecruitmentSurveyPage(
               key={category}
               className="rounded-2xl border bg-white p-6 shadow-soft"
             >
-              <h2 className="text-xl font-bold text-slate-900">{category}</h2>
+              <h2 className="text-xl font-bold text-slate-900">{locale === "fr-CA" ? translateRecruitmentReferenceName(category) : category}</h2>
               <div className="mt-4 grid gap-3">
                 {survey.skills
                   .filter((skill) => skill.categoryName === category)
@@ -164,12 +165,12 @@ export default async function BoardRecruitmentSurveyPage(
                       key={skill.id}
                       className="flex items-center justify-between gap-4 rounded-xl border p-4"
                     >
-                      <span className="font-medium text-slate-800">
-                        {skill.name}
+                      <span className="font-medium text-slate-800" data-no-translate={skill.isCustom ? "true" : undefined}>
+                        {locale === "fr-CA" ? translateRecruitmentReferenceName(skill.name, skill.isCustom) : skill.name}
                       </span>
                       <SurveyResponseSelect
                         name={`skill-${skill.id}`}
-                        label={`${skill.name} response`}
+                        label={`${locale === "fr-CA" ? translateRecruitmentReferenceName(skill.name, skill.isCustom) : skill.name} ${locale === "fr-CA" ? "réponse" : "response"}`}
                         defaultValue={answers[skill.id] ? "true" : "false"}
                       />
                     </label>

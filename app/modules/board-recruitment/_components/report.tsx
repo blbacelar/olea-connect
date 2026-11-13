@@ -3,6 +3,7 @@
 import { Printer } from "lucide-react";
 import * as React from "react";
 
+import { useLocaleContext } from "@/components/i18n/LocaleProvider";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -29,11 +30,13 @@ import {
   responseFor,
 } from "@/lib/board-recruitment/metrics";
 import type { RecruitmentData } from "@/lib/board-recruitment/types";
+import { translateRecruitmentCoverageLevel, translateRecruitmentTermStatus } from "@/lib/i18n/board-recruitment-fr";
 import { cn } from "@/lib/utils";
 
 import { StatCard } from "./shared";
 
 export function Report({ data }: { data: RecruitmentData }) {
+  const french = useLocaleContext().locale === "fr-CA";
   const [identified, setIdentified] = React.useState(true);
   const [isExporting, setIsExporting] = React.useState(false);
   const [exportError, setExportError] = React.useState("");
@@ -54,7 +57,7 @@ export function Report({ data }: { data: RecruitmentData }) {
             Printable recruitment report
           </h2>
         </div>
-        <div className="flex gap-2">
+        <div className="flex w-full flex-wrap gap-2 sm:w-auto">
           <Button
             type="button"
             variant={identified ? "default" : "outline"}
@@ -72,6 +75,7 @@ export function Report({ data }: { data: RecruitmentData }) {
           <Button
             type="button"
             variant="outline"
+            className="w-full sm:w-auto"
             disabled={isExporting}
             onClick={() => {
               setIsExporting(true);
@@ -164,7 +168,7 @@ export function Report({ data }: { data: RecruitmentData }) {
                   return (
                     <TableRow key={skill.id}>
                       <TableCell>{skill.categoryName}</TableCell>
-                      <TableCell className="font-semibold">
+                      <TableCell className="font-semibold" data-no-translate={skill.isCustom ? "true" : undefined}>
                         {skill.name}
                       </TableCell>
                       <TableCell>
@@ -172,10 +176,10 @@ export function Report({ data }: { data: RecruitmentData }) {
                           ? holders
                               .map((member) => member.fullName)
                               .join(", ") || "None"
-                          : `${holders.length} holder(s)`}
+                          : `${holders.length} ${french ? holders.length === 1 ? "titulaire" : "titulaires" : holders.length === 1 ? "holder" : "holders"}`}
                       </TableCell>
                       <TableCell>
-                        {coverageLevel(holders.length, directors.length)}
+                        {french ? translateRecruitmentCoverageLevel(coverageLevel(holders.length, directors.length)) : coverageLevel(holders.length, directors.length)}
                       </TableCell>
                     </TableRow>
                   );
@@ -190,6 +194,7 @@ export function Report({ data }: { data: RecruitmentData }) {
                 {gaps.map((skill) => (
                   <Badge
                     key={skill.id}
+                    data-no-translate={skill.isCustom ? "true" : undefined}
                     variant="outline"
                     className="border-red-200 bg-red-50 text-red-800"
                   >
@@ -222,7 +227,7 @@ export function Report({ data }: { data: RecruitmentData }) {
                       </TableCell>
                       <TableCell>{member.roleTitle || "Director"}</TableCell>
                       <TableCell>{term.endYear ?? "Not set"}</TableCell>
-                      <TableCell>{term.status}</TableCell>
+                      <TableCell>{french ? translateRecruitmentTermStatus(term.status) : term.status}</TableCell>
                     </TableRow>
                   );
                 })}

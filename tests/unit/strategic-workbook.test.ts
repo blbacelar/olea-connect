@@ -12,6 +12,7 @@ import { buildStrategicCalendarDates, strategicDatesToCalendarEvents } from "@/l
 import { buildBoardSnapshot } from "@/lib/strategic-planning/board-snapshot";
 import { strategicBoardSections } from "@/lib/reports/module-sections";
 import { strategicWorkbookFrenchTranslations } from "@/lib/i18n/strategic-workbook-fr";
+import { strategicGuidanceFrenchTranslations } from "@/lib/i18n/strategic-guidance-fr";
 import { stakeholderSurveyCloseDate, stakeholderSurveyHasClosed } from "@/lib/strategic-planning/survey-deadline";
 
 describe("final strategic workbook content", () => {
@@ -31,6 +32,18 @@ describe("final strategic workbook content", () => {
   it("has an exact French label for every generated module navigation item", () => {
     const translations = new Map(strategicWorkbookFrenchTranslations);
     expect(workbookModules.every((module) => translations.has(module.short))).toBe(true);
+  });
+
+  it("translates every module summary label, audience, duration and adjacent guidance heading", () => {
+    const translations = new Map([...strategicWorkbookFrenchTranslations,
+      ...strategicGuidanceFrenchTranslations]);
+    for (const label of ["Who:", "Time:", "Output:", "Questions to ask", "Steps",
+      "Scale it to your size", "Equity and reconciliation lens", "Facilitator notes",
+      "Common pitfalls"]) expect(translations.has(label)).toBe(true);
+    for (const module of workbookModules) {
+      expect(translations.has(module.who)).toBe(true);
+      for (const duration of Object.values(module.time)) expect(translations.has(duration)).toBe(true);
+    }
   });
 
   it("keeps survey reply-by and actual close dates independent", () => {

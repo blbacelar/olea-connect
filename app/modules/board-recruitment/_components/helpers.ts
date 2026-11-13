@@ -1,5 +1,13 @@
 import type { RecruitmentData } from "@/lib/board-recruitment/types";
 
+export function uninvitedDirectors(data: RecruitmentData) {
+  const invited = new Set(data.invitations.map((invitation) => invitation.memberId));
+  return data.members.filter((member) => member.active
+    && member.memberType === "director"
+    && Boolean(member.email.trim())
+    && !invited.has(member.id));
+}
+
 export {
   activeDirectorHasSkill,
   activeDirectorHolders,

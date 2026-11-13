@@ -31,7 +31,12 @@ const data: RecruitmentData = {
       notes: "",
     },
   ],
-  skills: [],
+  skills: [
+    { id: "legal", categoryId: "professional", categoryName: "Professional Expertise",
+      name: "Law / Legal Affairs", isCustom: false, sortOrder: 0 },
+    { id: "custom", categoryId: "professional", categoryName: "Professional Expertise",
+      name: "Community story", isCustom: true, sortOrder: 1 },
+  ],
   invitations: [],
   skillAssignments: [],
   responses: [],
@@ -56,6 +61,10 @@ describe("board recruitment PDF localization", () => {
     expect(pdf.metadata.title).toContain("Rapport de recrutement au conseil");
     expect(pdf.text).toContain("Couverture des compétences");
     expect(pdf.text).toContain("Mandats et relève du conseil");
+    expect(pdf.text).toContain("Expertise professionnelle");
+    expect(pdf.text).toContain("Droit / affaires juridiques");
+    expect(pdf.text).toContain("Community story");
+    expect(pdf.text).not.toContain("Law / Legal Affairs");
     expect(pdf.text).toContain("Courriel: bonjour@example.org");
     expect(pdf.text).not.toContain("Executive summary");
     expect(pdf.text).not.toContain("Board terms & succession");

@@ -1,10 +1,12 @@
 import { boardCalendarExactTranslations, boardCalendarPhraseTranslations } from "./board-calendar-fr";
+import { boardRecruitmentFrenchTranslations } from "./board-recruitment-fr";
 import { governanceGrowthFrenchPhrases, governanceGrowthFrenchTranslations } from "./governance-growth-fr";
 import { strategicGuidanceFrenchTranslations } from "./strategic-guidance-fr";
 import { strategicWorkbookFrenchPhrases, strategicWorkbookFrenchTranslations } from "./strategic-workbook-fr";
 
 const exactTranslations = new Map<string, string>([
   ...boardCalendarExactTranslations,
+  ...boardRecruitmentFrenchTranslations,
   ...governanceGrowthFrenchTranslations,
   ...strategicWorkbookFrenchTranslations,
   ...strategicGuidanceFrenchTranslations,

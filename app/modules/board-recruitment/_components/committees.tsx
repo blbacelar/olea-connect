@@ -28,8 +28,9 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { SubmitButton } from "@/components/ui/submit-button";
-import { calculateTerm } from "@/lib/board-recruitment/domain";
+import { calculateTerm, defaultCommittees } from "@/lib/board-recruitment/domain";
 import type { RecruitmentData } from "@/lib/board-recruitment/types";
+import { translateRecruitmentReferenceName } from "@/lib/i18n/board-recruitment-fr";
 
 import {
   ConfirmAction,
@@ -90,6 +91,7 @@ function CommitteeCard({
   committee: RecruitmentData["committees"][number];
   data: RecruitmentData;
 }) {
+  const french = useLocaleContext().locale === "fr-CA";
   const assignments = activeMembers.filter((member) =>
     committee.memberIds.includes(member.id),
   );
@@ -102,19 +104,19 @@ function CommitteeCard({
       <CardHeader>
         <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
           <div className="flex items-center gap-3">
-            <CardTitle>{committee.name}</CardTitle>
-            <CommitteeStatusBadge committee={committee} count={assignments.length} />
+            <CardTitle data-no-translate={defaultCommittees.some((name) => name === committee.name) ? undefined : "true"}>{french && defaultCommittees.some((name) => name === committee.name) ? translateRecruitmentReferenceName(committee.name) : committee.name}</CardTitle>
+            <CommitteeStatusBadge committee={committee} count={assignments.length} french={french} />
           </div>
           <CommitteeActions committee={committee} data={data} />
         </div>
         <CardDescription>
           {committee.chairId
-            ? `Chair: ${activeMembers.find((member) => member.id === committee.chairId)?.fullName ?? "Unknown"}`
+            ? `${french ? "Présidence" : "Chair"} : ${activeMembers.find((member) => member.id === committee.chairId)?.fullName ?? (french ? "Inconnue" : "Unknown")}`
             : "Assign members and choose a chair."}
         </CardDescription>
         {termRisk.length > 0 ? (
           <div className="mt-3 rounded-lg border border-amber-200 bg-amber-50 p-3 text-sm text-amber-950">
-            <p className="font-semibold">Board term impact at the {data.workspace.upcomingAgmYear} AGM</p>
+            <p className="font-semibold">{french ? `Incidence des mandats à l'AGA de ${data.workspace.upcomingAgmYear}` : `Board term impact at the ${data.workspace.upcomingAgmYear} AGM`}</p>
             <ul className="mt-1 list-inside list-disc space-y-1">
               {termRisk.map(({ member, term }) => (
                 <li key={member.id}>{member.fullName}: {term.status === "term-limited" ? "term-limited; plan a replacement" : "standing for re-election"}</li>
@@ -151,13 +153,15 @@ function CommitteeCard({
 function CommitteeStatusBadge({
   committee,
   count,
+  french,
 }: {
   committee: RecruitmentData["committees"][number];
   count: number;
+  french: boolean;
 }) {
   return (
     <Badge variant="outline" className={getCommitteeStatusClass(committee, count)}>
-      {getCommitteeStatusLabel(committee, count)}
+      {getCommitteeStatusLabel(committee, count, french)}
     </Badge>
   );
 }
@@ -289,7 +293,8 @@ function getCommitteeStatusClass(
 function getCommitteeStatusLabel(
   committee: RecruitmentData["committees"][number],
   count: number,
+  french: boolean,
 ) {
   if (count === 0) return "No members";
-  return committee.chairId ? `${count} member(s)` : "Needs a chair";
+  return committee.chairId ? `${count} ${french ? count === 1 ? "membre" : "membres" : count === 1 ? "member" : "members"}` : "Needs a chair";
 }
