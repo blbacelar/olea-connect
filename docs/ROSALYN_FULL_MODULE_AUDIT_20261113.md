@@ -4,7 +4,7 @@ Scope: the latest `origin/staging` checkout (`c9c949b`), the published staging a
 
 ## Result
 
-**Full parity is not established. Board Evaluation has confirmed missing fields in its Summary of Results & Action Plan.** The other inspected module content definitions match their source inventories, and the selected published staging workflows passed authenticated checks. A content match does not prove every untested interaction or exported pixel is identical.
+**All inventoried source fields now have an application counterpart on staging.** The audit first found missing Board Evaluation Summary & Action Plan fields; the follow-up below records the fix and its authenticated published-staging test. This establishes field coverage for the inspected HTMLs. It does not prove every untested interaction or exported pixel is identical.
 
 ## Source-to-application inventory
 
@@ -17,13 +17,13 @@ Scope: the latest `origin/staging` checkout (`c9c949b`), the published staging a
 | Board Recruitment — `Board Recruitment Toolkit (standalone) FINAL.html` | All 53 source skill labels match the application’s built-in skills in exact order. Six source tabs and four skill categories are represented. | Roster, survey, skills, terms, committees, reports, role gates, and public survey paths. | Board Terms share the active roster and term data with Committees; selected lifecycle checks passed. No missing built-in skill found. |
 | Strategic Planning — `strategic-planning-workbook (1).html` | Source `MODULES` literal is exactly equal to the application JSON: 10 modules, 46 sections, 69 named fields, 17 tables, one checklist. `SV_AUD`, `SV_THEMES`, and `SV_BANK` are exactly equal to the application survey bank: seven audiences, seven themes, 30 questions. | Settings, save/reload, survey creation/response, source JSON import, plan, budget, Calendar dates, branded reports, and French/mobile paths. | No missing template or bank field found. A metadata-only export of a historical externally hosted survey cannot recover responses absent from that file. |
 | Board Training — `olea-board-training (1).html` | All ten English/French course and quiz JSON payloads are exactly equal to the HTML `DATA` object. | Enrollment, course progress, assessment and certificate paths; entitlement tested for Seedling, Roots, and Canopy. | No missing course/quiz content field found. Public Olea Learning route also exists; editorial/pixel equivalence was not claimed. |
-| Board Evaluation — four files in `Board Toolkit Deliverables` from `Board Evaluation Survey Templates FINAL.zip` | Administrator guide question bank: 115/115 selection items match exactly. Annual survey: 44/44 rating items match exactly. Post-meeting survey: 7/7 rating items match exactly. The Summary HTML renders 82 controls, including repeated prototype rows. | Public annual form and summary save/reload are separately exercised in this audit. | **Not equivalent:** the Summary and Action Plan has source fields that are absent or collapsed in the application; see next section. |
+| Board Evaluation — four files in `Board Toolkit Deliverables` from `Board Evaluation Survey Templates FINAL.zip` | Administrator guide question bank: 115/115 selection items match exactly. Annual survey: 44/44 rating items match exactly. Post-meeting survey: 7/7 rating items match exactly. The Summary HTML renders 82 controls, including repeated prototype rows. | Public annual form, calculated summary, save/reload, PDF, and French mobile view were exercised on the published staging build. | The original missing Summary fields were added in PR #117; see the historical gap table and follow-up below. |
 
 The source comparisons used rendered Chromium DOMs for the bundled HTML and parsed source JavaScript objects for the data-driven workbooks. The Board Evaluation summary's 82 controls are the *rendered* prototype count; its repeated logical rows are larger. The count alone is not used as parity evidence.
 
-## Confirmed Board Evaluation Summary gaps
+## Board Evaluation Summary gaps found in the initial audit and fixed in PR #117
 
-Reference: `Board Toolkit Deliverables/4 · Summary of Results & Action Plan.html`. Application: `app/modules/board-evaluation/prototype-workspace.tsx`, action validation in `prototype-actions.ts`, and branded PDF in `lib/board-evaluation/report-html.ts`. These missing values are also absent from the submitted `summary_report` JSON shape, so filling another visible field does not preserve them independently.
+Reference: `Board Toolkit Deliverables/4 · Summary of Results & Action Plan.html`. The table preserves the initial comparison that motivated the fix. Application files changed: `app/modules/board-evaluation/prototype-workspace.tsx`, action validation in `prototype-actions.ts`, and branded PDF in `lib/board-evaluation/report-html.ts`.
 
 | Source HTML field or group | Current application | Required for exact parity |
 | --- | --- | --- |
@@ -35,7 +35,7 @@ Reference: `Board Toolkit Deliverables/4 · Summary of Results & Action Plan.htm
 | Target date, six-month check-in, success looks like | The application has equivalent target date, check-in, and success measure fields. | Present; no gap. |
 | Three recommended discussion questions and five year-over-year record rows | The application has equivalent fields. | Present; no gap. |
 
-This is a genuine field-level difference. The current app has additional privacy controls, persistence, and branded PDF functionality, but those do not replace the source fields above. A release should not be called “all HTML fields present” until these are implemented and validated end to end.
+This was a genuine field-level difference. PR #117 added distinct fields and validated them end to end on staging. Survey year, invited count, responses and current scores are populated from the live cycle rather than editable as in the standalone HTML; this prevents report values from disagreeing with submitted surveys. The field values and output are present, but this is a deliberate interaction difference from the prototype.
 
 The source's score flags use 4.5/3.5/3.0 cutoffs, and the application aggregate uses those same cutoffs. Response rate is also calculated from invited and received counts. The HTML column “vs Prior” is a **signed change**, not a prior-year average; its script adds an up arrow at +0.3 and a down arrow at -0.3. This was corrected after checking the rendered table header and behavior script. The app may calculate current counts, averages and percentages rather than let an administrator overwrite them, to preserve the small-sample privacy rule.
 
@@ -50,7 +50,7 @@ The source's score flags use 4.5/3.5/3.0 cutoffs, and the application aggregate 
 | Board Training on every tier and in Olea Learning | Seedling, Roots, Canopy entitlement and public Learning route are present; selected training paths pass. |
 | Newsletter near top of Olea and Olive About link | Both are present on staging; the newsletter uses Olive's existing list. |
 | Olive website changes | Deferred by the user; outside this repository's scope. |
-| Board Evaluation and Calendar “not showing everything” | Calendar source field mapping and selected flows did not expose a new gap. Board Evaluation Summary **does** have the confirmed gaps listed above. |
+| Board Evaluation and Calendar “not showing everything” | Calendar source field mapping and selected flows did not expose a new gap. Board Evaluation Summary gaps were confirmed and fixed in PR #117, with published staging verification below. |
 
 ## Verification and limits
 
@@ -61,14 +61,14 @@ The source's score flags use 4.5/3.5/3.0 cutoffs, and the application aggregate 
 - Five focused unit files passed (11 tests), TypeScript typecheck passed after restoring all declared dependencies, focused ESLint passed, and `git diff --check` passed. No product code was changed in this audit branch.
 - Read-only source comparisons do not prove pixel identity, full accessibility, every language string, email delivery or all historical data states. The report distinguishes verified source content from sampled workflows.
 
-## Work needed before a full-parity signoff
+## Original release checklist for the Board Evaluation gap
 
-1. Extend Board Evaluation summary storage, validation, screen and branded PDF with the missing source metadata, comparative scores, structured themes and priority fields.
-2. Add focused tests for those fields, calculations, French display, save/reload and report export against the development Supabase, then verify the deployed staging build with an authenticated account.
-3. Rerun the affected module paths and update this matrix from observed results. Only then declare that no source field is missing.
+1. Completed: extend Board Evaluation summary storage, validation, screen and branded PDF with the missing source metadata, comparative scores, structured themes and priority fields.
+2. Completed: test those fields, calculations, French display, save/reload and report export against the development Supabase, then repeat the authenticated scenario on published staging.
+3. Completed for source-field coverage: update this matrix from observed results. Exact pixel and every-interaction parity remain outside the tested evidence.
 
 ## Follow-up implementation — 13 November 2026
 
 The gap table above describes the published staging build at the time of the audit. The current branch now adds the missing Board Evaluation Summary fields to the screen, validated `summary_report` JSON, and branded English/French PDF: preparer and dates; 11 quantitative rows with response count, average, share of ratings 4–5, signed change and flag; two pattern/frequency themes for each of four open questions; and three priorities with separate source section, average, issue, suggested action, four responsible-role choices, Other name, dates and success measure. Existing saved summaries are normalized so their themes and priorities still appear. Current scores are calculated from responses and hidden for small samples; the HTML's manually entered comparative change remains editable.
 
-The expanded authenticated development-Supabase browser scenario submitted five anonymous responses, closed the survey, checked the calculated count/average/positive share, checked all repeated Summary controls, saved and reloaded entered fields, downloaded the branded PDF, and checked the French mobile screen: **1/1 passed**. Focused report/domain/submission unit tests: **10/10 passed**; TypeScript and focused ESLint passed with zero errors. The development Supabase migration ledger matched the local migrations **131/131**; no new database migration is needed because the report is stored in the existing JSONB column. This establishes that the previously identified field gap is fixed in the branch and development-backed app. A staging deployment and authenticated staging smoke are still required before changing the published-staging finding above or claiming full released parity.
+The expanded authenticated development-Supabase browser scenario submitted five anonymous responses, closed the survey, checked the calculated count/average/positive share, checked all repeated Summary controls, saved and reloaded entered fields, downloaded the branded PDF, and checked the French mobile screen: **1/1 passed locally and 1/1 passed on published staging**. The full unit suite passed **599/599**; TypeScript, production build and focused ESLint passed with zero errors. The development Supabase migration ledger matched the local migrations **131/131**; no new database migration was needed because the report uses the existing JSONB column. PR #117 merged into `staging` as `16a7850`; Vercel Preview `dpl_gZY1BefznJ5XCSWkj2WNzikE3QeK` was Ready, aliased to `staging.oleaconnects.com`, and its healthcheck returned 200. The published staging smoke passed against that deployment. Production was not changed.
