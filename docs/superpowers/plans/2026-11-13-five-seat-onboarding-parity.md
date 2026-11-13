@@ -67,8 +67,8 @@
 
 - [x] Pass 1: inventory all source inputs, selects, textareas, generated rows, survey questions, and action controls; reconcile counts with the prior audit.
 - [x] Pass 2: fill representative and repeated controls as owner/role users, reload, and verify data and exports in English and French.
-- [ ] Pass 3: independently revisit every row marked missing, renamed, read-only, or not exercised, and verify fixes on published staging.
-- [ ] Preserve explicit limitations instead of marking an untested control as passed.
+- [x] Pass 3: revisit rows marked missing, renamed, read-only, or not exercised; verify the four confirmed fixes and the Chromium PDF retry on published staging. The matrix still distinguishes source inventory from exercised controls.
+- [x] Preserve explicit limitations instead of marking an untested control as passed.
 
 ### Task 5: Verification and delivery
 
@@ -77,6 +77,6 @@
 **Interfaces:** Produce fresh test results and an exact staging revision/deployment reference.
 
 - [x] Run focused unit/E2E tests, typecheck, lint, build, and `git diff --check` in proportion to any fixes.
-- [ ] Run the final authenticated scenario against the published staging deployment and development Supabase.
-- [ ] Confirm cleanup of QA data; record any residual test records honestly.
-- [ ] Commit and merge verified fixes to staging, then record finish time, evidence, and limitations.
+- [x] Run the final authenticated scenario against the published staging deployment and development Supabase (8/8 passed on `dpl_BeEgrVBpRirj8bJBr8XTdCTznsp9`).
+- [x] Confirm cleanup of QA data; final development Supabase query found zero task QA organizations.
+- [x] Commit and merge verified fixes to staging (PRs #119 and #120); record finish time, evidence, and limitations in the work log and QA report.
