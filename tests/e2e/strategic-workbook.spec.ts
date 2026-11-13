@@ -64,9 +64,12 @@ test.describe("@critical strategic workbook", () => {
       await expect.poll(() => page.evaluate(() => document.querySelector('[data-testid="app-main"]')!
         .getBoundingClientRect().left)).toBeLessThanOrEqual(1);
       expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(390);
-      const navBox = await page.getByRole("navigation", { name: "Workbook modules" }).boundingBox();
-      expect(navBox!.width).toBeGreaterThan(280);
-      expect(navBox!.x + navBox!.width).toBeLessThanOrEqual(391);
+      await expect(page.locator('nav[aria-label="Workbook modules"]')).toBeHidden();
+      const mobileSection = page.getByRole("button", { name: "Workbook section: 9. Implementing and reviewing" });
+      await expect(mobileSection).toBeVisible();
+      await mobileSection.click();
+      await page.getByRole("dialog").getByRole("button", { name: "0. Start here" }).click();
+      await expect(page.getByRole("heading", { name: "Start here: set up your workbook" })).toBeVisible();
       await page.evaluate(() => window.scrollTo(0, 0));
       await page.screenshot({ path: testInfo.outputPath("strategic-workbook-mobile.png") });
       const { data: row, error: readError } = await testData.supabase
@@ -247,6 +250,15 @@ test.describe("@critical strategic workbook", () => {
       expect(html).toContain('<html lang="fr-CA">');
       expect(html).toContain("Centre QA francophone");
       expect(html).toContain("Horizon du plan");
+      await page.setViewportSize({ width: 390, height: 844 });
+      const mobileSection = page.getByRole("button", { name: "Section du cahier: 0. Commencer" });
+      await expect(mobileSection).toBeVisible();
+      await mobileSection.click();
+      await page.getByRole("dialog").getByRole("button", { name: "1. Se préparer à planifier" }).click();
+      await expect(page.getByText("l'organisme est prêt", { exact: false })).toBeVisible();
+      await page.getByRole("button", { name: "Section du cahier: 1. Se préparer à planifier" }).click();
+      await page.getByRole("dialog").getByRole("button", { name: "2. Faire le bilan et examiner le contexte" }).click();
+      await expect(page.getByText("le sondage prêt à l'emploi", { exact: false })).toBeVisible();
     } finally {
       await context.close();
     }

@@ -3,6 +3,7 @@
 import { Check, Mail } from "lucide-react";
 import * as React from "react";
 
+import { useLocaleContext } from "@/components/i18n/LocaleProvider";
 import {
   saveRecruitmentResponse,
   sendRecruitmentInvitation,
@@ -42,9 +43,10 @@ import {
   HiddenWorkspace,
   SectionHeader,
 } from "./shared";
-import { invitationFor } from "./helpers";
+import { invitationFor, uninvitedDirectors } from "./helpers";
 
 export function Survey({ data }: { data: RecruitmentData }) {
+  const french = useLocaleContext().locale === "fr-CA";
   const [memberId, setMemberId] = React.useState(
     data.members.find(
       (member) => member.memberType === "director" && member.active,
@@ -57,6 +59,12 @@ export function Survey({ data }: { data: RecruitmentData }) {
   const directors = data.members.filter(
     (item) => item.memberType === "director" && item.active,
   );
+  const pendingInvitations = uninvitedDirectors(data);
+  const invitationGuidance = directors.length === 0
+    ? french ? "Ajoutez un administrateur actif dans les mandats du conseil pour envoyer le sondage." : "Add an active director in Board Terms before sending the survey."
+    : directors.every((director) => !director.email.trim())
+      ? french ? "Ajoutez une adresse courriel dans les mandats du conseil avant d'envoyer le sondage." : "Add an email address in Board Terms before sending the survey."
+      : french ? "Tous les administrateurs admissibles ont déjà été invités ou ont répondu." : "All eligible directors have already been invited or responded.";
   const responded = data.invitations.filter(
     (item) => item.status === "responded",
   ).length;
@@ -67,21 +75,34 @@ export function Survey({ data }: { data: RecruitmentData }) {
         title="Survey & Send"
         description="Invite active directors to complete the annual skills survey. Staff are excluded automatically; responded invitations never regress."
         action={
-          <form action={sendRecruitmentInvitations}>
-            <HiddenWorkspace data={data} />
-            <SubmitButton>
-              <Mail className="size-4" />
-              Send to all not-yet-invited
-            </SubmitButton>
-          </form>
+          <div className="space-y-2">
+            <form action={sendRecruitmentInvitations}>
+              <HiddenWorkspace data={data} />
+              <SubmitButton disabled={pendingInvitations.length === 0}>
+                <Mail className="size-4" />
+                Send to all not-yet-invited
+              </SubmitButton>
+            </form>
+            {pendingInvitations.length === 0 && directors.length > 0 ? (
+              <div className="max-w-64 text-sm text-slate-600" role="status">
+                <p>{invitationGuidance}</p>
+                {directors.length === 0 || directors.every((director) => !director.email.trim()) ? (
+                  <Button asChild variant="link" size="sm" className="h-auto px-0">
+                    <a href="/modules/board-recruitment?tab=terms">{french ? "Ouvrir les mandats du conseil" : "Open Board Terms"}</a>
+                  </Button>
+                ) : null}
+              </div>
+            ) : null}
+          </div>
         }
       />
       <Card>
         <CardHeader>
           <CardTitle>Distribution status</CardTitle>
           <CardDescription>
-            {responded} of {directors.length} active directors responded for{" "}
-            {data.workspace.surveyYear}.
+            {french
+              ? `${responded} administrateurs actifs sur ${directors.length} ont répondu pour ${data.workspace.surveyYear}.`
+              : `${responded} of ${directors.length} active directors responded for ${data.workspace.surveyYear}.`}
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -93,7 +114,7 @@ export function Survey({ data }: { data: RecruitmentData }) {
               }}
             />
           </div>
-          <Table>
+          {directors.length > 0 ? <Table>
             <TableHeader>
               <TableRow>
                 <TableHead>Name</TableHead>
@@ -155,6 +176,8 @@ export function Survey({ data }: { data: RecruitmentData }) {
                           <SubmitButton
                             size="sm"
                             variant={status === "sent" ? "outline" : "default"}
+                            disabled={!item.email.trim()}
+                            title={!item.email.trim() ? (french ? "Ajoutez une adresse courriel dans les mandats du conseil avant d'envoyer le sondage." : "Add an email address in Board Terms before sending the survey.") : undefined}
                             pendingText="Sending..."
                           >
                             <Mail className="size-4" />
@@ -167,7 +190,14 @@ export function Survey({ data }: { data: RecruitmentData }) {
                 );
               })}
             </TableBody>
-          </Table>
+          </Table> : (
+            <EmptyState>
+              <p>{invitationGuidance}</p>
+              <Button asChild variant="link" size="sm" className="mt-2 h-auto">
+                <a href="/modules/board-recruitment?tab=terms">{french ? "Ouvrir les mandats du conseil" : "Open Board Terms"}</a>
+              </Button>
+            </EmptyState>
+          )}
         </CardContent>
       </Card>
       <Card>
@@ -221,7 +251,7 @@ export function Survey({ data }: { data: RecruitmentData }) {
                             key={skill.id}
                             className="flex flex-col gap-2 rounded-lg border p-3 sm:flex-row sm:items-center sm:justify-between"
                           >
-                            <span className="text-sm">{skill.name}</span>
+                            <span className="text-sm" data-no-translate={skill.isCustom ? "true" : undefined}>{skill.name}</span>
                             <div className="flex gap-2">
                               <Button
                                 type="button"

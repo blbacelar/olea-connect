@@ -11,6 +11,7 @@ import React from "react";
 
 import type { BrandProfile } from "@/lib/types";
 import type { Locale } from "@/lib/i18n/locales";
+import { translateRecruitmentReferenceName } from "@/lib/i18n/board-recruitment-fr";
 import { normalizePdfBrand } from "@/lib/pdf/brand-export";
 import { getEmbeddedLogo } from "@/lib/template-renderer/logo-data";
 import { activeDirectorHolders } from "./metrics";
@@ -474,10 +475,10 @@ export async function renderBoardRecruitmentPdfBuffer(
             {gaps.map((skill) => (
               <View key={skill.id} style={styles.row} wrap={false}>
                 <Text style={[styles.cellText, styles.strong, { padding: 8 }]}>
-                  {skill.categoryName}
+                  {locale === "fr-CA" ? translateRecruitmentReferenceName(skill.categoryName) : skill.categoryName}
                 </Text>
                 <Text style={[styles.cellText, { padding: 8 }]}>
-                  {skill.name}
+                  {locale === "fr-CA" ? translateRecruitmentReferenceName(skill.name, skill.isCustom) : skill.name}
                 </Text>
               </View>
             ))}
@@ -692,8 +693,8 @@ function SkillsTable({
           <DataRow
             key={skill.id}
             cells={[
-              skill.categoryName,
-              skill.name,
+              locale === "fr-CA" ? translateRecruitmentReferenceName(skill.categoryName) : skill.categoryName,
+              locale === "fr-CA" ? translateRecruitmentReferenceName(skill.name, skill.isCustom) : skill.name,
               identified
                 ? holders.map((member) => member.fullName).join(", ") || t("None")
                 : `${holders.length} ${t("holder(s)")}`,

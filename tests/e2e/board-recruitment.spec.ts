@@ -7,6 +7,57 @@ import { BoardRecruitmentPage } from "../pages/board-recruitment.page";
 import { inspectPdf } from "../support/pdf-inspector";
 
 test.describe("@critical Board Recruitment Toolkit", () => {
+  test("guides an empty workspace without sending a bulk survey invitation", async ({
+    browser, baseURL, testData,
+  }) => {
+    test.setTimeout(90_000);
+    if (!baseURL) throw new Error("Playwright baseURL is required.");
+    const owner = await testData.createOrganizationOwner({ activeSubscription: true, planId: "roots" });
+    for (const [locale, buttonLabel, guidance] of [
+      ["en-CA", "Send to all not-yet-invited", "Add an active director in Board Terms before sending the survey."],
+      ["fr-CA", "Envoyer à tous les non invités", "Ajoutez un administrateur actif dans les mandats du conseil pour envoyer le sondage."],
+    ]) {
+      const context = await browser.newContext({
+        baseURL,
+        storageState: await createAuthenticatedStorageState(owner.email, owner.password, baseURL),
+      });
+      try {
+        await context.addCookies([{ name: "olea_locale", value: locale, url: baseURL }]);
+        const page = await context.newPage();
+        await page.goto("/modules/board-recruitment?tab=survey");
+        await expect(page.getByRole("button", { name: buttonLabel })).toBeDisabled();
+        await expect(page.getByRole("table")).toHaveCount(0);
+        await expect(page.getByText(guidance, { exact: true })).toBeVisible();
+        await page.getByRole("link", { name: locale === "fr-CA" ? "Ouvrir les mandats du conseil" : "Open Board Terms" }).click();
+        await expect(page).toHaveURL(/tab=terms/);
+      } finally {
+        await context.close();
+      }
+    }
+    const context = await browser.newContext({
+      baseURL,
+      storageState: await createAuthenticatedStorageState(owner.email, owner.password, baseURL),
+    });
+    try {
+      const page = await context.newPage();
+      const recruitment = new BoardRecruitmentPage(page);
+      await recruitment.open("terms");
+      await recruitment.addMember("No email director", "");
+      await recruitment.openTab("Survey & Send");
+      const row = page.getByRole("row").filter({ hasText: "No email director" });
+      await expect(row.getByRole("button", { name: "Send" })).toBeDisabled();
+      await expect(row).toContainText("Add email in Board Terms");
+      await page.setViewportSize({ width: 390, height: 844 });
+      await page.goto("/modules/board-recruitment?tab=report");
+      const exportButton = page.getByRole("button", { name: "Export PDF" });
+      const box = await exportButton.boundingBox();
+      expect(box).not.toBeNull();
+      expect(box!.x + box!.width).toBeLessThanOrEqual(390);
+    } finally {
+      await context.close();
+    }
+  });
+
   test("opens the tenant-scoped toolkit and exposes all modules", async ({
     page,
   }) => {

@@ -4,6 +4,7 @@ import { ChevronDown, Plus } from "lucide-react";
 import * as React from "react";
 
 import { addRecruitmentSkill } from "@/app/modules/board-recruitment/actions";
+import { useLocaleContext } from "@/components/i18n/LocaleProvider";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -15,6 +16,7 @@ import {
 } from "@/components/ui/card";
 import { responseFor } from "@/lib/board-recruitment/metrics";
 import type { RecruitmentData } from "@/lib/board-recruitment/types";
+import { translateRecruitmentReferenceName } from "@/lib/i18n/board-recruitment-fr";
 import { cn } from "@/lib/utils";
 
 import {
@@ -157,24 +159,29 @@ function SkillCategoryToggle({
   isExpanded,
   onToggle,
 }: SkillCategoryToggleProps) {
+  const french = useLocaleContext().locale === "fr-CA";
+  const visibleCategory = french ? translateRecruitmentReferenceName(category) : category;
   return (
-    <button
+    <Button
       type="button"
-      className="group flex min-w-0 flex-1 items-start justify-between gap-3 text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-olea-green focus-visible:ring-offset-2"
-      aria-label={`${category} skills`}
+      variant="ghost"
+      className="group flex h-auto min-w-0 flex-1 items-start justify-between gap-3 p-0 text-left hover:bg-transparent"
+      aria-label={french ? `Compétences : ${visibleCategory}` : `${category} skills`}
       aria-expanded={isExpanded}
       aria-controls={contentId}
       onClick={() => onToggle(category)}
     >
       <div>
-        <CardTitle>{category}</CardTitle>
+        <CardTitle>{visibleCategory}</CardTitle>
         <CardDescription>
           <CoveredSkillCount
             activeDirectors={activeDirectors}
             categorySkills={categorySkills}
             data={data}
           />{" "}
-          of {categorySkills.length} skills covered by active directors
+          {french
+            ? `compétences sur ${categorySkills.length} couvertes par les administrateurs actifs`
+            : `of ${categorySkills.length} skills covered by active directors`}
         </CardDescription>
       </div>
       <ChevronDown
@@ -184,7 +191,7 @@ function SkillCategoryToggle({
           !isExpanded && "-rotate-90",
         )}
       />
-    </button>
+    </Button>
   );
 }
 
@@ -211,9 +218,10 @@ function AddSkillForm({
   categoryId: string;
   data: RecruitmentData;
 }) {
+  const french = useLocaleContext().locale === "fr-CA";
   return (
     <ModalForm
-      title={`Add skill to ${category}`}
+      title={french ? `Ajouter une compétence à ${translateRecruitmentReferenceName(category)}` : `Add skill to ${category}`}
       description="Custom skills are scoped to this workspace and cannot duplicate an existing skill."
       trigger={
         <Button variant="outline">
