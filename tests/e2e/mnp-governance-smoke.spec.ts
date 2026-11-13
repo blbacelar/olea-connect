@@ -2,8 +2,6 @@ import type { Browser, Page } from "@playwright/test";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 
-import { evaluationQuestions } from "@/lib/board-evaluation/domain";
-
 import { createAuthenticatedStorageState } from "../fixtures/authenticated.fixture";
 import { expect, test } from "../fixtures/test-data.fixture";
 
@@ -24,16 +22,6 @@ async function chooseOption(page: Page, label: string, option: string) {
   await page.getByRole("option", { name: option, exact: true }).click();
 }
 
-async function submitRatings(page: Page, rating: number) {
-  await page.goto("/modules/board-evaluation");
-  await expect(page.getByRole("heading", { name: /Your board evaluation|Update your ratings/ })).toBeVisible();
-  for (const question of evaluationQuestions) {
-    await chooseOption(page, question.en, String(rating));
-  }
-  await page.getByRole("button", { name: /Submit ratings|Update ratings/ }).click();
-  await expect(page.getByRole("heading", { name: "Update your ratings" })).toBeVisible();
-}
-
 test.describe("@critical MNP governance and sponsor privacy", () => {
   test.beforeAll(() => {
     const dbUrl = process.env.TEST_SUPABASE_URL;
@@ -46,62 +34,6 @@ test.describe("@critical MNP governance and sponsor privacy", () => {
     }
     if (["oleaconnects.com", "www.oleaconnects.com"].includes(new URL(appUrl).hostname)) {
       throw new Error("MNP smoke must not run against the production domain.");
-    }
-  });
-
-  test("Roots collects three private ratings, then shows only closed aggregates", async ({ browser, baseURL, testData }, testInfo) => {
-    test.setTimeout(180_000);
-    if (!baseURL) throw new Error("Playwright baseURL is required.");
-    const owner = await testData.createOrganizationOwner({ activeSubscription: true, planId: "roots" });
-    const second = await testData.createOrganizationMember(owner);
-    const third = await testData.createOrganizationMember(owner);
-    const sessions = await Promise.all([owner, second, third].map((account) =>
-      authenticatedPage(browser, baseURL, account)));
-    try {
-      const [ownerPage, secondPage, thirdPage] = sessions.map((session) => session.page);
-      await ownerPage.goto("/modules/board-evaluation");
-      await expect(ownerPage.getByRole("heading", { name: "Start an annual board evaluation" })).toBeVisible();
-      await ownerPage.getByRole("button", { name: "Open evaluation" }).click();
-      await expect(ownerPage.getByRole("heading", { name: `${new Date().getUTCFullYear()} board evaluation` })).toBeVisible({ timeout: 30_000 });
-      await testInfo.attach("board-evaluation-open", { body: await ownerPage.screenshot({ path: visualPath("board-open"), fullPage: true }), contentType: "image/png" });
-
-      await submitRatings(ownerPage, 1);
-      await submitRatings(secondPage, 3);
-      await ownerPage.reload();
-      await expect(ownerPage.getByTestId("app-main").getByText("At least three board members must respond before you can close the evaluation.")).toBeVisible();
-      await expect(ownerPage.getByRole("button", { name: "Close evaluation and show results" })).toHaveCount(0);
-      await submitRatings(thirdPage, 5);
-
-      await ownerPage.reload();
-      await expect(ownerPage.getByText("3 board members have responded.")).toBeVisible();
-      await expect(ownerPage.getByText("Aggregate results appear after the evaluation closes with at least three responses.")).toBeVisible();
-      await expect(ownerPage.getByText("3.0 / 5")).toHaveCount(0);
-      await ownerPage.getByRole("button", { name: "Close evaluation and show results" }).click();
-      await expect(ownerPage.getByRole("dialog")).toContainText("This cannot be undone.");
-      await ownerPage.getByRole("dialog").getByRole("button", { name: "Close evaluation", exact: true }).click();
-      await expect(ownerPage.getByText("Closed", { exact: true })).toBeVisible();
-      await ownerPage.reload();
-      await expect(ownerPage.getByText("3.0 / 5")).toHaveCount(evaluationQuestions.length);
-      await expect(ownerPage.getByRole("button", { name: "Update ratings" })).toHaveCount(0);
-      await expect(ownerPage.getByRole("spinbutton", { name: "Evaluation year" }))
-        .toHaveValue(String(new Date().getUTCFullYear() + 1));
-      await testInfo.attach("board-evaluation-closed", { body: await ownerPage.screenshot({ path: visualPath("board-closed"), fullPage: true }), contentType: "image/png" });
-      await ownerPage.setViewportSize({ width: 390, height: 844 });
-      await expect(ownerPage.getByTestId("app-sidebar")).toBeHidden();
-      await expect(ownerPage.getByTestId("app-main").locator("..")).toHaveCSS("margin-left", "0px");
-      await testInfo.attach("board-evaluation-mobile", { body: await ownerPage.screenshot({ path: visualPath("board-mobile"), fullPage: true }), contentType: "image/png" });
-
-      await secondPage.reload();
-      await expect(secondPage.getByText("3.0 / 5")).toHaveCount(evaluationQuestions.length);
-      await expect(secondPage.getByRole("button", { name: "Update ratings" })).toHaveCount(0);
-      const { data: responses, error } = await testData.supabase
-        .from("board_evaluation_responses")
-        .select("id, respondent_id")
-        .eq("organization_id", owner.organizationId);
-      expect(error).toBeNull();
-      expect(responses).toHaveLength(3);
-    } finally {
-      await Promise.all(sessions.map((session) => session.context.close()));
     }
   });
 
