@@ -9,6 +9,7 @@ import {
   enqueueCircleMemberSync,
 } from "@/lib/circle/provisioning";
 import { requireMemberContext } from "@/lib/data/member-context";
+import { isValidBoardCalendarInvitationRole, type BoardCalendarRole } from "@/lib/board-calendar/access";
 import type { OrganizationRole } from "@/lib/types";
 import { createAdminClient } from "@/utils/supabase/admin";
 import { createClient } from "@/utils/supabase/server";
@@ -43,16 +44,21 @@ function assertManager(role: OrganizationRole) {
 export async function inviteTeamMember(
   email: string,
   role: Exclude<OrganizationRole, "owner"> = "member",
+  boardCalendarRole: BoardCalendarRole = role === "admin" ? "administrator" : "member",
 ): Promise<InviteTeamMemberResult> {
   try {
     const { member, organization } = await requireMemberContext();
     assertManager(member.membershipRole);
+    if (!isValidBoardCalendarInvitationRole(role, boardCalendarRole)) {
+      return { ok: false, message: "Choose a Board Calendar role that matches the team role." };
+    }
 
     const supabase = await createClient();
-    const { error } = await supabase.rpc("create_team_invitation", {
+    const { error } = await supabase.rpc("create_board_calendar_team_invitation", {
       target_organization_id: organization.id,
       target_email: email.trim().toLowerCase(),
       target_role: role,
+      target_calendar_role: boardCalendarRole,
       raw_token: randomBytes(32).toString("base64url"),
       target_expires_at: new Date(
         Date.now() + 7 * 24 * 60 * 60 * 1000,
@@ -90,6 +96,23 @@ export async function cancelTeamInvitation(invitationId: string) {
   if (error) throw new Error(error.message);
   if (!data) throw new Error("This invitation is no longer pending.");
   revalidatePath("/team");
+}
+
+export async function updateBoardCalendarMemberRole(
+  userId: string,
+  boardCalendarRole: Extract<BoardCalendarRole, "executive" | "chair" | "member">,
+) {
+  const { member, organization } = await requireMemberContext();
+  assertManager(member.membershipRole);
+  const supabase = await createClient();
+  const { error } = await supabase.rpc("set_board_calendar_member_role", {
+    target_organization_id: organization.id,
+    target_user_id: userId,
+    target_calendar_role: boardCalendarRole,
+  });
+  if (error) throw new Error(error.message);
+  revalidatePath("/team");
+  revalidatePath("/modules/board-calendar");
 }
 
 export async function updateTeamMember(

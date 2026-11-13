@@ -91,6 +91,7 @@ export interface Member {
   firstName: string;
   role: string;
   membershipRole: OrganizationRole;
+  boardCalendarRole?: "administrator" | "executive" | "chair" | "member";
   email: string;
 }
 
@@ -249,6 +250,7 @@ export interface TeamInvitation {
   id: string;
   email: string;
   role: OrganizationRole;
+  boardCalendarRole?: "administrator" | "executive" | "chair" | "member";
   status: "pending" | "accepted" | "expired" | "revoked";
   createdAt: string;
   expiresAt: string;
@@ -259,6 +261,7 @@ export interface TeamMember {
   email: string;
   name: string;
   role: OrganizationRole;
+  boardCalendarRole?: "administrator" | "executive" | "chair" | "member";
   status: "invited" | "active" | "suspended";
   joinedAt: string | null;
 }

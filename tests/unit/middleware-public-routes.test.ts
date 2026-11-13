@@ -9,6 +9,7 @@ describe("middleware public routes", () => {
   it("keeps the referral marketing page public", () => {
     expect(isPublicPath("/referrals")).toBe(true);
     expect(isPublicPath("/demos")).toBe(true);
+    expect(isPublicPath("/learning")).toBe(true);
   });
 
   it("keeps referral-code redirects public without opening the dashboard", () => {
@@ -21,6 +22,12 @@ describe("middleware public routes", () => {
     expect(isPublicPath("/accessibility")).toBe(true);
     expect(isPublicPath("/dashboard")).toBe(false);
     expect(isPublicPath("/subscription")).toBe(false);
+  });
+
+  it("allows anonymous ED and strategic survey links without opening module workspaces", () => {
+    expect(isPublicPath("/modules/ed-review/survey/opaque-token")).toBe(true);
+    expect(isPublicPath("/modules/strategic-planning/survey/opaque-token")).toBe(true);
+    expect(isPublicPath("/modules/ed-review/annual")).toBe(false);
   });
 });
 

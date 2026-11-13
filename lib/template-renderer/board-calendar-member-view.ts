@@ -1,4 +1,5 @@
 import type { TemplateFormData } from "./types";
+import type { BoardCalendarRole } from "@/lib/board-calendar/access";
 
 type Row = Record<string, unknown>;
 
@@ -25,6 +26,9 @@ export function projectBoardCalendarForMember(data: TemplateFormData): TemplateF
     annual_highlights: rows(data, "annual_highlights").map((row) => pick(row, [
       "date", "month", "title", "category",
     ])),
+    agm_milestones: rows(data, "agm_milestones").map((row) => pick(row, [
+      "calculated_date", "track", "task",
+    ])),
     event_categories: rows(data, "event_categories").map((row) => pick(row, [
       "category", "hex_code",
     ])),
@@ -32,6 +36,32 @@ export function projectBoardCalendarForMember(data: TemplateFormData): TemplateF
       "id", "category", "content_type", "confidential", "file_name", "meeting_id",
       "name", "size", "size_label", "storage_path", "uploaded_at", "url",
     ])),
+    board_contacts: rows(data, "board_contacts").map((row) => pick(row, [
+      "id", "name", "boardRole", "email", "phone", "address", "committee", "receivesEmails",
+    ])),
+    committees: rows(data, "committees").map((row) => pick(row, [
+      "name", "committee", "chair", "chair_user_id", "notes",
+    ])),
     meeting_documents: rows(data, "meeting_documents").filter((row) => row.status === "approved"),
+  };
+}
+
+export function projectBoardCalendarForRole(data: TemplateFormData, role: BoardCalendarRole): TemplateFormData {
+  if (role === "administrator") return data;
+  const common = projectBoardCalendarForMember(data);
+  if (role === "member") return common;
+  const fullMeetings = rows(data, "meetings");
+  if (role === "chair") {
+    return {
+      ...common,
+      meetings: fullMeetings,
+      meeting_documents: rows(data, "meeting_documents"),
+    };
+  }
+  return {
+    ...common,
+    meetings: fullMeetings,
+    tasks: rows(data, "tasks"),
+    operational_task_rules: rows(data, "operational_task_rules"),
   };
 }

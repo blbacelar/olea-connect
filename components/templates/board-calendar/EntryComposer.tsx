@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { Eye, Pencil, Plus, Trash2, X } from "lucide-react";
+import { Eye, FileText, Pencil, Plus, Trash2, X } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -43,10 +43,12 @@ export function CalendarEntryComposer(props: CalendarEntryComposerProps) {
     <div className="rounded-xl border bg-slate-50 p-3 sm:p-4">
       <SelectedDatePanel
         readOnly={props.readOnly}
+        french={props.french}
         editingEventId={props.editingEventId}
         events={props.selectedDateEvents}
         selectedDateKey={props.selectedDateKey}
         onEditEvent={props.onEditEvent}
+        onOpenDocuments={props.onOpenDocuments}
         onPendingDeleteChange={setEntryPendingDelete}
       />
 
@@ -135,17 +137,21 @@ export function CalendarEntryComposer(props: CalendarEntryComposerProps) {
 
 function SelectedDatePanel({
   readOnly,
+  french,
   editingEventId,
   events,
   selectedDateKey,
   onEditEvent,
+  onOpenDocuments,
   onPendingDeleteChange,
 }: {
   readOnly?: boolean;
+  french?: boolean;
   editingEventId: string | null;
   events: CalendarViewEvent[];
   selectedDateKey: string;
   onEditEvent: (event: CalendarViewEvent) => void;
+  onOpenDocuments: (event: CalendarViewEvent) => void;
   onPendingDeleteChange: (event: CalendarViewEvent) => void;
 }) {
   return (
@@ -179,10 +185,22 @@ function SelectedDatePanel({
                   className="h-8 justify-start px-2 text-xs sm:justify-center"
                   onClick={() => onEditEvent(event)}
                 >
-                  {readOnly ? <Eye className="size-3.5" /> : <Pencil className="size-3.5" />}
-                  {readOnly ? "View entry" : "Edit entry"}
+                  {readOnly || event.source === "strategic" ? <Eye className="size-3.5" /> : <Pencil className="size-3.5" />}
+                  {event.source === "strategic" ? (french ? "Voir le plan stratégique" : "View strategic plan") : readOnly ? "View entry" : "Edit entry"}
                 </Button>
-                {!readOnly ?
+                {/^meeting-\d+$/.test(event.id) ? (
+                  <Button
+                    type="button"
+                    size="sm"
+                    variant="outline"
+                    className="min-h-10 justify-start gap-1.5 text-xs"
+                    onClick={() => onOpenDocuments(event)}
+                  >
+                    <FileText className="size-3.5" />
+                    {french ? "Ordre du jour et procès-verbal" : "Agenda and minutes"}
+                  </Button>
+                ) : null}
+                {!readOnly && event.source !== "strategic" ?
                 <Button
                   type="button"
                   size="sm"
@@ -209,6 +227,7 @@ function SelectedDatePanel({
 
 interface CalendarEntryComposerProps {
   readOnly?: boolean;
+  french?: boolean;
   editingEvent: CalendarViewEvent | null;
   editingEventId: string | null;
   entryCategory: string;
@@ -243,6 +262,7 @@ interface CalendarEntryComposerProps {
   onDeleteEntry: (eventId: string) => void;
   onDoneChange: (value: boolean) => void;
   onEditEvent: (event: CalendarViewEvent) => void;
+  onOpenDocuments: (event: CalendarViewEvent) => void;
   onEntryTypeChange: (value: BoardCalendarEntryType) => void;
   onLeadContactChange: (value: string) => void;
   onLocationChange: (value: string) => void;

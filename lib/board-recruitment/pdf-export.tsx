@@ -10,11 +10,99 @@ import {
 import React from "react";
 
 import type { BrandProfile } from "@/lib/types";
-import { buildPdfFooter, normalizePdfBrand } from "@/lib/pdf/brand-export";
+import type { Locale } from "@/lib/i18n/locales";
+import { normalizePdfBrand } from "@/lib/pdf/brand-export";
 import { getEmbeddedLogo } from "@/lib/template-renderer/logo-data";
 import { activeDirectorHolders } from "./metrics";
 import { calculateTerm, coverageLevel, officerLabels } from "./domain";
 import type { RecruitmentData, RecruitmentMember } from "./types";
+
+const frenchReportText: Record<string, string> = {
+  "Board recruitment report": "Rapport de recrutement au conseil",
+  "Board Recruitment Toolkit": "Outil de recrutement au conseil",
+  "Board Recruitment Report": "Rapport de recrutement au conseil",
+  "Survey year:": "Année du sondage :",
+  "Identified view": "Vue nominative",
+  "Anonymous view": "Vue anonyme",
+  "Generated": "Généré le",
+  "Page": "Page",
+  "of": "sur",
+  "Executive summary": "Sommaire",
+  "Board composition, skills coverage, succession planning, and recruitment priorities for the current survey year.": "Composition du conseil, couverture des compétences, planification de la relève et priorités de recrutement pour l'année du sondage en cours.",
+  "Active directors": "Membres actifs du conseil",
+  "Skills tracked": "Compétences suivies",
+  "Recruitment priorities": "Priorités de recrutement",
+  "Report context": "Contexte du rapport",
+  "Names are included in this report.": "Les noms figurent dans ce rapport.",
+  "Names are anonymized for this report.": "Les noms sont anonymisés dans ce rapport.",
+  "Survey invitations and responses are scoped to the organization and survey year.": "Les invitations et réponses au sondage sont limitées à l'organisme et à l'année du sondage.",
+  "Report contents": "Contenu du rapport",
+  "Skills coverage, recruitment priorities, board terms, committee assignments, and survey invitation status are included in the following pages.": "Les pages suivantes présentent les compétences, les priorités de recrutement, les mandats, les comités et l'état des invitations au sondage.",
+  "Skills coverage": "Couverture des compétences",
+  "Current coverage across active directors and the skills that require recruitment attention.": "Compétences des membres actifs du conseil et lacunes à combler par le recrutement.",
+  "No uncovered skills.": "Aucune compétence non couverte.",
+  "Board terms & succession": "Mandats et relève du conseil",
+  "Term calculations and succession status for active directors.": "Calcul des mandats et état de la relève des membres actifs du conseil.",
+  "Committees & survey status": "Comités et état du sondage",
+  "Committee assignments, chairs, invitation progress, and response progress.": "Composition des comités, présidences, invitations et réponses au sondage.",
+  "Current strengths and recruitment gaps": "Forces actuelles et lacunes de recrutement",
+  "Term calculations for active directors": "Calcul des mandats des membres actifs du conseil",
+  "Assignments, invitations, and responses": "Affectations, invitations et réponses",
+  "Category": "Catégorie",
+  "Skill": "Compétence",
+  "Holders": "Personnes compétentes",
+  "Coverage": "Couverture",
+  "Member": "Membre",
+  "Role": "Rôle",
+  "Term": "Mandat",
+  "Status": "État",
+  "Committee": "Comité",
+  "Chair": "Présidence",
+  "Members": "Membres",
+  "Director": "Membre du conseil",
+  "Invitation": "Invitation",
+  "Response": "Réponse",
+  "None": "Aucun",
+  "Not set": "Non défini",
+  "Not assigned": "Non attribué",
+  "Not an officer": "Sans fonction au bureau",
+  "Not invited": "Non invité",
+  "Responded": "Réponse reçue",
+  "Not submitted": "Non soumis",
+  "holder(s)": "personne(s)",
+  "member(s)": "membre(s)",
+  "none": "aucune",
+  "strong": "forte",
+  "moderate": "moyenne",
+  "gap": "lacune",
+  "staff": "personnel",
+  "continuing": "en cours",
+  "standing": "à renouveler",
+  "term-limited": "limite de mandat atteinte",
+  "pending": "en attente",
+  "sent": "envoyée",
+  "responded": "réponse reçue",
+  "Chair / President": "Présidence du conseil",
+  "Vice Chair / President": "Vice-présidence du conseil",
+  "Board Secretary": "Secrétariat du conseil",
+  "Board Treasurer": "Trésorerie du conseil",
+};
+
+export function recruitmentReportText(locale: Locale, source: string) {
+  return locale === "fr-CA" ? frenchReportText[source] ?? source : source;
+}
+
+function recruitmentFooter(brand: ReportBrand, title: string, locale: Locale) {
+  const french = locale === "fr-CA";
+  return [
+    brand.organizationName,
+    title,
+    brand.address ? `${french ? "Adresse" : "Address"}: ${brand.address}` : null,
+    brand.phone ? `${french ? "Téléphone" : "Phone"}: ${brand.phone}` : null,
+    brand.contactEmail ? `${french ? "Courriel" : "Email"}: ${brand.contactEmail}` : null,
+    brand.website ? `${french ? "Site Web" : "Web"}: ${brand.website.replace(/^https?:\/\//i, "").replace(/\/$/, "")}` : null,
+  ].filter(Boolean).join(" • ");
+}
 
 const styles = StyleSheet.create({
   cover: {
@@ -254,7 +342,9 @@ export async function renderBoardRecruitmentPdfBuffer(
   data: RecruitmentData,
   brand: BrandProfile,
   identified: boolean,
+  locale: Locale = "en-CA",
 ) {
+  const t = (source: string) => recruitmentReportText(locale, source);
   const safeBrand: ReportBrand = normalizePdfBrand(
     brand,
     "#446B52",
@@ -267,13 +357,13 @@ export async function renderBoardRecruitmentPdfBuffer(
   const gaps = data.skills.filter(
     (skill) => activeDirectorHolders(data, skill.id).length === 0,
   );
-  const footer = buildPdfFooter(safeBrand, "Board Recruitment Toolkit");
+  const footer = recruitmentFooter(safeBrand, t("Board Recruitment Toolkit"), locale);
 
   return renderToBuffer(
     <Document
-      title={`${data.workspace.organizationName} Board Recruitment Report`}
+      title={`${data.workspace.organizationName} ${t("Board Recruitment Report")}`}
       author={data.workspace.organizationName}
-      subject="Board Recruitment Toolkit report"
+      subject={t("Board recruitment report")}
       creator="Olea Connects™"
       producer="Olea Connects™"
     >
@@ -290,9 +380,9 @@ export async function renderBoardRecruitmentPdfBuffer(
           variant="cover"
         />
         <View style={styles.coverContent}>
-          <Text style={styles.coverEyebrow}>Board recruitment report</Text>
+          <Text style={styles.coverEyebrow}>{t("Board recruitment report")}</Text>
           <Text style={[styles.coverTitle, { color: safeBrand.primaryColor }]}>
-            Board Recruitment Toolkit
+            {t("Board Recruitment Toolkit")}
           </Text>
           <View
             style={[
@@ -304,40 +394,39 @@ export async function renderBoardRecruitmentPdfBuffer(
             {data.workspace.organizationName}
           </Text>
           <Text style={styles.coverMeta}>
-            Survey year: {data.workspace.surveyYear}
+            {t("Survey year:")} {data.workspace.surveyYear}
             {"\n"}
-            {identified ? "Identified view" : "Anonymous view"}
+            {t(identified ? "Identified view" : "Anonymous view")}
             {"\n"}
-            Generated {formatDate(new Date())}
+            {t("Generated")} {formatDate(new Date(), locale)}
           </Text>
         </View>
         <View style={styles.coverFooter}>
           <Text>{footer}</Text>
-          <Text>Page 1</Text>
+          <Text>{t("Page")} 1</Text>
         </View>
       </Page>
 
-      <ReportPage brand={safeBrand} logoDataUrl={logo?.dataUrl} footer={footer}>
+      <ReportPage brand={safeBrand} logoDataUrl={logo?.dataUrl} footer={footer} locale={locale}>
         <Text style={[styles.title, { color: safeBrand.primaryColor }]}>
-          Executive summary
+          {t("Executive summary")}
         </Text>
         <Text style={styles.subtitle}>
-          Board composition, skills coverage, succession planning, and
-          recruitment priorities for the current survey year.
+          {t("Board composition, skills coverage, succession planning, and recruitment priorities for the current survey year.")}
         </Text>
         <View style={styles.statRow}>
           <Stat
-            label="Active directors"
+            label={t("Active directors")}
             value={activeDirectors.length}
             brand={safeBrand}
           />
           <Stat
-            label="Skills tracked"
+            label={t("Skills tracked")}
             value={data.skills.length}
             brand={safeBrand}
           />
           <Stat
-            label="Recruitment priorities"
+            label={t("Recruitment priorities")}
             value={gaps.length}
             brand={safeBrand}
             last
@@ -346,42 +435,39 @@ export async function renderBoardRecruitmentPdfBuffer(
         <View
           style={[styles.callout, { backgroundColor: safeBrand.primaryColor }]}
         >
-          <Text style={styles.calloutLabel}>Report context</Text>
+          <Text style={styles.calloutLabel}>{t("Report context")}</Text>
           <Text style={styles.calloutText}>
             {identified
-              ? "Names are included in this report."
-              : "Names are anonymized for this report."}{" "}
-            Survey invitations and responses are scoped to the organization and
-            survey year.
+              ? t("Names are included in this report.")
+              : t("Names are anonymized for this report.")}{" "}
+            {t("Survey invitations and responses are scoped to the organization and survey year.")}
           </Text>
         </View>
         <Text style={[styles.sectionTitle, { color: safeBrand.primaryColor }]}>
-          Report contents
+          {t("Report contents")}
         </Text>
         <Text style={styles.sectionDescription}>
-          Skills coverage, recruitment priorities, board terms, committee
-          assignments, and survey invitation status are included in the
-          following pages.
+          {t("Skills coverage, recruitment priorities, board terms, committee assignments, and survey invitation status are included in the following pages.")}
         </Text>
-        <Contents />
+        <Contents locale={locale} />
       </ReportPage>
 
-      <ReportPage brand={safeBrand} logoDataUrl={logo?.dataUrl} footer={footer}>
+      <ReportPage brand={safeBrand} logoDataUrl={logo?.dataUrl} footer={footer} locale={locale}>
         <Text style={[styles.title, { color: safeBrand.primaryColor }]}>
-          Skills coverage
+          {t("Skills coverage")}
         </Text>
         <Text style={styles.subtitle}>
-          Current coverage across active directors and the skills that require
-          recruitment attention.
+          {t("Current coverage across active directors and the skills that require recruitment attention.")}
         </Text>
         <SkillsTable
           data={data}
           directors={activeDirectors}
           identified={identified}
+          locale={locale}
         />
         <View style={styles.section} />
         <Text style={[styles.sectionTitle, { color: safeBrand.primaryColor }]}>
-          Recruitment priorities
+          {t("Recruitment priorities")}
         </Text>
         {gaps.length ? (
           <View style={styles.table}>
@@ -397,42 +483,44 @@ export async function renderBoardRecruitmentPdfBuffer(
             ))}
           </View>
         ) : (
-          <Text style={styles.muted}>No uncovered skills.</Text>
+          <Text style={styles.muted}>{t("No uncovered skills.")}</Text>
         )}
       </ReportPage>
 
-      <ReportPage brand={safeBrand} logoDataUrl={logo?.dataUrl} footer={footer}>
+      <ReportPage brand={safeBrand} logoDataUrl={logo?.dataUrl} footer={footer} locale={locale}>
         <Text style={[styles.title, { color: safeBrand.primaryColor }]}>
-          Board terms & succession
+          {t("Board terms & succession")}
         </Text>
         <Text style={styles.subtitle}>
-          Term calculations and succession status for active directors.
+          {t("Term calculations and succession status for active directors.")}
         </Text>
         <TermsTable
           data={data}
           directors={activeDirectors}
           identified={identified}
+          locale={locale}
         />
       </ReportPage>
 
-      <ReportPage brand={safeBrand} logoDataUrl={logo?.dataUrl} footer={footer}>
+      <ReportPage brand={safeBrand} logoDataUrl={logo?.dataUrl} footer={footer} locale={locale}>
         <Text style={[styles.title, { color: safeBrand.primaryColor }]}>
-          Committees & survey status
+          {t("Committees & survey status")}
         </Text>
         <Text style={styles.subtitle}>
-          Committee assignments, chairs, invitation progress, and response
-          progress.
+          {t("Committee assignments, chairs, invitation progress, and response progress.")}
         </Text>
         <CommitteeTable
           data={data}
           directors={activeDirectors}
           identified={identified}
+          locale={locale}
         />
         <View style={styles.section} />
         <SurveyTable
           data={data}
           directors={activeDirectors}
           identified={identified}
+          locale={locale}
         />
       </ReportPage>
     </Document>,
@@ -444,18 +532,21 @@ function ReportPage({
   children,
   footer,
   logoDataUrl,
+  locale,
 }: {
   brand: ReportBrand;
   children: React.ReactNode;
   footer: string;
   logoDataUrl?: string;
+  locale: Locale;
 }) {
+  const t = (source: string) => recruitmentReportText(locale, source);
   return (
     <Page size="LETTER" style={styles.page} wrap>
       <View style={styles.header} fixed>
         <BrandMark brand={brand} logoDataUrl={logoDataUrl} />
         <Text style={styles.headerOrganization}>{brand.organizationName}</Text>
-        <Text style={styles.headerTitle}>Board Recruitment Toolkit</Text>
+        <Text style={styles.headerTitle}>{t("Board Recruitment Toolkit")}</Text>
       </View>
       {children}
       <View style={styles.footerRule} fixed />
@@ -465,7 +556,7 @@ function ReportPage({
       <Text
         style={styles.footerPage}
         fixed
-        render={({ pageNumber, totalPages }) => `Page ${pageNumber} of ${totalPages}`}
+        render={({ pageNumber, totalPages }) => `${t("Page")} ${pageNumber} ${t("of")} ${totalPages}`}
       />
     </Page>
   );
@@ -528,7 +619,8 @@ function Stat({
   );
 }
 
-function Contents() {
+function Contents({ locale }: { locale: Locale }) {
+  const t = (source: string) => recruitmentReportText(locale, source);
   return (
     <View>
       {[
@@ -567,9 +659,9 @@ function Contents() {
           </Text>
           <View style={{ marginLeft: 10 }}>
             <Text style={{ fontFamily: "Helvetica-Bold", fontSize: 10 }}>
-              {title}
+              {t(title)}
             </Text>
-            <Text style={{ color: "#5E7087", fontSize: 9 }}>{description}</Text>
+            <Text style={{ color: "#5E7087", fontSize: 9 }}>{t(description)}</Text>
           </View>
         </View>
       ))}
@@ -581,14 +673,17 @@ function SkillsTable({
   data,
   directors,
   identified,
+  locale,
 }: {
   data: RecruitmentData;
   directors: RecruitmentMember[];
   identified: boolean;
+  locale: Locale;
 }) {
+  const t = (source: string) => recruitmentReportText(locale, source);
   return (
     <DataTable
-      headers={["Category", "Skill", "Holders", "Coverage"]}
+      headers={[t("Category"), t("Skill"), t("Holders"), t("Coverage")]}
       widths={["25%", "25%", "35%", "15%"]}
     >
       {data.skills.map((skill) => {
@@ -600,9 +695,9 @@ function SkillsTable({
               skill.categoryName,
               skill.name,
               identified
-                ? holders.map((member) => member.fullName).join(", ") || "None"
-                : `${holders.length} holder(s)`,
-              coverageLevel(holders.length, directors.length),
+                ? holders.map((member) => member.fullName).join(", ") || t("None")
+                : `${holders.length} ${t("holder(s)")}`,
+              t(coverageLevel(holders.length, directors.length)),
             ]}
             widths={["25%", "25%", "35%", "15%"]}
           />
@@ -616,14 +711,17 @@ function TermsTable({
   data,
   directors,
   identified,
+  locale,
 }: {
   data: RecruitmentData;
   directors: RecruitmentMember[];
   identified: boolean;
+  locale: Locale;
 }) {
+  const t = (source: string) => recruitmentReportText(locale, source);
   return (
     <DataTable
-      headers={["Member", "Role", "Term", "Status"]}
+      headers={[t("Member"), t("Role"), t("Term"), t("Status")]}
       widths={["30%", "25%", "20%", "25%"]}
     >
       {directors.map((member) => {
@@ -632,10 +730,10 @@ function TermsTable({
           <DataRow
             key={member.id}
             cells={[
-              identified ? member.fullName : "Director",
-              member.roleTitle || officerLabels[member.office] || "Director",
-              term.endYear ? String(term.endYear) : "Not set",
-              term.status,
+              identified ? member.fullName : t("Director"),
+              member.roleTitle || t(officerLabels[member.office] || "Director"),
+              term.endYear ? String(term.endYear) : t("Not set"),
+              t(term.status),
             ]}
             widths={["30%", "25%", "20%", "25%"]}
           />
@@ -649,14 +747,17 @@ function CommitteeTable({
   data,
   directors,
   identified,
+  locale,
 }: {
   data: RecruitmentData;
   directors: RecruitmentMember[];
   identified: boolean;
+  locale: Locale;
 }) {
+  const t = (source: string) => recruitmentReportText(locale, source);
   return (
     <DataTable
-      headers={["Committee", "Chair", "Members"]}
+      headers={[t("Committee"), t("Chair"), t("Members")]}
       widths={["35%", "30%", "35%"]}
     >
       {data.committees.map((committee) => {
@@ -674,13 +775,13 @@ function CommitteeTable({
               chair
                 ? identified
                   ? chair.fullName
-                  : "Director"
-                : "Not assigned",
+                  : t("Director")
+                : t("Not assigned"),
               members.length
                 ? identified
                   ? members.map((member) => member.fullName).join(", ")
-                  : `${members.length} member(s)`
-                : "None",
+                  : `${members.length} ${t("member(s)")}`
+                : t("None"),
             ]}
             widths={["35%", "30%", "35%"]}
           />
@@ -694,14 +795,17 @@ function SurveyTable({
   data,
   directors,
   identified,
+  locale,
 }: {
   data: RecruitmentData;
   directors: RecruitmentMember[];
   identified: boolean;
+  locale: Locale;
 }) {
+  const t = (source: string) => recruitmentReportText(locale, source);
   return (
     <DataTable
-      headers={["Director", "Invitation", "Response"]}
+      headers={[t("Director"), t("Invitation"), t("Response")]}
       widths={["45%", "25%", "30%"]}
     >
       {directors.map((member) => {
@@ -715,9 +819,9 @@ function SurveyTable({
           <DataRow
             key={member.id}
             cells={[
-              identified ? member.fullName : "Director",
-              invitation?.status || "Not invited",
-              responded ? "Responded" : "Not submitted",
+              identified ? member.fullName : t("Director"),
+              t(invitation?.status || "Not invited"),
+              t(responded ? "Responded" : "Not submitted"),
             ]}
             widths={["45%", "25%", "30%"]}
           />
@@ -772,8 +876,8 @@ function DataRow({ cells, widths }: { cells: string[]; widths: string[] }) {
   );
 }
 
-function formatDate(value: Date) {
-  return new Intl.DateTimeFormat("en-CA", { dateStyle: "medium" }).format(
+function formatDate(value: Date, locale: Locale) {
+  return new Intl.DateTimeFormat(locale, { dateStyle: "medium" }).format(
     value,
   );
 }

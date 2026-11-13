@@ -9,6 +9,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { boardCalendarContactSchema, getBoardCalendarContacts, type BoardCalendarContact } from "@/lib/template-renderer/board-calendar-contacts";
 import { createTemplateRecordId } from "@/lib/template-renderer/create-id";
@@ -18,6 +19,7 @@ const blankContact = (): BoardCalendarContact => ({
   id: createTemplateRecordId("contact"), name: "", boardRole: "Director", email: "",
   phone: "", address: "", committee: "", receivesEmails: true,
 });
+const boardRoleOptions = ["Chair", "Vice Chair", "Treasurer", "Secretary", "Director", "Committee Chair", "Executive Director", "Staff"] as const;
 
 export function BoardCalendarContactsPanel({
   data, canManage, onDataChange,
@@ -43,10 +45,10 @@ export function BoardCalendarContactsPanel({
     if (!draft) return;
     const result = boardCalendarContactSchema.safeParse(draft);
     if (!result.success) {
-      setError(t("Enter a name and a valid email. Phone may contain digits, +, spaces, parentheses, and hyphens.", "Indiquez un nom et une adresse courriel valide. Le téléphone peut contenir des chiffres, +, des espaces, des parenthèses et des traits d’union."));
+      setError(t("Enter a name. If provided, email must be valid. Phone may contain digits, +, spaces, parentheses, and hyphens.", "Indiquez un nom. Si vous fournissez un courriel, il doit être valide. Le téléphone peut contenir des chiffres, +, des espaces, des parenthèses et des traits d’union."));
       return;
     }
-    if (contacts.some((contact) => contact.id !== draft.id && contact.email.toLowerCase() === draft.email.toLowerCase())) {
+    if (draft.email && contacts.some((contact) => contact.id !== draft.id && contact.email.toLowerCase() === draft.email.toLowerCase())) {
       setError(t("This email is already in the directory.", "Cette adresse courriel figure déjà dans le répertoire."));
       return;
     }
@@ -76,22 +78,25 @@ export function BoardCalendarContactsPanel({
       <TableHead>{t("Name and role", "Nom et rôle")}</TableHead><TableHead>{t("Email", "Courriel")}</TableHead><TableHead>{t("Committee", "Comité")}</TableHead><TableHead>{t("Date emails", "Avis des dates")}</TableHead><TableHead className="text-right">{t("Actions", "Actions")}</TableHead>
     </TableRow></TableHeader><TableBody>{contacts.map((contact) => <TableRow key={contact.id}>
       <TableCell><strong>{contact.name}</strong><p className="text-xs text-slate-500">{contact.boardRole}</p></TableCell>
-      <TableCell><a className="text-olea-green underline" href={`mailto:${contact.email}`}>{contact.email}</a>{contact.phone ? <p className="text-xs text-slate-500">{contact.phone}</p> : null}</TableCell>
-      <TableCell>{contact.committee || "—"}</TableCell><TableCell>{contact.receivesEmails ? t("Yes", "Oui") : t("No", "Non")}</TableCell>
+      <TableCell>{contact.email ? <a className="text-olea-green underline" href={`mailto:${contact.email}`}>{contact.email}</a> : t("No email", "Sans courriel")}{contact.phone ? <p className="text-xs text-slate-500">{contact.phone}</p> : null}</TableCell>
+      <TableCell>{contact.committee || "—"}</TableCell><TableCell>{contact.email && contact.receivesEmails ? t("Yes", "Oui") : t("No", "Non")}</TableCell>
       <TableCell className="text-right"><div className="flex justify-end gap-1"><Button type="button" size="sm" variant="ghost" aria-label={t(`Edit ${contact.name}`, `Modifier ${contact.name}`)} onClick={() => setDraft(contact)}><Pencil className="size-4" /></Button>
         <Button type="button" size="sm" variant="ghost" aria-label={t(`Remove ${contact.name}`, `Retirer ${contact.name}`)} onClick={() => setPendingDelete(contact)}><Trash2 className="size-4" /></Button></div></TableCell>
     </TableRow>)}</TableBody></Table></div> : <p className="rounded-lg border border-dashed p-4 text-sm text-slate-600">{t("No board contacts yet. Add contacts to send meeting date notices.", "Aucun contact du conseil. Ajoutez des contacts pour envoyer les avis de réunion.")}</p>}
-    <Dialog open={Boolean(draft)} onOpenChange={(open) => !open && setDraft(null)}><DialogContent className="max-w-lg"><DialogHeader><DialogTitle>{t("Board contact", "Contact du conseil")}</DialogTitle><DialogDescription>{t("Name and email are required. Only opted-in contacts receive date emails.", "Le nom et le courriel sont requis. Seuls les contacts inscrits reçoivent les avis.")}</DialogDescription></DialogHeader>
+    <Dialog open={Boolean(draft)} onOpenChange={(open) => !open && setDraft(null)}><DialogContent className="max-w-lg"><DialogHeader><DialogTitle>{t("Board contact", "Contact du conseil")}</DialogTitle><DialogDescription>{t("Name is required. Email is optional; contacts receive date emails only when they have a valid email and opt in.", "Le nom est requis. Le courriel est facultatif; les contacts reçoivent les avis de dates seulement s’ils ont une adresse valide et y consentent.")}</DialogDescription></DialogHeader>
       {draft ? <div className="grid gap-3 sm:grid-cols-2">
         {([
           ["name", "Name", "Nom", "text", true, 160],
           ["boardRole", "Board role", "Rôle au conseil", "text", false, 100],
-          ["email", "Email", "Courriel", "email", true, 320],
+          ["email", "Email", "Courriel", "email", false, 320],
           ["phone", "Phone", "Téléphone", "tel", false, 50],
           ["address", "Address", "Adresse", "text", false, 500],
           ["committee", "Committee", "Comité", "text", false, 160],
         ] as const).map(([key, en, fr, type, required, max]) => <div key={key} className="space-y-1"><Label htmlFor={`contact-${key}`}>{t(en, fr)}</Label>
-          <Input id={`contact-${key}`} type={type} required={required} maxLength={max} value={draft[key]} onChange={(event) => change(key, event.target.value)} placeholder={key === "email" ? "name@organization.org" : key === "phone" ? "+1 604 555 0100" : undefined} /></div>)}
+          {key === "boardRole" ? <Select value={draft.boardRole || undefined} onValueChange={(value) => change("boardRole", value)}><SelectTrigger id="contact-boardRole"><SelectValue placeholder={t("Choose a board role", "Choisir un rôle au conseil")} /></SelectTrigger><SelectContent>
+            {draft.boardRole && !boardRoleOptions.some((option) => option === draft.boardRole) ? <SelectItem value={draft.boardRole}>{draft.boardRole}</SelectItem> : null}
+            {boardRoleOptions.map((option) => <SelectItem key={option} value={option}>{option}</SelectItem>)}
+          </SelectContent></Select> : <Input id={`contact-${key}`} type={type} required={required} maxLength={max} value={draft[key]} onChange={(event) => change(key, event.target.value)} placeholder={key === "email" ? "name@organization.org" : key === "phone" ? "+1 604 555 0100" : undefined} />}</div>)}
         <label className="flex items-center gap-2 sm:col-span-2"><Checkbox checked={draft.receivesEmails} onChange={(event) => change("receivesEmails", event.target.checked)} />{t("Receives meeting date emails", "Reçoit les avis des dates de réunion")}</label>
         {error ? <p role="alert" className="text-sm text-red-800 sm:col-span-2">{error}</p> : null}
         <div className="flex justify-end gap-2 sm:col-span-2"><Button type="button" variant="outline" onClick={() => setDraft(null)}>{t("Cancel", "Annuler")}</Button><Button type="button" onClick={save}>{t("Save contact", "Enregistrer le contact")}</Button></div>

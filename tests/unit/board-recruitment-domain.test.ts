@@ -39,10 +39,16 @@ describe("Board Recruitment domain", () => {
     ).toMatchObject({ endYear: 2026, status: "standing" });
     expect(
       calculateTerm(
+        { memberType: "director", dateJoined: "2017-06-01" },
+        workspace,
+      ),
+    ).toMatchObject({ endYear: 2026, status: "term-limited", eligible: false });
+    expect(
+      calculateTerm(
         { memberType: "director", dateJoined: "2012-06-01" },
         workspace,
       ),
-    ).toMatchObject({ status: "term-limited", eligible: false });
+    ).toMatchObject({ endYear: 2027, status: "continuing", eligible: false });
     expect(
       calculateTerm(
         { memberType: "staff", dateJoined: "2020-01-01" },

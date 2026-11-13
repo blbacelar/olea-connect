@@ -17,10 +17,12 @@ import { getCommitteeRowKey, getString, type TemplateRecord } from "./workflow-u
 
 export function DirectoryTable({
   committees,
+  canManage = true,
   onEditCommittee,
   onRemoveCommittee,
 }: {
   committees: Array<{ committee: TemplateRecord; index: number }>;
+  canManage?: boolean;
   onEditCommittee: (index: number) => void;
   onRemoveCommittee: (index: number) => void;
 }) {
@@ -32,7 +34,7 @@ export function DirectoryTable({
             <TableHead>Committee</TableHead>
             <TableHead>Chair</TableHead>
             <TableHead className="w-[120px]">Notes</TableHead>
-            <TableHead className="w-[210px] text-right">Actions</TableHead>
+            {canManage ? <TableHead className="w-[210px] text-right">Actions</TableHead> : null}
           </TableRow>
         </TableHeader>
         <TableBody>
@@ -56,7 +58,7 @@ export function DirectoryTable({
                   "—"
                 )}
               </TableCell>
-              <TableCell className="text-right">
+              {canManage ? <TableCell className="text-right">
                 <div className="flex justify-end gap-2">
                   <Button
                     type="button"
@@ -78,7 +80,7 @@ export function DirectoryTable({
                     <Trash2 className="size-4" />
                   </Button>
                 </div>
-              </TableCell>
+              </TableCell> : null}
             </TableRow>
           ))}
         </TableBody>

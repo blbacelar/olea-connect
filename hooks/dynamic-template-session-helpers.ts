@@ -123,8 +123,11 @@ export async function persistDynamicTemplateSession({
   } catch (error) {
     saveFailed = true;
     hasUnsavedEditsRef.current = true;
+    const message = error instanceof Error ? error.message : "Unable to save this template.";
     setSaveError(
-      error instanceof Error ? error.message : "Unable to save this template.",
+      message.startsWith("Minified React error")
+        ? "The save failed. Reload the page to get the latest changes, then try again."
+        : message,
     );
     setSaveState("error");
     throw error;

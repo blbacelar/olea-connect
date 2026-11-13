@@ -4,11 +4,13 @@ import { useRouter } from "next/navigation";
 import { useState, useTransition } from "react";
 
 import { getRemainingInviteSeatCount } from "@/lib/team/seats";
+import type { BoardCalendarRole } from "@/lib/board-calendar/access";
 import type { OrganizationRole, TeamData } from "@/lib/types";
 
 import {
   cancelTeamInvitation,
   inviteTeamMember,
+  updateBoardCalendarMemberRole,
   updateTeamMember,
 } from "./actions";
 import {
@@ -38,6 +40,7 @@ export function TeamWorkspace({ team }: { team: TeamData }) {
   const router = useRouter();
   const [email, setEmail] = useState("");
   const [inviteRole, setInviteRole] = useState<"admin" | "member">("member");
+  const [calendarRole, setCalendarRole] = useState<BoardCalendarRole>("member");
   const [sent, setSent] = useState(false);
   const [error, setError] = useState("");
   const [inviteError, setInviteError] = useState("");
@@ -83,7 +86,7 @@ export function TeamWorkspace({ team }: { team: TeamData }) {
       try {
         setError("");
         setInviteError("");
-        const result = await inviteTeamMember(normalized, inviteRole);
+        const result = await inviteTeamMember(normalized, inviteRole, calendarRole);
         if (!result.ok) {
           setSent(false);
           setInviteError(getInviteErrorMessage(result.message));
@@ -125,19 +128,25 @@ export function TeamWorkspace({ team }: { team: TeamData }) {
         isPending={isPending}
         members={team.members}
         onUpdateMember={updateMember}
+        onUpdateCalendarRole={(memberId, role) => runMutation(() => updateBoardCalendarMemberRole(memberId, role))}
       />
 
       {team.canManage ? (
         <>
           <InviteTeamMemberForm
             email={email}
+            calendarRole={calendarRole}
             inviteError={inviteError}
             inviteRole={inviteRole}
             isPending={isPending}
             remainingInviteSeats={remainingInviteSeats}
             sent={sent}
             onEmailChange={handleEmailChange}
-            onInviteRoleChange={setInviteRole}
+            onInviteRoleChange={(role) => {
+              setInviteRole(role);
+              setCalendarRole(role === "admin" ? "administrator" : "member");
+            }}
+            onCalendarRoleChange={setCalendarRole}
             onSendInvite={sendInvite}
           />
           <PendingInviteList

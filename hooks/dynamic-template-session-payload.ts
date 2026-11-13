@@ -11,6 +11,7 @@ export function toSavePayload(
     completionPercent: session.completionPercent,
     formData: session.formData,
     id: session.id,
+    expectedLastSavedAt: session.lastSavedAt,
     organizationId: session.organizationId,
     resourceId: session.resourceId,
     schemaSnapshot: session.schemaSnapshot,

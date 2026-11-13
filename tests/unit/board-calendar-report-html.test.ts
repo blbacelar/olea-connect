@@ -156,6 +156,57 @@ describe("board calendar HTML report export", () => {
     expect(html).not.toContain("<script>alert(1)</script>");
   });
 
+  it("renders the branded calendar report in French without translating user content", () => {
+    const html = buildBoardCalendarReportHtml({
+      brand,
+      formData,
+      generatedAt: new Date("2026-07-09T12:00:00Z"),
+      organizationName: "Olea Connects",
+      title: "Board Calendar",
+      locale: "fr-CA",
+    });
+    expect(html).toContain('<html lang="fr-CA">');
+    expect(html).toContain("Rapport du portail du conseil");
+    expect(html).toContain("Dossiers du conseil");
+    expect(html).toContain("Liste des tâches du personnel");
+    expect(html).toContain("Généré le");
+    expect(html).toContain("Q3 Board Meeting");
+    expect(html).toContain("--brand-primary: #2F6B4F;");
+    expect(html).toContain("Agenda &lt;script&gt;alert(1)&lt;/script&gt;");
+  });
+
+  it("keeps French labels and organization brand in the generated PDF", async () => {
+    const html = buildBoardCalendarReportHtml({
+      brand,
+      formData,
+      generatedAt: new Date("2026-07-09T12:00:00Z"),
+      organizationName: "Olea Connects",
+      title: "Board Calendar",
+      locale: "fr-CA",
+    });
+    const buffer = await renderHtmlToPdfBuffer(html, {
+      headerHtml: buildBoardCalendarReportHeaderHtml("Olea Connects", "Board Calendar", "fr-CA"),
+      footerText: "Olea Connects",
+    });
+    const loadingTask = getDocument({ data: new Uint8Array(buffer), disableFontFace: true, useSystemFonts: true });
+    const document = await loadingTask.promise;
+    try {
+      const texts: string[] = [];
+      for (let number = 1; number <= document.numPages; number += 1) {
+        const page = await document.getPage(number);
+        const content = await page.getTextContent();
+        texts.push(content.items.map((item) => ("str" in item ? item.str : "")).join(" "));
+        page.cleanup();
+      }
+      const text = texts.join(" ");
+      expect(text).toContain("Olea Connects");
+      expect(text.replace(/\s+/g, "").toLowerCase()).toContain("rapportduportailduconseil");
+      expect(text).toContain("Liste des tâches du personnel");
+    } finally {
+      await loadingTask.destroy();
+    }
+  }, 60_000);
+
   it("keeps the branded in-document report header", () => {
     const html = buildBoardCalendarReportHtml({
       brand: {

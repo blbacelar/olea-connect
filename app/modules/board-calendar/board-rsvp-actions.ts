@@ -3,6 +3,7 @@
 import { z } from "zod";
 
 import { requireMemberContext } from "@/lib/data/member-context";
+import { canEditBoardCalendarDocuments, effectiveBoardCalendarRole } from "@/lib/board-calendar/access";
 import { buildBoardPackageMeetings } from "@/lib/template-renderer/board-calendar-packages";
 import type { TemplateFormData } from "@/lib/template-renderer/types";
 import { createAdminClient } from "@/utils/supabase/admin";
@@ -48,7 +49,7 @@ export async function getBoardCalendarRsvpRoster(templateInstanceId: string, mee
   const id = calendarSchema.parse(templateInstanceId);
   const targetMeetingId = z.string().min(1).max(200).parse(meetingId);
   const { member, organization, meetings } = await context(id);
-  if (member.membershipRole === "member") throw new Error("Only an organization administrator can view the RSVP roster.");
+  if (!canEditBoardCalendarDocuments(effectiveBoardCalendarRole(member))) throw new Error("Only a Calendar administrator or Committee Chair can view the RSVP roster.");
   if (!meetings.some((meeting) => meeting.id === targetMeetingId)) {
     throw new Error("This meeting is no longer in the board calendar.");
   }

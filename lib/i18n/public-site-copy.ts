@@ -30,6 +30,7 @@ export type PublicSiteCopy = {
     sponsorship: string;
     referrals: string;
     demos: string;
+    learning: string;
     podcast: string;
     getStarted: string;
   };
@@ -207,6 +208,7 @@ export const publicSiteCopy: Record<Locale, PublicSiteCopy> = {
       sponsorship: "Sponsorship",
       referrals: "Referrals",
       demos: "Demos",
+      learning: "Learning",
       podcast: "Podcast",
       getStarted: "Get started",
     },
@@ -406,6 +408,7 @@ export const publicSiteCopy: Record<Locale, PublicSiteCopy> = {
           features: [
             "Board calendar, meetings, workflows, and packages",
             "Grant checklists, templates, dashboard, and deadlines",
+            "Board governance training and certificates",
             "Olea Connects™ Community, webinars, and forums",
             "48-hour email support",
           ],
@@ -434,7 +437,6 @@ export const publicSiteCopy: Record<Locale, PublicSiteCopy> = {
             "Everything in Roots",
             "ED/CEO 360 review",
             "Strategic planning module",
-            "Board training modules",
             "Community leadership opportunities",
             "Priority phone and email support",
           ],
@@ -466,17 +468,6 @@ export const publicSiteCopy: Record<Locale, PublicSiteCopy> = {
           name: "KPI and Impact Dashboard",
           description:
             "Available for Seedling organizations; included in Roots and Canopy.",
-        },
-        {
-          id: "boardTraining",
-          name: "Board Governance Training",
-          description:
-            "Available for Seedling and Roots organizations.",
-        },
-        {
-          id: "smallBoardTraining",
-          name: "Board Governance Training, small boards",
-          description: "For Seedling boards with up to 9 directors.",
         },
         {
           id: "strategicPlanning",
@@ -610,6 +601,7 @@ export const publicSiteCopy: Record<Locale, PublicSiteCopy> = {
       sponsorship: "Commandites",
       referrals: "Références",
       demos: "Démos",
+      learning: "Formation",
       podcast: "Balado",
       getStarted: "Commencer",
     },
@@ -824,6 +816,7 @@ export const publicSiteCopy: Record<Locale, PublicSiteCopy> = {
           features: [
             "Calendrier du conseil, réunions, flux de travail et dossiers",
             "Listes de vérification, modèles, tableau de bord et échéances de subventions",
+            "Formation en gouvernance du conseil et certificats",
             "Communauté Olea Connects™, webinaires et forums",
             "Soutien par courriel sous 48 heures",
           ],
@@ -852,7 +845,6 @@ export const publicSiteCopy: Record<Locale, PublicSiteCopy> = {
             "Tout ce qui est inclus dans Roots",
             "Évaluation 360 ED/CEO",
             "Module de planification stratégique",
-            "Modules de formation du conseil",
             "Occasions de leadership communautaire",
             "Soutien prioritaire par téléphone et courriel",
           ],
@@ -884,17 +876,6 @@ export const publicSiteCopy: Record<Locale, PublicSiteCopy> = {
           name: "Tableau de bord KPI et impact",
           description:
             "Disponible pour Seedling; inclus dans Roots et Canopy.",
-        },
-        {
-          id: "boardTraining",
-          name: "Formation en gouvernance du conseil",
-          description:
-            "Disponible pour les organismes Seedling et Roots.",
-        },
-        {
-          id: "smallBoardTraining",
-          name: "Formation en gouvernance, petits conseils",
-          description: "Pour les conseils Seedling comptant jusqu'à 9 administrateurs.",
         },
         {
           id: "strategicPlanning",

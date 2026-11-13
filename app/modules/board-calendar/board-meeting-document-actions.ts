@@ -3,7 +3,9 @@
 import { z } from "zod";
 
 import { requireMemberContext } from "@/lib/data/member-context";
+import { canEditBoardCalendarDocuments, effectiveBoardCalendarRole } from "@/lib/board-calendar/access";
 import { createBrandingSnapshot } from "@/lib/data/brand-assets";
+import { getRequestLocale } from "@/lib/i18n/server";
 import { buildMeetingDocumentHtml } from "@/lib/template-renderer/board-calendar-meeting-document-html";
 import { getMeetingDocuments, meetingDocumentKinds, meetingDocumentTitles } from "@/lib/template-renderer/board-calendar-meeting-documents";
 import { renderHtmlToPdfBuffer } from "@/lib/template-renderer/html-pdf-export";
@@ -47,7 +49,7 @@ export async function generateBoardMeetingDocumentPdf(
     if (!document || !meeting || typeof meeting !== "object") {
       throw new Error("This meeting document is not available.");
     }
-    if (member.membershipRole === "member" && document.status !== "approved") {
+    if (!canEditBoardCalendarDocuments(effectiveBoardCalendarRole(member)) && document.status !== "approved") {
       throw new Error("Only approved meeting documents are available to board members.");
     }
     if (document.status === "approved" && !parsed.acknowledged) {
@@ -84,6 +86,7 @@ export async function generateBoardMeetingDocumentPdf(
       secondaryColor: brand.secondaryColor,
       logoUrl: brand.logoUrl,
       readerName: member.name,
+      locale: await getRequestLocale(),
     });
     const pdf = await renderHtmlToPdfBuffer(html);
     await writeBoardPackageAuditLog({

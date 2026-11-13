@@ -21,9 +21,11 @@ export function hasGovernanceFeature(
     new Date(subscription.current_period_end).getTime() <= now.getTime()) return false;
 
   const tier = subscription.plan_id;
-  const included = feature === "board_evaluation"
-    ? ["roots", "canopy", "harvest"].includes(tier)
-    : ["canopy", "harvest"].includes(tier);
+  const included = feature === "board_training"
+    ? ["seedling", "roots", "canopy", "harvest"].includes(tier)
+    : feature === "board_evaluation"
+      ? ["roots", "canopy", "harvest"].includes(tier)
+      : ["canopy", "harvest"].includes(tier);
   return included || (subscription.subscription_items ?? []).some(
     (item) => item.item_type === feature && item.active,
   );

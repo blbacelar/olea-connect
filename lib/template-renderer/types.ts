@@ -127,6 +127,7 @@ export interface WorkspaceMemberOption {
 export interface DynamicTemplateEditorData {
   organization: Organization;
   membershipRole: "owner" | "admin" | "member";
+  boardCalendarRole: "administrator" | "executive" | "chair" | "member";
   template: {
     id: string;
     slug: string;
@@ -153,6 +154,7 @@ export type FieldPath = Array<string | number>;
 
 export interface TemplateSavePayload {
   id: string;
+  expectedLastSavedAt?: string;
   resourceId: string;
   organizationId: string;
   title: string;

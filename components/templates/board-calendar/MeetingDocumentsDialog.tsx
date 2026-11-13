@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import { Download, FileCheck2, LoaderCircle, Save } from "lucide-react";
 
 import { Badge } from "@/components/ui/badge";
+import { useLocaleContext } from "@/components/i18n/LocaleProvider";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { getBoardCalendarRsvpRoster } from "@/app/modules/board-calendar/board-rsvp-actions";
@@ -38,6 +39,7 @@ export function MeetingDocumentsDialog({
   onClose,
   onDataChange,
   saveState,
+  saveError,
   templateInstanceId,
 }: {
   canApprove: boolean;
@@ -47,9 +49,11 @@ export function MeetingDocumentsDialog({
   onClose: () => void;
   onDataChange: DataChangeHandler;
   saveState: "saved" | "saving" | "unsaved" | "error";
+  saveError?: string;
   templateInstanceId?: string;
 }) {
   const availableKinds = meetingDocumentKindsFor(meeting.type);
+  const french = useLocaleContext().locale === "fr-CA";
   const [kind, setKind] = useState<MeetingDocumentKind>(availableKinds[0]);
   const [rsvpRoster, setRsvpRoster] = useState<Array<{ userId: string; response: string }>>([]);
   const [draft, setDraft] = useState<MeetingDocument>(() => loadDocument(availableKinds[0]));
@@ -78,7 +82,7 @@ export function MeetingDocumentsDialog({
     const existing = getMeetingDocuments(data).find((document) =>
       document.meetingId === meeting.id && document.kind === nextKind,
     );
-    return existing ?? seedAttendance(createMeetingDocument(meeting.id, nextKind, members.map((member) => member.id)), rsvpRoster);
+    return existing ?? seedAttendance(createMeetingDocument(meeting.id, nextKind, members.map((member) => member.id), french), rsvpRoster);
   }
 
   function selectKind(nextKind: MeetingDocumentKind) {
@@ -157,7 +161,7 @@ export function MeetingDocumentsDialog({
           <Badge variant="outline">{draft.status === "approved" ? "Approved" : "Draft"}</Badge>
           {draft.status === "approved" ? <span className="text-slate-500">Included in this meeting&apos;s board package.</span> : null}
         </div>
-        {readOnly ? <p className="rounded-lg border border-amber-200 bg-amber-50 p-3 text-sm text-amber-900">Only an organization owner or administrator can change meeting documents.</p> : null}
+        {readOnly ? <p className="rounded-lg border border-amber-200 bg-amber-50 p-3 text-sm text-amber-900">Only a Calendar administrator or Committee Chair can change meeting documents.</p> : null}
         <fieldset disabled={readOnly}>
           <MeetingDocumentFields document={draft} members={members} onChange={(next) => {
             if (next.attendance.some((row, index) => row.status !== draft.attendance[index]?.status)) {
@@ -169,7 +173,7 @@ export function MeetingDocumentsDialog({
         </fieldset>
         {error ? <p role="alert" className="text-sm font-medium text-red-700">{error}</p> : null}
         {rsvpLoading ? <p role="status" className="text-sm text-slate-600">Loading meeting RSVPs before saving attendance...</p> : null}
-        {saveState === "error" ? <p role="alert" className="text-sm font-medium text-red-700">The calendar could not save this document. Keep this dialog open and try again.</p> : null}
+        {saveState === "error" ? <p role="alert" className="text-sm font-medium text-red-700">{saveError || "The calendar could not save this document. Keep this dialog open and try again."}</p> : null}
         {draft.status === "approved" ? <div className="flex items-start gap-2 rounded-lg border p-3">
           <Checkbox id="meeting-document-ack" checked={acknowledged} onChange={(event) => setAcknowledged(event.target.checked)} />
           <label htmlFor="meeting-document-ack" className="text-sm leading-5">I acknowledge that this board document is confidential before exporting it.</label>
@@ -196,7 +200,8 @@ function seedAttendance(document: MeetingDocument, roster: Array<{ userId: strin
   return { ...document, attendance: document.attendance.map((row) => ({
     ...row,
     status: row.status !== "not_recorded" ? row.status
-      : byMember.get(row.memberId) === "attending" ? "present"
-      : byMember.get(row.memberId) === "not_attending" ? "absent" : row.status,
+      : byMember.get(row.memberId) === "attending" ? "attending"
+      : byMember.get(row.memberId) === "not_attending" ? "not_attending"
+      : byMember.get(row.memberId) === "tentative" ? "tentative" : "no_response",
   })) };
 }

@@ -120,6 +120,9 @@ describe("board calendar package helpers", () => {
     });
 
     const documents = getBoardPackageDocuments(withDocument);
+    const rawAdded = (withDocument.documents as Record<string, unknown>[]).at(-1);
+    expect(rawAdded).toMatchObject({ storage_path: "workspaces/org-1/board-calendar/session-1/meeting-finance/minutes.pdf", file_name: "minutes.pdf", content_type: "application/pdf" });
+    expect(rawAdded).not.toHaveProperty("storagePath");
     const addedDocument = documents.find(
       (document) => document.name === "Finance minutes",
     );

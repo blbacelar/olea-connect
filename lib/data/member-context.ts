@@ -72,7 +72,7 @@ export async function getOptionalMemberContext(): Promise<Session | null> {
   const { data: membership, error: membershipError } = await supabase
     .from("organization_members")
     .select(
-      "organization_id, role, joined_at, organizations(id, name, profile_completed_at)",
+      "organization_id, role, board_calendar_role, joined_at, organizations(id, name, profile_completed_at)",
     )
     .eq("user_id", user.id)
     .eq("status", "active")
@@ -190,6 +190,9 @@ export async function getOptionalMemberContext(): Promise<Session | null> {
     firstName: fullName.split(/\s+/)[0],
     role: membership.role === "owner" ? "Organization owner" : membership.role,
     membershipRole: membership.role as OrganizationRole,
+    boardCalendarRole: membership.role === "owner" || membership.role === "admin"
+      ? "administrator"
+      : membership.board_calendar_role ?? "member",
     email: user.email ?? "",
   };
 

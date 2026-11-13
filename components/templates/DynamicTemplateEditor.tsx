@@ -34,6 +34,7 @@ import type {
   TemplateValue,
 } from "@/lib/template-renderer/types";
 import { cn } from "@/lib/utils";
+import type { StrategicCalendarDate } from "@/lib/strategic-planning/calendar-dates";
 
 import { BoardCalendarWorkbench } from "./BoardCalendarWorkbench";
 import { TemplateExportPanel } from "./TemplateExportPanel";
@@ -51,6 +52,7 @@ export function DynamicTemplateEditor({
   generateExport,
   createDownloadUrl,
   headerAction,
+  strategicDates = [],
 }: {
   basePath?: string;
   data: DynamicTemplateEditorData;
@@ -66,6 +68,7 @@ export function DynamicTemplateEditor({
   }) => Promise<TemplateExportRecord>;
   createDownloadUrl: (exportId: string) => Promise<string>;
   headerAction?: ReactNode;
+  strategicDates?: StrategicCalendarDate[];
 }) {
   const router = useRouter();
   const editorBasePath = basePath ?? `/templates/${data.template.slug}`;
@@ -292,6 +295,7 @@ export function DynamicTemplateEditor({
 
         {calendarEnabled ? (
           <BoardCalendarWorkbench
+            strategicDates={strategicDates}
             brand={session.brandingSnapshot}
             data={session.formData}
             errorsByPath={errorsByPath}
@@ -299,8 +303,9 @@ export function DynamicTemplateEditor({
             organizationName={session.brandingSnapshot.organizationName}
             sections={session.schemaSnapshot.sections}
             workspaceMembers={data.workspaceMembers}
-            membershipRole={data.membershipRole}
+            boardCalendarRole={data.boardCalendarRole}
             saveState={saveState}
+            saveError={saveError}
             generateExport={generateExport}
             createDownloadUrl={createDownloadUrl}
             onChange={updateValue}

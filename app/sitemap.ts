@@ -3,6 +3,7 @@ import type { MetadataRoute } from "next";
 const publicPaths = [
   "/",
   "/demos",
+  "/learning",
   "/sponsorship",
   "/referrals",
   "/accessibility",

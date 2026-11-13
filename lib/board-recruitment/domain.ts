@@ -138,19 +138,14 @@ export function calculateTerm(
   }
   const nextTerm = termNumber + 1;
   const yearsAtNextEnd = endYear + workspace.termLengthYears - joinedYear;
+  const standingAtAgm = endYear === workspace.upcomingAgmYear;
+  const eligible = nextTerm <= workspace.maxConsecutiveTerms &&
+    yearsAtNextEnd <= workspace.maxYearsOfService;
   return {
     termNumber,
     endYear,
-    status:
-      endYear === workspace.upcomingAgmYear
-        ? "standing"
-        : nextTerm > workspace.maxConsecutiveTerms ||
-            yearsAtNextEnd > workspace.maxYearsOfService
-          ? "term-limited"
-          : "continuing",
-    eligible:
-      nextTerm <= workspace.maxConsecutiveTerms &&
-      yearsAtNextEnd <= workspace.maxYearsOfService,
+    status: standingAtAgm ? (eligible ? "standing" : "term-limited") : "continuing",
+    eligible,
   };
 }
 

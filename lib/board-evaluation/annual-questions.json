@@ -1,0 +1,116 @@
+[
+  {
+    "num": 1,
+    "name": "Mission, Vision & Strategic Direction",
+    "prompt": "How well does the board understand and advance the organization's purpose and long-term goals?",
+    "qs": [
+      "I can clearly articulate our organization's mission and vision.",
+      "The board regularly reviews the mission to ensure it remains relevant and impactful.",
+      "The board provides meaningful input into the strategic planning process.",
+      "The board monitors progress toward strategic goals at each meeting.",
+      "The board effectively evaluates and responds to changes in the external environment."
+    ]
+  },
+  {
+    "num": 2,
+    "name": "Governance & Board Structure",
+    "prompt": "How well is the board organized and fulfilling its governance role?",
+    "qs": [
+      "The board has clearly defined roles and responsibilities.",
+      "Board members understand the distinction between governance and management.",
+      "The board operates according to its bylaws and governing documents.",
+      "Board meetings are well organized and make effective use of time.",
+      "The board chair provides effective leadership."
+    ]
+  },
+  {
+    "num": 3,
+    "name": "Financial Oversight",
+    "prompt": "How well does the board fulfill its financial stewardship and accountability responsibilities?",
+    "qs": [
+      "I receive financial reports that are clear, accurate, and timely.",
+      "I have sufficient financial literacy to understand the organization's financial statements.",
+      "The board actively monitors the organization's financial health throughout the year.",
+      "The board ensures that appropriate financial controls and auditing processes are in place.",
+      "The board understands and approves major financial decisions and expenditures."
+    ]
+  },
+  {
+    "num": 4,
+    "name": "Executive Director/CEO Relationship",
+    "prompt": "How effectively does the board support and work with executive leadership?",
+    "qs": [
+      "The board provides the ED with clear direction and support.",
+      "The board conducts a fair, transparent, and timely performance review of the ED.",
+      "The ED provides the board with sufficient and useful information between meetings.",
+      "The relationship between the board and the ED is collaborative and respectful.",
+      "The board appropriately delegates operational authority to the ED."
+    ]
+  },
+  {
+    "num": 5,
+    "name": "Board Composition & Recruitment",
+    "prompt": "How well is the board building, renewing, and sustaining itself?",
+    "qs": [
+      "The board has the right mix of skills, experience, and perspectives to govern effectively.",
+      "The board proactively identifies and addresses gaps in its composition.",
+      "The board has a clear and effective process for recruiting and orienting new members.",
+      "The board reflects the diversity of the communities we serve.",
+      "The board actively promotes equity, diversity, and inclusion in its governance practices."
+    ]
+  },
+  {
+    "num": 6,
+    "name": "Individual Board Member Engagement",
+    "prompt": "Reflect honestly on your own participation and contribution as a board member.",
+    "qs": [
+      "I attend board and committee meetings consistently.",
+      "I come to meetings prepared, having reviewed materials in advance.",
+      "I actively participate in board discussions and deliberations.",
+      "I fulfill the commitments I make as a board member.",
+      "I feel that my participation on this board is meaningful and impactful."
+    ]
+  },
+  {
+    "num": 7,
+    "name": "Fundraising & Resource Development",
+    "prompt": "How effectively does the board contribute to securing resources for the organization?",
+    "qs": [
+      "The board understands its role in fundraising and resource development.",
+      "Individual board members participate in fundraising activities.",
+      "The board reviews and monitors fundraising performance regularly.",
+      "I am comfortable asking others to support the organization financially."
+    ]
+  },
+  {
+    "num": 8,
+    "name": "Risk Management & Legal Compliance",
+    "prompt": "How well does the board protect the organization and ensure legal compliance?",
+    "qs": [
+      "The board has reviewed and understands the organization's primary risks.",
+      "The board reviews and monitors compliance with relevant laws and regulations.",
+      "Board members annually disclose potential conflicts of interest.",
+      "The board is aware of and addresses ethical concerns when they arise."
+    ]
+  },
+  {
+    "num": 9,
+    "name": "Community Relations & Advocacy",
+    "prompt": "How well does the board promote the organization's reputation and mission externally?",
+    "qs": [
+      "Board members actively promote the organization in the community.",
+      "The board understands the key stakeholders and communities the organization serves.",
+      "Board members serve as effective advocates for the organization's mission."
+    ]
+  },
+  {
+    "num": 10,
+    "name": "Equity, Inclusion & Organizational Culture",
+    "prompt": "How committed is the board to equity and inclusive governance practices?",
+    "qs": [
+      "Board culture is welcoming and inclusive for all members.",
+      "The board holds the organization accountable for equitable policies and practices.",
+      "The board ensures that voices of those most impacted by our mission are reflected in governance."
+    ]
+  }
+]

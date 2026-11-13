@@ -12,6 +12,7 @@ import {
   type BoardCalendarEntryType,
 } from "@/lib/template-renderer/board-calendar-editor";
 import { addDays } from "@/lib/template-renderer/calendar-view";
+import type { CalendarViewEvent } from "@/lib/template-renderer/calendar-view";
 import { setValue } from "@/lib/template-renderer/schema";
 import type {
   TemplateExportFormat,
@@ -24,6 +25,7 @@ import { useBoardCalendarActiveTab } from "./use-board-calendar-active-tab";
 import { useBoardCalendarEntryForm } from "./use-board-calendar-entry-form";
 import { useWorkbenchDerivedData } from "./use-workbench-derived-data";
 import { downloadBoardCalendarIcs, parseCalendarDateKey } from "./workbench-ics";
+import type { StrategicCalendarDate } from "@/lib/strategic-planning/calendar-dates";
 
 export function useBoardCalendarWorkbench({
   data,
@@ -32,10 +34,14 @@ export function useBoardCalendarWorkbench({
   generateExport,
   createDownloadUrl,
   onDataChange,
+  strategicDates = [],
+  french = false,
 }: {
   data: TemplateFormData;
   templateInstanceId?: string;
   organizationName: string;
+  strategicDates?: StrategicCalendarDate[];
+  french?: boolean;
   generateExport: (input: {
     templateInstanceId: string;
     format: TemplateExportFormat;
@@ -50,7 +56,7 @@ export function useBoardCalendarWorkbench({
     boardMeetings, categories, categoryColors, configuredMonth, configuredYear,
     events, eventsByDate, hasDatedEvents, meetingEvents, nextEvent, todayKey,
     upcomingEvents, upcomingMeetingEvents,
-  } = useWorkbenchDerivedData({ data, todayDate });
+  } = useWorkbenchDerivedData({ data, todayDate, strategicDates, french });
   const [mode, setMode] = useState<CalendarMode>("month");
   const { activeTab, setActiveTab } = useBoardCalendarActiveTab();
   const [anchorDate, setAnchorDate] = useState(todayDate);
@@ -119,6 +125,7 @@ export function useBoardCalendarWorkbench({
   }
 
   function deleteCalendarEntry(eventId: string) {
+    if (eventId.startsWith("strategic-")) return;
     onDataChange((currentData) => {
       const identity = getBoardCalendarEntryIdentity(eventId);
       const syncedData = identity?.type === "staff_task"
@@ -163,6 +170,14 @@ export function useBoardCalendarWorkbench({
     entry.clearEntryForm();
   }
 
+  function editCalendarEntry(event: CalendarViewEvent) {
+    if (event.source === "strategic") {
+      window.location.assign("/modules/strategic-planning");
+      return;
+    }
+    entry.editCalendarEntry(event);
+  }
+
   async function exportPdf() {
     if (!templateInstanceId) {
       window.print();
@@ -188,7 +203,7 @@ export function useBoardCalendarWorkbench({
     activeTab, addCalendarEntry, addToCalendarFile: () =>
       downloadBoardCalendarIcs({ events, organizationName }), anchorDate, boardMeetings,
     categories, clearEntryForm: entry.clearEntryForm,
-    editCalendarEntry: entry.editCalendarEntry, editingEvent: entry.editingEvent,
+    editCalendarEntry, editingEvent: entry.editingEvent,
     editingEventId: entry.editingEventId, entryCategory: entry.entryCategory,
     entryColor: entry.entryColor, entryConfirmed: entry.entryConfirmed,
     entryRepeat: entry.entryRepeat,

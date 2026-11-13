@@ -33,6 +33,42 @@ describe("board meeting documents", () => {
     expect(html).toContain("#abcdef");
     expect(html).toContain("Prepared for Alex");
   });
+  it("renders structured open-action review on a committee agenda", () => {
+    const agenda = createMeetingDocument("committee-1", "committee_agenda", []);
+    const approved = {
+      ...agenda,
+      status: "approved" as const,
+      sections: { ...agenda.sections, agenda: "", next: "" },
+      actions: [{ id: "action-1", description: "Review draft policy", ownerId: "", ownerName: "Governance Chair", dueDate: "2026-11-20", done: false, status: "open" as const }],
+    };
+    const data: TemplateFormData = { meetings: [{ id: "committee-1", type: "Finance Committee" }], meeting_documents: [approved] };
+    expect(validateMeetingDocuments(data)).toHaveLength(1);
+    const html = buildMeetingDocumentHtml({ document: approved,
+      meeting: { title: "Finance Committee", date: "2026-11-20", time: "", location: "" },
+      memberNames: new Map(), organizationName: "Example Org" });
+    expect(html).toContain("Review of open action items");
+    expect(html).toContain("Review draft policy");
+    expect(html).toContain("Governance Chair");
+  });
+
+  it("renders branded French meeting minutes without translating entered text", () => {
+    const minutes = createMeetingDocument(meeting.id, "board_minutes", ["member-1"]);
+    const html = buildMeetingDocumentHtml({
+      document: { ...minutes, status: "approved", sections: { ...minutes.sections, discussion: "Budget review" } },
+      meeting: { title: "Finance Committee", date: "2026-11-10", time: "13:00", location: "" },
+      memberNames: new Map([["member-1", "Alex Chair"]]),
+      organizationName: "Olea Connects",
+      primaryColor: "#123456",
+      locale: "fr-CA",
+    });
+    expect(html).toContain('<html lang="fr-CA">');
+    expect(html).toContain("Procès-verbal du conseil");
+    expect(html).toContain("Présences");
+    expect(html).toContain("Décisions et motions");
+    expect(html).toContain("Mesures à prendre");
+    expect(html).toContain("Budget review");
+    expect(html).toContain("#123456");
+  });
   it("keeps drafts out of packages and includes only approved documents", () => {
     const agenda = createMeetingDocument(meeting.id, "consent_agenda", ["member-1"]);
     const draftData = upsertMeetingDocument(base, { ...agenda, sections: { ...agenda.sections, consent: "Approve the prior minutes" } });
@@ -52,8 +88,8 @@ describe("board meeting documents", () => {
       ...minutes,
       status: "approved" as const,
       attendance: [{ memberId: "member-1", status: "present" as const }],
-      motions: [{ id: "motion-1", text: "Approve the budget", movedBy: "member-1", secondedBy: "", votesFor: 4, votesAgainst: 1, abstentions: 0, outcome: "carried" as const }],
-      actions: [{ id: "action-1", description: "Notify finance", ownerId: "member-1", dueDate: "2026-11-20", done: false }],
+      motions: [{ id: "motion-1", text: "Approve the budget", movedBy: "member-1", secondedBy: "", votesFor: 4, votesAgainst: 1, abstentions: 0, outcome: "tabled" as const }],
+      actions: [{ id: "action-1", description: "Notify finance", ownerId: "", ownerName: "Finance Lead", dueDate: "2026-11-20", done: false, status: "in_progress" as const }],
     };
     const data = upsertMeetingDocument(base, completed);
     expect(validateMeetingDocuments(data)).toHaveLength(1);
@@ -65,12 +101,14 @@ describe("board meeting documents", () => {
     });
     expect(html).toContain("Approve the budget");
     expect(html).toContain("For 4 · Against 1");
-    expect(html).toContain("Alex Chair");
+    expect(html).toContain("tabled");
+    expect(html).toContain("Finance Lead");
+    expect(html).toContain("in progress");
   });
 
   it("rejects approval without content, orphan references, invalid votes, and duplicate documents", () => {
     const agenda = createMeetingDocument(meeting.id, "consent_agenda", []);
-    expect(() => validateMeetingDocuments({ ...base, meeting_documents: [{ ...agenda, status: "approved" }] })).toThrow(/Add meeting content/);
+    expect(() => validateMeetingDocuments({ ...base, meeting_documents: [{ ...agenda, status: "approved", sections: { ...agenda.sections, consent: "", regular: "" } }] })).toThrow(/Add meeting content/);
     expect(() => validateMeetingDocuments({ ...base, meeting_documents: [{ ...agenda, meetingId: "other" }] })).toThrow(/missing meeting/);
     expect(() => validateMeetingDocuments({ ...base, meeting_documents: [agenda, agenda] })).toThrow(/Duplicate/);
     const minutes = createMeetingDocument(meeting.id, "board_minutes", []);

@@ -64,7 +64,7 @@ export const navigationGroups: NavigationItem[][] = [
       icon: ClipboardList,
       requiredOrganizationRoles: ["owner", "admin"],
     },
-    { label: "Board Training", href: "/modules/board-training", icon: BookOpen, requiredTier: "canopy" },
+    { label: "Board Training", href: "/modules/board-training", icon: BookOpen },
     { label: "Community", href: "/community", icon: Users },
     { label: "Sponsors", href: "/sponsors", icon: Handshake },
     { label: "Webinars", href: "/webinars", icon: CalendarDays },

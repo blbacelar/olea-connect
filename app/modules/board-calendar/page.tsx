@@ -5,6 +5,7 @@ import { DynamicTemplateEditor } from "@/components/templates/DynamicTemplateEdi
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { getDynamicTemplateEditorData } from "@/lib/data/templates";
+import { getStrategicCalendarDates } from "@/lib/data/strategic-calendar";
 import { boardCalendarModule } from "@/lib/modules";
 
 import {
@@ -53,10 +54,13 @@ export default async function BoardCalendarModulePage(
     );
   }
 
+  const strategicDates = await getStrategicCalendarDates();
+
   return (
     <DynamicTemplateEditor
       basePath={boardCalendarModule.path}
       data={editorData}
+      strategicDates={strategicDates}
       eyebrow="Board portal"
       newSessionLabel="Unsaved new calendar"
       savedSessionsLabel="Saved calendars"

@@ -27,12 +27,14 @@ export function DirectoryTablePanel({
   data,
   onDataChange,
   workspaceMembers,
+  canManage = true,
 }: {
   data: TemplateFormData;
   onDataChange: (
     updater: (currentData: TemplateFormData) => TemplateFormData,
   ) => void;
   workspaceMembers: WorkspaceMemberOption[];
+  canManage?: boolean;
 }) {
   const committees = getRows(data, "committees");
   const [editingCommitteeIndex, setEditingCommitteeIndex] = useState<number | null>(
@@ -146,7 +148,7 @@ export function DirectoryTablePanel({
           </p>
         </div>
         <div className="flex flex-wrap gap-2">
-          <Button
+          {canManage ? <Button
             type="button"
             variant="outline"
             size="sm"
@@ -159,8 +161,8 @@ export function DirectoryTablePanel({
             {hasActiveFilters ? (
               <Badge className="ml-1 bg-olea-green text-white">On</Badge>
             ) : null}
-          </Button>
-          <Button
+          </Button> : null}
+          {canManage ? <Button
             type="button"
             variant="outline"
             size="sm"
@@ -169,7 +171,7 @@ export function DirectoryTablePanel({
           >
             <Plus className="size-4" />
             Add committee
-          </Button>
+          </Button> : null}
         </div>
       </div>
       {showFilters ? (
@@ -188,6 +190,7 @@ export function DirectoryTablePanel({
         <>
           <DirectoryTable
             committees={filteredCommittees}
+            canManage={canManage}
             onEditCommittee={openCommitteeEditor}
             onRemoveCommittee={removeCommittee}
           />
@@ -199,11 +202,12 @@ export function DirectoryTablePanel({
         </>
       ) : (
         <p className="rounded-lg border border-dashed p-4 text-sm text-slate-500">
-          No committees yet. Add one when this board uses committees or named
-          working groups.
+          {canManage
+            ? "No committees yet. Add one when this board uses committees or named working groups."
+            : "No committees have been added by the calendar administrator yet."}
         </p>
       )}
-      <DirectoryEditorDialog
+      {canManage ? <DirectoryEditorDialog
         committeeDraft={committeeDraft}
         editingCommittee={editingCommittee}
         editingCommitteeIndex={editingCommitteeIndex}
@@ -212,7 +216,7 @@ export function DirectoryTablePanel({
         onClose={closeCommitteeEditor}
         onSave={saveCommitteeDraft}
         onUpdateDraft={updateCommitteeDraft}
-      />
+      /> : null}
     </section>
   );
 }

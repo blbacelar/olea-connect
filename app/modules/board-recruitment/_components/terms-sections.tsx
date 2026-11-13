@@ -7,6 +7,7 @@ import {
   saveRecruitmentTermRules,
 } from "@/app/modules/board-recruitment/actions";
 import { Badge } from "@/components/ui/badge";
+import { useLocaleContext } from "@/components/i18n/LocaleProvider";
 import {
   Card,
   CardContent,
@@ -47,13 +48,15 @@ export function TermRulesCard({
   rules: TermRuleDraft;
   setRules: RuleSetter;
 }) {
+  const french = useLocaleContext().locale === "fr-CA";
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Term rules</CardTitle>
+        <CardTitle>{french ? "Règles des mandats" : "Term rules"}</CardTitle>
         <CardDescription>
-          Enter the rules from your bylaws. The roster, officer succession, and
-          report update from these values after saving.
+          {french
+            ? "Saisissez les règles de vos règlements administratifs. Le registre, la relève des dirigeants et le rapport se mettront à jour après l'enregistrement."
+            : "Enter the rules from your bylaws. The roster, officer succession, and report update from these values after saving."}
         </CardDescription>
       </CardHeader>
       <CardContent>
@@ -114,6 +117,7 @@ export function TermSummaryCard({
   data: RecruitmentData;
   directors: RecruitmentMember[];
 }) {
+  const french = useLocaleContext().locale === "fr-CA";
   const standing = directors.filter(
     (member) => calculateTerm(member, data.workspace).status === "standing",
   );
@@ -125,9 +129,7 @@ export function TermSummaryCard({
     <Card>
       <CardHeader>
         <CardTitle>Term summary</CardTitle>
-        <CardDescription>
-          Computed from active directors and the rules above.
-        </CardDescription>
+        <CardDescription>{french ? "Calculé à partir des administrateurs actifs et des règles ci-dessus." : "Computed from active directors and the rules above."}</CardDescription>
       </CardHeader>
       <CardContent className="grid gap-4 sm:grid-cols-3">
         <StatCard
@@ -152,11 +154,12 @@ export function OfficerSuccessionCard({
   data: RecruitmentData;
   directors: RecruitmentMember[];
 }) {
+  const french = useLocaleContext().locale === "fr-CA";
   return (
     <Card>
       <CardHeader>
         <CardTitle>Executive Committee & officer succession</CardTitle>
-        <CardDescription>Officer seats are derived from active directors.</CardDescription>
+        <CardDescription>{french ? "Les postes de direction sont attribués parmi les administrateurs actifs." : "Officer seats are derived from active directors."}</CardDescription>
       </CardHeader>
       <CardContent className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
         {Object.entries(officerLabels)
@@ -176,14 +179,14 @@ export function OfficerSuccessionCard({
 }
 
 export function RosterCard({ data }: { data: RecruitmentData }) {
+  const french = useLocaleContext().locale === "fr-CA";
   return (
     <Card>
       <CardHeader>
         <CardTitle>Roster</CardTitle>
-        <CardDescription>
-          Inactive members remain available for audit history but are excluded
-          from matrix and term counts.
-        </CardDescription>
+        <CardDescription>{french
+          ? "Les membres inactifs restent dans l'historique d'audit, mais sont exclus de la matrice et du calcul des mandats."
+          : "Inactive members remain available for audit history but are excluded from matrix and term counts."}</CardDescription>
       </CardHeader>
       <CardContent>
         <Table>
@@ -205,7 +208,7 @@ export function RosterCard({ data }: { data: RecruitmentData }) {
         </Table>
         {!data.members.length ? (
           <EmptyState>
-            Add the first director or staff member to build the roster.
+            {french ? "Ajoutez un premier administrateur ou membre du personnel pour créer le registre." : "Add the first director or staff member to build the roster."}
           </EmptyState>
         ) : null}
       </CardContent>

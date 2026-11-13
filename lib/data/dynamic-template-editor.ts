@@ -1,7 +1,8 @@
 import "server-only";
 
 import { normalizeTemplateSchema } from "@/lib/template-renderer/schema";
-import { projectBoardCalendarForMember } from "@/lib/template-renderer/board-calendar-member-view";
+import { projectBoardCalendarForRole } from "@/lib/template-renderer/board-calendar-member-view";
+import { effectiveBoardCalendarRole } from "@/lib/board-calendar/access";
 import type {
   DynamicTemplateEditorData,
   DynamicTemplateSession,
@@ -214,8 +215,9 @@ export async function getDynamicTemplateEditorData(
   if (!resolved) return null;
 
   const { definition, schema } = resolved;
-  const memberCalendar = resource.slug === "board-calendar-operational-workflow" && member.membershipRole === "member";
-  const admin = memberCalendar ? createAdminClient() : null;
+  const calendarRole = effectiveBoardCalendarRole(member);
+  const restrictedCalendar = resource.slug === "board-calendar-operational-workflow" && calendarRole !== "administrator";
+  const admin = restrictedCalendar ? createAdminClient() : null;
   const memberInstances = admin
     ? await admin.from("template_instances")
         .select("id,title,status,completion_percent,last_saved_at,updated_at")
@@ -245,7 +247,7 @@ export async function getDynamicTemplateEditorData(
   });
 
   const fullFormData = buildFormData(definition, existing, member);
-  const formData = memberCalendar ? projectBoardCalendarForMember(fullFormData) : fullFormData;
+  const formData = restrictedCalendar ? projectBoardCalendarForRole(fullFormData, calendarRole) : fullFormData;
   const schemaSnapshot = normalizeTemplateSchema(existing?.schema_snapshot) ?? schema;
   const session = buildDynamicSession({
     resource,
@@ -258,12 +260,13 @@ export async function getDynamicTemplateEditorData(
   });
   const [directory, exports] = await Promise.all([
     fetchWorkspaceDirectory({ supabase, organizationId: organization.id, schemaSnapshot }),
-    memberCalendar ? Promise.resolve([]) : fetchTemplateExports(supabase, session.id, organization.id),
+    restrictedCalendar ? Promise.resolve([]) : fetchTemplateExports(supabase, session.id, organization.id),
   ]);
 
   return {
     organization,
     membershipRole: member.membershipRole,
+    boardCalendarRole: calendarRole,
     template: {
       id: resource.id,
       slug: resource.slug,

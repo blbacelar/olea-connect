@@ -15,34 +15,40 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import type { TeamData } from "@/lib/types";
+import { boardCalendarRoleLabel, type BoardCalendarRole } from "@/lib/board-calendar/access";
 
 type TeamInvitation = TeamData["invitations"][number];
 
 export function InviteTeamMemberForm({
   email,
+  calendarRole,
   inviteError,
   inviteRole,
   isPending,
   remainingInviteSeats,
   sent,
   onEmailChange,
+  onCalendarRoleChange,
   onInviteRoleChange,
   onSendInvite,
 }: {
   email: string;
+  calendarRole: BoardCalendarRole;
   inviteError: string;
   inviteRole: "admin" | "member";
   isPending: boolean;
   remainingInviteSeats: number;
   sent: boolean;
   onEmailChange: (value: string) => void;
+  onCalendarRoleChange: (role: BoardCalendarRole) => void;
   onInviteRoleChange: (role: "admin" | "member") => void;
   onSendInvite: () => void;
 }) {
+  const french = useLocaleContext().locale === "fr-CA";
   return (
     <>
       <SectionHeading>Invite a team member</SectionHeading>
-      <div className="mb-3 flex max-w-2xl flex-col gap-3 sm:flex-row">
+      <div className="mb-3 flex max-w-3xl flex-col gap-3 sm:flex-row">
         <Input
           type="email"
           value={email}
@@ -55,12 +61,24 @@ export function InviteTeamMemberForm({
           aria-label="Team member email"
         />
         <Select value={inviteRole} onValueChange={onInviteRoleChange}>
-          <SelectTrigger className="h-11 bg-white sm:w-36" aria-label="Invite role">
+          <SelectTrigger className="h-11 bg-white sm:w-36" aria-label={french ? "Rôle de l'invitation" : "Invite role"}>
             <SelectValue />
           </SelectTrigger>
           <SelectContent>
             <SelectItem value="member">Member</SelectItem>
             <SelectItem value="admin">Admin</SelectItem>
+          </SelectContent>
+        </Select>
+        <Select value={calendarRole} onValueChange={(value) => onCalendarRoleChange(value as BoardCalendarRole)} disabled={inviteRole === "admin"}>
+          <SelectTrigger className="h-11 bg-white sm:w-56" aria-label={french ? "Rôle au calendrier du conseil" : "Board Calendar role"}>
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            {inviteRole === "admin" ? <SelectItem value="administrator">{french ? "Administrateur du calendrier" : "Calendar Administrator"}</SelectItem> : <>
+              <SelectItem value="executive">{french ? "Direction générale / opérations" : "Executive Director / COO"}</SelectItem>
+              <SelectItem value="chair">{french ? "Présidence de comité" : "Committee Chair"}</SelectItem>
+              <SelectItem value="member">{french ? "Membre du conseil" : "Board Member"}</SelectItem>
+            </>}
           </SelectContent>
         </Select>
         <Button
@@ -82,6 +100,9 @@ export function InviteTeamMemberForm({
         </div>
       ) : null}
       <p className="mb-8 text-sm text-slate-500">
+        {french
+          ? "L’accès au calendrier du conseil s’applique à l’acceptation de l’invitation. Les administrateurs gèrent le calendrier; la direction voit les réunions et les tâches; les présidences de comité modifient les documents; les membres voient les dates, dossiers et réponses. "
+          : "Board Calendar access is applied when the invitation is accepted. Administrators manage the calendar; Executive Directors view meetings and workflow; Committee Chairs edit meeting documents; Board Members view dates, packages and RSVP. "}
         {remainingInviteSeats > 0
           ? `${remainingInviteSeats} invite slot${
               remainingInviteSeats === 1 ? "" : "s"
@@ -135,6 +156,7 @@ function PendingInviteRow({
   onCancelInvitation: (inviteId: string) => void;
 }) {
   const { locale } = useLocaleContext();
+  const french = locale === "fr-CA";
   return (
     <div
       role="group"
@@ -147,6 +169,7 @@ function PendingInviteRow({
           <Badge variant="outline" className="capitalize">
             {invite.role}
           </Badge>
+          <Badge variant="outline">{french ? "Calendrier : " : "Calendar: "}{boardCalendarRoleLabel(invite.boardCalendarRole ?? "member", french)}</Badge>
         </div>
         <p className="mt-0.5 text-[12.5px] text-slate-400">
           {locale === "fr-CA" ? "Invitation envoyée le" : "Invited"}{" "}

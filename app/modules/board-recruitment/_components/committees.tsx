@@ -11,6 +11,7 @@ import {
   updateRecruitmentCommittee,
 } from "@/app/modules/board-recruitment/actions";
 import { Badge } from "@/components/ui/badge";
+import { useLocaleContext } from "@/components/i18n/LocaleProvider";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -27,6 +28,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { SubmitButton } from "@/components/ui/submit-button";
+import { calculateTerm } from "@/lib/board-recruitment/domain";
 import type { RecruitmentData } from "@/lib/board-recruitment/types";
 
 import {
@@ -38,13 +40,14 @@ import {
 } from "./shared";
 
 export function Committees({ data }: { data: RecruitmentData }) {
+  const french = useLocaleContext().locale === "fr-CA";
   const active = data.members.filter((member) => member.active);
   return (
     <div className="space-y-6">
       <SectionHeader
-        eyebrow="Board structure"
-        title="Committees"
-        description="Create committees, assign directors and staff, and designate one chair per committee."
+        eyebrow={french ? "Structure du conseil" : "Board structure"}
+        title={french ? "Comités" : "Committees"}
+        description={french ? "Créez des comités, attribuez des administrateurs et du personnel, puis nommez une présidence pour chaque comité. Les mandats et les comités partagent le même registre." : "Create committees, assign directors and staff, and designate one chair per committee. Board Terms and committees use the same roster."}
         action={
           <ModalForm
             title="Add committee"
@@ -90,6 +93,9 @@ function CommitteeCard({
   const assignments = activeMembers.filter((member) =>
     committee.memberIds.includes(member.id),
   );
+  const termRisk = assignments.filter((member) => member.memberType === "director")
+    .map((member) => ({ member, term: calculateTerm(member, data.workspace) }))
+    .filter(({ term }) => term.status === "standing" || term.status === "term-limited");
 
   return (
     <Card data-testid={`committee-card-${committee.id}`}>
@@ -106,6 +112,17 @@ function CommitteeCard({
             ? `Chair: ${activeMembers.find((member) => member.id === committee.chairId)?.fullName ?? "Unknown"}`
             : "Assign members and choose a chair."}
         </CardDescription>
+        {termRisk.length > 0 ? (
+          <div className="mt-3 rounded-lg border border-amber-200 bg-amber-50 p-3 text-sm text-amber-950">
+            <p className="font-semibold">Board term impact at the {data.workspace.upcomingAgmYear} AGM</p>
+            <ul className="mt-1 list-inside list-disc space-y-1">
+              {termRisk.map(({ member, term }) => (
+                <li key={member.id}>{member.fullName}: {term.status === "term-limited" ? "term-limited; plan a replacement" : "standing for re-election"}</li>
+              ))}
+            </ul>
+            <Button asChild variant="link" size="sm" className="mt-1 h-auto px-0 text-amber-950"><a href="/modules/board-recruitment?tab=terms">Review Board Terms</a></Button>
+          </div>
+        ) : null}
       </CardHeader>
       <CardContent className="space-y-4">
         <div className="flex flex-wrap gap-2">

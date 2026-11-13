@@ -379,6 +379,11 @@ const surveyFormCopy: Record<Locale, SurveyFormCopy> = {
                 label:
                   "Fait en sorte que les voix de la communauté soient réellement valorisées.",
               },
+              {
+                id: "C4",
+                label:
+                  "Mon organisme ou ma communauté est considéré comme un véritable partenaire.",
+              },
             ],
           },
           {
