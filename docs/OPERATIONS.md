@@ -286,6 +286,14 @@ npx supabase test db supabase/tests --local
 
 ### Auth Email Hook
 
+The development Supabase project uses its built-in mailer while the Send Email
+hook is disabled. Keep its **Reset password** email template in sync with
+`supabase/templates/recovery.html`. The link goes to the app's confirmation
+page with `TokenHash`; a Supabase `ConfirmationURL` depends on the browser's
+PKCE verifier and fails when someone opens the email in a different browser or
+profile. The confirmation page waits for a click before verifying the token,
+so email security link previews do not consume it.
+
 Deploy the custom Supabase Auth email hook:
 
 ```bash
