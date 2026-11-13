@@ -19,13 +19,13 @@ export async function renderHtmlToPdfBuffer(
     import("puppeteer-core"),
   ]);
   const executablePath = await getChromiumExecutablePath(chromium);
-  const browser = await puppeteer.launch({
+  const browser = await retryWhenExecutableBusy(() => puppeteer.launch({
     args: executablePath.local
       ? ["--no-sandbox", "--disable-setuid-sandbox"]
       : chromium.args,
     executablePath: executablePath.path,
     headless: true,
-  });
+  }));
 
   try {
     const page = await browser.newPage();
@@ -52,6 +52,20 @@ export async function renderHtmlToPdfBuffer(
     return Buffer.from(pdf);
   } finally {
     await browser.close();
+  }
+}
+
+export async function retryWhenExecutableBusy<T>(launch: () => Promise<T>): Promise<T> {
+  for (let attempt = 0; ; attempt += 1) {
+    try {
+      return await launch();
+    } catch (error) {
+      if (!error || typeof error !== "object" || !("code" in error) ||
+        error.code !== "ETXTBSY" || attempt >= 4) throw error;
+      // Concurrent serverless invocations can see Chromium while another invocation
+      // is still inflating the shared /tmp binary. Wait until it is executable.
+      await new Promise((resolve) => setTimeout(resolve, 250 * (2 ** attempt)));
+    }
   }
 }
 

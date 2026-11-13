@@ -21,7 +21,7 @@ The first account and active Canopy subscription were provisioned by a test fixt
 
 ## Branded documents and fixes
 
-The custom-branded PDF checks found two defects in the published baseline:
+The custom-branded PDF checks and final staging smoke found these defects:
 
 | Finding | Correction on this branch | Verification |
 | --- | --- | --- |
@@ -29,19 +29,20 @@ The custom-branded PDF checks found two defects in the published baseline:
 | Board Calendar meeting-document PDF omitted the brand's address, phone, email and website. | Pass the shared branded footer to the PDF renderer. Board Evaluation PDF receives the same footer for consistency. | Calendar PDF was downloaded and its first page was visually inspected: uploaded SVG logo, blue primary color, orange accent, organization name and contact footer were present. |
 | Calendar FINAL applies the organization's colors and logo to the portal, but the app's calendar navigation used Olea colors. | Show the saved logo and organization name in the calendar header; use primary color for the active tab and secondary color for the accent and meeting count. | Authenticated local app + development Supabase test checked the logo and the active tab's exact CSS color. |
 | Calendar FINAL has three document-security controls absent from the app settings. | Add persisted acknowledgment, download audit and generated-PDF reader watermark controls, defaulting to enabled for existing calendars; honor the selected values on the server. | Authenticated local app + development Supabase test unchecked all three, reloaded, exported an approved consent agenda without acknowledgment, verified the watermark was absent and found no download audit row. Default-on export and acknowledgment were retested. French labels and the 390 px layout also passed. |
+| Concurrent staging PDF exports intermittently returned HTTP 500 while the shared Chromium executable was being inflated (`spawn ETXTBSY`). | Retry only this temporary Chromium launch error with a bounded backoff; preserve other errors. | Five-seat staging smoke exposed the defect (7/8 scenarios passed); Vercel runtime log identified `ETXTBSY`. Three focused retry tests, TypeScript, lint, full unit suite and production build passed. Published-staging retest is pending. |
 
 The PDF test checks Board Evaluation, Board Calendar, Board Recruitment, Strategic Planning and ED Review annual exports. First pages of all five PDFs were rendered and visually checked: the uploaded logo, blue primary, orange accent, organization name and contact footer were visible. The Board Training certificate is an Olea-issued certificate: it names the member's organization but intentionally uses the Olea issuer's visual identity; it is not an organization governance report.
 
 ## Results and limits
 
-- `npm run typecheck`: passed after the final security-control refactor.
-- `npx vitest run`: 124 files and 603 tests passed.
+- `npm run typecheck`: passed after the final Chromium fix.
+- `npx vitest run`: 125 files and 606 tests passed after the Chromium fix, including all three new retry cases.
 - Focused ESLint: zero errors; remaining size/complexity warnings in large existing module files. Extracting the security controls removed the new file-size warning.
 - Authenticated published-staging regression: 48/51 passed in the loaded run, then the three timing failures passed in 2.1 minutes when rerun alone. The two Recruitment CRUD scenarios ran near the prior 30-second limit; their suite timeout was increased to 90 seconds for the remote environment.
 - Authenticated published-staging source/signup/PDF addendum: 15/15 passed.
 - Authenticated local app + development Supabase branded documents: 5/5 passed. Calendar security settings and default-on PDF regression passed in a later focused run.
-- Production-mode Next.js build: passed after the final refactor.
+- Production-mode Next.js build: passed after the final Chromium fix.
 - A read-only development Supabase query found one orphaned QA organization from an interrupted test run; its exact fixture identity was checked, then its subscription, brand, membership, profile and auth user were removed. A second query found zero QA organizations created since this task started.
-- Deployed-staging smoke and exact commit/deployment reference: pending.
+- Initial smoke after PR #119 was merged into staging at `b40b3c3` (`dpl_B3j4t4zNwdzjeoQUMNjzZ4ZAmz6n`): 7/8 passed, including the five-seat journey and four branded PDF/security scenarios. Strategic Planning PDF failed with the Chromium launch race described above. Final post-fix smoke and deployment reference: pending.
 
 This audit checks source content and selected real user journeys. It does not claim that every one of the 851 source items was individually clicked by a browser, that page pixels are identical to the standalone HTML, or that a French native speaker reviewed every translated sentence. The standalone Calendar's Google/Outlook sync controls and destructive "reset demo" control remain excluded by the user's earlier direction; the app exports `.ics` for manual import. The invitation name is collected when the invitee accepts rather than before the invite is sent. The matrix and automated checks make these interaction differences explicit.
