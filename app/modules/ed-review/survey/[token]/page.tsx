@@ -14,7 +14,7 @@ export default async function PublicEdReviewSurveyPage(
 ) {
   const searchParams = await props.searchParams;
   const params = await props.params;
-  const campaign = await getPublicEdReviewCampaign(params.token);
+  const campaign = await getPublicEdReviewCampaign(params.token, { includeClosed: true });
   if (!campaign) redirect("/modules/ed-review/survey/unavailable");
   if (campaign.instrumentVersion === 2) {
     return (
@@ -26,6 +26,7 @@ export default async function PublicEdReviewSurveyPage(
       />
     );
   }
+  if (!campaign.acceptingResponses) redirect("/modules/ed-review/survey/unavailable");
   return (
     <AnonymousSurveyForm
       campaign={campaign}

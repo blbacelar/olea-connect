@@ -118,6 +118,8 @@ test.describe("@critical anonymous ED/CEO review surveys", () => {
           .eq("token_hash", tokenHash);
         expect(reopened.error).toBeNull();
       }
+      await survey.reload();
+      await expect(survey.getByRole("radiogroup").first().getByLabel("4")).toBeChecked();
       await survey.getByRole("button", { name: "Submit survey" }).last().click();
       await expect(survey.getByRole("heading", { name: "Thank you" })).toBeVisible();
       await expect(survey.getByText(/^Submitted /)).toBeVisible();
