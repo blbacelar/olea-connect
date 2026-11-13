@@ -70,7 +70,7 @@ export function buildMeetingDocumentHtml({
     .cover { min-height:9in; display:flex; flex-direction:column; justify-content:center; border-top:10px solid ${secondary}; }
     .eyebrow { color:${primary}; text-transform:uppercase; letter-spacing:.15em; font-weight:700; }
     .logo { max-width:180px;max-height:90px;object-fit:contain;margin-bottom:24px; }
-    .reader { position:fixed;bottom:0;right:0;color:#666;font-size:9px; }
+    .reader { position:fixed;top:46%;left:8%;width:84%;transform:rotate(-28deg);text-align:center;color:rgba(22,32,51,.10);font-size:42px;font-weight:700;pointer-events:none; }
     h1 { font-size:31px; margin:.2in 0; } h2 { font-size:15px; color:${primary}; margin:20px 0 6px; }
     h3 { font-size:12px; margin:14px 0 5px; } section { break-inside:avoid; }
     .content { break-before:page; } table { border-collapse:collapse; width:100%; }

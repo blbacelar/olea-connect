@@ -24,6 +24,7 @@ import {
   type MeetingDocumentKind,
 } from "@/lib/template-renderer/board-calendar-meeting-documents";
 import type { BoardPackageMeeting } from "@/lib/template-renderer/board-calendar-packages";
+import { getBoardCalendarSecurity } from "@/lib/template-renderer/board-calendar-security";
 import type { TemplateFormData, WorkspaceMemberOption } from "@/lib/template-renderer/types";
 
 import { MeetingDocumentFields } from "./MeetingDocumentFields";
@@ -54,6 +55,7 @@ export function MeetingDocumentsDialog({
 }) {
   const availableKinds = meetingDocumentKindsFor(meeting.type);
   const french = useLocaleContext().locale === "fr-CA";
+  const requireAck = getBoardCalendarSecurity(data).requireAck;
   const [kind, setKind] = useState<MeetingDocumentKind>(availableKinds[0]);
   const [rsvpRoster, setRsvpRoster] = useState<Array<{ userId: string; response: string }>>([]);
   const [draft, setDraft] = useState<MeetingDocument>(() => loadDocument(availableKinds[0]));
@@ -174,14 +176,14 @@ export function MeetingDocumentsDialog({
         {error ? <p role="alert" className="text-sm font-medium text-red-700">{error}</p> : null}
         {rsvpLoading ? <p role="status" className="text-sm text-slate-600">Loading meeting RSVPs before saving attendance...</p> : null}
         {saveState === "error" ? <p role="alert" className="text-sm font-medium text-red-700">{saveError || "The calendar could not save this document. Keep this dialog open and try again."}</p> : null}
-        {draft.status === "approved" ? <div className="flex items-start gap-2 rounded-lg border p-3">
+        {requireAck && draft.status === "approved" ? <div className="flex items-start gap-2 rounded-lg border p-3">
           <Checkbox id="meeting-document-ack" checked={acknowledged} onChange={(event) => setAcknowledged(event.target.checked)} />
           <label htmlFor="meeting-document-ack" className="text-sm leading-5">I acknowledge that this board document is confidential before exporting it.</label>
         </div> : null}
         <DialogFooter className="sm:flex-wrap">
           <Button type="button" variant="outline" onClick={requestClose}>Close</Button>
           {dirty ? <Button type="button" variant="outline" onClick={discardChanges}>Discard changes</Button> : null}
-          <Button type="button" variant="outline" disabled={dirty || saveState !== "saved" || !templateInstanceId || isExporting || (draft.status === "approved" && !acknowledged) || !getMeetingDocuments(data).some((item) => item.meetingId === meeting.id && item.kind === kind)} onClick={() => void exportPdf()}>
+          <Button type="button" variant="outline" disabled={dirty || saveState !== "saved" || !templateInstanceId || isExporting || (requireAck && draft.status === "approved" && !acknowledged) || !getMeetingDocuments(data).some((item) => item.meetingId === meeting.id && item.kind === kind)} onClick={() => void exportPdf()}>
             {isExporting ? <LoaderCircle className="size-4 animate-spin" /> : <Download className="size-4" />} Export PDF
           </Button>
           {!readOnly ? <Button type="button" variant="outline" disabled={rsvpLoading || saveState === "saving" || saveState === "unsaved"} onClick={() => persist("draft")}>

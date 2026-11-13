@@ -10,10 +10,12 @@ import { recordBoardPackageDownload } from "./board-package-operations";
 
 export function useBoardPackageDownloadController({
   brand,
+  requireAck,
   setOperationError,
   templateInstanceId,
 }: {
   brand: BrandProfile;
+  requireAck: boolean;
   setOperationError: (message: string) => void;
   templateInstanceId: string;
 }) {
@@ -22,7 +24,7 @@ export function useBoardPackageDownloadController({
   const [isPackaging, setIsPackaging] = useState(false);
   const [packageAcknowledged, setPackageAcknowledged] = useState(false);
   const packageIncludesConfidentialDocuments = Boolean(
-    packageTarget?.documents.some((document) => document.confidential),
+    requireAck && packageTarget?.documents.some((document) => document.confidential),
   );
 
   async function confirmPackageDownload() {

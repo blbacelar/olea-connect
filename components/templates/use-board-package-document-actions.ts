@@ -22,10 +22,12 @@ type DataChangeHandler = (
 export function useBoardPackageDocumentActions({
   meetings,
   onDataChange,
+  requireAck,
   templateInstanceId,
 }: {
   meetings: BoardPackageMeeting[];
   onDataChange: DataChangeHandler;
+  requireAck: boolean;
   templateInstanceId: string;
 }) {
   const [downloadTarget, setDownloadTarget] =
@@ -73,7 +75,7 @@ export function useBoardPackageDocumentActions({
     document: BoardPackageDocument,
     meeting?: BoardPackageMeeting,
   ) {
-    if (document.confidential) {
+    if (requireAck && document.confidential) {
       setDownloadTarget(document);
       return;
     }
@@ -98,7 +100,7 @@ export function useBoardPackageDocumentActions({
         meeting,
         templateInstanceId,
       });
-      removeDocumentFromData(deleteTarget, meeting);
+      removeDocumentFromData(deleteTarget);
       setDeleteTarget(null);
     } catch (error) {
       setDeleteTarget(null);
@@ -114,10 +116,7 @@ export function useBoardPackageDocumentActions({
     return meetings.find((item) => item.id === document.meetingId);
   }
 
-  function removeDocumentFromData(
-    document: BoardPackageDocument,
-    meeting?: BoardPackageMeeting,
-  ) {
+  function removeDocumentFromData(document: BoardPackageDocument) {
     onDataChange((currentData) =>
       deleteBoardPackageDocument(currentData, document.id),
     );

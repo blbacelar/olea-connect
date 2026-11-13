@@ -6,8 +6,10 @@ import { requireMemberContext } from "@/lib/data/member-context";
 import { canEditBoardCalendarDocuments, effectiveBoardCalendarRole } from "@/lib/board-calendar/access";
 import { createBrandingSnapshot } from "@/lib/data/brand-assets";
 import { getRequestLocale } from "@/lib/i18n/server";
+import { reportFooter } from "@/lib/reports/branded-html";
 import { buildMeetingDocumentHtml } from "@/lib/template-renderer/board-calendar-meeting-document-html";
 import { getMeetingDocuments, meetingDocumentKinds, meetingDocumentTitles } from "@/lib/template-renderer/board-calendar-meeting-documents";
+import { getBoardCalendarSecurity } from "@/lib/template-renderer/board-calendar-security";
 import { renderHtmlToPdfBuffer } from "@/lib/template-renderer/html-pdf-export";
 import type { TemplateFormData } from "@/lib/template-renderer/types";
 import { createAdminClient } from "@/utils/supabase/admin";
@@ -38,6 +40,7 @@ export async function generateBoardMeetingDocumentPdf(
     if (error || !instance) throw new Error("This board calendar is not available to your workspace.");
 
     const formData = instance.form_data as TemplateFormData;
+    const security = getBoardCalendarSecurity(formData);
     const document = getMeetingDocuments(formData).find((item) =>
       item.meetingId === parsed.meetingId && item.kind === parsed.kind,
     );
@@ -52,7 +55,7 @@ export async function generateBoardMeetingDocumentPdf(
     if (!canEditBoardCalendarDocuments(effectiveBoardCalendarRole(member)) && document.status !== "approved") {
       throw new Error("Only approved meeting documents are available to board members.");
     }
-    if (document.status === "approved" && !parsed.acknowledged) {
+    if (security.requireAck && document.status === "approved" && !parsed.acknowledged) {
       throw new Error("Acknowledge confidentiality before downloading this document.");
     }
 
@@ -85,11 +88,11 @@ export async function generateBoardMeetingDocumentPdf(
       primaryColor: brand.primaryColor,
       secondaryColor: brand.secondaryColor,
       logoUrl: brand.logoUrl,
-      readerName: member.name,
+      readerName: security.watermark ? member.name : undefined,
       locale: await getRequestLocale(),
     });
-    const pdf = await renderHtmlToPdfBuffer(html);
-    await writeBoardPackageAuditLog({
+    const pdf = await renderHtmlToPdfBuffer(html, { footerText: reportFooter(brand) });
+    if (security.logAccess) await writeBoardPackageAuditLog({
       action: "document_downloaded",
       documentId: `${parsed.meetingId}:${parsed.kind}`,
       documentName: meetingDocumentTitles[parsed.kind],

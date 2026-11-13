@@ -9,6 +9,7 @@ import { getAppUrl, getEmailRecipient, getEmailSender, getReplyTo, getResend } f
 import { parseBoardEvaluationInviteEmails } from "@/lib/board-evaluation/invitations";
 import { parseQuestionSelection } from "@/lib/board-evaluation/question-bank";
 import { buildBoardEvaluationReportHtml } from "@/lib/board-evaluation/report-html";
+import { reportFooter } from "@/lib/reports/branded-html";
 import { boardEvaluationSummarySchema, readBoardEvaluationSummary } from "@/lib/board-evaluation/summary-report";
 import { createBrandingSnapshot } from "@/lib/data/brand-assets";
 import { getBoardEvaluationPrototypeData } from "@/lib/data/board-evaluation-prototype";
@@ -352,7 +353,7 @@ export async function generateBoardEvaluationReportPdf(cycleId: string, french: 
       notes: report.notes,
       french,
     });
-    const pdf = await renderHtmlToPdfBuffer(html);
+    const pdf = await renderHtmlToPdfBuffer(html, { footerText: reportFooter(brand) });
     return { ok: true as const, base64: pdf.toString("base64"), fileName: `board-evaluation-${data.cycle.year}.pdf` };
   } catch (error) {
     return { ok: false as const, error: error instanceof Error ? error.message : "The report could not be generated." };
