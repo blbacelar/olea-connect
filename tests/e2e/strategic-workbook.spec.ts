@@ -93,7 +93,7 @@ test.describe("@critical strategic workbook", () => {
     try {
       const memberPage = await memberContext.newPage();
       await memberPage.goto("/modules/strategic-planning/workbook");
-      await expect(memberPage.getByText("An organization owner or administrator with Strategic Planning access"))
+      await expect(memberPage.getByTestId("app-main").getByText("An organization owner or administrator with Strategic Planning access"))
         .toBeVisible();
       await expect(memberPage.getByRole("button", { name: "Save workbook" })).toHaveCount(0);
       const memberClient = createClient(
@@ -153,10 +153,10 @@ test.describe("@critical strategic workbook", () => {
       const memberPage = await memberContext.newPage();
       await memberPage.goto("/modules/strategic-planning/board");
       await expect(memberPage.getByRole("heading", { name: "Board snapshot QA" })).toBeVisible();
-      await expect(memberPage.getByText("Private editor summary shared with members")).toBeVisible();
+      await expect(memberPage.getByTestId("app-main").getByText("Private editor summary shared with members")).toBeVisible();
       await expect(memberPage.getByRole("button", { name: "Share with board" })).toHaveCount(0);
       await memberPage.goto("/modules/strategic-planning/workbook");
-      await expect(memberPage.getByText("An organization owner or administrator with Strategic Planning access"))
+      await expect(memberPage.getByTestId("app-main").getByText("An organization owner or administrator with Strategic Planning access"))
         .toBeVisible();
 
       const memberClient = createClient(
