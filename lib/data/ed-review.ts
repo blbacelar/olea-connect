@@ -777,7 +777,10 @@ async function deliverCampaignLinks({
   };
 }
 
-export async function getPublicEdReviewCampaign(token: string) {
+export async function getPublicEdReviewCampaign(
+  token: string,
+  options: { includeClosed?: boolean } = {},
+) {
   if (!/^[A-Za-z0-9_-]{32,128}$/.test(token)) return null;
   if (
     !allowPublicSurveyRequest({
@@ -801,15 +804,11 @@ export async function getPublicEdReviewCampaign(token: string) {
     ? data.ed_review_cycles[0]
     : data.ed_review_cycles;
   const now = Date.now();
-  if (
-    !review ||
-    review.status !== "open" ||
-    data.status !== "open" ||
-    new Date(data.opens_at).getTime() > now ||
-    (data.closes_at && new Date(data.closes_at).getTime() <= now)
-  ) {
-    return null;
-  }
+  if (!review) return null;
+  const acceptingResponses = review.status === "open" && data.status === "open" &&
+    new Date(data.opens_at).getTime() <= now &&
+    (!data.closes_at || new Date(data.closes_at).getTime() > now);
+  if (!acceptingResponses && !options.includeClosed) return null;
   // A public token does not bypass the organization's current entitlement.
   // Previously issued links remain usable while Canopy or the add-on is active.
   if (!(await hasEdReviewMembership(supabase, review.organization_id))) return null;
@@ -834,6 +833,7 @@ export async function getPublicEdReviewCampaign(token: string) {
       ? primaryColor
       : "#2F6E5B",
     instrumentVersion: (data.instrument_version ?? 1) as SurveyInstrumentVersion,
+    acceptingResponses,
   };
 }
 

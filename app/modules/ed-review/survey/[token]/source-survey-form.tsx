@@ -25,6 +25,7 @@ type SourceCampaign = {
   reviewYear: number;
   closesAt: string | null;
   brandPrimaryColor?: string;
+  acceptingResponses: boolean;
 };
 
 type Draft = {
@@ -149,6 +150,7 @@ export function SourceSurveyForm({
       : submissionState.errorCode
         ? text.failed
         : "";
+  const visibleError = error || submissionError || (!campaign.acceptingResponses ? text.unavailable : "");
   const total = definition.sections.reduce((sum, section) => sum + section.questions.length, 0);
   const answered = Object.values(draft?.ratings ?? {}).filter((value) => Number.isInteger(value) && value >= 1 && value <= 5).length;
 
@@ -271,12 +273,12 @@ export function SourceSurveyForm({
           <Button type="button" variant="outline" className="px-2 text-xs sm:px-4 sm:text-sm" onClick={() => window.print()} title={text.printHint}>
             <Printer className="size-4" aria-hidden="true" />{text.print}
           </Button>
-          <Button type="submit" form="ed-source-survey-form" className="survey-primary px-2 text-xs sm:px-4 sm:text-sm" disabled={!draft}>
+          <Button type="submit" form="ed-source-survey-form" className="survey-primary px-2 text-xs sm:px-4 sm:text-sm" disabled={!draft || !campaign.acceptingResponses}>
             {text.submit}
           </Button>
           </div>
         </div>
-        {error || submissionError ? <p role="alert" className="mx-auto mt-2 max-w-4xl rounded-md border border-red-200 bg-red-50 p-2 text-sm text-red-800">{error || submissionError}</p> : null}
+        {visibleError ? <p role="alert" className="mx-auto mt-2 max-w-4xl rounded-md border border-red-200 bg-red-50 p-2 text-sm text-red-800">{visibleError}</p> : null}
       </div>
 
       <form
@@ -432,7 +434,7 @@ export function SourceSurveyForm({
             </div>
             <div className="flex flex-wrap items-center justify-between gap-3 border-t pt-5 print:hidden">
               <p className="text-sm text-slate-600">{text.rated(answered, total)} · {saveLabel}</p>
-              <SubmitButton className="survey-primary" pendingText={text.submitting}>{text.submit}</SubmitButton>
+              <SubmitButton className="survey-primary" pendingText={text.submitting} disabled={!campaign.acceptingResponses}>{text.submit}</SubmitButton>
             </div>
           </CardContent>
         </Card>
