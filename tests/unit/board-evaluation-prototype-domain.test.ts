@@ -20,9 +20,12 @@ describe("final Board Evaluation question and scoring contract", () => {
     const question = annualQuestions[0];
     const four = aggregateAnnualResponses({ responses: Array.from({ length: 4 }, () => ({ [question.id]: 5 })), invited: 7 });
     expect(four.questions[0]).toMatchObject({ suppressed: true, average: null, distribution: null });
+    expect(four.sections[0]).toMatchObject({ responseCount: 4, percentPositive: null });
+    expect(four.overallPositivePercent).toBeNull();
     const five = aggregateAnnualResponses({ responses: Array.from({ length: 5 }, () => ({ [question.id]: 5 })), invited: 7 });
     expect(five.questions[0]).toMatchObject({ suppressed: false, average: 5, distribution: null });
-    expect(five.sections[0]).toMatchObject({ average: 5, flag: "strength" });
+    expect(five.sections[0]).toMatchObject({ average: 5, flag: "strength", responseCount: 5, percentPositive: 100 });
+    expect(five.overallPositivePercent).toBe(100);
     expect(five.responseRate).toBe(71);
     const largerBoard = aggregateAnnualResponses({ responses: Array.from({ length: 5 }, () => ({ [question.id]: 4 })), invited: 9 });
     expect(largerBoard.questions[0].distribution).toEqual([0, 0, 0, 5, 0]);

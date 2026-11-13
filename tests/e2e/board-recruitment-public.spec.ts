@@ -8,5 +8,5 @@ test("rejects an invalid or expired board recruitment survey token", async ({
   await expect(
     page.getByRole("heading", { name: "Survey link unavailable" }),
   ).toBeVisible();
-  await expect(page.getByText(/expired or is no longer active/i)).toBeVisible();
+  await expect(page.getByText(/expired or is no longer active/i).first()).toBeVisible();
 });

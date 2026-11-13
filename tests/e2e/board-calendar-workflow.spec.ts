@@ -492,19 +492,19 @@ test.describe("@critical Board Calendar & Operational Workflow", () => {
       await boardCalendar.reload();
       await boardCalendar.chooseWorkspaceView("Calendar workspace");
       await boardCalendar.calendar.selectDate(eventDate);
-      await boardCalendar.expectTextVisible("Board Budget Review Updated");
+      await boardCalendar.calendar.expectSelectedDateText("Board Budget Review Updated");
       await boardCalendar.meetings.expectMeetingVisible("Board Budget Review Updated");
       await expect(page.getByText("Board Budget Review", { exact: true })).toHaveCount(0);
       await boardCalendar.chooseWorkspaceView("Calendar workspace");
 
       await boardCalendar.calendar.selectDate(annualNoteDate);
-      await boardCalendar.expectTextVisible("Grant filing deadline");
+      await boardCalendar.calendar.expectSelectedDateText("Grant filing deadline");
 
       await boardCalendar.calendar.selectDate(taskDate);
-      await boardCalendar.expectTextVisible("Send board package");
+      await boardCalendar.calendar.expectSelectedDateText("Send board package");
 
       await boardCalendar.calendar.selectDate(agmDate);
-      await boardCalendar.expectTextVisible("Confirm AGM venue");
+      await boardCalendar.calendar.expectSelectedDateText("Confirm AGM venue");
       await boardCalendar.expectTextCount(
         "Parallel Finance Committee",
         0,
