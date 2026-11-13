@@ -16,7 +16,7 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Textarea } from "@/components/ui/textarea";
-import { annualQuestions, meetingQuestions } from "@/lib/board-evaluation/prototype-domain";
+import { annualQuestions, meetingQuestions, scoreFlag } from "@/lib/board-evaluation/prototype-domain";
 import { annualOpenQuestions } from "@/lib/board-evaluation/prototype-content";
 import { parseBoardEvaluationInviteEmails } from "@/lib/board-evaluation/invitations";
 import { boardEvaluationThankYouCopy } from "@/lib/board-evaluation/thank-you";
@@ -481,7 +481,7 @@ function SummaryAndActionPlan({ data, french }: { data: Data; french: boolean })
           <div className="space-y-1"><Label htmlFor="score-count-overall" className="text-xs">{text("# Resp", "Nb rép.", french)}</Label><Input id="score-count-overall" value={String(data.annual.received)} readOnly /></div>
           <div className="space-y-1"><Label htmlFor="score-current-overall" className="text-xs">{text("Current avg", "Moy. actuelle", french)}</Label><Input id="score-current-overall" value={data.annual.overallAverage === null ? "" : data.annual.overallAverage.toFixed(2)} placeholder="—" readOnly /></div>
           <div className="space-y-1"><Label htmlFor="score-positive-overall" className="text-xs">% 4–5</Label><Input id="score-positive-overall" value={data.annual.overallPositivePercent === null ? "" : `${data.annual.overallPositivePercent}%`} placeholder="—" readOnly /></div>
-          <div className="space-y-1"><Label htmlFor="score-change-overall" className="text-xs">{text("vs Prior", "vs antérieur", french)}</Label><Input id="score-change-overall" type="number" min={-5} max={5} step="0.01" value={changeVsPrior[10]} onChange={(event) => setChangeVsPrior((current) => current.map((score, index) => index === 10 ? event.target.value : score))} placeholder="+0.30" /></div><span />
+          <div className="space-y-1"><Label htmlFor="score-change-overall" className="text-xs">{text("vs Prior", "vs antérieur", french)}</Label><Input id="score-change-overall" type="number" min={-5} max={5} step="0.01" value={changeVsPrior[10]} onChange={(event) => setChangeVsPrior((current) => current.map((score, index) => index === 10 ? event.target.value : score))} placeholder="+0.30" /></div><Badge variant="outline">{assessmentLabel(data.annual.overallAverage === null ? null : scoreFlag(data.annual.overallAverage), trendWithChange(changeVsPrior[10], "new"), french)}</Badge>
         </div>
         <p id="summary-score-guidance" className="sr-only">{text("Current averages are calculated and cannot be edited to protect small groups.", "Les moyennes actuelles sont calculées et ne peuvent être modifiées afin de protéger les petits groupes.", french)}</p>
       </CardContent></Card>
