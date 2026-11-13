@@ -36,6 +36,7 @@ import {
   updateRow,
   WorkspaceMemberSelect,
 } from "./workflow-utils";
+import { DocumentSecurityControls } from "./DocumentSecurityControls";
 
 export function BoardCalendarSetupPanel({
   data,
@@ -209,6 +210,7 @@ export function BoardCalendarSetupPanel({
         onUpdateTaskRule={updateTaskRule}
         onUpdateTaskRuleTiming={updateTaskRuleTiming}
       />
+      <DocumentSecurityControls data={data} onChange={onChange} />
     </section>
   );
 }

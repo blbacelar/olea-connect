@@ -2,6 +2,7 @@
 
 import { buildBoardPackageMeetings, getBoardPackageDocuments } from "@/lib/template-renderer/board-calendar-packages";
 import type { TemplateFormData } from "@/lib/template-renderer/types";
+import { getBoardCalendarSecurity } from "@/lib/template-renderer/board-calendar-security";
 import {
   BOARD_PACKAGE_DOCUMENTS_BUCKET,
   buildBoardPackageStoragePath,
@@ -140,7 +141,8 @@ export async function createBoardPackageDocumentDownloadUrl({
     const document = getBoardPackageDocuments(instance.form_data as TemplateFormData)
       .find((item) => item.storagePath === storagePath && item.id === documentId);
     if (!document) throw new Error("This file is not in the board calendar.");
-    if (document.confidential && !acknowledged) {
+    const security = getBoardCalendarSecurity(instance.form_data as TemplateFormData);
+    if (security.requireAck && document.confidential && !acknowledged) {
       throw new Error("Acknowledge confidentiality before downloading this file.");
     }
 
@@ -152,7 +154,7 @@ export async function createBoardPackageDocumentDownloadUrl({
 
     if (error) throw error;
 
-    await writeBoardPackageAuditLog({
+    if (security.logAccess) await writeBoardPackageAuditLog({
       action: "document_downloaded",
       documentId: document.id,
       documentName: document.name,
@@ -242,6 +244,13 @@ export async function recordBoardPackageAuditEvent(
       throw new Error("Only an organization administrator can delete board package documents.");
     }
     await assertTemplateInstanceAccess(payload.templateInstanceId, organization.id);
+    if (payload.action === "package_downloaded" || payload.action === "document_downloaded") {
+      const { data: calendar, error: calendarError } = await createAdminClient()
+        .from("template_instances").select("form_data")
+        .eq("id", payload.templateInstanceId).eq("organization_id", organization.id).single();
+      if (calendarError || !calendar) throw new Error("This board calendar is unavailable.");
+      if (!getBoardCalendarSecurity(calendar.form_data as TemplateFormData).logAccess) return { ok: true };
+    }
     if (payload.action === "package_opened") {
       const { data: instance, error } = await createAdminClient()
         .from("template_instances")

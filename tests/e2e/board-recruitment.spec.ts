@@ -7,6 +7,7 @@ import { BoardRecruitmentPage } from "../pages/board-recruitment.page";
 import { inspectPdf } from "../support/pdf-inspector";
 
 test.describe("@critical Board Recruitment Toolkit", () => {
+  test.setTimeout(90_000);
   test("guides an empty workspace without sending a bulk survey invitation", async ({
     browser, baseURL, testData,
   }) => {

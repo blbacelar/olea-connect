@@ -27,6 +27,7 @@ import {
   type BoardPackageMeeting,
 } from "@/lib/template-renderer/board-calendar-packages";
 import type { TemplateFormData, WorkspaceMemberOption } from "@/lib/template-renderer/types";
+import { getBoardCalendarSecurity } from "@/lib/template-renderer/board-calendar-security";
 import type { BrandProfile } from "@/lib/types";
 import { BoardPackageSendDialog } from "./board-calendar/BoardPackageSendDialog";
 
@@ -54,6 +55,7 @@ export function BoardPackagesPanel({
   workspaceMembers: WorkspaceMemberOption[];
 }) {
   const [openMeetingIds, setOpenMeetingIds] = useState<string[]>([]);
+  const security = getBoardCalendarSecurity(data);
   const [sendTarget, setSendTarget] = useState<BoardPackageMeeting | null>(null);
   const hasOpenedLinkedMeeting = useRef(false);
   const meetings = useMemo(() => buildBoardPackageMeetings(data), [data]);
@@ -69,10 +71,12 @@ export function BoardPackagesPanel({
   const documents = useBoardPackageDocumentActions({
     meetings,
     onDataChange,
+    requireAck: security.requireAck,
     templateInstanceId,
   });
   const packages = useBoardPackageDownloadController({
     brand,
+    requireAck: security.requireAck,
     setOperationError: documents.setOperationError,
     templateInstanceId,
   });
@@ -117,9 +121,9 @@ export function BoardPackagesPanel({
         <div className="flex gap-3">
           <AlertTriangle className="mt-0.5 size-5 shrink-0" />
           <p>
-            Board packages can include confidential governance documents. Members
-            must acknowledge confidentiality before opening restricted files, and
-            downloads are recorded in the audit log.
+            Board packages can include confidential governance documents.
+            {security.requireAck ? " Members must acknowledge confidentiality before opening restricted files." : ""}
+            {security.logAccess ? " Downloads are recorded in the audit log." : ""}
           </p>
         </div>
       </div>

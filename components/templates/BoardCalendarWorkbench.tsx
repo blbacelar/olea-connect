@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { Download, FileText, LoaderCircle, Plus } from "lucide-react";
 import Link from "next/link";
+import Image from "next/image";
 
 import { useLocaleContext } from "@/components/i18n/LocaleProvider";
 import { canEditBoardCalendarDocuments, canManageBoardCalendar, canUpdateBoardCalendarTaskStatus, canViewBoardCalendarMeetingsAndWorkflows, type BoardCalendarRole } from "@/lib/board-calendar/access";
@@ -89,6 +90,7 @@ export function BoardCalendarWorkbench({
     settings: french ? "Paramètres" : "Settings", branding: french ? "Identité visuelle" : "Branding",
   };
   const localizedTabs = visibleTabs.map((tab) => ({ ...tab, label: tabLabels[tab.value] }));
+  const brandTextColor = readableTextColor(brand.primaryColor);
 
   function openMeetingDocuments(event: { id: string }) {
     const index = Number(event.id.match(/^meeting-(\d+)$/)?.[1]);
@@ -113,7 +115,11 @@ export function BoardCalendarWorkbench({
 
   return (
     <div className="flex flex-col gap-4">
-      <div className="rounded-xl border bg-gradient-to-br from-white to-olea-light/60 p-4 shadow-sm sm:p-5">
+      <div className="rounded-xl border bg-white p-4 shadow-sm sm:p-5" style={{ borderTop: `4px solid ${brand.secondaryColor}` }}>
+        <div className="mb-4 flex items-center gap-3" data-testid="board-calendar-brand-header">
+          {brand.logoUrl ? <Image src={brand.logoUrl} alt={`${brand.organizationName} logo`} width={40} height={40} unoptimized className="size-10 rounded object-contain" /> : null}
+          <strong className="text-base" style={{ color: brand.primaryColor }}>{brand.organizationName}</strong>
+        </div>
         <div className="flex w-full flex-col gap-2 sm:flex-row sm:flex-wrap sm:justify-end">
           {!readOnly ? <Button
             type="button"
@@ -191,13 +197,14 @@ export function BoardCalendarWorkbench({
                   <TabsTrigger
                     key={tab.value}
                     value={tab.value}
-                    className="gap-2 px-3 py-2 data-[state=active]:bg-white data-[state=active]:text-olea-dark"
+                    className="gap-2 px-3 py-2"
+                    style={activeTab === tab.value ? { backgroundColor: brand.primaryColor, color: brandTextColor } : undefined}
                   >
                     <Icon className="size-4" />
                     {tab.label}
                     {tab.value === "meetings" &&
                     workbench.upcomingMeetingEvents.length ? (
-                      <span className="rounded-full bg-olea-orange px-2 py-0.5 text-[11px] font-bold text-white">
+                      <span className="rounded-full px-2 py-0.5 text-[11px] font-bold" style={{ backgroundColor: brand.secondaryColor, color: readableTextColor(brand.secondaryColor) }}>
                         {workbench.upcomingMeetingEvents.length}
                       </span>
                     ) : null}
@@ -336,14 +343,24 @@ function SecondaryTabs({
         <section className="space-y-3 rounded-xl border bg-white p-5 shadow-sm">
           <h3 className="text-lg font-semibold">{french ? "Identité visuelle du conseil" : "Board branding"}</h3>
           <p className="text-sm text-slate-600">{french
-            ? "Les rapports et documents PDF utilisent le logo et les couleurs actuels de votre organisme. Modifiez-les dans les paramètres de marque."
-            : "Reports and PDF documents use your organization’s current logo and colors. Edit them in brand settings."}</p>
+            ? "Ce portail du conseil, les rapports et les documents PDF utilisent le logo et les couleurs actuels de votre organisme. Modifiez-les dans les paramètres de marque."
+            : "This board portal, reports, and PDF documents use your organization’s current logo and colors. Edit them in brand settings."}</p>
           <div className="flex items-center gap-3"><span className="size-6 rounded border" style={{ backgroundColor: brand.primaryColor }} aria-label={french ? "Couleur principale" : "Primary color"} /><span className="size-6 rounded border" style={{ backgroundColor: brand.secondaryColor }} aria-label={french ? "Couleur secondaire" : "Secondary color"} /><strong>{brand.organizationName}</strong></div>
           <Button asChild variant="outline"><Link href="/settings/brand">{french ? "Modifier la marque" : "Edit brand"}</Link></Button>
         </section>
       </TabsContent>
     </>
   );
+}
+
+function readableTextColor(hex: string): "#111827" | "#ffffff" {
+  const color = hex.replace("#", "");
+  const channels = [0, 2, 4].map((offset) => {
+    const value = Number.parseInt(color.slice(offset, offset + 2), 16) / 255;
+    return value <= 0.04045 ? value / 12.92 : ((value + 0.055) / 1.055) ** 2.4;
+  });
+  const luminance = 0.2126 * channels[0] + 0.7152 * channels[1] + 0.0722 * channels[2];
+  return luminance > 0.179 ? "#111827" : "#ffffff";
 }
 
 interface BoardCalendarWorkbenchProps {

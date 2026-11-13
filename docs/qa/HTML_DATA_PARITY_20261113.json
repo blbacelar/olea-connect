@@ -1,0 +1,134 @@
+{
+  "sourceDirectory": "/Users/brunobacelar/Downloads",
+  "checked": [
+    {
+      "label": "Board Training essentials.en.course",
+      "leaves": 589,
+      "result": "exact JSON equality"
+    },
+    {
+      "label": "Board Training essentials.en.quiz",
+      "leaves": 201,
+      "result": "exact JSON equality"
+    },
+    {
+      "label": "Board Training essentials.fr.course",
+      "leaves": 589,
+      "result": "exact JSON equality"
+    },
+    {
+      "label": "Board Training essentials.fr.quiz",
+      "leaves": 201,
+      "result": "exact JSON equality"
+    },
+    {
+      "label": "Board Training refresher.en.course",
+      "leaves": 148,
+      "result": "exact JSON equality"
+    },
+    {
+      "label": "Board Training refresher.en.quiz",
+      "leaves": 84,
+      "result": "exact JSON equality"
+    },
+    {
+      "label": "Board Training refresher.fr.course",
+      "leaves": 148,
+      "result": "exact JSON equality"
+    },
+    {
+      "label": "Board Training refresher.fr.quiz",
+      "leaves": 84,
+      "result": "exact JSON equality"
+    },
+    {
+      "label": "Board Training chair.en",
+      "leaves": 91,
+      "result": "exact JSON equality"
+    },
+    {
+      "label": "Board Training chair.fr",
+      "leaves": 91,
+      "result": "exact JSON equality"
+    },
+    {
+      "label": "Strategic Planning modules",
+      "entries": 10,
+      "leaves": 924,
+      "result": "exact JSON equality"
+    },
+    {
+      "label": "Strategic Planning survey questions",
+      "entries": 30,
+      "leaves": 221,
+      "result": "exact JSON equality"
+    },
+    {
+      "label": "Strategic Planning survey audiences",
+      "entries": 7,
+      "leaves": 21,
+      "result": "exact JSON equality"
+    },
+    {
+      "label": "Strategic Planning survey themes",
+      "entries": 7,
+      "leaves": 14,
+      "result": "exact JSON equality"
+    },
+    {
+      "label": "ED Review staff survey",
+      "entries": 18,
+      "leaves": 93,
+      "result": "exact rendered question ID, label and order, visible text and prompt metadata equality"
+    },
+    {
+      "label": "ED Review partner survey",
+      "entries": 15,
+      "leaves": 78,
+      "result": "exact rendered question ID, label and order, visible text and prompt metadata equality"
+    },
+    {
+      "label": "Board Recruitment prof skills",
+      "entries": 18,
+      "leaves": 18,
+      "result": "exact source skill label and order equality"
+    },
+    {
+      "label": "Board Recruitment gov skills",
+      "entries": 10,
+      "leaves": 10,
+      "result": "exact source skill label and order equality"
+    },
+    {
+      "label": "Board Recruitment comm skills",
+      "entries": 12,
+      "leaves": 12,
+      "result": "exact source skill label and order equality"
+    },
+    {
+      "label": "Board Recruitment contrib skills",
+      "entries": 13,
+      "leaves": 13,
+      "result": "exact source skill label and order equality"
+    },
+    {
+      "label": "Board Evaluation question bank",
+      "entries": 115,
+      "leaves": 115,
+      "result": "every application question found verbatim in rendered source HTML"
+    },
+    {
+      "label": "Board Evaluation annual survey",
+      "entries": 44,
+      "leaves": 44,
+      "result": "every application question found verbatim in rendered source HTML"
+    },
+    {
+      "label": "Board Evaluation post-meeting survey",
+      "entries": 7,
+      "leaves": 7,
+      "result": "every application question found verbatim in rendered source HTML"
+    }
+  ],
+  "totalLeaves": 3796
+}

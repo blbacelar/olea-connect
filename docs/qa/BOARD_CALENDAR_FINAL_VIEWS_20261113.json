@@ -1,0 +1,340 @@
+[
+  {
+    "key": "dashboard",
+    "label": "▦ Dashboard",
+    "controls": [],
+    "actions": []
+  },
+  {
+    "key": "calendar",
+    "label": "▤ Calendar",
+    "controls": [],
+    "actions": [
+      "‹",
+      "›",
+      "Today",
+      "▦ Grid",
+      "☰ List"
+    ]
+  },
+  {
+    "key": "meetings",
+    "label": "❑ Meetings 5",
+    "controls": [],
+    "actions": [
+      "✎",
+      "×"
+    ]
+  },
+  {
+    "key": "workflows",
+    "label": "✓ Workflows",
+    "controls": [],
+    "actions": [
+      "All",
+      "This week",
+      "Overdue",
+      "Open"
+    ]
+  },
+  {
+    "key": "packages",
+    "label": "❐ Board Packages",
+    "controls": [],
+    "actions": [
+      "⬇ Download package",
+      "+ Add file",
+      "⬇",
+      "×",
+      "⬇",
+      "×",
+      "⬇",
+      "×",
+      "⬇ Download package",
+      "+ Add file",
+      "⬇",
+      "×",
+      "+ Add file",
+      "+ Add file",
+      "+ Add file",
+      "+ Add file",
+      "⬇ Download package",
+      "+ Add file",
+      "⬇",
+      "×",
+      "+ Add general document"
+    ]
+  },
+  {
+    "key": "contacts",
+    "label": "☰ Directory",
+    "controls": [],
+    "actions": [
+      "✉ Invite member",
+      "+ Add member",
+      "✎",
+      "✎",
+      "✎",
+      "✎",
+      "✎",
+      "✎",
+      "✎",
+      "✎"
+    ]
+  },
+  {
+    "key": "auditlog",
+    "label": "🛡 Audit Log",
+    "controls": [],
+    "actions": []
+  },
+  {
+    "key": "integrations",
+    "label": "⇄ Integrations",
+    "controls": [],
+    "actions": [
+      "Connect",
+      "Connect",
+      "Connect",
+      "Connect"
+    ]
+  },
+  {
+    "key": "settings",
+    "label": "⚙ Settings",
+    "controls": [
+      {
+        "tag": "input",
+        "type": null,
+        "name": null,
+        "id": "",
+        "field": "name",
+        "label": "",
+        "context": "Organization Organization name Fiscal year Administrator name Save organization",
+        "markup": "<input data-dc-tpl=\"274\" data-form=\"org\" data-field=\"name\" value=\"Riverside Community Foundation\" style=\"width: 100%; padding: 9px 11px; border: 1px solid var(--border); border-radius: 9px; font-size: 13.5px; background: rgb(255, 255, 255);\">"
+      },
+      {
+        "tag": "input",
+        "type": null,
+        "name": null,
+        "id": "",
+        "field": "fiscalYear",
+        "label": "e.g. 2026–2027",
+        "context": "Organization Organization name Fiscal year Administrator name Save organization",
+        "markup": "<input data-dc-tpl=\"276\" data-form=\"org\" data-field=\"fiscalYear\" placeholder=\"e.g. 2026–2027\" value=\"2026–2027\" style=\"width: 100%; padding: 9px 11px; border: 1px solid var(--border); border-radius: 9px; font-size: 13.5px; background: rgb(255, 255, 255);\">"
+      },
+      {
+        "tag": "input",
+        "type": null,
+        "name": null,
+        "id": "",
+        "field": "admin",
+        "label": "",
+        "context": "Organization Organization name Fiscal year Administrator name Save organization",
+        "markup": "<input data-dc-tpl=\"278\" data-form=\"org\" data-field=\"admin\" value=\"Dana Whitfield\" style=\"width: 100%; padding: 9px 11px; border: 1px solid var(--border); border-radius: 9px; font-size: 13.5px; background: rgb(255, 255, 255);\">"
+      },
+      {
+        "tag": "input",
+        "type": null,
+        "name": null,
+        "id": "",
+        "field": null,
+        "label": "",
+        "context": "×",
+        "markup": "<input data-dc-tpl=\"285\" data-lti=\"0\" data-ltk=\"name\" value=\"Send save-the-date\" style=\"width: 100%; padding: 9px 11px; border: 1px solid var(--border); border-radius: 9px; font-size: 13.5px; background: rgb(255, 255, 255); margin: 0px;\">"
+      },
+      {
+        "tag": "input",
+        "type": "number",
+        "name": null,
+        "id": "",
+        "field": null,
+        "label": "",
+        "context": "×",
+        "markup": "<input data-dc-tpl=\"286\" data-lti=\"0\" data-ltk=\"days\" type=\"number\" min=\"0\" title=\"Days before\" value=\"21\" style=\"width: 100%; padding: 9px 11px; border: 1px solid var(--border); border-radius: 9px; font-size: 13.5px; background: rgb(255, 255, 255); margin: 0px;\">"
+      },
+      {
+        "tag": "input",
+        "type": null,
+        "name": null,
+        "id": "",
+        "field": null,
+        "label": "",
+        "context": "×",
+        "markup": "<input data-dc-tpl=\"285\" data-lti=\"1\" data-ltk=\"name\" value=\"Request agenda items\" style=\"width: 100%; padding: 9px 11px; border: 1px solid var(--border); border-radius: 9px; font-size: 13.5px; background: rgb(255, 255, 255); margin: 0px;\">"
+      },
+      {
+        "tag": "input",
+        "type": "number",
+        "name": null,
+        "id": "",
+        "field": null,
+        "label": "",
+        "context": "×",
+        "markup": "<input data-dc-tpl=\"286\" data-lti=\"1\" data-ltk=\"days\" type=\"number\" min=\"0\" title=\"Days before\" value=\"14\" style=\"width: 100%; padding: 9px 11px; border: 1px solid var(--border); border-radius: 9px; font-size: 13.5px; background: rgb(255, 255, 255); margin: 0px;\">"
+      },
+      {
+        "tag": "input",
+        "type": null,
+        "name": null,
+        "id": "",
+        "field": null,
+        "label": "",
+        "context": "×",
+        "markup": "<input data-dc-tpl=\"285\" data-lti=\"2\" data-ltk=\"name\" value=\"Committee reports due\" style=\"width: 100%; padding: 9px 11px; border: 1px solid var(--border); border-radius: 9px; font-size: 13.5px; background: rgb(255, 255, 255); margin: 0px;\">"
+      },
+      {
+        "tag": "input",
+        "type": "number",
+        "name": null,
+        "id": "",
+        "field": null,
+        "label": "",
+        "context": "×",
+        "markup": "<input data-dc-tpl=\"286\" data-lti=\"2\" data-ltk=\"days\" type=\"number\" min=\"0\" title=\"Days before\" value=\"10\" style=\"width: 100%; padding: 9px 11px; border: 1px solid var(--border); border-radius: 9px; font-size: 13.5px; background: rgb(255, 255, 255); margin: 0px;\">"
+      },
+      {
+        "tag": "input",
+        "type": null,
+        "name": null,
+        "id": "",
+        "field": null,
+        "label": "",
+        "context": "×",
+        "markup": "<input data-dc-tpl=\"285\" data-lti=\"3\" data-ltk=\"name\" value=\"Compile board package\" style=\"width: 100%; padding: 9px 11px; border: 1px solid var(--border); border-radius: 9px; font-size: 13.5px; background: rgb(255, 255, 255); margin: 0px;\">"
+      },
+      {
+        "tag": "input",
+        "type": "number",
+        "name": null,
+        "id": "",
+        "field": null,
+        "label": "",
+        "context": "×",
+        "markup": "<input data-dc-tpl=\"286\" data-lti=\"3\" data-ltk=\"days\" type=\"number\" min=\"0\" title=\"Days before\" value=\"7\" style=\"width: 100%; padding: 9px 11px; border: 1px solid var(--border); border-radius: 9px; font-size: 13.5px; background: rgb(255, 255, 255); margin: 0px;\">"
+      },
+      {
+        "tag": "input",
+        "type": null,
+        "name": null,
+        "id": "",
+        "field": null,
+        "label": "",
+        "context": "×",
+        "markup": "<input data-dc-tpl=\"285\" data-lti=\"4\" data-ltk=\"name\" value=\"Distribute board package\" style=\"width: 100%; padding: 9px 11px; border: 1px solid var(--border); border-radius: 9px; font-size: 13.5px; background: rgb(255, 255, 255); margin: 0px;\">"
+      },
+      {
+        "tag": "input",
+        "type": "number",
+        "name": null,
+        "id": "",
+        "field": null,
+        "label": "",
+        "context": "×",
+        "markup": "<input data-dc-tpl=\"286\" data-lti=\"4\" data-ltk=\"days\" type=\"number\" min=\"0\" title=\"Days before\" value=\"5\" style=\"width: 100%; padding: 9px 11px; border: 1px solid var(--border); border-radius: 9px; font-size: 13.5px; background: rgb(255, 255, 255); margin: 0px;\">"
+      },
+      {
+        "tag": "input",
+        "type": null,
+        "name": null,
+        "id": "",
+        "field": null,
+        "label": "",
+        "context": "×",
+        "markup": "<input data-dc-tpl=\"285\" data-lti=\"5\" data-ltk=\"name\" value=\"Confirm quorum / RSVPs\" style=\"width: 100%; padding: 9px 11px; border: 1px solid var(--border); border-radius: 9px; font-size: 13.5px; background: rgb(255, 255, 255); margin: 0px;\">"
+      },
+      {
+        "tag": "input",
+        "type": "number",
+        "name": null,
+        "id": "",
+        "field": null,
+        "label": "",
+        "context": "×",
+        "markup": "<input data-dc-tpl=\"286\" data-lti=\"5\" data-ltk=\"days\" type=\"number\" min=\"0\" title=\"Days before\" value=\"1\" style=\"width: 100%; padding: 9px 11px; border: 1px solid var(--border); border-radius: 9px; font-size: 13.5px; background: rgb(255, 255, 255); margin: 0px;\">"
+      },
+      {
+        "tag": "input",
+        "type": "checkbox",
+        "name": null,
+        "id": "",
+        "field": null,
+        "label": "Require acknowledgment before downloadReaders confirm the material is confidential before the file opens.",
+        "context": "Require acknowledgment before downloadReaders confirm the material is confidential before the file opens.",
+        "markup": "<input data-dc-tpl=\"294\" type=\"checkbox\" data-sec=\"requireAck\" checked=\"\" style=\"margin-top: 3px; width: 16px; height: 16px; flex-shrink: 0;\">"
+      },
+      {
+        "tag": "input",
+        "type": "checkbox",
+        "name": null,
+        "id": "",
+        "field": null,
+        "label": "Log every downloadRecord who downloaded each file and when.",
+        "context": "Log every downloadRecord who downloaded each file and when.",
+        "markup": "<input data-dc-tpl=\"294\" type=\"checkbox\" data-sec=\"logAccess\" checked=\"\" style=\"margin-top: 3px; width: 16px; height: 16px; flex-shrink: 0;\">"
+      },
+      {
+        "tag": "input",
+        "type": "checkbox",
+        "name": null,
+        "id": "",
+        "field": null,
+        "label": "Watermark exported PDFsStamp the reader’s name on downloaded board packages.",
+        "context": "Watermark exported PDFsStamp the reader’s name on downloaded board packages.",
+        "markup": "<input data-dc-tpl=\"294\" type=\"checkbox\" data-sec=\"watermark\" checked=\"\" style=\"margin-top: 3px; width: 16px; height: 16px; flex-shrink: 0;\">"
+      }
+    ],
+    "actions": [
+      "Save organization",
+      "×",
+      "×",
+      "×",
+      "×",
+      "×",
+      "×",
+      "+ Add task template",
+      "⬇ Download backup (JSON)",
+      "Reset demo data"
+    ]
+  },
+  {
+    "key": "branding",
+    "label": "◐ Branding",
+    "controls": [
+      {
+        "tag": "input",
+        "type": "file",
+        "name": null,
+        "id": "",
+        "field": null,
+        "label": "",
+        "context": "Logo Upload your logo Colors are detected from your logo automatically. PNG with transparent background recommended.",
+        "markup": "<input data-dc-tpl=\"310\" type=\"file\" accept=\"image/*\" style=\"width: 100%; padding: 9px 11px; border: 1px solid var(--border); border-radius: 9px; font-size: 13.5px; background: rgb(255, 255, 255);\">"
+      },
+      {
+        "tag": "input",
+        "type": "color",
+        "name": null,
+        "id": "",
+        "field": null,
+        "label": "",
+        "context": "Primary (blue family)",
+        "markup": "<input data-dc-tpl=\"317\" type=\"color\" data-brand=\"primary\" value=\"#235FA7\" style=\"width: 100%; height: 44px; border: 1px solid var(--border); border-radius: 9px; cursor: pointer; padding: 3px;\">"
+      },
+      {
+        "tag": "input",
+        "type": "color",
+        "name": null,
+        "id": "",
+        "field": null,
+        "label": "",
+        "context": "Accent (orange family)",
+        "markup": "<input data-dc-tpl=\"320\" type=\"color\" data-brand=\"accent\" value=\"#E8843C\" style=\"width: 100%; height: 44px; border: 1px solid var(--border); border-radius: 9px; cursor: pointer; padding: 3px;\">"
+      }
+    ],
+    "actions": [
+      "button",
+      "Reset to blue / orange defaults"
+    ]
+  }
+]

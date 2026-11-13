@@ -1,6 +1,6 @@
 "use client";
 
-import { useActionState, useEffect, useState } from "react";
+import { useActionState, useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { ClipboardCheck, Copy, FileDown, Link2, Plus } from "lucide-react";
 import { useFormStatus } from "react-dom";
@@ -414,13 +414,21 @@ function SummaryAndActionPlan({ data, french }: { data: Data; french: boolean })
   const [notes, setNotes] = useState(savedReport.notes);
   const [exporting, setExporting] = useState(false);
   const [exportError, setExportError] = useState("");
-  if (!cycle || !data.annual) return null;
+  const handledAction = useRef(state);
   const reportValue = {
     ...savedReport, preparedBy, openedOn, closedOn, changeVsPrior, themeDetails,
     themes: themeDetails.map((rows) => rows[0].pattern), priorities,
     strengths, concerns, monitor, discussionQuestions, yearRecord, notes,
   };
-  const hasUnsavedReport = JSON.stringify(reportValue) !== JSON.stringify(savedReport);
+  const reportSnapshot = JSON.stringify(reportValue);
+  const [savedSnapshot, setSavedSnapshot] = useState(reportSnapshot);
+  const hasUnsavedReport = reportSnapshot !== savedSnapshot;
+  useEffect(() => {
+    if (handledAction.current === state) return;
+    handledAction.current = state;
+    if (state.status === "success") setSavedSnapshot(reportSnapshot);
+  }, [reportSnapshot, state]);
+  if (!cycle || !data.annual) return null;
   function updatePriority(index: number, key: Exclude<keyof SummaryPriority, "responsible">, value: string) {
     setPriorities((current) => current.map((item, itemIndex) => itemIndex === index ? { ...item, [key]: value } : item));
   }
