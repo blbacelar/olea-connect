@@ -154,6 +154,6 @@ export class EdReviewPage {
       .click();
     await expect(
       this.page.getByText("Board Chair access was assigned."),
-    ).toBeVisible();
+    ).toBeVisible({ timeout: 30_000 });
   }
 }

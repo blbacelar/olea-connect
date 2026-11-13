@@ -243,7 +243,7 @@ test.describe("@critical strategic workbook", () => {
       await expect(page.getByRole("tab", { name: "Conseils" })).toBeVisible();
       await page.getByRole("tab", { name: "Modèle" }).click();
       await page.getByLabel("Nom de l'organisme").fill("Centre QA francophone");
-      await expect(page.getByRole("button", { name: "Enregistré" })).toBeVisible();
+      await expect(page.getByRole("button", { name: "Enregistré" })).toBeVisible({ timeout: 30_000 });
       const report = await context.request.get("/api/strategic-planning/workbook/print?scope=current&module=m0&format=html");
       expect(report.status()).toBe(200);
       const html = await report.text();

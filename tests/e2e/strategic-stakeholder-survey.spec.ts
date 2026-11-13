@@ -25,6 +25,9 @@ test.describe("@critical strategic stakeholder survey", () => {
       await expect(page.getByText("Survey versions published. Share the links below.")).toBeVisible();
       const href = await page.getByRole("textbox", { name: "Anonymous survey link" }).first().inputValue();
       const token = href.split("/").at(-1)!;
+      const surveyCard = page.locator("div.rounded-xl.border.bg-card").filter({
+        has: page.locator(`a[href$="/${token}"]`),
+      });
       const { data: survey, error: lookupError } = await testData.supabase
         .from("strategic_stakeholder_surveys").select("id, organization_id, questions")
         .eq("public_token", token).single();
@@ -107,9 +110,9 @@ test.describe("@critical strategic stakeholder survey", () => {
       expect(reportText).toContain("Stakeholder survey results");
       expect(reportText).toContain("Average / 5");
       expect(reportText).not.toContain(owner.userId);
-      await page.getByRole("button", { name: "Close survey" }).first().click();
-      await expect(page.getByText("closed", { exact: true })).toBeVisible();
-      await expect(page.getByRole("button", { name: "Reopen survey" }).first()).toBeVisible();
+      await surveyCard.getByRole("button", { name: "Close survey" }).click();
+      await expect(surveyCard.getByText("closed", { exact: true })).toBeVisible();
+      await expect(surveyCard.getByRole("button", { name: "Reopen survey" })).toBeVisible();
       const closedContext = await browser.newContext({ baseURL, storageState: { cookies: [], origins: [] } });
       try {
         const closedPage = await closedContext.newPage();

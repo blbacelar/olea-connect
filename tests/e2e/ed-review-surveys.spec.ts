@@ -455,7 +455,7 @@ test.describe("@critical anonymous ED/CEO review surveys", () => {
     }
   });
 
-  test("makes a public survey unavailable immediately when the Board Chair closes the review", async ({
+  test("preserves a public survey draft when the Board Chair closes the review", async ({
     page,
     browser,
     baseURL,
@@ -485,12 +485,10 @@ test.describe("@critical anonymous ED/CEO review surveys", () => {
     try {
       const survey = await publicContext.newPage();
       await survey.goto(surveyUrl);
-      await expect(
-        survey.getByRole("heading", { name: "Survey link unavailable" }),
-      ).toBeVisible();
-      await expect(
-        survey.getByText(/closed, expired, or no longer active/i),
-      ).toBeVisible();
+      await expect(survey.getByRole("heading", { name: "Executive Director / CEO Annual Review — Staff Feedback" })).toBeVisible();
+      await expect(survey.getByRole("button", { name: "Submit survey" }).last()).toBeDisabled();
+      await expect(survey.locator("p[role='alert']")).toContainText("no longer accepting responses");
+      await expect(survey.getByRole("button", { name: "Download" })).toBeVisible();
     } finally {
       await publicContext.close();
     }
