@@ -21,7 +21,7 @@ export async function getBoardEvaluationPrototypeData(selectedCycleId?: string) 
   const orgId = context.session.organization.id;
   const [{ data: cycleRows, error: cycleError }, { data: meetingRows, error: meetingError }, { data: calendarResource, error: resourceError }] = await Promise.all([
     context.admin.from("board_evaluation_cycles")
-      .select("id,year,status,closes_on,public_token,question_selection,invited_count,summary_report,thank_you_copy")
+      .select("id,year,status,closes_on,created_at,closed_at,public_token,question_selection,invited_count,summary_report,thank_you_copy")
       .eq("organization_id", orgId).order("year", { ascending: false }),
     context.admin.from("board_evaluation_meeting_surveys")
       .select("id,template_instance_id,meeting_id,meeting_title,meeting_date,public_token,status,question_selection")
@@ -145,6 +145,8 @@ export async function getBoardEvaluationPrototypeData(selectedCycleId?: string) 
       year: selected.year,
       status: selected.status as "open" | "closed",
       closesOn: selected.closes_on,
+      openedOn: selected.created_at?.slice(0, 10) ?? "",
+      closedOn: selected.closed_at?.slice(0, 10) ?? "",
       publicToken: selected.public_token,
       invitedCount: selected.invited_count,
       questionSelection: parseQuestionSelection(selected.question_selection),

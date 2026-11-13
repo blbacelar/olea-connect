@@ -89,20 +89,31 @@ export function aggregateAnnualResponses({
     const sectionQuestionIds = new Set(questionPool.filter((question) => question.sectionNumber === section.num).map((question) => question.id));
     const visibleScores = questions.filter((question) => sectionQuestionIds.has(question.id) && question.average !== null).map((question) => question.average!);
     const mean = average(visibleScores);
+    const sectionResponses = responses.filter((response) => [...sectionQuestionIds].some((id) => isRating(response[id])));
+    const visibleQuestionIds = questions.filter((question) => sectionQuestionIds.has(question.id) && !question.suppressed).map((question) => question.id);
+    const ratings = sectionResponses.flatMap((response) => visibleQuestionIds
+      .map((id) => response[id]).filter(isRating));
     const previous = previousSectionScores[String(section.num)] ?? null;
     return {
       number: section.num,
       name: section.name,
       average: mean,
+      responseCount: sectionResponses.length,
+      percentPositive: sectionResponses.length >= 5 && ratings.length
+        ? Math.round(ratings.filter((rating) => rating >= 4).length / ratings.length * 100) : null,
       flag: mean === null ? null : scoreFlag(mean),
       trend: mean === null ? "new" as const : scoreTrend(mean, previous),
       persistentConcern: mean !== null && previous !== null && mean < 3.5 && previous < 3.5,
     };
   });
+  const allRatings = responses.flatMap((response) => questions.filter((question) => !question.suppressed)
+    .map((question) => response[question.id]).filter(isRating));
   return {
     received: responses.length,
     invited,
     responseRate: invited > 0 ? Math.round(responses.length / invited * 100) : null,
+    overallPositivePercent: responses.length >= 5 && allRatings.length
+      ? Math.round(allRatings.filter((rating) => rating >= 4).length / allRatings.length * 100) : null,
     smallBoard,
     questions,
     sections,

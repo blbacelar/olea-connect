@@ -9,6 +9,7 @@ import { getAppUrl, getEmailRecipient, getEmailSender, getReplyTo, getResend } f
 import { parseBoardEvaluationInviteEmails } from "@/lib/board-evaluation/invitations";
 import { parseQuestionSelection } from "@/lib/board-evaluation/question-bank";
 import { buildBoardEvaluationReportHtml } from "@/lib/board-evaluation/report-html";
+import { boardEvaluationSummarySchema, readBoardEvaluationSummary } from "@/lib/board-evaluation/summary-report";
 import { createBrandingSnapshot } from "@/lib/data/brand-assets";
 import { getBoardEvaluationPrototypeData } from "@/lib/data/board-evaluation-prototype";
 import { requireGovernanceGrowthManager } from "@/lib/governance-growth/access";
@@ -248,28 +249,7 @@ export async function saveBoardEvaluationSummary(
   try {
     const context = await requireGovernanceGrowthManager("board_evaluation");
     const cycleId = uuid.parse(val(form, "cycleId"));
-    const report = z.object({
-      themes: z.array(z.string().trim().max(1500)).max(4),
-      priorities: z.array(z.object({
-        title: z.string().trim().max(200),
-        owner: z.string().trim().max(160),
-        dueOn: z.union([z.iso.date(), z.literal("")]),
-        checkInOn: z.union([z.iso.date(), z.literal("")]),
-        measure: z.string().trim().max(500),
-      })).length(3),
-      strengths: z.array(z.string().trim().max(500)).length(3),
-      concerns: z.array(z.string().trim().max(500)).length(3),
-      monitor: z.array(z.string().trim().max(500)).length(3),
-      discussionQuestions: z.array(z.string().trim().max(500)).length(3),
-      yearRecord: z.array(z.object({
-        year: z.string().trim().max(20),
-        overall: z.string().trim().max(20),
-        strength: z.string().trim().max(300),
-        priority: z.string().trim().max(300),
-        responseRate: z.string().trim().max(20),
-      })).length(5),
-      notes: z.string().trim().max(4000),
-    }).parse(JSON.parse(val(form, "report")));
+    const report = boardEvaluationSummarySchema.parse(JSON.parse(val(form, "report")));
     const { data, error } = await context.admin.from("board_evaluation_cycles")
       .update({ summary_report: report })
       .eq("id", cycleId).eq("organization_id", context.session.organization.id)
@@ -353,9 +333,9 @@ export async function generateBoardEvaluationReportPdf(cycleId: string, french: 
     }
     if (data.cycle.status !== "closed") throw new Error("Close the survey before exporting its findings report.");
     const brand = await createBrandingSnapshot(context.admin, context.session.organization.brand);
-    const report = data.cycle.summaryReport;
-    const themes = Array.isArray(report.themes) ? report.themes.filter((value): value is string => typeof value === "string") : [];
-    const priorities = Array.isArray(report.priorities) ? report.priorities as Array<{ title: string; owner: string; dueOn: string; checkInOn: string; measure: string }> : [];
+    const report = readBoardEvaluationSummary(data.cycle.summaryReport, {
+      openedOn: data.cycle.openedOn, closedOn: data.cycle.closedOn,
+    });
     const html = buildBoardEvaluationReportHtml({
       organizationName: brand.organizationName,
       year: data.cycle.year,
@@ -363,14 +343,13 @@ export async function generateBoardEvaluationReportPdf(cycleId: string, french: 
       primaryColor: brand.primaryColor,
       secondaryColor: brand.secondaryColor,
       results: data.annual,
-      themes,
-      priorities,
-      strengths: Array.isArray(report.strengths) ? report.strengths as string[] : [],
-      concerns: Array.isArray(report.concerns) ? report.concerns as string[] : [],
-      monitor: Array.isArray(report.monitor) ? report.monitor as string[] : [],
-      discussionQuestions: Array.isArray(report.discussionQuestions) ? report.discussionQuestions as string[] : [],
-      yearRecord: Array.isArray(report.yearRecord) ? report.yearRecord as Array<{ year: string; overall: string; strength: string; priority: string; responseRate: string }> : [],
-      notes: typeof report.notes === "string" ? report.notes : "",
+      themes: report.themes, themeDetails: report.themeDetails,
+      priorities: report.priorities,
+      preparedBy: report.preparedBy, openedOn: report.openedOn, closedOn: report.closedOn,
+      changeVsPrior: report.changeVsPrior,
+      strengths: report.strengths, concerns: report.concerns, monitor: report.monitor,
+      discussionQuestions: report.discussionQuestions, yearRecord: report.yearRecord,
+      notes: report.notes,
       french,
     });
     const pdf = await renderHtmlToPdfBuffer(html);

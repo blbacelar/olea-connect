@@ -17,11 +17,13 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Textarea } from "@/components/ui/textarea";
 import { annualQuestions, meetingQuestions } from "@/lib/board-evaluation/prototype-domain";
+import { annualOpenQuestions } from "@/lib/board-evaluation/prototype-content";
 import { parseBoardEvaluationInviteEmails } from "@/lib/board-evaluation/invitations";
 import { boardEvaluationThankYouCopy } from "@/lib/board-evaluation/thank-you";
-import { annualSurveySectionsFr, meetingSurveyGroupsFr } from "@/lib/board-evaluation/prototype-content-fr";
+import { annualOpenQuestionsFr, annualSurveySectionsFr, meetingSurveyGroupsFr } from "@/lib/board-evaluation/prototype-content-fr";
 import { meetingBankFr, meetingCategoryFr, meetingOpenBankFr, openBankFr, ratedBankFr } from "@/lib/board-evaluation/question-bank-fr";
 import { nextAvailableEvaluationYear } from "@/lib/board-evaluation/domain";
+import { readBoardEvaluationSummary, type SummaryPriority } from "@/lib/board-evaluation/summary-report";
 import { meetingBank, meetingOpenBank, openBank, questionSelectionStatus, ratedBank, type QuestionSelection } from "@/lib/board-evaluation/question-bank";
 import type { getBoardEvaluationPrototypeData } from "@/lib/data/board-evaluation-prototype";
 
@@ -74,6 +76,12 @@ function assessmentLabel(flag: string | null, trend: string, french: boolean) {
     stable: ["Stable", "Stable"], new: ["First year", "Première année"],
   };
   return `${label ? label[french ? 1 : 0] : flag}${trend ? ` · ${trends[trend]?.[french ? 1 : 0] ?? trend}` : ""}`;
+}
+
+function trendWithChange(change: string, fallback: string) {
+  if (!change) return fallback;
+  const value = Number(change);
+  return value >= 0.3 ? "up" : value <= -0.3 ? "down" : "stable";
 }
 
 function Submit({ children }: { children: React.ReactNode }) {
@@ -364,9 +372,7 @@ function MeetingSurveyQr({ href, french }: { href: string; french: boolean }) {
   </div>;
 }
 
-type Priority = { title: string; owner: string; dueOn: string; checkInOn: string; measure: string };
 type YearRow = { year: string; overall: string; strength: string; priority: string; responseRate: string };
-const blankYearRow = (): YearRow => ({ year: "", overall: "", strength: "", priority: "", responseRate: "" });
 
 function OpenAnswerReview({ answer, cycleId, french }: { answer: Data["openAnswers"][number]; cycleId: string; french: boolean }) {
   const [state, action] = useActionState(reviewBoardEvaluationOpenAnswer, idle);
@@ -391,45 +397,40 @@ function OpenAnswerReview({ answer, cycleId, french }: { answer: Data["openAnswe
 function SummaryAndActionPlan({ data, french }: { data: Data; french: boolean }) {
   const cycle = data.cycle;
   const [state, action] = useActionState(saveBoardEvaluationSummary, idle);
-  const saved = cycle?.summaryReport;
-  const savedThemes = Array.isArray(saved?.themes) ? saved.themes.filter((value): value is string => typeof value === "string") : [];
-  const savedPriorities = Array.isArray(saved?.priorities) ? saved.priorities as Priority[] : [];
-  const [themes, setThemes] = useState<string[]>(Array.from({ length: 4 }, (_, index) => savedThemes[index] ?? ""));
-  const [priorities, setPriorities] = useState<Priority[]>(Array.from({ length: 3 }, (_, index) => ({
-    title: savedPriorities[index]?.title ?? "", owner: savedPriorities[index]?.owner ?? "",
-    dueOn: savedPriorities[index]?.dueOn ?? "", checkInOn: savedPriorities[index]?.checkInOn ?? "",
-    measure: savedPriorities[index]?.measure ?? "",
-  })));
-  const savedStrengths = Array.isArray(saved?.strengths) ? saved.strengths as string[] : [];
-  const savedConcerns = Array.isArray(saved?.concerns) ? saved.concerns as string[] : [];
-  const savedMonitor = Array.isArray(saved?.monitor) ? saved.monitor as string[] : [];
-  const savedDiscussion = Array.isArray(saved?.discussionQuestions) ? saved.discussionQuestions as string[] : [];
-  const savedYearRows = Array.isArray(saved?.yearRecord) ? saved.yearRecord as YearRow[] : [];
-  const [strengths, setStrengths] = useState<string[]>(Array.from({ length: 3 }, (_, index) => savedStrengths[index] ?? ""));
-  const [concerns, setConcerns] = useState<string[]>(Array.from({ length: 3 }, (_, index) => savedConcerns[index] ?? ""));
-  const [monitor, setMonitor] = useState<string[]>(Array.from({ length: 3 }, (_, index) => savedMonitor[index] ?? ""));
-  const [discussionQuestions, setDiscussionQuestions] = useState<string[]>(Array.from({ length: 3 }, (_, index) => savedDiscussion[index] ?? ""));
-  const [yearRecord, setYearRecord] = useState<YearRow[]>(Array.from({ length: 5 }, (_, index) => savedYearRows[index] ?? blankYearRow()));
-  const [notes, setNotes] = useState(typeof saved?.notes === "string" ? saved.notes : "");
+  const savedReport = readBoardEvaluationSummary(cycle?.summaryReport, {
+    openedOn: cycle?.openedOn, closedOn: cycle?.closedOn,
+  });
+  const [preparedBy, setPreparedBy] = useState(savedReport.preparedBy);
+  const [openedOn, setOpenedOn] = useState(savedReport.openedOn);
+  const [closedOn, setClosedOn] = useState(savedReport.closedOn);
+  const [changeVsPrior, setChangeVsPrior] = useState(savedReport.changeVsPrior);
+  const [themeDetails, setThemeDetails] = useState(savedReport.themeDetails);
+  const [priorities, setPriorities] = useState<SummaryPriority[]>(savedReport.priorities);
+  const [strengths, setStrengths] = useState(savedReport.strengths);
+  const [concerns, setConcerns] = useState(savedReport.concerns);
+  const [monitor, setMonitor] = useState(savedReport.monitor);
+  const [discussionQuestions, setDiscussionQuestions] = useState(savedReport.discussionQuestions);
+  const [yearRecord, setYearRecord] = useState<YearRow[]>(savedReport.yearRecord);
+  const [notes, setNotes] = useState(savedReport.notes);
   const [exporting, setExporting] = useState(false);
   const [exportError, setExportError] = useState("");
   if (!cycle || !data.annual) return null;
-  const hasUnsavedReport = JSON.stringify({ themes, priorities, strengths, concerns, monitor, discussionQuestions, yearRecord, notes }) !== JSON.stringify({
-    themes: Array.from({ length: 4 }, (_, index) => savedThemes[index] ?? ""),
-    priorities: Array.from({ length: 3 }, (_, index) => ({
-      title: savedPriorities[index]?.title ?? "", owner: savedPriorities[index]?.owner ?? "",
-      dueOn: savedPriorities[index]?.dueOn ?? "", checkInOn: savedPriorities[index]?.checkInOn ?? "",
-      measure: savedPriorities[index]?.measure ?? "",
-    })),
-    strengths: Array.from({ length: 3 }, (_, index) => savedStrengths[index] ?? ""),
-    concerns: Array.from({ length: 3 }, (_, index) => savedConcerns[index] ?? ""),
-    monitor: Array.from({ length: 3 }, (_, index) => savedMonitor[index] ?? ""),
-    discussionQuestions: Array.from({ length: 3 }, (_, index) => savedDiscussion[index] ?? ""),
-    yearRecord: Array.from({ length: 5 }, (_, index) => savedYearRows[index] ?? blankYearRow()),
-    notes: typeof saved?.notes === "string" ? saved.notes : "",
-  });
-  function updatePriority(index: number, key: keyof Priority, value: string) {
+  const reportValue = {
+    ...savedReport, preparedBy, openedOn, closedOn, changeVsPrior, themeDetails,
+    themes: themeDetails.map((rows) => rows[0].pattern), priorities,
+    strengths, concerns, monitor, discussionQuestions, yearRecord, notes,
+  };
+  const hasUnsavedReport = JSON.stringify(reportValue) !== JSON.stringify(savedReport);
+  function updatePriority(index: number, key: Exclude<keyof SummaryPriority, "responsible">, value: string) {
     setPriorities((current) => current.map((item, itemIndex) => itemIndex === index ? { ...item, [key]: value } : item));
+  }
+  function updateResponsible(index: number, key: keyof SummaryPriority["responsible"], value: boolean | string) {
+    setPriorities((current) => current.map((item, itemIndex) => itemIndex === index
+      ? { ...item, responsible: { ...item.responsible, [key]: value } } : item));
+  }
+  function updateTheme(question: number, theme: number, key: "pattern" | "frequency", value: string) {
+    setThemeDetails((current) => current.map((rows, questionIndex) => questionIndex === question
+      ? rows.map((row, themeIndex) => themeIndex === theme ? { ...row, [key]: value } : row) : rows));
   }
   function updateYearRow(index: number, key: keyof YearRow, value: string) {
     setYearRecord((current) => current.map((item, itemIndex) => itemIndex === index ? { ...item, [key]: value } : item));
@@ -457,17 +458,33 @@ function SummaryAndActionPlan({ data, french }: { data: Data; french: boolean })
           <div className="rounded-lg border p-3"><strong className="text-xl">{data.annual.responseRate === null ? "—" : `${data.annual.responseRate}%`}</strong><p>{text("Response rate", "Taux de réponse", french)}</p></div>
         </div>
       </CardContent></Card>
-    <Card><CardHeader><CardTitle>{text("Quantitative results", "Résultats quantitatifs", french)}</CardTitle></CardHeader><CardContent className="space-y-2">
-      {data.annual.sections.map((section) => <div key={section.number} className="grid gap-1 rounded-lg border p-3 text-sm sm:grid-cols-[1fr_auto_auto] sm:items-center">
-        <strong>{section.number}. {french ? annualSurveySectionsFr[section.number - 1]?.name ?? section.name : section.name}</strong>
-        <span>{section.average === null ? "—" : `${section.average.toFixed(2)} / 5`}</span>
-        <Badge variant="outline">{assessmentLabel(section.flag, section.trend, french)}{section.persistentConcern ? ` · ${text("Persistent concern", "Préoccupation persistante", french)}` : ""}</Badge>
-      </div>)}
-      <div className="flex justify-between rounded-lg border-2 p-3 font-semibold"><span>{text("Overall", "Ensemble", french)}</span><span>{data.annual.overallAverage === null ? "—" : data.annual.overallAverage.toFixed(2)}</span></div>
-    </CardContent></Card>
     <form action={action} className="space-y-5">
       <Input name="cycleId" type="hidden" value={cycle.id} readOnly />
-      <Input name="report" type="hidden" value={JSON.stringify({ themes, priorities, strengths, concerns, monitor, discussionQuestions, yearRecord, notes })} readOnly />
+      <Input name="report" type="hidden" value={JSON.stringify(reportValue)} readOnly />
+      <Card><CardHeader><CardTitle>{text("Survey details", "Détails du sondage", french)}</CardTitle></CardHeader><CardContent className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        <div className="space-y-1"><Label htmlFor="summary-board-year">{text("Board year", "Année du conseil", french)}</Label><Input id="summary-board-year" value={String(cycle.year)} readOnly /><p className="text-xs text-slate-500">{text("Set when the evaluation opens.", "Définie à l’ouverture de l’évaluation.", french)}</p></div>
+        <div className="space-y-1"><Label htmlFor="summary-prepared-by">{text("Prepared by", "Préparé par", french)}</Label><Input id="summary-prepared-by" maxLength={160} value={preparedBy} onChange={(event) => setPreparedBy(event.target.value)} placeholder={text("Name or role", "Nom ou fonction", french)} /></div>
+        <div className="space-y-1"><Label htmlFor="summary-opened-on">{text("Survey open", "Ouverture du sondage", french)}</Label><Input id="summary-opened-on" type="date" value={openedOn} onChange={(event) => setOpenedOn(event.target.value)} /></div>
+        <div className="space-y-1"><Label htmlFor="summary-closed-on">{text("Survey closed", "Clôture du sondage", french)}</Label><Input id="summary-closed-on" type="date" min={openedOn || undefined} value={closedOn} onChange={(event) => setClosedOn(event.target.value)} /><p className="text-xs text-slate-500">{text("On or after the opening date.", "À la date d’ouverture ou après.", french)}</p></div>
+      </CardContent></Card>
+      <Card><CardHeader><CardTitle>{text("Quantitative results", "Résultats quantitatifs", french)}</CardTitle></CardHeader><CardContent className="space-y-2">
+        <p className="text-xs text-slate-600">{text("Counts, averages, and the share of ratings 4–5 are calculated from responses; small samples are suppressed. Enter the change versus the prior year from -5 to +5, with up to two decimals, when known.", "Le nombre, la moyenne et la part des notes 4–5 sont calculés à partir des réponses; les petits échantillons sont masqués. Indiquez la variation par rapport à l’année précédente de -5 à +5, avec au plus deux décimales, si elle est connue.", french)}</p>
+        {data.annual.sections.map((section) => <div key={section.number} className="grid gap-2 rounded-lg border p-3 text-sm lg:grid-cols-[minmax(0,1fr)_5rem_6rem_5rem_6rem_auto] lg:items-center">
+          <strong>{section.number}. {french ? annualSurveySectionsFr[section.number - 1]?.name ?? section.name : section.name}</strong>
+          <div className="space-y-1"><Label htmlFor={`score-count-${section.number}`} className="text-xs">{text("# Resp", "Nb rép.", french)}</Label><Input id={`score-count-${section.number}`} value={cycle.status === "closed" ? String(section.responseCount) : ""} placeholder="—" readOnly /></div>
+          <div className="space-y-1"><Label htmlFor={`score-current-${section.number}`} className="text-xs">{text("Current avg", "Moy. actuelle", french)}</Label><Input id={`score-current-${section.number}`} value={section.average === null ? "" : section.average.toFixed(2)} placeholder="—" readOnly aria-describedby="summary-score-guidance" /></div>
+          <div className="space-y-1"><Label htmlFor={`score-positive-${section.number}`} className="text-xs">% 4–5</Label><Input id={`score-positive-${section.number}`} value={section.percentPositive === null ? "" : `${section.percentPositive}%`} placeholder="—" readOnly /></div>
+          <div className="space-y-1"><Label htmlFor={`score-change-${section.number}`} className="text-xs">{text("vs Prior", "vs antérieur", french)}</Label><Input id={`score-change-${section.number}`} type="number" min={-5} max={5} step="0.01" value={changeVsPrior[section.number - 1]} onChange={(event) => setChangeVsPrior((current) => current.map((score, index) => index === section.number - 1 ? event.target.value : score))} placeholder="+0.30" /></div>
+          <Badge variant="outline">{assessmentLabel(section.flag, trendWithChange(changeVsPrior[section.number - 1], section.trend), french)}{section.persistentConcern ? ` · ${text("Persistent concern", "Préoccupation persistante", french)}` : ""}</Badge>
+        </div>)}
+        <div className="grid gap-2 rounded-lg border-2 p-3 font-semibold lg:grid-cols-[minmax(0,1fr)_5rem_6rem_5rem_6rem_auto] lg:items-center"><span>{text("Overall", "Ensemble", french)}</span>
+          <div className="space-y-1"><Label htmlFor="score-count-overall" className="text-xs">{text("# Resp", "Nb rép.", french)}</Label><Input id="score-count-overall" value={String(data.annual.received)} readOnly /></div>
+          <div className="space-y-1"><Label htmlFor="score-current-overall" className="text-xs">{text("Current avg", "Moy. actuelle", french)}</Label><Input id="score-current-overall" value={data.annual.overallAverage === null ? "" : data.annual.overallAverage.toFixed(2)} placeholder="—" readOnly /></div>
+          <div className="space-y-1"><Label htmlFor="score-positive-overall" className="text-xs">% 4–5</Label><Input id="score-positive-overall" value={data.annual.overallPositivePercent === null ? "" : `${data.annual.overallPositivePercent}%`} placeholder="—" readOnly /></div>
+          <div className="space-y-1"><Label htmlFor="score-change-overall" className="text-xs">{text("vs Prior", "vs antérieur", french)}</Label><Input id="score-change-overall" type="number" min={-5} max={5} step="0.01" value={changeVsPrior[10]} onChange={(event) => setChangeVsPrior((current) => current.map((score, index) => index === 10 ? event.target.value : score))} placeholder="+0.30" /></div><span />
+        </div>
+        <p id="summary-score-guidance" className="sr-only">{text("Current averages are calculated and cannot be edited to protect small groups.", "Les moyennes actuelles sont calculées et ne peuvent être modifiées afin de protéger les petits groupes.", french)}</p>
+      </CardContent></Card>
       <Card><CardHeader><CardTitle>{text("Key findings", "Principaux constats", french)}</CardTitle></CardHeader><CardContent className="grid gap-5 lg:grid-cols-3">
         {([
           ["Top strengths", "Principales forces", strengths, setStrengths],
@@ -483,18 +500,26 @@ function SummaryAndActionPlan({ data, french }: { data: Data; french: boolean })
           <p className="mt-3 text-sm text-slate-600">{text("Only survey administrators can see these unlinked comments. Paraphrase identifying detail before using a theme in the report. Individual ratings are never shown here.", "Seuls les administrateurs du sondage peuvent voir ces commentaires non liés. Reformulez les détails identifiables avant d’utiliser un thème dans le rapport. Les notes individuelles ne sont jamais affichées ici.", french)}</p>
           <div className="mt-4 space-y-3">{data.openAnswers.map((answer) => <OpenAnswerReview key={answer.id} answer={answer} cycleId={cycle.id} french={french} />)}</div>
         </details> : null}
-        {themes.map((theme, index) => <div key={index} className="space-y-2"><Label htmlFor={`theme-${index}`}>{text("Theme", "Thème", french)} {index + 1}</Label>
-          <Textarea id={`theme-${index}`} maxLength={1500} value={theme} onChange={(event) => setThemes((current) => current.map((item, itemIndex) => itemIndex === index ? event.target.value : item))} placeholder={text("Summarize a pattern without attributing a quote", "Résumez une tendance sans attribuer une citation", french)} />
-          <p className="text-xs text-slate-500">{text("Up to 1,500 characters. Remove names and identifying detail.", "Jusqu’à 1 500 caractères. Retirez les noms et les détails identifiables.", french)}</p>
+        {themeDetails.map((rows, question) => <div key={question} className="space-y-3 rounded-lg border p-4"><h3 className="font-semibold">Q{question + 1} — {french ? annualOpenQuestionsFr[question] : annualOpenQuestions[question]}</h3>
+          {rows.map((row, theme) => <div key={theme} className="grid gap-3 sm:grid-cols-[minmax(0,1fr)_8rem]">
+            <div className="space-y-1"><Label htmlFor={`theme-${question}-${theme}`}>{text("Theme", "Thème", french)} {theme + 1} — {text("Pattern", "Tendance", french)}</Label><Input id={`theme-${question}-${theme}`} maxLength={1500} value={row.pattern} onChange={(event) => updateTheme(question, theme, "pattern", event.target.value)} placeholder={text("An anonymous pattern, without names", "Une tendance anonyme, sans noms", french)} /></div>
+            <div className="space-y-1"><Label htmlFor={`frequency-${question}-${theme}`}>{text("Frequency", "Fréquence", french)}</Label><Input id={`frequency-${question}-${theme}`} maxLength={50} pattern="[0-9]{1,5} (of|sur) [0-9]{1,5}" title={text("Use a count such as 2 of 6.", "Utilisez un nombre comme 2 sur 6.", french)} value={row.frequency} onChange={(event) => updateTheme(question, theme, "frequency", event.target.value)} placeholder={text("2 of 6", "2 sur 6", french)} /></div>
+          </div>)}
+          <p className="text-xs text-slate-500">{text("Summarize reviewed answers only. Do not include names or identifying details. Write frequency as x of y when known.", "Résumez seulement les réponses examinées, sans noms ni détails identifiants. Indiquez la fréquence sous la forme x sur y si elle est connue.", french)}</p>
         </div>)}
       </CardContent></Card>
       <Card><CardHeader><CardTitle>{text("Action planning — three priorities", "Plan d’action — trois priorités", french)}</CardTitle></CardHeader><CardContent className="space-y-5">
         {priorities.map((priority, index) => <div key={index} className="space-y-3 rounded-lg border p-4"><h3 className="font-semibold">{text("Priority", "Priorité", french)} {index + 1}</h3>
-          <div className="space-y-2"><Label htmlFor={`priority-title-${index}`}>{text("Action", "Action", french)}</Label><Input id={`priority-title-${index}`} maxLength={200} value={priority.title} onChange={(event) => updatePriority(index, "title", event.target.value)} placeholder={text("One concrete improvement", "Une amélioration concrète", french)} /></div>
-          <div className="grid gap-3 sm:grid-cols-2"><div className="space-y-2"><Label htmlFor={`priority-owner-${index}`}>{text("Owner", "Responsable", french)}</Label><Input id={`priority-owner-${index}`} maxLength={160} value={priority.owner} onChange={(event) => updatePriority(index, "owner", event.target.value)} placeholder={text("Committee or lead", "Comité ou personne responsable", french)} /></div>
-            <div className="space-y-2"><Label htmlFor={`priority-due-${index}`}>{text("Target date", "Date cible", french)}</Label><Input id={`priority-due-${index}`} type="date" value={priority.dueOn} onChange={(event) => updatePriority(index, "dueOn", event.target.value)} /></div></div>
-          <div className="space-y-2"><Label htmlFor={`priority-checkin-${index}`}>{text("Six-month check-in", "Suivi à six mois", french)}</Label><Input id={`priority-checkin-${index}`} type="date" value={priority.checkInOn} onChange={(event) => updatePriority(index, "checkInOn", event.target.value)} /></div>
-          <div className="space-y-2"><Label htmlFor={`priority-measure-${index}`}>{text("How will we know it worked?", "Comment saurons-nous que cela a fonctionné?", french)}</Label><Textarea id={`priority-measure-${index}`} maxLength={500} value={priority.measure} onChange={(event) => updatePriority(index, "measure", event.target.value)} /></div>
+          <div className="grid gap-3 sm:grid-cols-[minmax(0,1fr)_8rem]"><div className="space-y-1"><Label htmlFor={`priority-section-${index}`}>{text("Section", "Section", french)}</Label><Input id={`priority-section-${index}`} maxLength={160} value={priority.section} onChange={(event) => updatePriority(index, "section", event.target.value)} placeholder={text("Governance area", "Domaine de gouvernance", french)} /></div>
+            <div className="space-y-1"><Label htmlFor={`priority-average-${index}`}>{text("Avg", "Moyenne", french)}</Label><Input id={`priority-average-${index}`} type="number" min={0} max={5} step="0.01" value={priority.average} onChange={(event) => updatePriority(index, "average", event.target.value)} placeholder="0–5" /></div></div>
+          <div className="space-y-1"><Label htmlFor={`priority-issue-${index}`}>{text("Issue identified", "Problème identifié", french)}</Label><Textarea id={`priority-issue-${index}`} maxLength={1000} value={priority.issue} onChange={(event) => updatePriority(index, "issue", event.target.value)} placeholder={text("What the results show", "Ce que montrent les résultats", french)} /></div>
+          <div className="space-y-1"><Label htmlFor={`priority-actions-${index}`}>{text("Suggested actions", "Mesures proposées", french)}</Label><Textarea id={`priority-actions-${index}`} maxLength={1000} value={priority.suggestedActions} onChange={(event) => updatePriority(index, "suggestedActions", event.target.value)} placeholder={text("Specific next steps", "Prochaines étapes précises", french)} /></div>
+          <fieldset className="space-y-2"><legend className="text-sm font-medium">{text("Responsible", "Responsable", french)}</legend><div className="flex flex-wrap gap-4">
+            {([["boardChair", "Board Chair", "Présidence du conseil"], ["governanceCommittee", "Governance Committee", "Comité de gouvernance"], ["ed", "ED", "DG"], ["other", "Other", "Autre"]] as const).map(([key, en, fr]) => <label key={key} className="flex items-center gap-2 text-sm"><Checkbox checked={priority.responsible[key]} onChange={(event) => updateResponsible(index, key, event.target.checked)} />{text(en, fr, french)}</label>)}
+          </div><div className="max-w-sm space-y-1"><Label htmlFor={`priority-other-${index}`}>{text("Other responsible person or group", "Autre personne ou groupe responsable", french)}</Label><Input id={`priority-other-${index}`} maxLength={160} value={priority.responsible.otherName} onChange={(event) => { updateResponsible(index, "otherName", event.target.value); if (event.target.value) updateResponsible(index, "other", true); }} placeholder={text("Name or role", "Nom ou fonction", french)} /></div></fieldset>
+          <div className="grid gap-3 sm:grid-cols-2"><div className="space-y-1"><Label htmlFor={`priority-due-${index}`}>{text("Target date", "Date cible", french)}</Label><Input id={`priority-due-${index}`} type="date" value={priority.dueOn} onChange={(event) => updatePriority(index, "dueOn", event.target.value)} /></div>
+            <div className="space-y-1"><Label htmlFor={`priority-checkin-${index}`}>{text("6-month check-in", "Suivi à six mois", french)}</Label><Input id={`priority-checkin-${index}`} type="date" value={priority.checkInOn} onChange={(event) => updatePriority(index, "checkInOn", event.target.value)} /></div></div>
+          <div className="space-y-1"><Label htmlFor={`priority-measure-${index}`}>{text("Success looks like", "La réussite ressemblera à", french)}</Label><Textarea id={`priority-measure-${index}`} maxLength={500} value={priority.measure} onChange={(event) => updatePriority(index, "measure", event.target.value)} placeholder={text("A measurable result", "Un résultat mesurable", french)} /></div>
         </div>)}
       </CardContent></Card>
       <Card><CardHeader><CardTitle>{text("Recommended discussion questions", "Questions de discussion recommandées", french)}</CardTitle></CardHeader><CardContent className="space-y-3">
