@@ -22,11 +22,6 @@ export class BoardCalendarCalendarPage extends BoardCalendarBasePage {
     return this.page.getByTestId("board-calendar-month-grid");
   }
 
-  async expectPastDatesDisabled() {
-    await expect(this.monthGrid).toBeVisible();
-    await expect(this.monthGrid.locator("button:disabled").first()).toBeVisible();
-  }
-
   async expectMonthGridFitsViewport() {
     await this.chooseWorkspaceView("Calendar workspace");
     await expect(this.monthGrid).toBeVisible();
@@ -36,10 +31,6 @@ export class BoardCalendarCalendarPage extends BoardCalendarBasePage {
     });
 
     expect(fitsViewport).toBe(true);
-  }
-
-  async expectPastDateDisabled(dayLabel: RegExp | string) {
-    await expect(this.page.getByRole("button", { name: dayLabel })).toBeDisabled();
   }
 
   async selectDate(dateKey: string) {

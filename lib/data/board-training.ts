@@ -24,7 +24,7 @@ type EnrollmentRow = {
   organization_signed_at: string | null; acknowledged_at: string | null;
 };
 
-async function hasActiveCanopySubscription(admin: ReturnType<typeof createAdminClient>, organizationId: string) {
+async function hasActiveTrainingSubscription(admin: ReturnType<typeof createAdminClient>, organizationId: string) {
   const { data: subscription, error } = await admin
     .from("subscriptions")
     .select("plan_id, status, current_period_end, subscription_items(item_type, active)")
@@ -39,13 +39,13 @@ async function hasActiveCanopySubscription(admin: ReturnType<typeof createAdminC
 
 export async function hasTrainingAccess() {
   const session = await requireMemberContext();
-  return hasActiveCanopySubscription(createAdminClient(), session.organization.id);
+  return hasActiveTrainingSubscription(createAdminClient(), session.organization.id);
 }
 
 export async function requireTrainingContext() {
   const session = await requireMemberContext();
   const admin = createAdminClient();
-  if (!(await hasActiveCanopySubscription(admin, session.organization.id))) {
+  if (!(await hasActiveTrainingSubscription(admin, session.organization.id))) {
     notFound();
   }
   return { ...session, admin, isManager: ["owner", "admin"].includes(session.member.membershipRole) };

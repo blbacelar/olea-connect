@@ -19,6 +19,7 @@ import { BoardPackageUploadFields } from "./board-package-upload-fields";
 import type { UploadFormState } from "./board-package-upload-state";
 
 export function BoardPackageUploadDialog({
+  fileOnly = false,
   form,
   formError,
   isOpen,
@@ -29,6 +30,7 @@ export function BoardPackageUploadDialog({
   onUpdateForm,
   title,
 }: {
+  fileOnly?: boolean;
   form: UploadFormState;
   formError: string;
   isOpen: boolean;
@@ -48,12 +50,13 @@ export function BoardPackageUploadDialog({
         <DialogHeader>
           <DialogTitle>{title}</DialogTitle>
           <DialogDescription>
-            Upload a private board document or attach a secure external
-            reference link. Private files are opened through short-lived signed
-            download links.
+            {fileOnly
+              ? "Upload a private board document. Private files are opened through short-lived signed download links."
+              : "Upload a private board document or attach a secure external reference link. Private files are opened through short-lived signed download links."}
           </DialogDescription>
         </DialogHeader>
         <BoardPackageUploadFields
+          fileOnly={fileOnly}
           form={form}
           onFileChange={onFileChange}
           onUpdateForm={onUpdateForm}

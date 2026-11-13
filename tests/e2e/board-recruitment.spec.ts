@@ -118,12 +118,24 @@ test.describe("@critical Board Recruitment Toolkit", () => {
       marker,
       `term-rules-${Date.now()}@example.test`,
       [],
-      "2019-01-01",
+      "2018-01-01",
     );
     await expect(recruitment.memberRow(marker)).toContainText(
-      "Term 5 · ends 2029",
+      "Term 5 · ends 2028",
     );
     await expect(recruitment.memberRow(marker)).toContainText("Term-limited");
+    await recruitment.openTab("Committees");
+    await recruitment.assignCommitteeMember("Executive", marker);
+    await expect(recruitment.committeeCard("Executive")).toContainText(
+      `${marker}: term-limited; plan a replacement`,
+    );
+    await recruitment.committeeCard("Executive").getByRole("link", { name: "Review Board Terms" }).click();
+    await expect(recruitment.tab("Board Terms")).toHaveAttribute("data-state", "active");
+    await recruitment.memberRow(marker).getByRole("button", { name: `Deactivate ${marker}` }).click();
+    await expect(recruitment.memberRow(marker)).toContainText("Inactive");
+    await recruitment.openTab("Committees");
+    await expect(recruitment.committeeCard("Executive")).not.toContainText("plan a replacement");
+    await recruitment.openTab("Board Terms");
     await recruitment.deleteMember(marker);
   });
 

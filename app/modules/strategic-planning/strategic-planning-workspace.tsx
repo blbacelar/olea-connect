@@ -188,6 +188,21 @@ export function StrategicPlanningWorkspace({ data }: { data: Data }) {
   return (
     <div className="space-y-6">
       <PageHeader title="Strategic Planning" description="Agree on direction, assign ownership, and review progress in one board-ready place." />
+      <Card><CardContent className="flex flex-wrap items-center justify-between gap-4 p-5">
+        <div>
+          <p className="font-semibold">Strategic Planning workbook</p>
+          <p className="mt-1 text-sm text-slate-600">Use the full planning journey, from organization setup through quarterly review.</p>
+        </div>
+        {data.canManage ? <Button asChild><Link href="/modules/strategic-planning/workbook">Open workbook</Link></Button>
+          : <Button asChild variant="outline"><Link href="/modules/strategic-planning/board">View board dashboard</Link></Button>}
+      </CardContent></Card>
+      {data.canManage ? <Card><CardContent className="flex flex-wrap items-center justify-between gap-4 p-5">
+        <div>
+          <p className="font-semibold">Stakeholder surveys</p>
+          <p className="mt-1 text-sm text-slate-600">Gather board, staff, volunteer, client, partner, funder, and community input.</p>
+        </div>
+        <Button asChild variant="outline"><Link href="/modules/strategic-planning/surveys">Manage surveys</Link></Button>
+      </CardContent></Card> : null}
       <Card>
         <CardHeader className="flex flex-row items-center justify-between gap-3">
           <CardTitle>Plan direction</CardTitle>

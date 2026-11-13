@@ -1,0 +1,1707 @@
+{
+  "sizes": [
+    {
+      "v": "small",
+      "l": "Small",
+      "d": "Volunteer-led or a few staff; budget roughly under $500K"
+    },
+    {
+      "v": "mid",
+      "l": "Mid-size",
+      "d": "Established staff team and several programs; roughly $500K to $5M"
+    },
+    {
+      "v": "large",
+      "l": "Large",
+      "d": "Multiple sites, departments or complex funding; roughly over $5M"
+    }
+  ],
+  "modules": [
+    {
+      "id": "m0",
+      "num": "0",
+      "short": "Start here",
+      "title": "Start here: set up your workbook",
+      "purpose": "Tell us about your organization, choose your size level and plan horizon, and decide which modules you will use. Your choices adapt the rest of the workbook.",
+      "who": "ED/CEO with the Board Chair",
+      "time": {
+        "small": "30 minutes",
+        "mid": "1 hour",
+        "large": "1 to 2 hours"
+      },
+      "guidance": [
+        {
+          "h": "Where this workbook takes you",
+          "html": "<p>The goal is a finished, board-ready strategic plan, built on a simple structure anyone can follow:</p><ol><li><b>3 to 4 strategic goals:</b> the big outcomes you will achieve by the end of the plan (Module 4).</li><li><b>2 to 4 key priorities under each goal:</b> what you will focus on to get there, each with a measure and yearly targets (Module 5).</li><li><b>Actions under each priority, for every year of the plan:</b> who does what, by which quarter, and what it costs (Module 6).</li></ol><p>As you complete each module's template, your answers flow into four places in the menu:</p><ul><li><b>Your strategic plan</b> assembles the full plan document and one-page summary for board approval, and shows which sections still need work.</li><li><b>Action tracker</b> is your live, internal tool for tracking every action quarter by quarter, with an owner and a red, yellow or green status, rolled up to each goal.</li><li><b>Plan budget</b> is the finance view: what each action costs by year, how much is secured, and what has been spent each quarter.</li><li><b>Board dashboard</b> is the quarterly progress report you share with your board.</li></ul><p>Module 2 also includes a ready-to-send <b>stakeholder survey</b> you can tailor, download and send out.</p><div class='tbl-wrap'><table class='wb'><thead><tr><th>Plan section</th><th>Built from</th></tr></thead><tbody><tr><td>Message, about us, how we planned, thank yous</td><td>Module 8A</td></tr><tr><td>Where we are today</td><td>Module 2</td></tr><tr><td>Mission, vision and values</td><td>Module 3</td></tr><tr><td>Strategic goals</td><td>Module 4</td></tr><tr><td>Key priorities and measures under each goal</td><td>Module 5</td></tr><tr><td>Actions by year, with owners and budgets</td><td>Module 6</td></tr><tr><td>Plan budget by goal and year</td><td>Module 6 and the Plan budget page</td></tr><tr><td>How we will track progress</td><td>Module 7</td></tr><tr><td>How we will review the plan, and board approval</td><td>Modules 9 and 8</td></tr></tbody></table></div>"
+        },
+        {
+          "h": "How this workbook works",
+          "html": "<p>The workbook has nine modules that follow a complete strategic planning journey. Each module has two tabs:</p><ul><li><b>Guidance</b> explains the purpose, the questions to ask, how to run the work at your size, facilitator notes and common pitfalls.</li><li><b>Template</b> is where your organization records its thinking and decisions. Completed templates become your strategic plan.</li></ul><p>Use the modules in order to build a full plan, or pick only the ones you need. For example, use Module 2 alone for a board retreat SWOT, or Modules 7 and 9 to put an existing plan to work.</p>"
+        },
+        {
+          "h": "Choose your size level",
+          "html": "<p>Your size level sets how deep each module goes. Every module includes a <b>Scale it to your size</b> box, and your level is highlighted. Pick the level that matches your capacity, not just your budget. A large organization doing a quick refresh can choose Small.</p><ul><li><b>Small:</b> volunteer-led or a few staff; budget roughly under $500K. Lean process, short plan.</li><li><b>Mid-size:</b> established staff team and several programs; roughly $500K to $5M. Planning committee, stakeholder survey and interviews, a retreat.</li><li><b>Large:</b> multiple sites, departments or complex funding; roughly over $5M. Full engagement, external facilitator, dashboards and formal reviews.</li></ul>"
+        },
+        {
+          "h": "Choose your plan horizon",
+          "html": "<ul><li><b>3-year plan:</b> suits smaller or newer organizations, fast-changing funding or policy environments, or organizations coming through a leadership change or crisis.</li><li><b>5-year plan:</b> suits established organizations planning capital projects, major growth or long-term community outcomes. The workbook adds a formal mid-point review in Year 3.</li></ul><p>Year columns in Modules 5 and 9 adjust to your choice.</p>"
+        },
+        {
+          "h": "Which modules do you need?",
+          "html": "<div class='tbl-wrap'><table class='wb'><thead><tr><th>Your situation</th><th>Modules to use</th></tr></thead><tbody><tr><td>First strategic plan, or a full new plan</td><td>All modules, 1 to 9</td></tr><tr><td>Refreshing a plan that is mostly still working</td><td>2, 4, 5, 6, 9</td></tr><tr><td>Board retreat to set direction</td><td>2, 3, 4</td></tr><tr><td>Plan approved but not being used</td><td>6, 7, 9</td></tr><tr><td>New ED/CEO wants to understand the organization</td><td>2, 3</td></tr></tbody></table></div>"
+        },
+        {
+          "h": "Who does what",
+          "html": "<ul><li><b>Board:</b> sets direction, approves mission, vision, values and the final plan, and monitors progress.</li><li><b>ED/CEO:</b> leads the process and turns the plan into operations, budgets and work plans.</li><li><b>Staff:</b> bring front-line knowledge, gather information and build action plans.</li><li><b>Facilitator (internal or external):</b> designs and runs sessions, keeps the process fair, focused and on schedule.</li></ul>"
+        },
+        {
+          "h": "About the equity and reconciliation lens",
+          "html": "<p>Every module includes optional prompts on equity, inclusion, accessibility and Truth and Reconciliation. We recommend keeping the lens on. It helps you ask whose voices shape the plan, who benefits, and how your work relates to First Nations, Inuit and Métis peoples and the <a href='https://nctr.ca/records/reports/' target='_blank' rel='noopener'>Truth and Reconciliation Commission's Calls to Action</a>. When it is on, extra template sections appear in each module.</p>"
+        }
+      ],
+      "template": [
+        {
+          "title": "Organization profile",
+          "fields": [
+            {
+              "id": "org.name",
+              "label": "Organization name",
+              "kind": "text"
+            },
+            {
+              "id": "org.type",
+              "label": "Organization type",
+              "kind": "choice",
+              "options": [
+                "Registered charity",
+                "Nonprofit society or corporation",
+                "Indigenous-led organization",
+                "Other"
+              ]
+            },
+            {
+              "id": "org.province",
+              "label": "Province or territory",
+              "kind": "text"
+            },
+            {
+              "id": "org.serve",
+              "label": "Who we serve",
+              "hint": "In one or two sentences.",
+              "kind": "textarea"
+            },
+            {
+              "id": "org.budget",
+              "label": "Annual budget (approximate)",
+              "kind": "text",
+              "half": true
+            },
+            {
+              "id": "org.staff",
+              "label": "Staff and volunteers (approximate)",
+              "kind": "text",
+              "half": true
+            }
+          ]
+        },
+        {
+          "title": "Workbook settings",
+          "hint": "These choices adapt the guidance and templates in every module. You can change them at any time.",
+          "fields": [
+            {
+              "id": "set.size",
+              "label": "Size level",
+              "kind": "choice",
+              "options": [
+                {
+                  "v": "small",
+                  "l": "Small — Volunteer-led or a few staff; budget roughly under $500K"
+                },
+                {
+                  "v": "mid",
+                  "l": "Mid-size — Established staff team and several programs; roughly $500K to $5M"
+                },
+                {
+                  "v": "large",
+                  "l": "Large — Multiple sites, departments or complex funding; roughly over $5M"
+                }
+              ],
+              "setting": true
+            },
+            {
+              "id": "set.horizon",
+              "label": "Plan horizon",
+              "kind": "choice",
+              "options": [
+                {
+                  "v": "3",
+                  "l": "3-year plan"
+                },
+                {
+                  "v": "5",
+                  "l": "5-year plan"
+                }
+              ],
+              "setting": true
+            },
+            {
+              "id": "set.equity",
+              "label": "Equity and reconciliation lens",
+              "kind": "choice",
+              "options": [
+                {
+                  "v": "on",
+                  "l": "On (recommended)"
+                },
+                {
+                  "v": "off",
+                  "l": "Off"
+                }
+              ],
+              "setting": true
+            }
+          ]
+        },
+        {
+          "title": "Our planning journey",
+          "fields": [
+            {
+              "id": "start.use",
+              "label": "Modules we will use",
+              "hint": "Unselected modules stay available but appear faded in the menu.",
+              "kind": "checks",
+              "options": [
+                {
+                  "v": "m1",
+                  "l": "1. Getting ready to plan"
+                },
+                {
+                  "v": "m2",
+                  "l": "2. Looking back and around"
+                },
+                {
+                  "v": "m3",
+                  "l": "3. Mission, vision and values"
+                },
+                {
+                  "v": "m4",
+                  "l": "4. Strategic goals"
+                },
+                {
+                  "v": "m5",
+                  "l": "5. Key priorities and measures"
+                },
+                {
+                  "v": "m6",
+                  "l": "6. Actions and owners"
+                },
+                {
+                  "v": "m7",
+                  "l": "7. Tracking progress"
+                },
+                {
+                  "v": "m8",
+                  "l": "8. Approving and sharing"
+                },
+                {
+                  "v": "m9",
+                  "l": "9. Implementing and reviewing"
+                }
+              ],
+              "setting": true
+            },
+            {
+              "id": "start.lead",
+              "label": "Planning lead(s)",
+              "kind": "text"
+            },
+            {
+              "id": "start.begin",
+              "label": "Planning start date",
+              "kind": "date",
+              "half": true
+            },
+            {
+              "id": "start.approve",
+              "label": "Target board approval date",
+              "kind": "date",
+              "half": true
+            },
+            {
+              "id": "start.period",
+              "label": "Plan period",
+              "hint": "For example, 2027 to 2030.",
+              "kind": "text",
+              "half": true
+            },
+            {
+              "id": "start.plan",
+              "label": "Plan start date (first day of Year 1, Q1)",
+              "hint": "Use the first day of your fiscal year, so plan years and quarters match your budget. Quarter dates also appear in your board calendar.",
+              "kind": "date",
+              "half": true
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "m1",
+      "num": "1",
+      "short": "Getting ready to plan",
+      "title": "Getting ready to plan",
+      "purpose": "Confirm the organization is ready, agree on why you are planning, and set up the people, timeline and budget for the process.",
+      "who": "ED/CEO and Board Chair; the board approves the process",
+      "time": {
+        "small": "1 to 2 weeks",
+        "mid": "2 to 4 weeks",
+        "large": "4 to 6 weeks"
+      },
+      "questions": [
+        "Why are we creating a strategic plan now? Is it an expiring plan, a funder requirement, growth, a leadership change or a crisis?",
+        "What happened with our last plan? What did we achieve, and what stalled or was ignored?",
+        "Do we have the time, energy and budget to do this well right now?",
+        "Will this be a 3-year or 5-year plan, and why?",
+        "Who should be on the planning team?",
+        "Will an internal person or an external facilitator lead the sessions?",
+        "Which stakeholders must we hear from, and how?",
+        "When will the board approve the final plan?"
+      ],
+      "steps": [
+        "Complete the readiness checklist. If two or more items are “not yet”, address them first or keep the process lean.",
+        "Agree why you are planning and what would make the process worth everyone's time.",
+        "Form the planning team and confirm the facilitator.",
+        "Complete the planning charter: scope, budget, timeline, engagement and decision-making.",
+        "Take the charter to the board for approval."
+      ],
+      "scale": {
+        "small": "The board, or an existing committee, acts as the planning team. Use the readiness checklist and a short charter. One 90-minute meeting is enough.",
+        "mid": "A planning committee of 5 to 7 board and staff members. Plan a stakeholder survey and a few interviews. Consider a facilitator for the retreat.",
+        "large": "A formal committee of 7 to 9 with board, staff and community voices; an external facilitator; a written engagement plan; and a project timeline with an approved budget."
+      },
+      "facilitator": [
+        "Open with: “What would make this planning process worth our time?” Capture answers; they become your success criteria.",
+        "Surface fatigue or cynicism early. If the last plan sat on a shelf, name it and ask what will be different this time.",
+        "Agree how decisions will be made (consensus or vote) before the discussion starts.",
+        "Watch for one voice, often a founder or long-serving board member, setting the scope alone."
+      ],
+      "equity": [
+        "Who is on the planning team, and who is missing? Does it reflect the communities you serve?",
+        "Whose traditional territory does your organization operate on, and how will you acknowledge it in the process?",
+        "Will you compensate community members, Elders or people with lived experience for their time?",
+        "Are meetings accessible: timing, location, language, childcare and disability accommodations?"
+      ],
+      "tips": [
+        "Decide how the plan will be used before you write it. Plans tied to budgets and board agendas get used.",
+        "Keep the planning team small; engage everyone else through surveys and sessions.",
+        "Do not start in the middle of a crisis. Stabilize first."
+      ],
+      "output": "A completed readiness checklist, an approved planning charter and a confirmed timeline.",
+      "template": [
+        {
+          "title": "1A. Readiness checklist",
+          "hint": "Answer honestly. Two or more “not yet” answers means fix those first or keep the process lean.",
+          "checklist": {
+            "id": "m1.ready",
+            "items": [
+              "Leadership (ED/CEO and Board Chair) is stable for the next 6 months",
+              "The board is committed to the process",
+              "We have a clear picture of our current finances",
+              "No crisis is absorbing all our attention",
+              "Staff and board have time set aside",
+              "We have a budget for the process, even a small one"
+            ]
+          }
+        },
+        {
+          "title": "1B. Planning charter",
+          "fields": [
+            {
+              "id": "m1.why",
+              "label": "Why we are planning now",
+              "kind": "textarea"
+            },
+            {
+              "id": "m1.success",
+              "label": "What would make this process worth our time",
+              "hint": "Our success criteria for the process.",
+              "kind": "textarea"
+            },
+            {
+              "id": "m1.lastplan",
+              "label": "What we learned from our last plan",
+              "kind": "textarea"
+            },
+            {
+              "id": "m1.facilitator",
+              "label": "Facilitator",
+              "kind": "choice",
+              "options": [
+                "Internal",
+                "External",
+                "Not yet decided"
+              ]
+            },
+            {
+              "id": "m1.facname",
+              "label": "Facilitator name",
+              "kind": "text",
+              "half": true
+            },
+            {
+              "id": "m1.budget",
+              "label": "Budget for the process",
+              "kind": "text",
+              "half": true
+            },
+            {
+              "id": "m1.decisions",
+              "label": "How we will make decisions",
+              "kind": "choice",
+              "options": [
+                "Consensus",
+                "Majority vote",
+                "Consensus, with a vote if needed"
+              ]
+            },
+            {
+              "id": "m1.approve",
+              "label": "Date the board approved this charter",
+              "kind": "date",
+              "half": true
+            }
+          ]
+        },
+        {
+          "title": "1C. Planning team",
+          "table": {
+            "id": "m1.team",
+            "rows": 5,
+            "cols": [
+              {
+                "h": "Name",
+                "suggest": "dl-owners"
+              },
+              {
+                "h": "Role on the team"
+              },
+              {
+                "h": "Represents",
+                "type": "select",
+                "options": [
+                  "",
+                  "Board",
+                  "Staff",
+                  "Community",
+                  "Partner",
+                  "Other"
+                ]
+              },
+              {
+                "h": "Contact"
+              }
+            ]
+          }
+        },
+        {
+          "title": "1D. Key milestones",
+          "table": {
+            "id": "m1.dates",
+            "prefill": [
+              "Charter approved",
+              "Information gathering complete",
+              "Planning session or retreat",
+              "Draft plan circulated",
+              "Board approval",
+              "Plan launched"
+            ],
+            "cols": [
+              {
+                "h": "Milestone"
+              },
+              {
+                "h": "Target date",
+                "type": "date"
+              },
+              {
+                "h": "Lead",
+                "suggest": "dl-owners"
+              }
+            ]
+          }
+        },
+        {
+          "title": "1E. Inclusion in the process",
+          "equity": true,
+          "fields": [
+            {
+              "id": "m1.eq.missing",
+              "label": "Voices that are usually missing, and how we will include them",
+              "kind": "textarea"
+            },
+            {
+              "id": "m1.eq.access",
+              "label": "Accessibility and compensation",
+              "hint": "Honoraria, interpretation, timing, childcare, accommodations.",
+              "kind": "textarea"
+            },
+            {
+              "id": "m1.eq.land",
+              "label": "Land acknowledgement and relationships with local First Nations, Inuit or Métis communities",
+              "kind": "textarea"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "m2",
+      "num": "2",
+      "short": "Looking back and around",
+      "title": "Looking back and looking around",
+      "purpose": "Build a shared, honest picture of where the organization stands today and what is changing around it, before deciding where to go.",
+      "who": "ED/CEO and staff gather information; the planning team analyzes it",
+      "time": {
+        "small": "2 to 3 weeks",
+        "mid": "4 to 6 weeks",
+        "large": "6 to 10 weeks"
+      },
+      "questions": [
+        "What have we accomplished in the last 3 to 5 years, and what evidence do we have?",
+        "What do our clients, participants, members and community say about us?",
+        "How healthy are our finances, revenue mix, reserves and fundraising?",
+        "How strong are our people: staff, volunteers, board skills and culture?",
+        "How effective is our governance?",
+        "What is changing in our sector, community, funding and policy environment?",
+        "Who else does similar work, and where could we partner rather than compete?",
+        "What are we uniquely good at?"
+      ],
+      "steps": [
+        "Gather key documents using the information inventory.",
+        "Review results against your last plan.",
+        "Hear from stakeholders: build the ready-made survey in the Stakeholder survey tab, send it out, and add interviews or focus groups if you have capacity.",
+        "Record survey results and add them to What we heard (2D).",
+        "Run a SWOT session with the planning team. Larger organizations add a PESTLE scan.",
+        "Summarize the five or so issues the plan must address."
+      ],
+      "scale": {
+        "small": "One short online survey for board, staff and key partners, and a 2-hour SWOT session. Situation summary on 1 to 2 pages.",
+        "mid": "Survey plus 5 to 10 interviews with funders and partners, a SWOT session and a brief PESTLE scan. Summary on 2 to 4 pages.",
+        "large": "Survey, interviews, focus groups with clients or community, a full PESTLE and peer scan, and program data broken down by population."
+      },
+      "facilitator": [
+        "Share a short data summary before the session so people arrive informed.",
+        "Push for specifics in the SWOT. “Great staff” becomes “low turnover and deep program expertise”.",
+        "Keep internal (strengths, weaknesses) separate from external (opportunities, threats). Groups often mix them.",
+        "Close by asking: “What surprised us?” and “What are the two or three things that matter most?”"
+      ],
+      "equity": [
+        "Did you hear directly from the people you serve, especially those most affected or hardest to reach?",
+        "Can you break down program data to see who is and is not being served?",
+        "Have you engaged local First Nations, Inuit or Métis organizations or communities respectfully, on their terms?",
+        "Is the survey offered in plain language and the languages your community uses?"
+      ],
+      "tips": [
+        "Do not let information gathering drag on. Set a deadline and work with what you have.",
+        "Protect anonymity in surveys so people can be candid.",
+        "Treat hard feedback as a gift. Defensiveness shuts down honest input."
+      ],
+      "output": "A short situation summary, a completed SWOT and a list of the most important issues the plan must address.",
+      "template": [
+        {
+          "title": "2A. Information inventory",
+          "table": {
+            "id": "m2.inv",
+            "prefill": [
+              "Previous strategic plan and progress",
+              "Last 3 years of financial statements and budgets",
+              "Program outcomes and participation data",
+              "Annual reports and funder reports",
+              "Board composition and skills matrix",
+              "Staff and volunteer data or survey results"
+            ],
+            "cols": [
+              {
+                "h": "Information"
+              },
+              {
+                "h": "Where it lives"
+              },
+              {
+                "h": "Who gathers it"
+              },
+              {
+                "h": "Done",
+                "type": "check"
+              }
+            ]
+          }
+        },
+        {
+          "title": "2B. Results from our last plan",
+          "hint": "Skip if this is your first plan.",
+          "table": {
+            "id": "m2.last",
+            "rows": 4,
+            "cols": [
+              {
+                "h": "Goal or priority from last plan"
+              },
+              {
+                "h": "What happened"
+              },
+              {
+                "h": "Evidence"
+              },
+              {
+                "h": "Carry forward?",
+                "type": "select",
+                "options": [
+                  "",
+                  "Yes",
+                  "Change it",
+                  "No"
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "title": "2C. Stakeholder engagement plan",
+          "hint": "Sample questions: What do you value most about us? What should we stop, start or continue? What needs are not being met? What will matter most over the next few years?",
+          "table": {
+            "id": "m2.eng",
+            "rows": 4,
+            "cols": [
+              {
+                "h": "Group"
+              },
+              {
+                "h": "Method",
+                "type": "select",
+                "options": [
+                  "",
+                  "Survey",
+                  "Interview",
+                  "Focus group",
+                  "Community session",
+                  "Other"
+                ]
+              },
+              {
+                "h": "How many"
+              },
+              {
+                "h": "Lead"
+              },
+              {
+                "h": "By when"
+              }
+            ]
+          }
+        },
+        {
+          "title": "Stakeholder survey",
+          "custom": "surveyLink"
+        },
+        {
+          "title": "2D. What we heard",
+          "fields": [
+            {
+              "id": "m2.heard",
+              "label": "Key themes from stakeholders",
+              "kind": "textarea"
+            },
+            {
+              "id": "m2.surprise",
+              "label": "What surprised us",
+              "kind": "textarea"
+            }
+          ]
+        },
+        {
+          "title": "2E. SWOT analysis",
+          "swot": "m2.swot"
+        },
+        {
+          "title": "2F. PESTLE scan",
+          "sizes": [
+            "mid",
+            "large"
+          ],
+          "table": {
+            "id": "m2.pestle",
+            "prefill": [
+              "Political: government priorities, elections",
+              "Economic: funding climate, cost of living",
+              "Social: demographics, community needs",
+              "Technological: digital services, data, AI",
+              "Legal: CRA rules, provincial societies act, privacy",
+              "Environmental: climate, emergencies"
+            ],
+            "cols": [
+              {
+                "h": "Factor"
+              },
+              {
+                "h": "Trends affecting us"
+              },
+              {
+                "h": "Impact",
+                "type": "select",
+                "options": [
+                  "",
+                  "High",
+                  "Medium",
+                  "Low"
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "title": "2G. Issues the plan must address",
+          "hint": "Your most important takeaways from this module. They feed directly into Module 4.",
+          "table": {
+            "id": "m2.issues",
+            "rows": 5,
+            "cols": [
+              {
+                "h": "Issue"
+              },
+              {
+                "h": "Why it matters"
+              },
+              {
+                "h": "Evidence"
+              }
+            ]
+          }
+        },
+        {
+          "title": "2H. Equity check on our information",
+          "equity": true,
+          "fields": [
+            {
+              "id": "m2.eq.who",
+              "label": "Who we heard from, and who we did not",
+              "kind": "textarea"
+            },
+            {
+              "id": "m2.eq.data",
+              "label": "What our data shows about who is and is not being served",
+              "kind": "textarea"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "m3",
+      "num": "3",
+      "short": "Mission, vision and values",
+      "title": "Mission, vision and values",
+      "purpose": "Confirm or refresh the foundations every priority must serve: why you exist, the future you work toward, and how you work.",
+      "who": "The board owns these statements; staff and stakeholders contribute",
+      "time": {
+        "small": "One board meeting",
+        "mid": "Half-day workshop",
+        "large": "3 to 6 weeks, including stakeholder testing"
+      },
+      "questions": [
+        "Does our mission still describe what we do and for whom?",
+        "Would a new board member or funder understand it in one reading?",
+        "Is our vision inspiring and still relevant?",
+        "Do our values show up in how we actually work, hire and make decisions?",
+        "Are our registered purposes (constitution, bylaws or letters patent) still aligned with what we do?"
+      ],
+      "steps": [
+        "Review current statements using the definitions below.",
+        "Decide for each: keep, refine or rewrite.",
+        "If refining, agree the key ideas as a group, then let two or three people draft.",
+        "Test drafts with staff and, for larger organizations, stakeholders.",
+        "Board approves final statements."
+      ],
+      "definitions": [
+        "<b>Mission:</b> why we exist, who we serve and what we do. It should be achievable through your work.",
+        "<b>Vision:</b> the future we want to see in our community. It is bigger than the organization.",
+        "<b>Values:</b> the principles that guide how we behave and make decisions."
+      ],
+      "scale": {
+        "small": "Review in one board meeting. Refine wording only if needed. Confirming the current statements is a valid outcome.",
+        "mid": "A half-day workshop with board and staff. A small group drafts options; the board chooses.",
+        "large": "Values workshop with staff and board, drafts tested with stakeholders, and a check that governing documents still match."
+      },
+      "facilitator": [
+        "Avoid wordsmithing in a large group. Agree on the ideas together, then let a few people draft.",
+        "Use the “one-breath test”: can someone say the mission in one breath?",
+        "For values, ask for stories: “Tell us about a time this organization was at its best.” Values emerge from the stories."
+      ],
+      "equity": [
+        "Does your mission language reflect the dignity and strengths of the people you serve, not only their needs?",
+        "Do your values include equity, inclusion, accessibility or reconciliation, and are they backed by action?",
+        "Would community members recognize themselves in your vision?"
+      ],
+      "tips": [
+        "If your mission changes significantly, check whether your governing documents or charitable purposes need updating with your provincial registry or the CRA.",
+        "Not every plan needs a new mission."
+      ],
+      "output": "Board-approved mission, vision and values statements, new or reaffirmed.",
+      "template": [
+        {
+          "title": "3A. Foundations review",
+          "table": {
+            "id": "m3.review",
+            "prefill": [
+              "Mission",
+              "Vision",
+              "Values"
+            ],
+            "cols": [
+              {
+                "h": "Statement"
+              },
+              {
+                "h": "Current wording"
+              },
+              {
+                "h": "Still accurate?",
+                "type": "select",
+                "options": [
+                  "",
+                  "Yes",
+                  "Partly",
+                  "No"
+                ]
+              },
+              {
+                "h": "Decision",
+                "type": "select",
+                "options": [
+                  "",
+                  "Keep",
+                  "Refine",
+                  "Rewrite"
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "title": "3B. Our final statements",
+          "hint": "These appear in your strategic plan.",
+          "fields": [
+            {
+              "id": "m3.mission",
+              "label": "Mission",
+              "hint": "Why we exist, who we serve, what we do.",
+              "kind": "textarea"
+            },
+            {
+              "id": "m3.vision",
+              "label": "Vision",
+              "hint": "The future we want for our community.",
+              "kind": "textarea"
+            }
+          ]
+        },
+        {
+          "title": "3C. Our values in action",
+          "table": {
+            "id": "m3.values",
+            "rows": 5,
+            "cols": [
+              {
+                "h": "Value"
+              },
+              {
+                "h": "What it looks like in practice"
+              },
+              {
+                "h": "What it does not look like"
+              }
+            ]
+          }
+        },
+        {
+          "title": "3D. Approval",
+          "fields": [
+            {
+              "id": "m3.approved",
+              "label": "Date approved by the board",
+              "kind": "date",
+              "half": true
+            },
+            {
+              "id": "m3.govdocs",
+              "label": "Do governing documents need updating?",
+              "kind": "choice",
+              "options": [
+                "No",
+                "Yes",
+                "To check"
+              ],
+              "half": true
+            }
+          ]
+        },
+        {
+          "title": "3E. Equity check on our foundations",
+          "equity": true,
+          "fields": [
+            {
+              "id": "m3.eq",
+              "label": "How our mission, vision and values reflect equity, inclusion and reconciliation",
+              "kind": "textarea"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "m4",
+      "num": "4",
+      "short": "Strategic goals",
+      "title": "Choosing your strategic goals",
+      "purpose": "Decide the 3 to 4 strategic goals: the big outcomes your organization will achieve by the end of the plan. Everything else in the plan ladders up to these.",
+      "who": "Planning team proposes; the board decides; a facilitator often runs the session",
+      "time": {
+        "small": "One 2 to 3 hour session",
+        "mid": "Half-day retreat",
+        "large": "Full-day retreat plus stakeholder testing"
+      },
+      "questions": [
+        "Based on Module 2, what are the most important issues we must address?",
+        "What outcomes would make the biggest difference for the people we serve?",
+        "Which opportunities match our strengths and mission?",
+        "What must we strengthen internally (finances, people, systems, governance) to succeed?",
+        "What will we stop doing, or not start, to make room?",
+        "Could we realistically achieve these goals within the plan period?"
+      ],
+      "steps": [
+        "Brainstorm possible goals from your issues list (Module 2G).",
+        "Score each option using the grid.",
+        "Discuss the scores and narrow to 3 or 4 goals.",
+        "Write each goal as an outcome, with what it means and what success looks like by the end of the plan.",
+        "Agree what to stop, start and continue."
+      ],
+      "definitions": [
+        "<b>How the plan fits together:</b> 3 to 4 <b>strategic goals</b> → 2 to 4 <b>key priorities</b> under each goal, each with a measure (Module 5) → <b>actions</b> with owners, tracked every quarter (Modules 6 and 7).",
+        "<b>A strategic goal</b> is a big outcome you want by the end of the plan, written as a result, not an activity. Example: <i>Every family in our region can access healthy food.</i>",
+        "Most plans mix impact goals (community outcomes) with one capacity goal, such as financial sustainability, people and culture, governance, partnerships or technology."
+      ],
+      "scale": {
+        "small": "One working session using the scoring grid. Three goals is plenty.",
+        "mid": "A half-day retreat. Share draft goals with staff before board approval.",
+        "large": "A full-day retreat, then test draft goals with staff, partners and community before the board decides."
+      },
+      "facilitator": [
+        "Use the scoring grid or dot voting to narrow ideas, then discuss the results. Do not accept them mechanically.",
+        "Ask “If we could only achieve one thing in this plan, what would it be?” to reveal the real top goal.",
+        "The “stop doing” conversation is often the hardest and most valuable. Give it real time.",
+        "Name tensions openly: growth versus stability, new programs versus core services."
+      ],
+      "equity": [
+        "Who benefits from each goal, and who might be left out or burdened?",
+        "Is there a goal, or a thread across goals, that advances equity, accessibility or reconciliation?",
+        "Did community input from Module 2 visibly shape these choices?"
+      ],
+      "tips": [
+        "More than four goals means you have not chosen.",
+        "Goals are outcomes, not activities. “Every family can access healthy food” is a goal; “hold a food drive” is an action.",
+        "Include one capacity goal. Programs cannot grow on a weak foundation."
+      ],
+      "output": "3 to 4 board-endorsed strategic goals, each with a clear outcome, plus a stop, start, continue list.",
+      "template": [
+        {
+          "title": "4A. Goal scoring grid",
+          "hint": "Score each option from 1 (low) to 5 (high). The total adds up automatically.",
+          "table": {
+            "id": "m4.score",
+            "rows": 6,
+            "cols": [
+              {
+                "h": "Possible goal"
+              },
+              {
+                "h": "Mission impact",
+                "type": "number"
+              },
+              {
+                "h": "Community need",
+                "type": "number"
+              },
+              {
+                "h": "Our strength",
+                "type": "number"
+              },
+              {
+                "h": "Funding potential",
+                "type": "number"
+              },
+              {
+                "h": "Urgency",
+                "type": "number"
+              },
+              {
+                "h": "Total",
+                "type": "sum"
+              }
+            ]
+          }
+        },
+        {
+          "title": "4B. Our strategic goals",
+          "hint": "Your 3 to 4 goals. They appear in your strategic plan and organize your action tracker.",
+          "table": {
+            "id": "m4.goals",
+            "rows": 4,
+            "add": false,
+            "cols": [
+              {
+                "h": "Strategic goal"
+              },
+              {
+                "h": "What it means"
+              },
+              {
+                "h": "Why it matters now"
+              },
+              {
+                "h": "Outcome by the end of the plan"
+              }
+            ]
+          }
+        },
+        {
+          "title": "4C. Stop, start, continue",
+          "fields": [
+            {
+              "id": "m4.stop",
+              "label": "Stop doing",
+              "kind": "textarea",
+              "third": true
+            },
+            {
+              "id": "m4.start",
+              "label": "Start doing",
+              "kind": "textarea",
+              "third": true
+            },
+            {
+              "id": "m4.cont",
+              "label": "Continue doing",
+              "kind": "textarea",
+              "third": true
+            }
+          ]
+        },
+        {
+          "title": "4D. Equity check on our goals",
+          "equity": true,
+          "fields": [
+            {
+              "id": "m4.eq.benefit",
+              "label": "Who benefits from our goals, and who might be left out",
+              "kind": "textarea"
+            },
+            {
+              "id": "m4.eq.thread",
+              "label": "How equity, accessibility or reconciliation runs through our goals",
+              "kind": "textarea"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "m5",
+      "num": "5",
+      "short": "Key priorities and measures",
+      "title": "Key priorities and measures",
+      "purpose": "Under each goal, choose the 2 to 4 key priorities that will get you there, and give each one a measure and yearly targets so you know it is working.",
+      "who": "ED/CEO and senior staff draft; the planning team reviews; the board approves with the plan",
+      "time": {
+        "small": "1 to 2 weeks",
+        "mid": "2 to 4 weeks",
+        "large": "3 to 6 weeks, with working groups"
+      },
+      "questions": [
+        "For each goal, what are the few things we must focus on to achieve it?",
+        "How will we know each priority is working? What one number would tell us?",
+        "Where are we starting from (the baseline)?",
+        "What target is realistic for each year of the plan?",
+        "If we deliver every priority under a goal, will we achieve that goal?"
+      ],
+      "steps": [
+        "For each goal, list possible priorities, then choose the 2 to 4 that matter most.",
+        "Give each priority one measure.",
+        "Record the baseline and a target for each year.",
+        "Run the ladder check: do the priorities under each goal add up to achieving it?"
+      ],
+      "definitions": [
+        "<b>Key priority:</b> a focus area that moves a goal forward. Example: <i>Open two rural food hubs.</i>",
+        "<b>Measure:</b> one number that shows the priority is working, with a baseline and yearly targets. Example: <i>Households served in rural areas: 0 today, 150 in Year 1, 400 by Year 3.</i>",
+        "Good measures are specific, countable and something you can actually collect."
+      ],
+      "scale": {
+        "small": "2 priorities per goal, using counts you already collect. About 6 to 8 priorities in total.",
+        "mid": "2 to 3 priorities per goal, about 8 to 12 in total, mixing counts and outcome measures.",
+        "large": "Up to 4 priorities per goal. Working groups draft each goal; outcome measures are backed by a data plan."
+      },
+      "facilitator": [
+        "Ask “If we deliver all of these, will we achieve the goal?” If not, something is missing.",
+        "Groups often write activities here. Priorities are focus areas; activities belong in Module 6.",
+        "Pick one measure per priority. Debating the perfect measure stalls progress; choose a good one and refine it later.",
+        "For 5-year plans, keep Year 4 and 5 targets light. Refine them at the mid-point review."
+      ],
+      "equity": [
+        "Can your measures show who is being reached, for example by region, language or population?",
+        "Is there a priority for equity inside your organization, such as board and staff diversity or accessibility?",
+        "If you work with Indigenous communities, have they had a say in what success looks like?"
+      ],
+      "tips": [
+        "No baseline? Make the Year 1 target “establish a baseline”.",
+        "Measure only what you will use to make decisions.",
+        "Front-load Year 1 with a few quick wins to build momentum."
+      ],
+      "output": "2 to 4 key priorities under each goal, each with a measure, baseline and yearly targets.",
+      "template": [
+        {
+          "title": "5A. Key priorities and measures",
+          "hint": "Choose the goal from the list (your own goals from Module 4B). Then write your key priorities and measures: start typing to see suggestions, or write your own. Year columns follow your plan horizon.",
+          "table": {
+            "id": "m5.pri",
+            "rows": 10,
+            "cols": [
+              {
+                "h": "Goal",
+                "type": "goal"
+              },
+              {
+                "h": "Key priority",
+                "suggest": "dl-priorities"
+              },
+              {
+                "h": "Measure",
+                "suggest": "dl-measures"
+              },
+              {
+                "h": "Baseline"
+              },
+              "{years}"
+            ]
+          }
+        },
+        {
+          "title": "5B. Ladder check",
+          "fields": [
+            {
+              "id": "m5.ladder",
+              "label": "Do the priorities under each goal add up to achieving it? Note any gaps.",
+              "kind": "textarea"
+            }
+          ]
+        },
+        {
+          "title": "5C. Equity measures",
+          "equity": true,
+          "fields": [
+            {
+              "id": "m5.eq",
+              "label": "Measures that show whether we are reaching people fairly, and equity priorities inside our organization",
+              "kind": "textarea"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "m6",
+      "num": "6",
+      "short": "Actions and budget",
+      "title": "Actions, owners and budget by year",
+      "purpose": "Turn each key priority into actions for every year of the plan, each with one owner, a due quarter and a budget, so finance can build the plan into the annual budget. Every action flows into your action tracker and Plan budget.",
+      "who": "ED/CEO and staff with your finance lead; the finance committee reviews; the board approves budgets",
+      "time": {
+        "small": "1 to 2 weeks",
+        "mid": "3 to 4 weeks",
+        "large": "4 to 8 weeks, aligned with the budget cycle"
+      },
+      "questions": [
+        "What specific actions will move each priority forward, and in which year?",
+        "Who owns each action?",
+        "In which quarter will each action be done?",
+        "What will each action cost, where will the money come from, and is it secured?",
+        "Which budget line does each cost belong to?",
+        "Do we have the people and skills, or do we need to hire, train or partner?",
+        "What are the biggest risks to delivering the plan?"
+      ],
+      "steps": [
+        "Bring your finance lead in from the start. Set your plan start date (Start here) to the first day of your fiscal year.",
+        "Plan Year 1 in detail: 2 to 5 actions per key priority, each with one owner, a due quarter and a budget.",
+        "Outline the main actions for each later year in its own tab. Add detail at each annual review.",
+        "Give every action a funding source and funding status. Finance adds the budget line.",
+        "Review the Plan budget with finance: costs by goal and year, and how much is secured. If costs exceed what you can fund, move actions to a later year or trim them.",
+        "Each quarter, record spending in the tracker or on the Plan budget page so finance can compare budget and actual."
+      ],
+      "definitions": [
+        "<b>Budget:</b> the expected cost of the action in its plan year, including staff time if you cost it. <b>Funding status:</b> Secured (approved or in hand), Pending (applied or requested) or To be raised.",
+        "<b>Plan years</b> follow your plan start date. When that date is the first day of your fiscal year, Year 1 of the plan is the same as your next budget year."
+      ],
+      "scale": {
+        "small": "One action list per year, with costs folded into the annual budget. The treasurer reviews the Plan budget once a quarter.",
+        "mid": "Actions by priority for each year, budget lines from finance, and a quarterly Plan budget review by the finance committee.",
+        "large": "Department action lists, budget lines and cost centres, a multi-year financial projection, and monthly budget-to-actual reviews."
+      },
+      "facilitator": [
+        "This is staff-led work, with finance at the table. The board asks whether the plan is realistic and resourced; it does not manage the details.",
+        "Do not approve an unfunded plan and hope. Move actions to later years or trim instead.",
+        "Ask finance to bring last year's actuals. Real numbers keep estimates honest.",
+        "Link actions to work plans and performance reviews so the plan becomes part of normal operations."
+      ],
+      "equity": [
+        "Have you budgeted for inclusive engagement: honoraria, interpretation and accessibility?",
+        "Is ownership of actions shared across a diverse group, not concentrated in a few people?",
+        "If partnering with Indigenous organizations, are agreements built on respect, reciprocity and fair resourcing?"
+      ],
+      "tips": [
+        "Every action needs one named owner, not “the team”.",
+        "Plan Year 1 in detail; outline later years and refresh them every year.",
+        "A rough cost is better than none. Finance can refine it.",
+        "Mark funding as Pending until it is actually approved."
+      ],
+      "output": "Actions for every year of the plan with owners, due quarters and budgets, a costed plan budget by goal and year, and a risk register.",
+      "template": [
+        {
+          "title": "6A. Actions by year",
+          "hint": "Choose a year, then add its actions. Each action needs a key priority (from Module 5A), one owner, a due quarter and a budget. Every action appears in your action tracker and Plan budget.",
+          "custom": "actions"
+        },
+        {
+          "title": "6B. Plan budget by goal and year",
+          "custom": "costs"
+        },
+        {
+          "title": "6C. People and skills",
+          "hint": "The staff, volunteers, skills or partners each goal needs.",
+          "table": {
+            "id": "m6.res",
+            "rows": 4,
+            "cols": [
+              {
+                "h": "Goal",
+                "type": "goal"
+              },
+              {
+                "h": "People and skills needed"
+              },
+              {
+                "h": "How we will get them"
+              }
+            ]
+          }
+        },
+        {
+          "title": "6D. Risk register",
+          "table": {
+            "id": "m6.risk",
+            "prefill": [
+              "Loss of a major funder",
+              "Key staff departure"
+            ],
+            "rows": 4,
+            "cols": [
+              {
+                "h": "Risk"
+              },
+              {
+                "h": "Likelihood",
+                "type": "select",
+                "options": [
+                  "",
+                  "High",
+                  "Medium",
+                  "Low"
+                ]
+              },
+              {
+                "h": "Impact",
+                "type": "select",
+                "options": [
+                  "",
+                  "High",
+                  "Medium",
+                  "Low"
+                ]
+              },
+              {
+                "h": "How we will reduce it"
+              },
+              {
+                "h": "Owner",
+                "suggest": "dl-owners"
+              }
+            ]
+          }
+        },
+        {
+          "title": "6E. Resourcing inclusion",
+          "equity": true,
+          "fields": [
+            {
+              "id": "m6.eq",
+              "label": "Budget and roles that support equity, accessibility and reconciliation commitments",
+              "kind": "textarea"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "m7",
+      "num": "7",
+      "short": "Tracking progress",
+      "title": "Tracking progress quarter by quarter",
+      "purpose": "Set up your live action tracker: who updates it and when, what red, yellow and green mean, and how progress reaches the board.",
+      "who": "ED/CEO owns the tracker; action owners update it; the board reviews it each quarter",
+      "time": {
+        "small": "1 to 2 hours to set up",
+        "mid": "Half a day to set up",
+        "large": "1 to 2 weeks to set up"
+      },
+      "questions": [
+        "Who coordinates the tracker and follows up on updates?",
+        "When do owners update their actions each quarter?",
+        "What exactly do red, yellow and green mean for us?",
+        "What does the board need to see, and how often?",
+        "What happens when something turns red?"
+      ],
+      "steps": [
+        "Agree what red, yellow and green mean (7A).",
+        "Name a tracker coordinator and set the quarterly update deadline (7B).",
+        "Open the Action tracker in the menu and check that every action has an owner and a due quarter.",
+        "Each quarter, owners set a colour and write a one-line update for each of their actions, and record results against each measure.",
+        "Review the tracker at a staff meeting, then complete the Board dashboard and share it with your board."
+      ],
+      "definitions": [
+        "<b>Green:</b> on track. <b>Yellow:</b> at risk, with a plan to recover. <b>Red:</b> off track; needs a decision or help. <b>Complete:</b> done. You can adjust these definitions in 7A.",
+        "The <b>Action tracker</b> (in the menu) is your live, internal working document. It sits alongside the published plan but is not part of it."
+      ],
+      "scale": {
+        "small": "Owners update the tracker before each quarterly board meeting. The board reviews the dashboard as a 10-minute agenda item.",
+        "mid": "Owners update quarterly or monthly. Staff review the tracker each quarter; the board receives the dashboard quarterly.",
+        "large": "Department leads update monthly and the leadership team reviews monthly. A board committee reviews quarterly, with deeper dives on red items."
+      },
+      "facilitator": [
+        "Agree up front that yellow and red are information, not blame. Honest colours only work when people feel safe reporting them.",
+        "Start each review with the reds: what is the obstacle, and what decision or help is needed?",
+        "Keep updates to one line. The tracker is a snapshot, not a report.",
+        "Celebrate greens and completed actions at every review."
+      ],
+      "equity": [
+        "Do your measures show whether outcomes are fair across different groups?",
+        "Is ownership of actions shared across a diverse group, not concentrated in a few people?",
+        "When collecting data with First Nations communities, are you following OCAP® principles: ownership, control, access and possession?"
+      ],
+      "tips": [
+        "If an owner has not updated an action, treat it as yellow until they do.",
+        "Review the tracker at a standing meeting so it never goes stale.",
+        "Use the same dashboard for board reports and funder updates."
+      ],
+      "output": "A working tracker with clear colour definitions, a coordinator and a quarterly update rhythm.",
+      "template": [
+        {
+          "title": "7A. What our colours mean",
+          "hint": "Leave blank to use the standard definitions shown.",
+          "fields": [
+            {
+              "id": "m7.green",
+              "label": "Green",
+              "hint": "Standard: Progressing as planned.",
+              "kind": "text"
+            },
+            {
+              "id": "m7.yellow",
+              "label": "Yellow",
+              "hint": "Standard: Some delay or risk, with a plan to recover.",
+              "kind": "text"
+            },
+            {
+              "id": "m7.red",
+              "label": "Red",
+              "hint": "Standard: Needs a decision, resources or help.",
+              "kind": "text"
+            }
+          ]
+        },
+        {
+          "title": "7B. Ownership and rhythm",
+          "fields": [
+            {
+              "id": "m7.coord",
+              "label": "Tracker coordinator",
+              "hint": "The person who follows up on updates and prepares the board dashboard.",
+              "kind": "text",
+              "list": "dl-owners",
+              "half": true
+            },
+            {
+              "id": "m7.deadline",
+              "label": "Quarterly update deadline",
+              "hint": "For example, two weeks before each quarterly board meeting.",
+              "kind": "text",
+              "half": true
+            },
+            {
+              "id": "m7.board",
+              "label": "How often the board reviews the tracker",
+              "kind": "choice",
+              "options": [
+                "Every meeting",
+                "Quarterly",
+                "Twice a year"
+              ]
+            },
+            {
+              "id": "m7.trigger",
+              "label": "What happens when an action turns red",
+              "hint": "For example, the owner brings options to the next leadership meeting.",
+              "kind": "textarea"
+            }
+          ]
+        },
+        {
+          "title": "7C. Tracking equity",
+          "equity": true,
+          "fields": [
+            {
+              "id": "m7.eq",
+              "label": "How we will track whether outcomes are fair across groups, and who helps interpret results",
+              "kind": "textarea"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "m8",
+      "num": "8",
+      "short": "Approving and sharing",
+      "title": "Approving and sharing the plan",
+      "purpose": "Finalize the plan, secure formal board approval, and share it so staff, volunteers, funders and community understand and support it.",
+      "who": "ED/CEO and planning team finalize; the board approves by motion; everyone shares it",
+      "time": {
+        "small": "2 to 3 weeks",
+        "mid": "3 to 4 weeks",
+        "large": "4 to 6 weeks"
+      },
+      "questions": [
+        "Is the plan clear, concise and readable by someone outside the organization?",
+        "Does the board fully understand and support it?",
+        "Who needs to hear about the plan, and in what format?",
+        "How will we thank and report back to the people who gave input?",
+        "How will we bring new staff and board members into the plan?"
+      ],
+      "steps": [
+        "Write the short plan sections in 8A: the opening message, about us, how you planned and thank yous.",
+        "Open Your strategic plan in the menu. It assembles the full plan from your completed modules; fill any sections it flags.",
+        "Circulate the draft for feedback at least one week before the approval meeting.",
+        "Approve the plan by formal board motion, recorded in the minutes.",
+        "Download or print the plan and its one-page summary.",
+        "Carry out your communication plan and celebrate."
+      ],
+      "definitions": [
+        "<b>Sample motion:</b> BE IT RESOLVED THAT the Board of Directors approves the [Organization Name] Strategic Plan [Year to Year] as presented, and directs the Executive Director to develop annual operating plans and budgets aligned with it."
+      ],
+      "scale": {
+        "small": "A 2 to 6 page plan, approved at a regular board meeting and shared at a staff meeting and by email to partners.",
+        "mid": "A full plan plus a one-page summary, a staff briefing and tailored messages to funders and partners.",
+        "large": "A designed plan and summary, a launch event, tailored communications by audience, and accessible and translated versions (including French where relevant)."
+      },
+      "facilitator": [
+        "Circulate the final draft at least one week before the approval meeting.",
+        "Invite each board member to name one thing in the plan that excites them. It builds ownership.",
+        "Celebrate and recognize everyone who contributed."
+      ],
+      "equity": [
+        "Have you reported back to the community members who shared input, showing how their voices shaped the plan?",
+        "Is the plan available in plain language, accessible formats and the languages your community uses?",
+        "If Indigenous communities contributed, have you shared the plan with them first and in the way they prefer?"
+      ],
+      "tips": [
+        "Shorter is better. A plan people read beats a plan people admire.",
+        "Put the one-page summary on the wall, the website and the front of board packages."
+      ],
+      "output": "A board-approved plan, a one-page summary and a communication plan in motion.",
+      "template": [
+        {
+          "title": "8A. Writing your plan",
+          "hint": "These short sections, plus everything you completed in Modules 2 to 9, become your strategic plan. See it assemble under Your strategic plan in the menu.",
+          "fields": [
+            {
+              "id": "m8.message",
+              "label": "Message from the Board Chair and ED/CEO",
+              "hint": "Why this plan matters and what you are committing to. 150 to 300 words.",
+              "kind": "textarea"
+            },
+            {
+              "id": "m8.land",
+              "label": "Land acknowledgement (optional)",
+              "kind": "textarea"
+            },
+            {
+              "id": "m8.about",
+              "label": "About us",
+              "hint": "A brief history, who you serve and what you do. If left blank, your Start here profile is used.",
+              "kind": "textarea"
+            },
+            {
+              "id": "m8.how",
+              "label": "How we developed this plan",
+              "hint": "Who led it, who you heard from and over what period.",
+              "kind": "textarea"
+            },
+            {
+              "id": "m8.thanks",
+              "label": "Thank you to contributors",
+              "kind": "textarea"
+            }
+          ]
+        },
+        {
+          "title": "8B. Plan document checklist",
+          "hint": "Tick each section as it is drafted.",
+          "table": {
+            "id": "m8.outline",
+            "add": false,
+            "prefill": [
+              "Message from the Board Chair and ED/CEO",
+              "Land acknowledgement (optional)",
+              "About us: brief history and who we serve",
+              "How we developed this plan",
+              "Where we are today (Module 2)",
+              "Mission, vision and values (Module 3)",
+              "Strategic goals and key priorities (Modules 4 and 5)",
+              "Actions and owners (Module 6)",
+              "How we will track progress (Module 7)",
+              "How we will implement and review (Module 9)",
+              "Thank you to contributors"
+            ],
+            "cols": [
+              {
+                "h": "Section"
+              },
+              {
+                "h": "Drafted by"
+              },
+              {
+                "h": "Done",
+                "type": "check"
+              }
+            ]
+          }
+        },
+        {
+          "title": "8C. Board approval",
+          "fields": [
+            {
+              "id": "m8.motion",
+              "label": "Motion as approved",
+              "kind": "textarea"
+            },
+            {
+              "id": "m8.date",
+              "label": "Date approved",
+              "kind": "date",
+              "half": true
+            },
+            {
+              "id": "m8.moved",
+              "label": "Moved and seconded by",
+              "kind": "text",
+              "half": true
+            }
+          ]
+        },
+        {
+          "title": "8D. Communication plan",
+          "table": {
+            "id": "m8.comms",
+            "prefill": [
+              "Staff and volunteers",
+              "Board members",
+              "Funders and donors",
+              "Partners",
+              "Clients and community",
+              "Members (if applicable)"
+            ],
+            "cols": [
+              {
+                "h": "Audience"
+              },
+              {
+                "h": "What they need to know"
+              },
+              {
+                "h": "Format"
+              },
+              {
+                "h": "Who shares it"
+              },
+              {
+                "h": "When"
+              }
+            ]
+          }
+        },
+        {
+          "title": "8E. Reporting back",
+          "equity": true,
+          "fields": [
+            {
+              "id": "m8.eq",
+              "label": "How we will report back to the people and communities who shaped the plan",
+              "kind": "textarea"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "m9",
+      "num": "9",
+      "short": "Implementing and reviewing",
+      "title": "Implementing and reviewing",
+      "purpose": "Keep the plan alive by building it into operations, board meetings and budgets, and by adjusting it as circumstances change.",
+      "who": "ED/CEO leads implementation; the board monitors and holds an annual review",
+      "time": {
+        "small": "Ongoing; annual review of 2 hours",
+        "mid": "Ongoing; annual half-day review",
+        "large": "Ongoing; annual retreat and mid-point review"
+      },
+      "questions": [
+        "How will the plan show up in our board agendas, staff meetings and budgets?",
+        "What is working, what is not, and why?",
+        "Has anything changed in our environment that requires us to adjust?",
+        "Are we still resourcing the priorities we committed to?",
+        "When will we start planning for the next cycle?"
+      ],
+      "steps": [
+        "Schedule the review calendar before the plan is approved.",
+        "Update the action tracker each quarter and share its dashboard with the board.",
+        "In the last quarter of each year, hold an annual review: carry unfinished actions into next year (9C), then plan next year's actions and budget with finance in Module 6.",
+        "For 5-year plans, run a deeper mid-point review in Year 3.",
+        "In the final year, evaluate the plan and return to Module 1 for the next one."
+      ],
+      "scale": {
+        "small": "A 10-minute strategic plan item on every board agenda and a 2-hour annual review.",
+        "mid": "Quarterly progress reports, an annual half-day review and an annual action plan refresh.",
+        "large": "Dashboard reporting, quarterly reviews, an annual retreat, a formal mid-point review and an end-of-plan evaluation, possibly external."
+      },
+      "facilitator": [
+        "Put the plan on every board agenda, even if only as a short progress item.",
+        "Normalize adjustment. Changing a priority or target based on evidence is good governance, not failure.",
+        "At the annual review, start with celebration before problem-solving."
+      ],
+      "equity": [
+        "Are you reporting progress back to the community, not only to the board and funders?",
+        "Have any equity or reconciliation commitments slipped? If so, why, and what will you do?",
+        "Are new board and staff members oriented to these commitments?"
+      ],
+      "tips": [
+        "The most common failure is silence after approval. Book the first quarterly review now.",
+        "Include the plan in board and staff orientation.",
+        "Link the ED/CEO's annual goals and performance review to the plan."
+      ],
+      "output": "A plan that is reviewed quarterly, refreshed annually and evaluated at the end of its term.",
+      "template": [
+        {
+          "title": "9A. Review calendar",
+          "table": {
+            "id": "m9.cal",
+            "add": false,
+            "prefill": "__calendar__",
+            "cols": [
+              {
+                "h": "Review"
+              },
+              {
+                "h": "What happens"
+              },
+              {
+                "h": "Who"
+              },
+              {
+                "h": "Scheduled date",
+                "type": "date"
+              }
+            ]
+          }
+        },
+        {
+          "title": "9B. Annual plan review",
+          "hint": "Complete once a year. For multi-year use, export a copy after each review.",
+          "fields": [
+            {
+              "id": "m9.year",
+              "label": "Plan year being reviewed",
+              "kind": "choice",
+              "options": "__years__"
+            },
+            {
+              "id": "m9.wins",
+              "label": "Our biggest achievements this year",
+              "kind": "textarea"
+            },
+            {
+              "id": "m9.track",
+              "label": "Priorities and actions on track",
+              "kind": "textarea"
+            },
+            {
+              "id": "m9.risk",
+              "label": "Priorities and actions at risk or off track, and why",
+              "kind": "textarea"
+            },
+            {
+              "id": "m9.env",
+              "label": "Changes in our environment",
+              "kind": "textarea"
+            },
+            {
+              "id": "m9.adjust",
+              "label": "Adjustments to goals, priorities or measures",
+              "kind": "textarea"
+            },
+            {
+              "id": "m9.next",
+              "label": "Next year's focus (add the actions in Module 6 under next year's tab)",
+              "kind": "textarea"
+            },
+            {
+              "id": "m9.budget",
+              "label": "Budget implications",
+              "kind": "textarea"
+            }
+          ]
+        },
+        {
+          "title": "9C. Carry unfinished actions into next year",
+          "custom": "rollover"
+        },
+        {
+          "title": "9D. Equity commitments check-in",
+          "equity": true,
+          "fields": [
+            {
+              "id": "m9.eq",
+              "label": "Progress on equity and reconciliation commitments, and what we will do about any that slipped",
+              "kind": "textarea"
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

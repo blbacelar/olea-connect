@@ -13,8 +13,7 @@ const features: Array<{ id: AddOnId; availability: [Availability, Availability, 
   { id: "boardEvaluation", availability: ["boardEvaluation", "included", "included"] },
   { id: "ceoReview", availability: ["ceoReview", "ceoReview", "included"] },
   { id: "strategicPlanning", availability: ["strategicPlanning", "strategicPlanning", "included"] },
-  { id: "boardTraining", availability: ["boardTraining", "boardTraining", "included"] },
-  { id: "smallBoardTraining", availability: ["smallBoardTraining", "unavailable", "unavailable"] },
+  { id: "boardTraining", availability: ["included", "included", "included"] },
   { id: "accreditationPrep", availability: ["accreditationPrep", "accreditationPrep", "accreditationPrep"] },
 ];
 

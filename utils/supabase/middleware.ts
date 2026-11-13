@@ -20,6 +20,7 @@ const publicPagePaths = new Set([
   "/",
   "/referrals",
   "/demos",
+  "/learning",
   "/sponsorship",
   "/accessibility",
   "/login",
@@ -59,6 +60,7 @@ function isPathOrChild(pathname: string, prefix: string) {
 export function isPublicPath(pathname: string) {
   return (
     publicPagePaths.has(pathname) ||
+    /^\/modules\/(?:ed-review|strategic-planning)\/survey\/[^/]+$/.test(pathname) ||
     publicPathPrefixes.some((prefix) => isPathOrChild(pathname, prefix))
   );
 }

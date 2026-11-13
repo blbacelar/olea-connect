@@ -2,6 +2,7 @@
 
 import { Pause, Play, Trash2 } from "lucide-react";
 import Link from "next/link";
+import { useLocaleContext } from "@/components/i18n/LocaleProvider";
 
 import { PageHeader } from "@/components/PageHeader";
 import { SectionHeading } from "@/components/SectionHeading";
@@ -15,6 +16,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import type { OrganizationRole, TeamData } from "@/lib/types";
+import { boardCalendarRoleLabel, type BoardCalendarRole } from "@/lib/board-calendar/access";
 
 type TeamMember = TeamData["members"][number];
 type TeamMemberUpdate = {
@@ -67,12 +69,14 @@ export function MemberList({
   members,
   canManage,
   onUpdateMember,
+  onUpdateCalendarRole,
 }: {
   canManage: boolean;
   currentMember: TeamData["currentMember"];
   isPending: boolean;
   members: TeamMember[];
   onUpdateMember: (memberId: string, payload: TeamMemberUpdate) => void;
+  onUpdateCalendarRole: (memberId: string, role: Extract<BoardCalendarRole, "executive" | "chair" | "member">) => void;
 }) {
   return (
     <>
@@ -86,6 +90,7 @@ export function MemberList({
             isPending={isPending}
             member={member}
             onUpdateMember={onUpdateMember}
+            onUpdateCalendarRole={onUpdateCalendarRole}
           />
         ))}
       </div>
@@ -99,14 +104,17 @@ function MemberRow({
   isPending,
   member,
   onUpdateMember,
+  onUpdateCalendarRole,
 }: {
   canManage: boolean;
   currentMember: TeamData["currentMember"];
   isPending: boolean;
   member: TeamMember;
   onUpdateMember: (memberId: string, payload: TeamMemberUpdate) => void;
+  onUpdateCalendarRole: (memberId: string, role: Extract<BoardCalendarRole, "executive" | "chair" | "member">) => void;
 }) {
   const isCurrentMember = member.id === currentMember.id;
+  const french = useLocaleContext().locale === "fr-CA";
 
   return (
     <div className="flex flex-wrap items-center gap-4 border-b border-slate-100 px-[22px] py-4 last:border-0">
@@ -124,6 +132,7 @@ function MemberRow({
           ) : null}
         </div>
         <p className="mt-0.5 text-[13px] text-slate-500">{member.email}</p>
+        <p className="mt-0.5 text-xs text-slate-500">{french ? "Calendrier du conseil" : "Board Calendar"}: {boardCalendarRoleLabel(member.boardCalendarRole ?? "member", french)}</p>
       </div>
 
       {canManage ? (
@@ -133,6 +142,7 @@ function MemberRow({
           isPending={isPending}
           member={member}
           onUpdateMember={onUpdateMember}
+          onUpdateCalendarRole={onUpdateCalendarRole}
         />
       ) : (
         <Badge variant="outline" className="capitalize">
@@ -149,15 +159,18 @@ function MemberActions({
   isPending,
   member,
   onUpdateMember,
+  onUpdateCalendarRole,
 }: {
   currentMember: TeamData["currentMember"];
   isCurrentMember: boolean;
   isPending: boolean;
   member: TeamMember;
   onUpdateMember: (memberId: string, payload: TeamMemberUpdate) => void;
+  onUpdateCalendarRole: (memberId: string, role: Extract<BoardCalendarRole, "executive" | "chair" | "member">) => void;
 }) {
   const cannotEditOwner =
     currentMember.membershipRole === "admin" && member.role === "owner";
+  const french = useLocaleContext().locale === "fr-CA";
 
   return (
     <div className="flex flex-wrap items-center gap-2">
@@ -182,6 +195,19 @@ function MemberActions({
           <SelectItem value="member">Member</SelectItem>
         </SelectContent>
       </Select>
+
+      {member.role === "member" ? <Select
+        value={member.boardCalendarRole ?? "member"}
+        disabled={isPending || isCurrentMember}
+        onValueChange={(role) => onUpdateCalendarRole(member.id, role as Extract<BoardCalendarRole, "executive" | "chair" | "member">)}
+      >
+        <SelectTrigger className="w-44 bg-white" aria-label={french ? `Rôle au calendrier pour ${member.name}` : `Board Calendar role for ${member.name}`}><SelectValue /></SelectTrigger>
+        <SelectContent>
+          <SelectItem value="executive">{french ? "Direction générale / opérations" : "Executive Director / COO"}</SelectItem>
+          <SelectItem value="chair">{french ? "Présidence de comité" : "Committee Chair"}</SelectItem>
+          <SelectItem value="member">{french ? "Membre du conseil" : "Board Member"}</SelectItem>
+        </SelectContent>
+      </Select> : null}
 
       <Button
         variant="outline"

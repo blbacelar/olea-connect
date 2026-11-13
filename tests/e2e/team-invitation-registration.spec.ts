@@ -24,7 +24,7 @@ test.describe("@critical @team invitation registration", () => {
     );
 
     const team = new TeamPage(ownerSession.page);
-    await team.inviteMember(invitee.email);
+    await team.inviteMember(invitee.email, "chair");
 
     await expect
       .poll(() => testData.getTeamInvitation(owner, invitee.email))
@@ -63,7 +63,7 @@ test.describe("@critical @team invitation registration", () => {
 
       await expect
         .poll(() => testData.getOrganizationMembership(owner.organizationId, inviteeUserId))
-        .toMatchObject({ role: "member", status: "active" });
+        .toMatchObject({ role: "member", status: "active", board_calendar_role: "chair" });
       await expect
         .poll(() => testData.getTeamInvitation(owner, invitee.email))
         .toMatchObject({ status: "accepted", acceptedBy: inviteeUserId });

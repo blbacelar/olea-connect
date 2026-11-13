@@ -24,9 +24,11 @@ type DataChangeHandler = (
 export function useBoardPackageUploadController({
   onDataChange,
   templateInstanceId,
+  fileOnly = false,
 }: {
   onDataChange: DataChangeHandler;
   templateInstanceId: string;
+  fileOnly?: boolean;
 }) {
   const [uploadMeeting, setUploadMeeting] =
     useState<BoardPackageMeeting | null>(null);
@@ -77,6 +79,11 @@ export function useBoardPackageUploadController({
       url: trimmedUrl,
     });
 
+    if (fileOnly && (!selectedFile || trimmedUrl)) {
+      setFormError("Committee Chairs must upload a private file to this calendar. External links are managed by administrators.");
+      return;
+    }
+
     if (validationError) {
       setFormError(validationError);
       return;
@@ -100,6 +107,7 @@ export function useBoardPackageUploadController({
       onDataChange((currentData) =>
         appendBoardPackageDocument(currentData, {
           ...form,
+          confidential: fileOnly ? true : form.confidential,
           contentType: uploadedDocument?.contentType,
           fileName: uploadedDocument?.fileName,
           meetingId: uploadMeeting?.id,

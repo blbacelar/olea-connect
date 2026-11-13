@@ -64,6 +64,7 @@ export function BoardPackagesPanel({
   const upload = useBoardPackageUploadController({
     onDataChange,
     templateInstanceId,
+    fileOnly: canManage && !canSend,
   });
   const documents = useBoardPackageDocumentActions({
     meetings,
@@ -72,7 +73,6 @@ export function BoardPackagesPanel({
   });
   const packages = useBoardPackageDownloadController({
     brand,
-    onDataChange,
     setOperationError: documents.setOperationError,
     templateInstanceId,
   });
@@ -177,6 +177,7 @@ export function BoardPackagesPanel({
       </section>
 
       <BoardPackageUploadDialog
+        fileOnly={canManage && !canSend}
         form={upload.form}
         formError={upload.formError}
         isOpen={upload.isUploadOpen}

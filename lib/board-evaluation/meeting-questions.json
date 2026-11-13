@@ -1,0 +1,24 @@
+[
+  {
+    "name": "Meeting Effectiveness",
+    "qs": [
+      "How would you rate the overall effectiveness of today's meeting?",
+      "How well did we use our time today?",
+      "How prepared were you for today's meeting?"
+    ]
+  },
+  {
+    "name": "Decision-Making & Discussion",
+    "qs": [
+      "How would you rate the quality of board discussion today?",
+      "How confident are you in the decisions made today?"
+    ]
+  },
+  {
+    "name": "Engagement & Inclusion",
+    "qs": [
+      "How engaged did you feel during today's meeting?",
+      "How safe did you feel raising questions or concerns today?"
+    ]
+  }
+]

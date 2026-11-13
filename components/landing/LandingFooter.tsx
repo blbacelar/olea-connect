@@ -44,6 +44,7 @@ export async function LandingFooter({
           <Link href="/#plans">{footerNav.pricing}</Link>
           <Link href="/#faq">{footerNav.faq}</Link>
           <Link href="/demos">{footerNav.demos}</Link>
+          <Link href="/learning">{footerNav.learning}</Link>
           <a href="https://www.youtube.com/@OliveinGoodCompany" target="_blank" rel="noopener noreferrer">{footerNav.podcast}</a>
           <Link href="/sponsorship">{footerNav.sponsorship}</Link>
           <Link href="/referrals">{footerNav.referrals}</Link>

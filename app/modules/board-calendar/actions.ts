@@ -8,6 +8,7 @@ import {
   isBoardPackageStoragePathForSession,
 } from "@/lib/template-renderer/board-calendar-storage";
 import { requireMemberContext } from "@/lib/data/member-context";
+import { canEditBoardCalendarDocuments, effectiveBoardCalendarRole } from "@/lib/board-calendar/access";
 import { createAdminClient } from "@/utils/supabase/admin";
 import { assertTemplateInstanceAccess, writeBoardPackageAuditLog } from "./board-calendar-action-support";
 import {
@@ -55,7 +56,7 @@ export async function uploadBoardPackageDocument(
 ): Promise<BoardPackageActionResult<BoardPackageUploadedDocument>> {
   try {
     const { member, organization } = await requireMemberContext();
-    if (member.membershipRole === "member") throw new Error("Only an organization administrator can upload board package files.");
+    if (!canEditBoardCalendarDocuments(effectiveBoardCalendarRole(member))) throw new Error("Only a Calendar administrator or Committee Chair can upload board package files.");
     const templateInstanceId = getRequiredFormValue(
       formData,
       "templateInstanceId",
@@ -191,7 +192,7 @@ export async function deleteBoardPackageDocumentFile({
 }): Promise<BoardPackageActionResult> {
   try {
     const { member, organization } = await requireMemberContext();
-    if (member.membershipRole === "member") throw new Error("Only an organization administrator can delete board package files.");
+    if (!canEditBoardCalendarDocuments(effectiveBoardCalendarRole(member))) throw new Error("Only a Calendar administrator or Committee Chair can delete board package files.");
 
     if (
       !isBoardPackageStoragePathForSession({
@@ -237,7 +238,7 @@ export async function recordBoardPackageAuditEvent(
   try {
     const { member, organization } = await requireMemberContext();
     assertBoardPackageAuditAction(payload.action);
-    if (member.membershipRole === "member" && payload.action === "document_deleted") {
+    if (!canEditBoardCalendarDocuments(effectiveBoardCalendarRole(member)) && payload.action === "document_deleted") {
       throw new Error("Only an organization administrator can delete board package documents.");
     }
     await assertTemplateInstanceAccess(payload.templateInstanceId, organization.id);

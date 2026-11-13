@@ -11,16 +11,21 @@ import {
   toDateKey,
 } from "@/lib/template-renderer/calendar-view";
 import type { TemplateFormData } from "@/lib/template-renderer/types";
+import { strategicDatesToCalendarEvents, type StrategicCalendarDate } from "@/lib/strategic-planning/calendar-dates";
 
 export function useWorkbenchDerivedData({
   data,
   todayDate,
+  strategicDates = [],
+  french = false,
 }: {
   data: TemplateFormData;
   todayDate: Date;
+  strategicDates?: StrategicCalendarDate[];
+  french?: boolean;
 }) {
   const syncedData = useMemo(() => syncBoardCalendarGeneratedTasks(data), [data]);
-  const events = useMemo(() => buildCalendarEvents(syncedData), [syncedData]);
+  const events = useMemo(() => [...buildCalendarEvents(syncedData), ...strategicDatesToCalendarEvents(strategicDates, french)], [syncedData, strategicDates, french]);
   const categoryColors = useMemo(() => buildCategoryColors(syncedData), [syncedData]);
   const eventsByDate = useMemo(() => groupEventsByDate(events), [events]);
   const configuredYear = getTemplateYear(data);

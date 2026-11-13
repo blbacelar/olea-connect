@@ -36,9 +36,13 @@ import { useStaffTaskFilters } from "./use-staff-task-filters";
 export function StaffTaskListPanel({
   data,
   onChange,
+  canEdit = true,
+  canEditStatus = true,
 }: {
   data: TemplateFormData;
   onChange: (path: FieldPath, value: TemplateValue) => void;
+  canEdit?: boolean;
+  canEditStatus?: boolean;
 }) {
   const setup = buildBoardCalendarSetup(data);
   const tasks = getRows(syncBoardCalendarGeneratedTasks(data), "tasks");
@@ -80,6 +84,21 @@ export function StaffTaskListPanel({
       ),
     );
     closeTaskEditor();
+  }
+
+  function cycleTaskStatus(index: number) {
+    const task = tasks[index];
+    const savedTasks = getRows(data, "tasks");
+    const key = getString(task, "generated_key") || getString(task, "id");
+    const savedIndex = key
+      ? savedTasks.findIndex((row) => (getString(row, "generated_key") || getString(row, "id")) === key)
+      : index;
+    if (savedIndex < 0 || !savedTasks[savedIndex]) return;
+    const statuses = ["Not Started", "In Progress", "Complete"];
+    const current = getString(savedTasks[savedIndex], "status");
+    const next = statuses[(statuses.indexOf(current) + 1) % statuses.length];
+    onChange(["tasks"], savedTasks.map((row, position) =>
+      position === savedIndex ? { ...row, status: next } : row));
   }
 
   return (
@@ -137,6 +156,9 @@ export function StaffTaskListPanel({
         <>
           <StaffTaskTable
             tasks={taskFilters.filteredTasks}
+            canEdit={canEdit}
+            canEditStatus={canEditStatus}
+            onCycleTaskStatus={cycleTaskStatus}
             onEditTask={openTaskEditor}
           />
           {!taskFilters.filteredTasks.length ? (
@@ -144,7 +166,7 @@ export function StaffTaskListPanel({
               No workflow tasks match the current filters.
             </p>
           ) : null}
-          <StaffTaskEditorDialog
+          {canEdit ? <StaffTaskEditorDialog
             editingTask={editingTask}
             editingTaskIndex={editingTaskIndex}
             responsibleOptions={setup.responsibleOptions}
@@ -152,7 +174,7 @@ export function StaffTaskListPanel({
             onClose={closeTaskEditor}
             onSave={saveTaskDraft}
             onUpdateDraft={updateTaskDraft}
-          />
+          /> : null}
         </>
       ) : (
         <p className="rounded-lg border border-dashed p-4 text-sm text-slate-500">
@@ -165,9 +187,15 @@ export function StaffTaskListPanel({
 
 function StaffTaskTable({
   tasks,
+  canEdit = true,
+  canEditStatus = true,
+  onCycleTaskStatus,
   onEditTask,
 }: {
   tasks: Array<{ index: number; task: TemplateRecord }>;
+  canEdit?: boolean;
+  canEditStatus?: boolean;
+  onCycleTaskStatus: (index: number) => void;
   onEditTask: (index: number) => void;
 }) {
   return (
@@ -181,7 +209,7 @@ function StaffTaskTable({
             <TableHead>Responsible</TableHead>
             <TableHead>Status</TableHead>
             <TableHead className="w-[120px]">Notes</TableHead>
-            <TableHead className="w-[120px] text-right">Actions</TableHead>
+            {canEdit ? <TableHead className="w-[120px] text-right">Actions</TableHead> : null}
           </TableRow>
         </TableHeader>
         <TableBody>
@@ -200,7 +228,8 @@ function StaffTaskTable({
                 {getString(task, "responsible") || "Unassigned"}
               </TableCell>
               <TableCell>
-                <StatusBadge status={getString(task, "status")} />
+                {canEditStatus ? <Button type="button" variant="ghost" size="sm" aria-label={`Advance status for task ${index + 1}`} onClick={() => onCycleTaskStatus(index)}><StatusBadge status={getString(task, "status")} /></Button>
+                  : <StatusBadge status={getString(task, "status")} />}
               </TableCell>
               <TableCell className="whitespace-nowrap text-slate-500">
                 {getString(task, "notes") ? (
@@ -214,7 +243,7 @@ function StaffTaskTable({
                   "—"
                 )}
               </TableCell>
-              <TableCell className="text-right">
+              {canEdit ? <TableCell className="text-right">
                 <Button
                   type="button"
                   variant="outline"
@@ -224,7 +253,7 @@ function StaffTaskTable({
                 >
                   <Pencil className="size-4" />
                 </Button>
-              </TableCell>
+              </TableCell> : null}
             </TableRow>
           ))}
         </TableBody>

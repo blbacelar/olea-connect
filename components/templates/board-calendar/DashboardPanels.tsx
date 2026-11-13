@@ -3,6 +3,14 @@ import { CalendarDays, Eye, FileText, Pencil } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import type { CalendarViewEvent } from "@/lib/template-renderer/calendar-view";
+import { meetingDocumentKindsFor, meetingDocumentTitles } from "@/lib/template-renderer/board-calendar-meeting-documents";
+
+const frenchMeetingDocumentTitles = {
+  consent_agenda: "Ordre du jour de consentement",
+  board_minutes: "Procès-verbal du conseil",
+  committee_agenda: "Ordre du jour du comité",
+  committee_minutes: "Procès-verbal du comité",
+} as const;
 
 export function SummaryCard({
   icon: Icon,
@@ -39,12 +47,14 @@ export function MeetingsTablePanel({
   upcomingMeetingCount,
   onEditEvent,
   onOpenDocuments,
+  french = false,
 }: {
   canEdit?: boolean;
   meetings: CalendarViewEvent[];
   upcomingMeetingCount: number;
   onEditEvent: (event: CalendarViewEvent) => void;
   onOpenDocuments: (event: CalendarViewEvent) => void;
+  french?: boolean;
 }) {
   return (
     <section
@@ -60,7 +70,9 @@ export function MeetingsTablePanel({
             Meetings
           </h3>
           <p className="mt-1 text-sm leading-6 text-slate-500">
-            Only entries created as Meeting or Event appear here.
+            {french
+              ? "Ouvrez une réunion pour préparer l’ordre du jour de consentement et le procès-verbal du conseil."
+              : "Open a meeting to prepare its consent agenda and board minutes. Committee meetings have their own agenda and minutes."}
           </p>
         </div>
         {upcomingMeetingCount ? (
@@ -87,6 +99,11 @@ export function MeetingsTablePanel({
                 <div>
                   <p className="font-semibold text-slate-950">{meeting.title}</p>
                   <p className="text-xs text-slate-500">{meeting.category}</p>
+                  <p className="mt-1 text-xs text-slate-600">
+                    {meetingDocumentKindsFor(meeting.category).map((kind) =>
+                      french ? frenchMeetingDocumentTitles[kind] : meetingDocumentTitles[kind],
+                    ).join(" · ")}
+                  </p>
                 </div>
                 <MeetingTableField label="Date" value={meeting.dateKey ?? "No date"} />
                 <MeetingTableField label="Time" value={meeting.time || "No time"} />
@@ -102,12 +119,13 @@ export function MeetingsTablePanel({
                   <Button
                     type="button"
                     variant="outline"
-                    size="icon"
-                    className="mr-2"
+                    size="sm"
+                    className="mr-2 mb-2 min-h-10 gap-1.5 lg:mb-0"
                     aria-label={`Open documents for ${meeting.title}`}
                     onClick={() => onOpenDocuments(meeting)}
                   >
                     <FileText className="size-3.5" />
+                    {french ? "Documents de réunion" : "Meeting documents"}
                   </Button>
                   <Button
                     type="button"

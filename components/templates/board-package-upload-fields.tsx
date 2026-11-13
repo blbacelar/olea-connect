@@ -1,4 +1,5 @@
 import { Input } from "@/components/ui/input";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
 import {
   Select,
@@ -14,10 +15,12 @@ import {
 } from "./board-package-upload-state";
 
 export function BoardPackageUploadFields({
+  fileOnly = false,
   form,
   onFileChange,
   onUpdateForm,
 }: {
+  fileOnly?: boolean;
   form: UploadFormState;
   onFileChange: (file: File | null) => void;
   onUpdateForm: <Key extends keyof UploadFormState>(
@@ -47,16 +50,16 @@ export function BoardPackageUploadFields({
         />
       </div>
       <FileUploadField onFileChange={onFileChange} />
-      <ExternalLinkField form={form} onUpdateForm={onUpdateForm} />
+      {!fileOnly ? <ExternalLinkField form={form} onUpdateForm={onUpdateForm} /> : null}
+      {fileOnly ? <p className="text-sm text-slate-600 sm:col-span-2">Committee Chairs add private files. All uploaded files require confidentiality acknowledgement.</p> :
       <label className="flex items-center gap-3 rounded-lg border bg-slate-50 px-3 py-3 text-sm font-medium text-slate-700 sm:col-span-2">
-        <input
-          type="checkbox"
+        <Checkbox
           checked={form.confidential}
           onChange={(event) => onUpdateForm("confidential", event.target.checked)}
           className="size-4 rounded border-slate-300"
         />
         Require confidentiality acknowledgement before opening
-      </label>
+      </label>}
     </div>
   );
 }

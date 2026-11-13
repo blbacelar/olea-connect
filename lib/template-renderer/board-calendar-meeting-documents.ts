@@ -20,7 +20,7 @@ export function meetingDocumentKindsFor(type: string): MeetingDocumentKind[] {
 
 const attendanceSchema = z.object({
   memberId: z.string().min(1).max(200),
-  status: z.enum(["not_recorded", "present", "remote", "absent"]),
+  status: z.enum(["not_recorded", "present", "remote", "absent", "attending", "tentative", "not_attending", "no_response"]),
 });
 
 const motionSchema = z.object({
@@ -28,18 +28,22 @@ const motionSchema = z.object({
   text: z.string().trim().min(1).max(2000),
   movedBy: z.string().max(200),
   secondedBy: z.string().max(200),
+  movedByName: z.string().trim().max(200).optional(),
+  secondedByName: z.string().trim().max(200).optional(),
   votesFor: z.number().int().min(0).max(10000),
   votesAgainst: z.number().int().min(0).max(10000),
   abstentions: z.number().int().min(0).max(10000),
-  outcome: z.enum(["pending", "carried", "failed"]),
+  outcome: z.enum(["pending", "carried", "failed", "tabled"]),
 });
 
 const actionSchema = z.object({
   id: z.string().min(1).max(200),
   description: z.string().trim().min(1).max(2000),
   ownerId: z.string().max(200),
+  ownerName: z.string().trim().max(200).optional(),
   dueDate: z.union([z.literal(""), z.iso.date()]),
   done: z.boolean(),
+  status: z.enum(["open", "in_progress", "done"]).optional(),
 });
 
 export const meetingDocumentSchema = z.object({
@@ -84,16 +88,53 @@ export const meetingDocumentSections: Record<
   ],
 };
 
+const initialSectionText: Partial<Record<MeetingDocumentKind, Record<string, string>>> = {
+  consent_agenda: {
+    call: "The Chair calls the meeting to order and confirms a quorum is present.",
+    consent: "Approved together in a single motion unless an item is pulled:\n• Approval of previous minutes\n• Financial report acceptance\n• Committee reports (received as information)\n• Routine renewals and ratifications",
+    regular: "1. \n2. \n3. ",
+    reports: "• Executive Director report\n• Treasurer / Finance\n• Committee updates",
+    adjourn: "Motion to adjourn. Next meeting date confirmed.",
+  },
+  board_minutes: {
+    prior: "The minutes of the previous meeting were reviewed and approved as presented.",
+    adjourn: "Meeting adjourned at ____. Next meeting: ____.",
+  },
+  committee_agenda: {
+    call: "Committee called to order. Quorum confirmed.",
+    agenda: "1. \n2. \n3. ",
+  },
+};
+
+const initialSectionTextFrench: Partial<Record<MeetingDocumentKind, Record<string, string>>> = {
+  consent_agenda: {
+    call: "La présidence ouvre la séance et confirme le quorum.",
+    consent: "Approuvés par une seule motion, sauf si un point est retiré :\n• Approbation du procès-verbal précédent\n• Acceptation du rapport financier\n• Réception des rapports des comités\n• Renouvellements et ratifications courants",
+    regular: "1. \n2. \n3. ",
+    reports: "• Rapport de la direction générale\n• Trésorerie et finances\n• Nouvelles des comités",
+    adjourn: "Motion de lever la séance. Date de la prochaine réunion confirmée.",
+  },
+  board_minutes: {
+    prior: "Le procès-verbal de la réunion précédente a été examiné et approuvé tel que présenté.",
+    adjourn: "Séance levée à ____. Prochaine réunion : ____.",
+  },
+  committee_agenda: {
+    call: "La séance du comité est ouverte. Le quorum est confirmé.",
+    agenda: "1. \n2. \n3. ",
+  },
+};
+
 export function createMeetingDocument(
   meetingId: string,
   kind: MeetingDocumentKind,
   memberIds: string[],
+  french = false,
 ): MeetingDocument {
   return {
     meetingId,
     kind,
     status: "draft",
-    sections: Object.fromEntries(meetingDocumentSections[kind].map(({ id }) => [id, ""])),
+    sections: Object.fromEntries(meetingDocumentSections[kind].map(({ id }) => [id, (french ? initialSectionTextFrench : initialSectionText)[kind]?.[id] ?? ""])),
     attendance: memberIds.map((memberId) => ({ memberId, status: "not_recorded" })),
     motions: [],
     actions: [],
@@ -210,7 +251,7 @@ export function hasApprovalContent(document: MeetingDocument): boolean {
   if (document.kind === "consent_agenda" || document.kind === "committee_agenda") {
     return document.kind === "consent_agenda"
       ? Boolean(document.sections.consent?.trim() || document.sections.regular?.trim())
-      : Boolean(document.sections.agenda?.trim() || document.sections.next?.trim());
+      : Boolean(document.sections.agenda?.trim() || document.sections.next?.trim() || document.actions.length);
   }
   return Boolean(
     document.sections.discussion?.trim() || document.motions.length || document.actions.length,

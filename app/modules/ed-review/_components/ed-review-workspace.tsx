@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import * as React from "react";
 import { useLocaleContext } from "@/components/i18n/LocaleProvider";
 import {
@@ -165,6 +166,11 @@ export function EdReviewWorkspace({
         </div>
 
         <TabsContent value="overview">
+          <Button asChild variant="outline" className="mb-5">
+            <Link href="/modules/ed-review/annual">{locale === "fr-CA"
+              ? "Ouvrir le document annuel d’évaluation de la direction générale"
+              : "Open ED / CEO annual evaluation document"}</Link>
+          </Button>
           <div className="grid gap-4 md:grid-cols-3">
             <Metric title="Cycle status" value={data.cycle.status} />
             <Metric title="Campaigns" value={String(data.campaigns.length)} />
@@ -173,6 +179,38 @@ export function EdReviewWorkspace({
               value={String(totalResponses)}
               detail={`Summary threshold: ${data.cycle.minimumResponseCount}`}
             />
+          </div>
+          <div className="mt-6 grid gap-4 md:grid-cols-2">
+            <Card>
+              <CardHeader>
+                <CardTitle>{locale === "fr-CA" ? "Sondage auprès du personnel" : "Staff feedback survey"}</CardTitle>
+                <CardDescription>
+                  {locale === "fr-CA"
+                    ? "Invitez le personnel à évaluer anonymement la direction, la culture, la communication, les opérations et les partenariats."
+                    : "Invite staff to answer anonymously about ED / CEO leadership, culture, communications, operations, and partnerships."}
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                {data.isBoardChair ? <CreateCampaignDialog cycleId={data.cycle.id}
+                  initialKind="staff" triggerLabel={locale === "fr-CA" ? "Créer le sondage du personnel" : "Create staff survey"} /> :
+                  <p className="text-sm text-slate-600">{locale === "fr-CA" ? "Demandez à la présidence du conseil de créer ce sondage." : "Ask the Board Chair to create this survey."}</p>}
+              </CardContent>
+            </Card>
+            <Card>
+              <CardHeader>
+                <CardTitle>{locale === "fr-CA" ? "Sondage auprès des partenaires et parties prenantes" : "Partner and stakeholder survey"}</CardTitle>
+                <CardDescription>
+                  {locale === "fr-CA"
+                    ? "Recueillez des réponses anonymes sur la confiance, l’inclusion, le leadership et l’impact auprès des partenaires, bailleurs de fonds et parties prenantes."
+                    : "Gather anonymous feedback from partners, funders, and community stakeholders on trust, inclusion, leadership, and impact."}
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                {data.isBoardChair ? <CreateCampaignDialog cycleId={data.cycle.id}
+                  initialKind="partner" triggerLabel={locale === "fr-CA" ? "Créer le sondage des partenaires" : "Create partner survey"} /> :
+                  <p className="text-sm text-slate-600">{locale === "fr-CA" ? "Demandez à la présidence du conseil de créer ce sondage." : "Ask the Board Chair to create this survey."}</p>}
+              </CardContent>
+            </Card>
           </div>
           <Card className="mt-6">
             <CardHeader>
@@ -973,12 +1011,18 @@ function StatusForm({
 function CreateCampaignDialog({
   cycleId,
   newCampaignLink,
+  initialKind = "staff",
+  triggerLabel = "Create campaign",
 }: {
   cycleId: string;
   newCampaignLink?: string;
+  initialKind?: "staff" | "partner";
+  triggerLabel?: string;
 }) {
+  const { locale } = useLocaleContext();
+  const french = locale === "fr-CA";
   const [open, setOpen] = React.useState(false);
-  const [kind, setKind] = React.useState<"staff" | "partner">("staff");
+  const [kind, setKind] = React.useState<"staff" | "partner">(initialKind);
 
   React.useEffect(() => {
     if (newCampaignLink) setOpen(false);
@@ -1018,15 +1062,16 @@ function CreateCampaignDialog({
       <DialogTrigger asChild>
         <Button>
           <Plus className="size-4" />
-          Create campaign
+          {triggerLabel}
         </Button>
       </DialogTrigger>
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>Create anonymous feedback campaign</DialogTitle>
+          <DialogTitle>{french ? "Créer un sondage anonyme" : "Create anonymous feedback campaign"}</DialogTitle>
           <DialogDescription>
-            After creation, you will get one short-lived chance to copy the
-            generic link. Only its hash is kept in the database.
+            {french
+              ? "Après sa création, copiez le lien partagé. Seule son empreinte est conservée dans la base de données."
+              : "After creation, you will get one short-lived chance to copy the generic link. Only its hash is kept in the database."}
           </DialogDescription>
         </DialogHeader>
         <form
@@ -1039,17 +1084,17 @@ function CreateCampaignDialog({
           <input type="hidden" name="opensAt" />
           <input type="hidden" name="closesAt" />
           <div className="grid gap-2">
-            <Label htmlFor="campaign-title">Campaign title</Label>
+            <Label htmlFor="campaign-title">{french ? "Titre du sondage" : "Campaign title"}</Label>
             <Input
               id="campaign-title"
               name="title"
               maxLength={160}
               required
-              placeholder="e.g. 2026 staff feedback"
+              placeholder={french ? "p. ex. sondage du personnel 2026" : "e.g. 2026 staff feedback"}
             />
           </div>
           <div className="grid gap-2">
-            <Label>Audience</Label>
+            <Label>{french ? "Public visé" : "Audience"}</Label>
             <Select
               value={kind}
               onValueChange={(value) => setKind(value as "staff" | "partner")}
@@ -1058,15 +1103,15 @@ function CreateCampaignDialog({
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="staff">Staff feedback survey</SelectItem>
+                <SelectItem value="staff">{french ? "Sondage du personnel" : "Staff feedback survey"}</SelectItem>
                 <SelectItem value="partner">
-                  Partner and stakeholder survey
+                  {french ? "Sondage des partenaires et parties prenantes" : "Partner and stakeholder survey"}
                 </SelectItem>
               </SelectContent>
             </Select>
           </div>
           <div className="grid gap-2">
-            <Label htmlFor="campaign-opens-at">Opens at</Label>
+            <Label htmlFor="campaign-opens-at">{french ? "Ouverture" : "Opens at"}</Label>
             <Input
               id="campaign-opens-at"
               name="opensAtLocal"
@@ -1076,7 +1121,7 @@ function CreateCampaignDialog({
             />
           </div>
           <div className="grid gap-2">
-            <Label htmlFor="campaign-closes-at">Closes at (optional)</Label>
+            <Label htmlFor="campaign-closes-at">{french ? "Fermeture (facultative)" : "Closes at (optional)"}</Label>
             <Input
               id="campaign-closes-at"
               name="closesAtLocal"
@@ -1084,20 +1129,21 @@ function CreateCampaignDialog({
             />
           </div>
           <div className="grid gap-2">
-            <Label htmlFor="campaign-recipients">Optional delivery list</Label>
+            <Label htmlFor="campaign-recipients">{french ? "Liste de diffusion (facultative)" : "Optional delivery list"}</Label>
             <Textarea
               id="campaign-recipients"
               name="recipientEmails"
               maxLength={12_000}
-              placeholder="One email per line, or separate addresses with commas."
+              placeholder={french ? "Une adresse courriel par ligne ou séparées par des virgules." : "One email per line, or separate addresses with commas."}
             />
             <p className="text-sm text-slate-600">
-              The same shared link is emailed to every address. Delivery records
-              remain separate from anonymous responses.
+              {french
+                ? "Le même lien est envoyé à chaque adresse. Les envois restent séparés des réponses anonymes."
+                : "The same shared link is emailed to every address. Delivery records remain separate from anonymous responses."}
             </p>
           </div>
-          <SubmitButton pendingText="Creating link...">
-            Create campaign
+          <SubmitButton pendingText={french ? "Création du lien..." : "Creating link..."}>
+            {french ? "Créer le sondage" : "Create campaign"}
           </SubmitButton>
         </form>
       </DialogContent>

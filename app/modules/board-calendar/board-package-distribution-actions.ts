@@ -5,6 +5,7 @@ import { createHash } from "node:crypto";
 import { z } from "zod";
 
 import { requireMemberContext } from "@/lib/data/member-context";
+import { canManageBoardCalendar, effectiveBoardCalendarRole } from "@/lib/board-calendar/access";
 import { getAppUrl, getEmailRecipient, getEmailSender, getReplyTo, getResend } from "@/lib/email/server";
 import { buildBoardPackageMeetings } from "@/lib/template-renderer/board-calendar-packages";
 import type { TemplateFormData } from "@/lib/template-renderer/types";
@@ -27,7 +28,7 @@ export async function sendBoardPackage(
   try {
     const parsed = sendPackageInputSchema.parse(input);
     const { member, organization } = await requireMemberContext();
-    if (member.membershipRole === "member") {
+    if (!canManageBoardCalendar(effectiveBoardCalendarRole(member))) {
       throw new Error("Only an organization administrator can send board packages.");
     }
     const supabase = await createClient();
@@ -97,7 +98,7 @@ export async function sendBoardPackage(
 
 export async function getBoardPackageAuditEvents(templateInstanceId: string) {
   const { member, organization } = await requireMemberContext();
-  if (member.membershipRole === "member") throw new Error("Only organization administrators can view the package audit log.");
+  if (!canManageBoardCalendar(effectiveBoardCalendarRole(member))) throw new Error("Only organization administrators can view the package audit log.");
   if (!z.string().uuid().safeParse(templateInstanceId).success) return [];
   await assertTemplateInstanceAccess(templateInstanceId, organization.id);
   const admin = createAdminClient();

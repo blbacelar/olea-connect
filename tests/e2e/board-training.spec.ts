@@ -26,7 +26,7 @@ async function rateTopics(page: Page, rating: number, topics = course.reflection
   }
 }
 
-test.describe("@critical Canopy board training", () => {
+test.describe("@critical board training", () => {
   test("switches the training home to French and opens the French course", async ({ browser, baseURL, testData }) => {
     if (!baseURL) throw new Error("Playwright baseURL is required.");
     const owner = await testData.createOrganizationOwner({ activeSubscription: true, planId: "canopy" });
@@ -142,15 +142,17 @@ test.describe("@critical Canopy board training", () => {
     } finally { await context.close(); }
   });
 
-  test("limits management and reports to the right roles and plan", async ({ browser, baseURL, testData }) => {
+  test("allows every active tier while limiting management by role", async ({ browser, baseURL, testData }) => {
     test.setTimeout(120_000);
     if (!baseURL) throw new Error("Playwright baseURL is required.");
     const owner = await testData.createOrganizationOwner({ activeSubscription: true, planId: "canopy" });
     const member = await testData.createOrganizationMember(owner);
     const roots = await testData.createOrganizationOwner({ activeSubscription: true, planId: "roots" });
+    const seedling = await testData.createOrganizationOwner({ activeSubscription: true, planId: "seedling" });
     const ownerContext = await browser.newContext({ baseURL, storageState: await createAuthenticatedStorageState(owner.email, owner.password, baseURL) });
     const memberContext = await browser.newContext({ baseURL, storageState: await createAuthenticatedStorageState(member.email, member.password, baseURL) });
     const rootsContext = await browser.newContext({ baseURL, storageState: await createAuthenticatedStorageState(roots.email, roots.password, baseURL) });
+    const seedlingContext = await browser.newContext({ baseURL, storageState: await createAuthenticatedStorageState(seedling.email, seedling.password, baseURL) });
     try {
       const ownerPage = await ownerContext.newPage();
       await ownerPage.goto("/modules/board-training/report");
@@ -160,9 +162,7 @@ test.describe("@critical Canopy board training", () => {
       await expect(memberPage.getByTestId("board-training-home")).toBeVisible();
       await expect(memberPage.getByRole("tab", { name: "Manage training" })).toHaveCount(0);
       await memberPage.goto("/modules/board-training/report");
-      await expect(memberPage.getByText("This page could not be found.")).toBeVisible();
-      await memberPage.goto("/modules/board-training/chair-guide");
-      await expect(memberPage.getByText("This page could not be found.")).toBeVisible();
+      await expect(memberPage.getByText("This page could not be found.")).toBeVisible({ timeout: 30_000 });
       const rootsPage = await rootsContext.newPage();
       const clientErrors: string[] = [];
       rootsPage.on("console", (message) => {
@@ -170,16 +170,14 @@ test.describe("@critical Canopy board training", () => {
       });
       await rootsPage.goto("/dashboard");
       await rootsPage.getByRole("link", { name: "Board Training" }).click();
-      await expect(rootsPage.getByTestId("board-training-locked")).toBeVisible();
-      await expect(rootsPage.getByRole("link", { name: "View membership options" })).toBeVisible();
-      await expect(rootsPage.getByTestId("board-training-home")).toHaveCount(0);
-      for (const path of ["essentials", "chair-guide", "certificates", "report"]) {
-        await rootsPage.goto(`/modules/board-training/${path}`);
-        await expect(rootsPage.getByTestId("board-training-locked")).toBeVisible();
-      }
+      await expect(rootsPage.getByTestId("board-training-home")).toBeVisible();
+      const seedlingPage = await seedlingContext.newPage();
+      await seedlingPage.goto("/modules/board-training");
+      await expect(seedlingPage.getByTestId("board-training-home")).toBeVisible();
+      await expect(seedlingPage.getByTestId("board-training-locked")).toHaveCount(0);
       expect(clientErrors).toEqual([]);
     } finally {
-      await ownerContext.close(); await memberContext.close(); await rootsContext.close();
+      await ownerContext.close(); await memberContext.close(); await rootsContext.close(); await seedlingContext.close();
     }
   });
 

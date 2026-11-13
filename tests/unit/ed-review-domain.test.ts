@@ -101,6 +101,6 @@ describe("anonymous ED review survey domain", () => {
 
   it("keeps all question identifiers deterministic for the public form and database validation", () => {
     expect(getQuestionIds("staff")).toHaveLength(18);
-    expect(getQuestionIds("partner")).toHaveLength(14);
+    expect(getQuestionIds("partner")).toHaveLength(15);
   });
 });

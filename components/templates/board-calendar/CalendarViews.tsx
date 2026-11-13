@@ -1,4 +1,5 @@
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import {
   buildMonthGrid,
   getWeekDays,
@@ -13,7 +14,6 @@ export function MonthCalendar({
   eventsByDate,
   monthIndex,
   selectedDateKey,
-  todayKey,
   year,
   onEditEvent,
   onSelectDate,
@@ -21,7 +21,6 @@ export function MonthCalendar({
   eventsByDate: Map<string, CalendarViewEvent[]>;
   monthIndex: number;
   selectedDateKey: string;
-  todayKey: string;
   year: number;
   onEditEvent: (event: CalendarViewEvent) => void;
   onSelectDate: (dateKey: string) => void;
@@ -40,7 +39,6 @@ export function MonthCalendar({
             key={day.dateKey}
             dateKey={day.dateKey}
             dayNumber={day.date.getDate()}
-            disabled={day.dateKey < todayKey}
             events={eventsByDate.get(day.dateKey) ?? []}
             muted={!day.isCurrentMonth}
             selected={day.dateKey === selectedDateKey}
@@ -57,14 +55,12 @@ export function WeekCalendar({
   anchorDate,
   eventsByDate,
   selectedDateKey,
-  todayKey,
   onEditEvent,
   onSelectDate,
 }: {
   anchorDate: Date;
   eventsByDate: Map<string, CalendarViewEvent[]>;
   selectedDateKey: string;
-  todayKey: string;
   onEditEvent: (event: CalendarViewEvent) => void;
   onSelectDate: (dateKey: string) => void;
 }) {
@@ -75,23 +71,19 @@ export function WeekCalendar({
       {weekDays.map((day) => {
         const dateKey = toDateKey(day);
         const events = eventsByDate.get(dateKey) ?? [];
-        const disabled = dateKey < todayKey;
         return (
           <div
             key={dateKey}
-            aria-disabled={disabled}
             className={cn(
               "rounded-xl border bg-white p-3 text-left transition",
-              disabled &&
-                "border-slate-200 bg-slate-100 text-slate-400 opacity-70",
               selectedDateKey === dateKey &&
                 "border-olea-green ring-2 ring-olea-green/20",
             )}
           >
-            <button
+            <Button
               type="button"
-              disabled={disabled}
-              className="w-full rounded-lg text-left transition hover:text-olea-green disabled:cursor-not-allowed disabled:hover:text-inherit"
+              variant="ghost"
+              className="h-auto w-full flex-col items-start rounded-lg px-0 text-left transition hover:text-olea-green"
               onClick={() => onSelectDate(dateKey)}
             >
               <p className="text-xs font-semibold uppercase tracking-[0.08em] text-slate-400">
@@ -100,7 +92,7 @@ export function WeekCalendar({
               <p className="mt-1 text-lg font-semibold text-slate-950">
                 {monthNames[day.getMonth()].slice(0, 3)} {day.getDate()}
               </p>
-            </button>
+            </Button>
             <div className="mt-3 space-y-2">
               {events.length ? (
                 events.map((event) => (
@@ -226,15 +218,16 @@ export function CalendarEventPill({
   }
 
   return (
-    <button
+    <Button
       type="button"
+      variant="ghost"
       aria-label={`Edit ${event.title}`}
-      className={className}
+      className={cn(className, "h-auto whitespace-normal")}
       style={style}
       onClick={onEditEvent}
     >
       {content}
-    </button>
+    </Button>
   );
 }
 
@@ -257,7 +250,6 @@ function CalendarWeekHeader() {
 function DayCell({
   dateKey,
   dayNumber,
-  disabled,
   events,
   muted,
   selected,
@@ -266,7 +258,6 @@ function DayCell({
 }: {
   dateKey: string;
   dayNumber: number;
-  disabled: boolean;
   events: CalendarViewEvent[];
   muted: boolean;
   selected: boolean;
@@ -275,30 +266,24 @@ function DayCell({
 }) {
   return (
     <div
-      aria-disabled={disabled}
       className={cn(
         "min-h-[74px] border-b border-r bg-white p-1.5 text-left transition last:border-r-0 sm:min-h-[96px] sm:p-2 md:min-h-[150px] md:p-3 [&:nth-child(7n)]:border-r-0",
         muted && "bg-slate-50 text-slate-400",
-        disabled && "bg-slate-100 text-slate-400 opacity-70",
         selected &&
           "relative z-10 border-olea-green ring-2 ring-inset ring-olea-green",
       )}
     >
-      <button
+      <Button
         type="button"
-        aria-label={disabled ? `${dateKey} unavailable` : `Select ${dateKey}`}
-        disabled={disabled}
-        className="flex w-full items-center justify-between gap-1 rounded-lg text-left disabled:cursor-not-allowed sm:gap-2"
+        variant="ghost"
+        aria-label={`Select ${dateKey}`}
+        className="flex h-auto w-full items-center justify-between gap-1 rounded-lg px-0 text-left sm:gap-2"
         onClick={onSelect}
       >
         <span
           className={cn(
             "flex size-6 items-center justify-center rounded-full text-xs font-semibold sm:size-7 sm:text-sm",
-            disabled
-              ? "bg-slate-200 text-slate-400"
-              : muted
-                ? "text-slate-400"
-                : "bg-olea-light text-olea-dark",
+            muted ? "text-slate-400" : "bg-olea-light text-olea-dark",
           )}
         >
           {dayNumber}
@@ -308,7 +293,7 @@ function DayCell({
             +{events.length - 3}
           </span>
         ) : null}
-      </button>
+      </Button>
       <div className="mt-1 flex flex-wrap gap-1 md:hidden">
         {events.slice(0, 4).map((event) => (
           <span

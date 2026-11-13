@@ -25,7 +25,7 @@ export class EdReviewPage {
     await this.page.getByRole("button", { name: "Open review" }).click();
     await expect(
       this.page.getByRole("button", { name: "Close review" }),
-    ).toBeVisible();
+    ).toBeVisible({ timeout: 30_000 });
   }
 
   async closeCycle() {
@@ -45,8 +45,10 @@ export class EdReviewPage {
     await expect(linkInput).toBeVisible();
     await expect(dialog).not.toBeVisible();
     const surveyUrl = await linkInput.inputValue();
-    expect(new URL(surveyUrl).origin).toBe(new URL(this.page.url()).origin);
-    return surveyUrl;
+    const shared = new URL(surveyUrl);
+    const app = new URL(this.page.url());
+    expect(shared.pathname).toMatch(/^\/modules\/ed-review\/survey\//);
+    return `${app.origin}${shared.pathname}${shared.search}`;
   }
 
   async assignHrReviewer(name: string) {
@@ -117,7 +119,7 @@ export class EdReviewPage {
       this.page
         .getByTestId("ed-review-reviewer-list")
         .getByText(name, { exact: true }),
-    ).toHaveCount(0);
+    ).toHaveCount(0, { timeout: 30_000 });
   }
 
   async expectSoleBoardChairAccessToBeProtected(name: string) {

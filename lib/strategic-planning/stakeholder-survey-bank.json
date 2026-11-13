@@ -1,0 +1,388 @@
+{
+  "audiences": [
+    {
+      "v": "board",
+      "l": "Board members",
+      "g": "Dear board members,"
+    },
+    {
+      "v": "staff",
+      "l": "Staff",
+      "g": "Hello everyone,"
+    },
+    {
+      "v": "volunteers",
+      "l": "Volunteers",
+      "g": "Dear volunteers,"
+    },
+    {
+      "v": "clients",
+      "l": "Clients and participants",
+      "g": "Hello,"
+    },
+    {
+      "v": "partners",
+      "l": "Partner organizations",
+      "g": "Dear colleagues,"
+    },
+    {
+      "v": "funders",
+      "l": "Funders and donors",
+      "g": "Dear friends,"
+    },
+    {
+      "v": "community",
+      "l": "Community members",
+      "g": "Hello,"
+    }
+  ],
+  "themes": [
+    [
+      "about",
+      "About you"
+    ],
+    [
+      "today",
+      "Our work today"
+    ],
+    [
+      "role",
+      "Your experience with us"
+    ],
+    [
+      "ahead",
+      "Looking ahead"
+    ],
+    [
+      "inclusion",
+      "Inclusion and reconciliation"
+    ],
+    [
+      "custom",
+      "More questions"
+    ],
+    [
+      "final",
+      "Final thoughts"
+    ]
+  ],
+  "questions": [
+    {
+      "id": "connect",
+      "th": "about",
+      "t": "choice",
+      "aud": "all",
+      "on": 1,
+      "q": "How are you connected to {org}? Choose the one that fits best.",
+      "o": [
+        "Client or participant",
+        "Volunteer",
+        "Staff member",
+        "Board member",
+        "Donor or funder",
+        "Partner organization",
+        "Community member",
+        "Other"
+      ]
+    },
+    {
+      "id": "how_long",
+      "th": "about",
+      "t": "choice",
+      "aud": "all",
+      "on": 0,
+      "q": "How long have you been connected to {org}?",
+      "o": [
+        "Less than 1 year",
+        "1 to 3 years",
+        "4 to 10 years",
+        "More than 10 years"
+      ]
+    },
+    {
+      "id": "understand",
+      "th": "today",
+      "t": "agree",
+      "aud": "all",
+      "on": 1,
+      "q": "I understand what {org} does and who it serves."
+    },
+    {
+      "id": "impact",
+      "th": "today",
+      "t": "agree",
+      "aud": "all",
+      "on": 1,
+      "q": "{org} makes a real difference in our community."
+    },
+    {
+      "id": "value",
+      "th": "today",
+      "t": "open",
+      "aud": "all",
+      "on": 1,
+      "q": "What do you value most about {org}?"
+    },
+    {
+      "id": "improve",
+      "th": "today",
+      "t": "open",
+      "aud": "all",
+      "on": 1,
+      "q": "What is one thing {org} could do better?"
+    },
+    {
+      "id": "services",
+      "th": "role",
+      "t": "rating",
+      "aud": [
+        "clients"
+      ],
+      "on": 1,
+      "q": "Overall, how would you rate the programs and services you have received?"
+    },
+    {
+      "id": "access",
+      "th": "role",
+      "t": "agree",
+      "aud": [
+        "clients",
+        "community"
+      ],
+      "on": 1,
+      "q": "It is easy to find out about and use {org}'s services."
+    },
+    {
+      "id": "barriers",
+      "th": "role",
+      "t": "open",
+      "aud": [
+        "clients",
+        "community"
+      ],
+      "on": 0,
+      "q": "What makes it hard for you, or people you know, to use our services?"
+    },
+    {
+      "id": "support",
+      "th": "role",
+      "t": "agree",
+      "aud": [
+        "staff",
+        "volunteers"
+      ],
+      "on": 1,
+      "q": "I have the tools, training and support I need to do my work well."
+    },
+    {
+      "id": "recommend",
+      "th": "role",
+      "t": "agree",
+      "aud": [
+        "staff",
+        "volunteers"
+      ],
+      "on": 1,
+      "q": "I would recommend {org} as a place to work or volunteer."
+    },
+    {
+      "id": "obstacles",
+      "th": "role",
+      "t": "open",
+      "aud": [
+        "staff",
+        "volunteers"
+      ],
+      "on": 1,
+      "q": "What gets in the way of doing your best work here?"
+    },
+    {
+      "id": "direction",
+      "th": "role",
+      "t": "agree",
+      "aud": [
+        "board",
+        "staff"
+      ],
+      "on": 1,
+      "q": "The board and leadership give {org} clear direction."
+    },
+    {
+      "id": "board_skills",
+      "th": "role",
+      "t": "open",
+      "aud": [
+        "board"
+      ],
+      "on": 1,
+      "q": "What skills, experience or perspectives are missing from our board?"
+    },
+    {
+      "id": "board_role",
+      "th": "role",
+      "t": "open",
+      "aud": [
+        "board"
+      ],
+      "on": 0,
+      "q": "How could the board best support the next strategic plan?"
+    },
+    {
+      "id": "partner",
+      "th": "role",
+      "t": "agree",
+      "aud": [
+        "partners"
+      ],
+      "on": 1,
+      "q": "{org} is an effective and reliable partner."
+    },
+    {
+      "id": "together",
+      "th": "role",
+      "t": "open",
+      "aud": [
+        "partners",
+        "funders"
+      ],
+      "on": 1,
+      "q": "Where could we work together more effectively?"
+    },
+    {
+      "id": "alignment",
+      "th": "role",
+      "t": "agree",
+      "aud": [
+        "funders"
+      ],
+      "on": 1,
+      "q": "{org}'s work fits well with your funding priorities."
+    },
+    {
+      "id": "funding_trends",
+      "th": "role",
+      "t": "open",
+      "aud": [
+        "funders"
+      ],
+      "on": 1,
+      "q": "What changes in funding or giving should we prepare for?"
+    },
+    {
+      "id": "needs",
+      "th": "ahead",
+      "t": "open",
+      "aud": "all",
+      "on": 1,
+      "q": "What needs in our community are not being met today?"
+    },
+    {
+      "id": "changes",
+      "th": "ahead",
+      "t": "open",
+      "aud": "all",
+      "on": 0,
+      "q": "What changes do you see coming in our community over the next 3 to 5 years?"
+    },
+    {
+      "id": "focus",
+      "th": "ahead",
+      "t": "multi",
+      "aud": "all",
+      "on": 1,
+      "q": "Where should {org} focus most over the next few years? Choose up to three.",
+      "o": [
+        "Expanding our current programs",
+        "Starting new programs or services",
+        "Reaching people we do not serve today",
+        "Advocacy and policy change",
+        "Partnerships with other organizations",
+        "Financial stability",
+        "Supporting our staff and volunteers",
+        "Online and digital services",
+        "Other"
+      ]
+    },
+    {
+      "id": "stop_start",
+      "th": "ahead",
+      "t": "open",
+      "aud": "all",
+      "on": 1,
+      "q": "What should {org} start doing, stop doing or keep doing?"
+    },
+    {
+      "id": "success",
+      "th": "ahead",
+      "t": "open",
+      "aud": "all",
+      "on": 1,
+      "q": "If {org} were very successful five years from now, what would be different?"
+    },
+    {
+      "id": "contact_pref",
+      "th": "ahead",
+      "t": "multi",
+      "aud": "all",
+      "on": 0,
+      "q": "How do you prefer to hear from us? Choose up to three.",
+      "o": [
+        "Email",
+        "Newsletter",
+        "Website",
+        "Social media",
+        "Text message",
+        "Phone",
+        "In person"
+      ]
+    },
+    {
+      "id": "respect",
+      "th": "inclusion",
+      "t": "agree",
+      "aud": [
+        "clients",
+        "community",
+        "volunteers"
+      ],
+      "on": 1,
+      "eq": 1,
+      "q": "I am treated with dignity and respect at {org}."
+    },
+    {
+      "id": "welcoming",
+      "th": "inclusion",
+      "t": "agree",
+      "aud": "all",
+      "on": 1,
+      "eq": 1,
+      "q": "{org} is welcoming to people of all backgrounds, identities and abilities."
+    },
+    {
+      "id": "missing",
+      "th": "inclusion",
+      "t": "open",
+      "aud": "all",
+      "on": 0,
+      "eq": 1,
+      "q": "Whose voices or needs do you think {org} is missing?"
+    },
+    {
+      "id": "reconciliation",
+      "th": "inclusion",
+      "t": "open",
+      "aud": "all",
+      "on": 0,
+      "eq": 1,
+      "q": "How can {org} better support reconciliation with First Nations, Inuit and Métis peoples?"
+    },
+    {
+      "id": "else",
+      "th": "final",
+      "t": "open",
+      "aud": "all",
+      "on": 1,
+      "q": "Is there anything else you would like to tell us?"
+    }
+  ]
+}

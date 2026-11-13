@@ -4,6 +4,7 @@ import { renderBoardRecruitmentPdfBuffer } from "@/lib/board-recruitment/pdf-exp
 import { getBoardRecruitmentData } from "@/lib/data/board-recruitment";
 import { createBrandingSnapshot } from "@/lib/data/brand-assets";
 import { getOptionalMemberContext } from "@/lib/data/member-context";
+import { getRequestLocale } from "@/lib/i18n/server";
 import { logError } from "@/lib/observability/logger";
 import { createAdminClient } from "@/utils/supabase/admin";
 
@@ -22,11 +23,12 @@ export async function GET(request: Request) {
 
     const url = new URL(request.url);
     const identified = url.searchParams.get("view") !== "anonymous";
-    const [data, brand] = await Promise.all([
+    const [data, brand, locale] = await Promise.all([
       getBoardRecruitmentData(),
       createBrandingSnapshot(createAdminClient(), session.organization.brand),
+      getRequestLocale(),
     ]);
-    const pdf = await renderBoardRecruitmentPdfBuffer(data, brand, identified);
+    const pdf = await renderBoardRecruitmentPdfBuffer(data, brand, identified, locale);
     const organization =
       data.workspace.organizationName
         .replace(/[^a-z0-9]+/gi, "-")

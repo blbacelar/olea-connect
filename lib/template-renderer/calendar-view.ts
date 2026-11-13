@@ -52,7 +52,7 @@ export interface CalendarViewEvent {
   monthIndex: number | null;
   category: string;
   color: string;
-  source: "meeting" | "annual" | "task" | "agm";
+  source: "meeting" | "annual" | "task" | "agm" | "strategic";
   leadContact?: string;
   time?: string;
   location?: string;

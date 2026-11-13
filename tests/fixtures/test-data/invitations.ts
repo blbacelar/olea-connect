@@ -130,7 +130,7 @@ export async function getAuthEmailConfirmationLink(this: TestDataManager, email:
 export async function getOrganizationMembership(this: TestDataManager, organizationId: string, userId: string) {
   const { data, error } = await this.supabase
     .from("organization_members")
-    .select("role, status")
+    .select("role, status, board_calendar_role")
     .eq("organization_id", organizationId)
     .eq("user_id", userId)
     .maybeSingle();

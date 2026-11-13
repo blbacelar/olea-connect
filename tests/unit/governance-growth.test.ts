@@ -26,10 +26,13 @@ const subscription = (overrides: Partial<GovernanceSubscription> = {}): Governan
 });
 
 describe("governance growth entitlement", () => {
-  it("includes evaluation for Roots and planning/training for Canopy", () => {
+  it("includes training in every active tier, evaluation in Roots, and planning in Canopy", () => {
     expect(hasGovernanceFeature("board_evaluation", subscription(), now)).toBe(true);
     expect(hasGovernanceFeature("strategic_planning", subscription(), now)).toBe(false);
-    expect(hasGovernanceFeature("board_training", subscription({ plan_id: "canopy" }), now)).toBe(true);
+    for (const plan_id of ["seedling", "roots", "canopy", "harvest"]) {
+      expect(hasGovernanceFeature("board_training", subscription({ plan_id }), now)).toBe(true);
+    }
+    expect(hasGovernanceFeature("board_training", subscription({ plan_id: "seedling", status: "canceled" }), now)).toBe(false);
   });
 
   it("accepts active add-ons but blocks expired or canceled subscriptions", () => {

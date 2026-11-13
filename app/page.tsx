@@ -5,6 +5,8 @@ import { LandingFaq } from "@/components/landing/LandingFaq";
 import { LandingFeatures } from "@/components/landing/LandingFeatures";
 import { LandingFooter } from "@/components/landing/LandingFooter";
 import { LandingHero } from "@/components/landing/LandingHero";
+import { LandingLearning } from "@/components/landing/LandingLearning";
+import { LandingNewsletter } from "@/components/landing/LandingNewsletter";
 import { LandingPricing } from "@/components/landing/LandingPricing";
 import { LandingPodcast } from "@/components/landing/LandingPodcast";
 import { LandingTrust } from "@/components/landing/LandingTrust";
@@ -23,6 +25,7 @@ export default async function HomePage() {
     <div className="min-h-screen bg-white">
       <PublicHeader showFoundingOffer={initialSpots?.foundingAvailable === true} />
       <main>
+        <LandingNewsletter locale={locale} />
         <LandingHero copy={copy.hero} />
         <LandingTransformation copy={copy.transformation} />
         <LandingFeatures copy={copy.features} />
@@ -30,6 +33,7 @@ export default async function HomePage() {
         <LandingTrust copy={copy.trust} />
         <LandingDemo copy={copy.demo} />
         <LandingWorkflow copy={copy.workflow} />
+        <LandingLearning locale={locale} />
         <LandingPricing copy={copy.pricing} locale={locale} initialSpots={initialSpots} />
         <LandingFaq copy={copy.faq} />
         <FinalCta copy={copy.finalCta} />

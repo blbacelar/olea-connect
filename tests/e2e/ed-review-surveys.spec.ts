@@ -16,6 +16,43 @@ const test = authenticatedTest.extend({
 });
 
 test.describe("@critical anonymous ED/CEO review surveys", () => {
+  test.setTimeout(120_000);
+  test("creates the partner survey from the overview and accepts anonymous feedback", async ({
+    page, browser, baseURL,
+  }) => {
+    if (!baseURL) throw new Error("Playwright baseURL is required.");
+    const reviewer = new EdReviewPage(page);
+    await reviewer.open();
+    await reviewer.openCycle();
+    await page.getByRole("tab", { name: "Overview" }).click();
+    await expect(page.getByRole("heading", { name: "Staff feedback survey" })).toBeVisible();
+    await expect(page.getByRole("heading", { name: "Partner and stakeholder survey" })).toBeVisible();
+    await page.getByRole("button", { name: "Create partner survey" }).click();
+    const dialog = page.getByRole("dialog");
+    await dialog.getByLabel("Campaign title").fill(`Partner feedback ${Date.now()}`);
+    await expect(dialog.getByRole("combobox")).toContainText("Partner and stakeholder survey");
+    await dialog.getByRole("button", { name: "Create campaign" }).click();
+    const linkInput = page.getByLabel("New anonymous survey link");
+    await expect(linkInput).toBeVisible();
+
+    const publicContext = await browser.newContext({ baseURL });
+    try {
+      const survey = await publicContext.newPage();
+      const surveyUrl = new URL(await linkInput.inputValue());
+      await survey.goto(`${new URL(page.url()).origin}${surveyUrl.pathname}${surveyUrl.search}`);
+      await expect(survey.getByText("Anonymous feedback", { exact: true }).first()).toBeVisible();
+      await survey.getByRole("radiogroup").first().getByLabel("4").check({ force: true });
+      await survey.getByRole("button", { name: "Submit anonymous feedback" }).click();
+      await survey.getByRole("button", { name: "Submit response" }).click();
+      await expect(survey.getByRole("heading", { name: "Thank you for your feedback" })).toBeVisible();
+    } finally {
+      await publicContext.close();
+    }
+    await page.reload();
+    await reviewer.openCampaigns();
+    await expect(page.getByText("Partner feedback", { exact: true })).toBeVisible();
+  });
+
   test("creates an open shared-link campaign and submits anonymous staff feedback", async ({
     page,
     browser,
@@ -34,7 +71,7 @@ test.describe("@critical anonymous ED/CEO review surveys", () => {
       const survey = await publicContext.newPage();
       await survey.goto(surveyUrl);
       await expect(
-        survey.getByText("Anonymous feedback", { exact: true }),
+        survey.getByText("Anonymous feedback", { exact: true }).first(),
       ).toBeVisible();
       await survey
         .getByRole("radiogroup")

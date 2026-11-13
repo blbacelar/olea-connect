@@ -6,7 +6,7 @@ export const boardCalendarContactSchema = z.object({
   id: z.string().min(1).max(200),
   name: z.string().trim().min(1).max(160),
   boardRole: z.string().trim().max(100),
-  email: z.email().max(320),
+  email: z.union([z.literal(""), z.email().max(320)]),
   phone: z.string().trim().max(50).regex(/^[+\d() .-]*$/),
   address: z.string().trim().max(500),
   committee: z.string().trim().max(160),
@@ -25,9 +25,13 @@ export function getBoardCalendarContacts(data: TemplateFormData): BoardCalendarC
   for (const row of parsed) {
     if (ids.has(row.id)) throw new Error("Each board contact needs a unique ID.");
     const email = row.email.toLowerCase();
-    if (emails.has(email)) throw new Error("Each board contact needs a unique email address.");
+    if (email && emails.has(email)) throw new Error("Each board contact needs a unique email address.");
     ids.add(row.id);
-    emails.add(email);
+    if (email) emails.add(email);
   }
   return parsed;
+}
+
+export function getBoardCalendarDateRecipients(data: TemplateFormData): BoardCalendarContact[] {
+  return getBoardCalendarContacts(data).filter((contact) => contact.receivesEmails && Boolean(contact.email));
 }

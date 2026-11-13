@@ -131,6 +131,7 @@ const partnerSections = [
       "Creates an inclusive, respectful experience for partners.",
       "Responds thoughtfully to partner needs.",
       "Makes community voices feel genuinely valued.",
+      "My organization or community is valued as a genuine partner.",
     ],
   },
   {

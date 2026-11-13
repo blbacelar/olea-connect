@@ -23,9 +23,13 @@ export class TeamPage {
     await expect(this.page.getByRole("button", { name: /^Remove / })).toHaveCount(0);
   }
 
-  async inviteMember(email: string) {
+  async inviteMember(email: string, calendarRole: "executive" | "chair" | "member" = "member") {
     await this.open();
     await this.page.getByRole("textbox", { name: "Team member email" }).first().fill(email);
+    if (calendarRole !== "member") {
+      await this.page.getByRole("combobox", { name: "Board Calendar role", exact: true }).click();
+      await this.page.getByRole("option", { name: calendarRole === "chair" ? "Committee Chair" : "Executive Director / COO" }).click();
+    }
     const sendInvite = this.page.locator('[data-testid="send-invite"]:visible');
     await expect(sendInvite).toBeVisible({ timeout: 15_000 });
     await expect(sendInvite).toBeEnabled({ timeout: 15_000 });

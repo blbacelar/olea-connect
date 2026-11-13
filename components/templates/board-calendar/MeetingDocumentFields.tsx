@@ -63,6 +63,10 @@ export function MeetingDocumentFields({
                   <SelectItem value="present">Present</SelectItem>
                   <SelectItem value="remote">Remote</SelectItem>
                   <SelectItem value="absent">Absent</SelectItem>
+                  <SelectItem value="attending">Attending</SelectItem>
+                  <SelectItem value="tentative">Tentative</SelectItem>
+                  <SelectItem value="not_attending">Not attending</SelectItem>
+                  <SelectItem value="no_response">No response</SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -70,23 +74,32 @@ export function MeetingDocumentFields({
         }) : <p className="text-sm text-slate-500">Invite workspace members to record attendance.</p>}
       </section>
 
-      {meetingDocumentSections[document.kind].map((section) => (
-        <div key={section.id} className="space-y-2">
-          <Label htmlFor={`meeting-document-${section.id}`}>{section.label}</Label>
-          <Textarea
-            id={`meeting-document-${section.id}`}
-            maxLength={4000}
-            placeholder={section.placeholder}
-            value={document.sections[section.id] ?? ""}
-            onChange={(event) => updateSection(section.id, event.target.value)}
-            rows={4}
-          />
-        </div>
-      ))}
+      {meetingDocumentSections[document.kind].map((section) =>
+        document.kind === "committee_agenda" && section.id === "review" ? (
+          <div key={section.id} className="space-y-3">
+            <ActionsEditor document={document} members={members} onChange={onChange} title="Review of open action items" />
+            {document.sections.review?.trim() ? (
+              <div className="space-y-2"><Label htmlFor="meeting-document-review">Earlier review notes</Label><Textarea id="meeting-document-review" maxLength={4000} value={document.sections.review} onChange={(event) => updateSection("review", event.target.value)} rows={3} /></div>
+            ) : null}
+          </div>
+        ) : (
+          <div key={section.id} className="space-y-2">
+            <Label htmlFor={`meeting-document-${section.id}`}>{section.label}</Label>
+            <Textarea
+              id={`meeting-document-${section.id}`}
+              maxLength={4000}
+              placeholder={section.placeholder}
+              value={document.sections[section.id] ?? ""}
+              onChange={(event) => updateSection(section.id, event.target.value)}
+              rows={4}
+            />
+          </div>
+        ),
+      )}
 
       {document.kind.endsWith("minutes") ? (
         <>
-          <MotionsEditor document={document} members={members} nameById={nameById} onChange={onChange} />
+          <MotionsEditor document={document} nameById={nameById} onChange={onChange} />
           <ActionsEditor document={document} members={members} onChange={onChange} />
         </>
       ) : null}
@@ -94,38 +107,10 @@ export function MeetingDocumentFields({
   );
 }
 
-function MemberSelect({
-  label,
-  members,
-  value,
-  onChange,
-}: {
-  label: string;
-  members: WorkspaceMemberOption[];
-  value: string;
-  onChange: (value: string) => void;
-}) {
-  return (
-    <div className="space-y-2">
-      <Label>{label}</Label>
-      <Select value={value || "none"} onValueChange={(selected) => onChange(selected === "none" ? "" : selected)}>
-        <SelectTrigger aria-label={label}><SelectValue placeholder="Choose a member" /></SelectTrigger>
-        <SelectContent>
-          <SelectItem value="none">Not selected</SelectItem>
-          {members.map((member) => (
-            <SelectItem key={member.id} value={member.id}>{member.name || member.email}</SelectItem>
-          ))}
-        </SelectContent>
-      </Select>
-    </div>
-  );
-}
-
 function MotionsEditor({
-  document, members, nameById, onChange,
+  document, nameById, onChange,
 }: {
   document: MeetingDocument;
-  members: WorkspaceMemberOption[];
   nameById: Map<string, string>;
   onChange: ChangeHandler;
 }) {
@@ -142,7 +127,7 @@ function MotionsEditor({
         </div>
         <Button type="button" variant="outline" size="sm" onClick={() => onChange({
           ...document,
-          motions: [...document.motions, { id: createTemplateRecordId("motion"), text: "", movedBy: "", secondedBy: "", votesFor: 0, votesAgainst: 0, abstentions: 0, outcome: "pending" }],
+          motions: [...document.motions, { id: createTemplateRecordId("motion"), text: "", movedBy: "", secondedBy: "", movedByName: "", secondedByName: "", votesFor: 0, votesAgainst: 0, abstentions: 0, outcome: "pending" }],
         })}><Plus className="size-4" /> Add motion</Button>
       </div>
       {document.motions.map((motion, index) => (
@@ -155,8 +140,8 @@ function MotionsEditor({
             <Button type="button" variant="ghost" size="icon" aria-label={`Remove motion ${index + 1}`} onClick={() => onChange({ ...document, motions: document.motions.filter((_, position) => position !== index) })}><Trash2 className="size-4" /></Button>
           </div>
           <div className="grid gap-3 sm:grid-cols-2">
-            <MemberSelect label={`Moved by for motion ${index + 1}`} members={members} value={motion.movedBy} onChange={(value) => update(index, { movedBy: value })} />
-            <MemberSelect label={`Seconded by for motion ${index + 1}`} members={members} value={motion.secondedBy} onChange={(value) => update(index, { secondedBy: value })} />
+            <div className="space-y-2"><Label htmlFor={`moved-${motion.id}`}>Moved by</Label><Input id={`moved-${motion.id}`} aria-label={`Moved by for motion ${index + 1}`} maxLength={200} placeholder="Name of mover" value={motion.movedByName ?? nameById.get(motion.movedBy) ?? ""} onChange={(event) => update(index, { movedByName: event.target.value, movedBy: "" })} /></div>
+            <div className="space-y-2"><Label htmlFor={`seconded-${motion.id}`}>Seconded by</Label><Input id={`seconded-${motion.id}`} aria-label={`Seconded by for motion ${index + 1}`} maxLength={200} placeholder="Name of seconder" value={motion.secondedByName ?? nameById.get(motion.secondedBy) ?? ""} onChange={(event) => update(index, { secondedByName: event.target.value, secondedBy: "" })} /></div>
           </div>
           <div className="grid gap-3 sm:grid-cols-4">
             {(["votesFor", "votesAgainst", "abstentions"] as const).map((field) => (
@@ -169,7 +154,7 @@ function MotionsEditor({
               <Label>Outcome</Label>
               <Select value={motion.outcome} onValueChange={(outcome: typeof motion.outcome) => update(index, { outcome })}>
                 <SelectTrigger aria-label={`Outcome for motion ${index + 1}`}><SelectValue /></SelectTrigger>
-                <SelectContent><SelectItem value="pending">Pending</SelectItem><SelectItem value="carried">Carried</SelectItem><SelectItem value="failed">Failed</SelectItem></SelectContent>
+                <SelectContent><SelectItem value="pending">Pending</SelectItem><SelectItem value="carried">Carried</SelectItem><SelectItem value="failed">Failed</SelectItem><SelectItem value="tabled">Tabled</SelectItem></SelectContent>
               </Select>
             </div>
           </div>
@@ -180,16 +165,17 @@ function MotionsEditor({
   );
 }
 
-function ActionsEditor({ document, members, onChange }: { document: MeetingDocument; members: WorkspaceMemberOption[]; onChange: ChangeHandler }) {
+function ActionsEditor({ document, members, onChange, title = "Action items" }: { document: MeetingDocument; members: WorkspaceMemberOption[]; onChange: ChangeHandler; title?: string }) {
+  const memberNameById = new Map(members.map((member) => [member.id, member.name || member.email]));
   function update(index: number, patch: Partial<MeetingDocument["actions"][number]>) {
     onChange({ ...document, actions: document.actions.map((action, position) => position === index ? { ...action, ...patch } : action) });
   }
   return (
     <section className="space-y-3 border-t pt-5">
       <div className="flex items-center justify-between gap-2">
-        <h3 className="text-sm font-semibold text-slate-950">Action items</h3>
+        <h3 className="text-sm font-semibold text-slate-950">{title}</h3>
         <Button type="button" variant="outline" size="sm" onClick={() => onChange({
-          ...document, actions: [...document.actions, { id: createTemplateRecordId("action"), description: "", ownerId: "", dueDate: "", done: false }],
+          ...document, actions: [...document.actions, { id: createTemplateRecordId("action"), description: "", ownerId: "", ownerName: "", dueDate: "", done: false, status: "open" }],
         })}><Plus className="size-4" /> Add action</Button>
       </div>
       {document.actions.map((action, index) => (
@@ -198,9 +184,10 @@ function ActionsEditor({ document, members, onChange }: { document: MeetingDocum
             <div className="flex-1 space-y-2"><Label htmlFor={`action-${action.id}`}>Action {index + 1}</Label><Input id={`action-${action.id}`} maxLength={2000} value={action.description} placeholder="Describe the follow-up" onChange={(event) => update(index, { description: event.target.value })} /></div>
             <Button type="button" variant="ghost" size="icon" aria-label={`Remove action ${index + 1}`} onClick={() => onChange({ ...document, actions: document.actions.filter((_, position) => position !== index) })}><Trash2 className="size-4" /></Button>
           </div>
-          <div className="grid gap-3 sm:grid-cols-2">
-            <MemberSelect label={`Owner for action ${index + 1}`} members={members} value={action.ownerId} onChange={(value) => update(index, { ownerId: value })} />
-            <div className="space-y-2"><Label htmlFor={`due-${action.id}`}>Due date</Label><Input id={`due-${action.id}`} type="date" value={action.dueDate} onChange={(event) => update(index, { dueDate: event.target.value })} /></div>
+          <div className="grid gap-3 sm:grid-cols-3">
+            <div className="space-y-2"><Label htmlFor={`owner-${action.id}`}>Owner</Label><Input id={`owner-${action.id}`} aria-label={`Owner for action ${index + 1}`} maxLength={200} placeholder="Person responsible" value={action.ownerName ?? memberNameById.get(action.ownerId) ?? ""} onChange={(event) => update(index, { ownerName: event.target.value, ownerId: "" })} /></div>
+            <div className="space-y-2"><Label htmlFor={`due-${action.id}`}>Due date</Label><Input id={`due-${action.id}`} type="date" value={action.dueDate} onChange={(event) => update(index, { dueDate: event.target.value })} /><p className="text-xs text-slate-500">Choose a calendar date.</p></div>
+            <div className="space-y-2"><Label>Status</Label><Select value={action.status ?? (action.done ? "done" : "open")} onValueChange={(status: "open" | "in_progress" | "done") => update(index, { status, done: status === "done" })}><SelectTrigger aria-label={`Status for action ${index + 1}`}><SelectValue /></SelectTrigger><SelectContent><SelectItem value="open">Open</SelectItem><SelectItem value="in_progress">In progress</SelectItem><SelectItem value="done">Done</SelectItem></SelectContent></Select></div>
           </div>
         </div>
       ))}

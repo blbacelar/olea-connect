@@ -2,28 +2,18 @@
 
 import { useState } from "react";
 
-import {
-  appendBoardPackageAccessLog,
-  type BoardPackageMeeting,
-} from "@/lib/template-renderer/board-calendar-packages";
-import type { TemplateFormData } from "@/lib/template-renderer/types";
+import { type BoardPackageMeeting } from "@/lib/template-renderer/board-calendar-packages";
 import type { BrandProfile } from "@/lib/types";
 
 import { downloadBoardPackageZip } from "./board-package-download";
 import { recordBoardPackageDownload } from "./board-package-operations";
 
-type DataChangeHandler = (
-  updater: (currentData: TemplateFormData) => TemplateFormData,
-) => void;
-
 export function useBoardPackageDownloadController({
   brand,
-  onDataChange,
   setOperationError,
   templateInstanceId,
 }: {
   brand: BrandProfile;
-  onDataChange: DataChangeHandler;
   setOperationError: (message: string) => void;
   templateInstanceId: string;
 }) {
@@ -51,7 +41,6 @@ export function useBoardPackageDownloadController({
         meeting: downloadablePackage,
         templateInstanceId,
       });
-      logPackageDownload(downloadablePackage);
       clearPackageTarget();
     } catch (error) {
       setOperationError(
@@ -78,16 +67,6 @@ export function useBoardPackageDownloadController({
   function clearPackageTarget() {
     setPackageTarget(null);
     setPackageAcknowledged(false);
-  }
-
-  function logPackageDownload(meeting: BoardPackageMeeting) {
-    onDataChange((currentData) =>
-      appendBoardPackageAccessLog(currentData, {
-        action: "package_downloaded",
-        meetingId: meeting.id,
-        meetingTitle: meeting.title,
-      }),
-    );
   }
 
   return {

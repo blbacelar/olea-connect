@@ -16,6 +16,7 @@ export async function getTeamData(): Promise<TeamData> {
     { count: activeMemberCount, error: memberError },
     { data: invitations, error: invitationError },
     { data: directory, error: directoryError },
+    { data: calendarRoles, error: calendarRolesError },
   ] = await Promise.all([
     supabase
       .from("organization_members")
@@ -25,7 +26,7 @@ export async function getTeamData(): Promise<TeamData> {
     canManage
       ? supabase
           .from("organization_invitations")
-          .select("id, email, role, status, created_at, expires_at")
+          .select("id, email, role, board_calendar_role, status, created_at, expires_at")
           .eq("organization_id", session.organization.id)
           .eq("status", "pending")
           .order("created_at", { ascending: false })
@@ -33,11 +34,18 @@ export async function getTeamData(): Promise<TeamData> {
     supabase.rpc("get_team_directory", {
       target_organization_id: session.organization.id,
     }),
+    canManage
+      ? supabase.from("organization_members").select("user_id, board_calendar_role")
+          .eq("organization_id", session.organization.id)
+      : Promise.resolve({ data: [], error: null }),
   ]);
 
   if (memberError) throw memberError;
   if (invitationError) throw invitationError;
   if (directoryError) throw directoryError;
+  if (calendarRolesError) throw calendarRolesError;
+
+  const roleByUserId = new Map((calendarRoles ?? []).map((row) => [row.user_id, row.board_calendar_role]));
 
   const members = (
     (directory ?? []) as Array<{
@@ -53,6 +61,8 @@ export async function getTeamData(): Promise<TeamData> {
     email: member.email,
     name: member.full_name,
     role: member.role,
+    boardCalendarRole: member.role === "owner" || member.role === "admin"
+      ? "administrator" : roleByUserId.get(member.user_id) ?? "member",
     status: member.status,
     joinedAt: member.joined_at,
   }));
@@ -76,6 +86,8 @@ export async function getTeamData(): Promise<TeamData> {
       id: invitation.id,
       email: invitation.email,
       role: invitation.role,
+      boardCalendarRole: invitation.role === "admin" ? "administrator"
+        : invitation.board_calendar_role ?? "member",
       status: invitation.status,
       createdAt: invitation.created_at,
       expiresAt: invitation.expires_at,

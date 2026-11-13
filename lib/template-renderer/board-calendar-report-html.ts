@@ -1,4 +1,6 @@
 import type { BrandProfile } from "@/lib/types";
+import type { Locale } from "@/lib/i18n/locales";
+import { translateFrenchUiText } from "@/lib/i18n/french-runtime-translations";
 
 import { buildBoardCalendarSetup, syncBoardCalendarGeneratedTasks } from "./board-calendar-editor";
 import {
@@ -31,6 +33,60 @@ export interface BoardCalendarReport {
 const fallbackPrimaryColor = "#2f6b4f";
 const fallbackSecondaryColor = "#df7a54";
 
+const reportFrenchLabels: Record<string, string> = {
+  "Board portal report": "Rapport du portail du conseil",
+  "Board calendar report": "Rapport du calendrier du conseil",
+  Generated: "Généré le",
+  "Entries created as Meeting or Event.": "Éléments créés comme réunion ou événement.",
+  "Generated and manual workflow tasks.": "Tâches générées et tâches ajoutées manuellement.",
+  "Board contacts and committee directory.": "Répertoire des contacts du conseil et des comités.",
+  "Milestones calculated from the confirmed AGM date.": "Jalons calculés à partir de la date confirmée de l'AGA.",
+  "Meeting package document index.": "Index des documents des dossiers de réunion.",
+  "No meetings have been added yet.": "Aucune réunion n'a encore été ajoutée.",
+  "No workflow tasks are available yet.": "Aucune tâche n'est disponible pour le moment.",
+  "No directory entries have been added yet.": "Aucune entrée n'a encore été ajoutée au répertoire.",
+  "No AGM milestones have been added yet.": "Aucun jalon de l'AGA n'a encore été ajouté.",
+  "No board package documents have been added yet.": "Aucun document de dossier du conseil n'a encore été ajouté.",
+  "Meeting / Document": "Réunion / Document",
+  "Board packages": "Dossiers du conseil",
+  "AGM planning timeline": "Calendrier de préparation de l'AGA",
+  "Board Calendar": "Calendrier du conseil",
+  Details: "Détails",
+  Done: "Terminé",
+  Documents: "Documents",
+  "Lead contact": "Personne responsable",
+  "Virtual link": "Lien virtuel",
+  "Role / Committee": "Rôle / Comité",
+  "Days before AGM": "Jours avant l'AGA",
+  "Target date": "Date cible",
+  "Calendar administrator": "Administration du calendrier",
+  "Executive Director / CEO": "Direction générale",
+  "Board Chair": "Présidence du conseil",
+  "General": "Général",
+  "Untitled task": "Tâche sans titre",
+  "Untitled": "Sans titre",
+  "No meetings": "Aucune réunion",
+};
+
+function reportText(value: string, locale: Locale) {
+  return locale === "fr-CA" ? reportFrenchLabels[value] ?? translateFrenchUiText(value) : value;
+}
+
+function localizeReportSection(section: BoardCalendarReportSection, locale: Locale): BoardCalendarReportSection {
+  if (locale !== "fr-CA") return section;
+  return {
+    ...section,
+    title: reportText(section.title, locale),
+    description: reportText(section.description, locale),
+    emptyMessage: reportText(section.emptyMessage, locale),
+    columns: section.columns.map((column) => reportText(column, locale)),
+    rows: section.rows.map((row) => row.map((cell, index) =>
+      ["Status", "Done", "Confirmed"].includes(section.columns[index])
+        || ["Role / Committee", "Details"].includes(section.columns[index])
+        ? reportText(cell, locale) : cell)),
+  };
+}
+
 export function isBoardCalendarSchema(schema: TemplateFieldSchema) {
   return schema.presentation?.calendar?.enabled === true;
 }
@@ -40,25 +96,27 @@ export function buildBoardCalendarReport({
   generatedAt = new Date(),
   organizationName,
   title,
+  locale = "en-CA",
 }: {
   formData: TemplateFormData;
   generatedAt?: Date;
   organizationName: string;
   title: string;
+  locale?: Locale;
 }): BoardCalendarReport {
   const syncedData = syncBoardCalendarGeneratedTasks(formData);
 
   return {
     generatedAt,
     organizationName,
-    title,
+    title: reportText(title, locale),
     sections: [
       buildMeetingsSection(syncedData),
       buildWorkflowSection(syncedData),
       buildDirectorySection(syncedData),
       buildAgmTimelineSection(syncedData),
       buildBoardPackagesSection(syncedData),
-    ],
+    ].map((section) => localizeReportSection(section, locale)),
   };
 }
 
@@ -68,18 +126,21 @@ export function buildBoardCalendarReportHtml({
   generatedAt = new Date(),
   organizationName,
   title,
+  locale = "en-CA",
 }: {
   brand: BrandProfile;
   formData: TemplateFormData;
   generatedAt?: Date;
   organizationName: string;
   title: string;
+  locale?: Locale;
 }) {
   const report = buildBoardCalendarReport({
     formData,
     generatedAt,
     organizationName,
     title,
+    locale,
   });
   const primaryColor = sanitizeCssColor(brand.primaryColor, fallbackPrimaryColor);
   const secondaryColor = sanitizeCssColor(
@@ -91,10 +152,10 @@ export function buildBoardCalendarReportHtml({
     : `<span>${escapeHtml(brand.logoInitials || getInitials(organizationName))}</span>`;
 
   return `<!doctype html>
-<html lang="en">
+<html lang="${locale}">
 <head>
   <meta charset="utf-8" />
-  <title>${escapeHtml(report.title)} report</title>
+  <title>${escapeHtml(report.title)} ${locale === "fr-CA" ? "rapport" : "report"}</title>
   <style>
     :root {
       --brand-primary: ${primaryColor};
@@ -294,11 +355,11 @@ export function buildBoardCalendarReportHtml({
   <section class="cover-page">
     <div class="cover-logo">${logoMarkup}</div>
     <div class="cover-content">
-      <p class="cover-eyebrow">Board portal report</p>
+      <p class="cover-eyebrow">${reportText("Board portal report", locale)}</p>
       <h1 class="cover-title">${escapeHtml(report.title)}</h1>
       <div class="cover-rule"></div>
       <p class="cover-org">${escapeHtml(report.organizationName)}</p>
-      <p class="cover-meta">Generated ${escapeHtml(formatDateTime(report.generatedAt))}</p>
+      <p class="cover-meta">${reportText("Generated", locale)} ${escapeHtml(formatDateTime(report.generatedAt, locale))}</p>
     </div>
   </section>
   <main>
@@ -306,10 +367,10 @@ export function buildBoardCalendarReportHtml({
     <header class="brand-header">
       <div class="logo">${logoMarkup}</div>
       <div>
-        <p class="eyebrow">Board calendar report</p>
+        <p class="eyebrow">${reportText("Board calendar report", locale)}</p>
         <h1>${escapeHtml(report.title)}</h1>
         <div class="meta">
-          ${escapeHtml(report.organizationName)} · Generated ${escapeHtml(formatDateTime(report.generatedAt))}
+          ${escapeHtml(report.organizationName)} · ${reportText("Generated", locale)} ${escapeHtml(formatDateTime(report.generatedAt, locale))}
         </div>
       </div>
     </header>
@@ -338,8 +399,9 @@ export function buildBoardCalendarReportFooterText(
 export function buildBoardCalendarReportHeaderHtml(
   organizationName: string,
   title: string,
+  locale: Locale = "en-CA",
 ) {
-  return `<div style="display:flex;justify-content:space-between;border-bottom:1px solid #d8dee8;padding-bottom:5px;width:100%"><strong>${escapeHtml(organizationName)}</strong><span>${escapeHtml(title)}</span></div>`;
+  return `<div style="display:flex;justify-content:space-between;border-bottom:1px solid #d8dee8;padding-bottom:5px;width:100%"><strong>${escapeHtml(organizationName)}</strong><span>${escapeHtml(reportText(title, locale))}</span></div>`;
 }
 
 function buildMeetingsSection(data: TemplateFormData): BoardCalendarReportSection {
@@ -514,13 +576,13 @@ function renderSection(section: BoardCalendarReportSection) {
 
 function renderCell(cell: string, column: string | undefined) {
   const safeCell = cell ? escapeHtml(cell) : "—";
-  const className = column === "Notes" || column === "Details" ? " class=\"notes\"" : "";
+  const className = column === "Notes" || column === "Details" || column === "Détails" ? " class=\"notes\"" : "";
 
   if (isLikelyUrl(cell)) {
     return `<td${className}><a href="${escapeHtml(cell)}">${safeCell}</a></td>`;
   }
 
-  if (column === "Status" || column === "Done" || column === "Confirmed") {
+  if (["Status", "Done", "Confirmed", "Statut", "Terminé", "Confirmé"].includes(column ?? "")) {
     return `<td${className}><span class="pill">${safeCell}</span></td>`;
   }
 
@@ -555,8 +617,8 @@ function isLikelyUrl(value: string) {
   return /^https?:\/\//i.test(value.trim());
 }
 
-function formatDateTime(value: Date) {
-  return new Intl.DateTimeFormat("en-US", {
+function formatDateTime(value: Date, locale: Locale = "en-CA") {
+  return new Intl.DateTimeFormat(locale, {
     dateStyle: "medium",
     timeStyle: "short",
   }).format(value);

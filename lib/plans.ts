@@ -27,6 +27,7 @@ export const membershipPlans: MembershipPlan[] = [
     features: [
       "Board calendar, meetings, workflows, and packages",
       "Grant checklists, templates, dashboard, and deadlines",
+      "Board governance training and certificates",
       "Olea Connects™ Community, webinars, and forums",
       "48-hour email support",
     ],
@@ -72,7 +73,6 @@ export const membershipPlans: MembershipPlan[] = [
       "Everything in Roots",
       "ED/CEO 360 review",
       "Strategic planning module",
-      "Board training modules",
       "Community leadership opportunities",
       "Priority phone and email support",
     ],

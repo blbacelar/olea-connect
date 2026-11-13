@@ -1,9 +1,22 @@
 import { boardCalendarExactTranslations, boardCalendarPhraseTranslations } from "./board-calendar-fr";
 import { governanceGrowthFrenchPhrases, governanceGrowthFrenchTranslations } from "./governance-growth-fr";
+import { strategicGuidanceFrenchTranslations } from "./strategic-guidance-fr";
+import { strategicWorkbookFrenchPhrases, strategicWorkbookFrenchTranslations } from "./strategic-workbook-fr";
 
 const exactTranslations = new Map<string, string>([
   ...boardCalendarExactTranslations,
   ...governanceGrowthFrenchTranslations,
+  ...strategicWorkbookFrenchTranslations,
+  ...strategicGuidanceFrenchTranslations,
+  ["Board Terms and committees use the same roster.", "Les mandats du conseil et les comités utilisent le même registre."],
+  ["Create committees, assign directors and staff, and designate one chair per committee. Board Terms and committees use the same roster.", "Créez des comités, affectez les administrateurs et le personnel, et désignez une présidence par comité. Les mandats du conseil et les comités utilisent le même registre."],
+  ["Review Board Terms", "Consulter les mandats du conseil"],
+  ["standing for re-election", "se présente à une nouvelle élection"],
+  ["term-limited; plan a replacement", "limité par mandat; planifiez une relève"],
+  ["Board Calendar role", "Rôle au calendrier du conseil"],
+  ["Calendar Administrator", "Administration du calendrier"],
+  ["Executive Director / COO", "Direction générale / opérations"],
+  ["Board Member", "Membre du conseil"],
   ["Developer access is active. No payment is due for this membership.", "L'accès de développement est actif. Aucun paiement n'est dû pour cette adhésion."],
   ["Developer access · no payment due", "Accès de développement · aucun paiement dû"],
   ["Access period", "Période d'accès"],
@@ -1426,8 +1439,12 @@ const exactTranslations = new Map<string, string>([
 ]);
 
 const phraseTranslations: Array<[RegExp, string]> = [
+  [/^Board term impact at the (\d{4}) AGM$/, "Incidence des mandats à l’AGA de $1"],
+  [/^(.+): term-limited; plan a replacement$/, "$1 : limité par mandat; planifiez une relève"],
+  [/^(.+): standing for re-election$/, "$1 : se présente à une nouvelle élection"],
   ...boardCalendarPhraseTranslations,
   ...governanceGrowthFrenchPhrases,
+  ...strategicWorkbookFrenchPhrases,
   [/Apply now\s*→?/g, "Soumettre maintenant"],
   [/\bEdit (.+)$/g, "Modifier $1"],
   [/\bAGM held\b/g, "AGA tenue"],

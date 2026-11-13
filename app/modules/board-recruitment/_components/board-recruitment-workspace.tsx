@@ -11,6 +11,7 @@ import {
 } from "lucide-react";
 
 import { Card, CardContent } from "@/components/ui/card";
+import { useLocaleContext } from "@/components/i18n/LocaleProvider";
 import { MobileSectionSelect } from "@/components/ui/mobile-section-select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import type {
@@ -45,6 +46,12 @@ export function BoardRecruitmentWorkspace({
   activeTab?: RecruitmentTab;
 }) {
   const [tab, setTab] = React.useState<RecruitmentTab>(activeTab);
+  const french = useLocaleContext().locale === "fr-CA";
+  const localizedTabs = french ? tabs.map((item) => ({
+    ...item,
+    label: ({ overview: "Vue d'ensemble", survey: "Sondage et envoi", matrix: "Matrice des compétences",
+      terms: "Mandats du conseil", committees: "Comités", report: "Rapport du conseil" } as Record<RecruitmentTab, string>)[item.value],
+  })) : tabs;
   const navigate = (value: RecruitmentTab) => {
     setTab(value);
     window.history.replaceState(
@@ -64,14 +71,15 @@ export function BoardRecruitmentWorkspace({
           <div className="flex flex-col gap-5 sm:flex-row sm:items-start sm:justify-between">
             <div>
               <p className="text-xs font-bold uppercase tracking-[0.12em] text-olea-green">
-                Board Recruitment Toolkit
+                {french ? "Boîte à outils de recrutement du conseil" : "Board Recruitment Toolkit"}
               </p>
               <h1 className="mt-2 text-3xl font-bold text-slate-900 md:text-4xl">
-                Board recruitment, made visible
+                {french ? "Le recrutement du conseil, rendu visible" : "Board recruitment, made visible"}
               </h1>
               <p className="mt-3 max-w-3xl leading-7 text-slate-600">
-                Maintain one shared roster, collect director skills, identify
-                gaps, and prepare a board-ready recruitment report.
+                {french
+                  ? "Tenez un registre commun, recueillez les compétences des administrateurs, repérez les lacunes et préparez un rapport de recrutement pour le conseil."
+                  : "Maintain one shared roster, collect director skills, identify gaps, and prepare a board-ready recruitment report."}
               </p>
             </div>
           </div>
@@ -84,13 +92,13 @@ export function BoardRecruitmentWorkspace({
       >
         <div className="rounded-xl border bg-white p-2 shadow-soft">
           <MobileSectionSelect
-            label="Board Recruitment section"
-            options={tabs}
+            label={french ? "Section du recrutement du conseil" : "Board Recruitment section"}
+            options={localizedTabs}
             value={tab}
             onValueChange={(value) => navigate(value as RecruitmentTab)}
           />
           <TabsList className="hidden h-auto min-w-max gap-1 bg-slate-50 md:inline-flex">
-            {tabs.map(({ value, label, icon: Icon }) => (
+            {localizedTabs.map(({ value, label, icon: Icon }) => (
               <TabsTrigger key={value} value={value} className="min-h-11 gap-2">
                 <Icon className="size-4" />
                 {label}

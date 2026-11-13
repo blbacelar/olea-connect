@@ -3,7 +3,6 @@
 import { useState } from "react";
 
 import {
-  appendBoardPackageAccessLog,
   deleteBoardPackageDocument,
   type BoardPackageDocument,
   type BoardPackageMeeting,
@@ -13,7 +12,6 @@ import type { TemplateFormData } from "@/lib/template-renderer/types";
 import {
   deleteBoardPackageDocumentWithAudit,
   getBoardPackageDocumentOpenUrl,
-  getDocumentMeetingContext,
 } from "./board-package-operations";
 import { downloadMeetingDocumentPdf, fetchMeetingDocumentPdf } from "./board-calendar/meeting-pdf-client";
 
@@ -53,7 +51,6 @@ export function useBoardPackageDocumentActions({
           templateInstanceId,
         });
         downloadMeetingDocumentPdf(pdf.bytes, pdf.fileName);
-        logDownload(document, meeting);
         return;
       }
       const documentUrl = await getBoardPackageDocumentOpenUrl({
@@ -62,7 +59,6 @@ export function useBoardPackageDocumentActions({
         meeting,
         templateInstanceId,
       });
-      logDownload(document, meeting);
       window.open(documentUrl, "_blank", "noopener,noreferrer");
     } catch (error) {
       setDownloadError(
@@ -118,31 +114,12 @@ export function useBoardPackageDocumentActions({
     return meetings.find((item) => item.id === document.meetingId);
   }
 
-  function logDownload(
-    document: BoardPackageDocument,
-    meeting?: BoardPackageMeeting,
-  ) {
-    onDataChange((currentData) =>
-      appendBoardPackageAccessLog(currentData, {
-        action: "document_downloaded",
-        documentId: document.id,
-        documentName: document.name,
-        ...getDocumentMeetingContext(document, meeting),
-      }),
-    );
-  }
-
   function removeDocumentFromData(
     document: BoardPackageDocument,
     meeting?: BoardPackageMeeting,
   ) {
     onDataChange((currentData) =>
-      appendBoardPackageAccessLog(deleteBoardPackageDocument(currentData, document.id), {
-        action: "document_deleted",
-        documentId: document.id,
-        documentName: document.name,
-        ...getDocumentMeetingContext(document, meeting),
-      }),
+      deleteBoardPackageDocument(currentData, document.id),
     );
   }
 

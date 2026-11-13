@@ -231,9 +231,9 @@ test.describe("@critical Board Calendar & Operational Workflow", () => {
       await boardCalendar.expectWorkspaceViewSelected("Directory");
     });
 
-    await test.step("block invalid new entries for past dates and empty titles", async () => {
+    await test.step("review past dates while blocking invalid new entries", async () => {
       await boardCalendar.chooseWorkspaceView("Calendar workspace");
-      await boardCalendar.calendar.expectPastDatesDisabled();
+      await boardCalendar.calendar.selectDate(getFutureDateKey(-1));
       await boardCalendar.calendar.selectDate(eventDate);
       await boardCalendar.calendar.expectBlankEntryForm();
       await boardCalendar.calendar.expectEntryModalTopVisible();

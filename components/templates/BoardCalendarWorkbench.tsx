@@ -5,6 +5,7 @@ import { Download, FileText, LoaderCircle, Plus } from "lucide-react";
 import Link from "next/link";
 
 import { useLocaleContext } from "@/components/i18n/LocaleProvider";
+import { canEditBoardCalendarDocuments, canManageBoardCalendar, canUpdateBoardCalendarTaskStatus, canViewBoardCalendarMeetingsAndWorkflows, type BoardCalendarRole } from "@/lib/board-calendar/access";
 import { Button } from "@/components/ui/button";
 import { MobileSectionSelect } from "@/components/ui/mobile-section-select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -18,6 +19,7 @@ import type {
   WorkspaceMemberOption,
 } from "@/lib/template-renderer/types";
 import type { BrandProfile } from "@/lib/types";
+import type { StrategicCalendarDate } from "@/lib/strategic-planning/calendar-dates";
 import { buildBoardPackageMeetings } from "@/lib/template-renderer/board-calendar-packages";
 import type { BoardPackageMeeting } from "@/lib/template-renderer/board-calendar-packages";
 
@@ -49,13 +51,16 @@ export function BoardCalendarWorkbench({
   templateInstanceId,
   organizationName,
   workspaceMembers,
-  membershipRole,
+  boardCalendarRole,
   saveState,
+  saveError,
   generateExport,
   createDownloadUrl,
   onChange,
   onDataChange,
+  strategicDates = [],
 }: BoardCalendarWorkbenchProps) {
+  const french = useLocaleContext().locale === "fr-CA";
   const workbench = useBoardCalendarWorkbench({
     data,
     templateInstanceId,
@@ -63,13 +68,17 @@ export function BoardCalendarWorkbench({
     generateExport,
     createDownloadUrl,
     onDataChange,
+    strategicDates,
+    french,
   });
   const [documentMeeting, setDocumentMeeting] = useState<BoardPackageMeeting | null>(null);
-  const french = useLocaleContext().locale === "fr-CA";
-  const readOnly = membershipRole === "member";
-  const visibleTabs = readOnly
-    ? moduleTabs.filter((tab) => ["dashboard", "calendar", "meetings", "packages"].includes(tab.value))
-    : moduleTabs;
+  const canManage = canManageBoardCalendar(boardCalendarRole);
+  const canEditDocs = canEditBoardCalendarDocuments(boardCalendarRole);
+  const readOnly = !canManage;
+  const visibleTabs = moduleTabs.filter((tab) => canManage
+    || ["dashboard", "calendar", "packages", "directory"].includes(tab.value)
+    || (canViewBoardCalendarMeetingsAndWorkflows(boardCalendarRole)
+      && ["meetings", "workflows"].includes(tab.value)));
   const activeTab = visibleTabs.some((tab) => tab.value === workbench.activeTab)
     ? workbench.activeTab : "dashboard";
   const tabLabels: Record<BoardCalendarModuleTab, string> = {
@@ -138,7 +147,7 @@ export function BoardCalendarWorkbench({
             <Download className="size-4" />
             {french ? "Exporter le calendrier (.ics)" : "Export calendar (.ics)"}
           </Button>
-          {membershipRole !== "member" ? <Button type="button" variant="outline" className="w-full sm:w-auto" onClick={downloadBackup}>
+          {canManage ? <Button type="button" variant="outline" className="w-full sm:w-auto" onClick={downloadBackup}>
             <Download className="size-4" />{french ? "Télécharger une sauvegarde JSON" : "Download JSON backup"}
           </Button> : null}
         </div>
@@ -215,11 +224,12 @@ export function BoardCalendarWorkbench({
             />
           </TabsContent>
           <TabsContent value="calendar" className="mt-0 space-y-5">
-            <CalendarTab workbench={workbench} readOnly={readOnly} />
+            <CalendarTab workbench={workbench} readOnly={readOnly} onOpenDocuments={openMeetingDocuments} />
           </TabsContent>
           <TabsContent value="meetings" className="mt-0">
             <MeetingsTablePanel
               canEdit={!readOnly}
+              french={french}
               meetings={workbench.meetingEvents}
               upcomingMeetingCount={workbench.upcomingMeetingEvents.length}
               onEditEvent={workbench.editCalendarEntry}
@@ -231,7 +241,7 @@ export function BoardCalendarWorkbench({
             data={data}
             templateInstanceId={templateInstanceId}
             workspaceMembers={workspaceMembers}
-            membershipRole={membershipRole}
+            boardCalendarRole={boardCalendarRole}
             saveState={saveState}
             onChange={onChange}
             onDataChange={onDataChange}
@@ -242,7 +252,7 @@ export function BoardCalendarWorkbench({
         <BoardCalendarDateNotifications
           data={data}
           templateInstanceId={templateInstanceId}
-          canSend={membershipRole !== "member"}
+          canSend={canManage}
           saveState={saveState}
         />
         <BoardCalendarRsvpPanel data={data} templateInstanceId={templateInstanceId} saveState={saveState} />
@@ -250,13 +260,14 @@ export function BoardCalendarWorkbench({
       {documentMeeting ? (
         <MeetingDocumentsDialog
           key={documentMeeting.id}
-          canApprove={membershipRole !== "member"}
+          canApprove={canEditDocs}
           data={data}
           meeting={documentMeeting}
           members={workspaceMembers}
           onClose={() => setDocumentMeeting(null)}
           onDataChange={onDataChange}
           saveState={saveState}
+          saveError={saveError}
           templateInstanceId={templateInstanceId}
         />
       ) : null}
@@ -269,7 +280,7 @@ function SecondaryTabs({
   data,
   templateInstanceId,
   workspaceMembers,
-  membershipRole,
+  boardCalendarRole,
   saveState,
   onChange,
   onDataChange,
@@ -279,16 +290,18 @@ function SecondaryTabs({
   | "data"
   | "templateInstanceId"
   | "workspaceMembers"
-  | "membershipRole"
+  | "boardCalendarRole"
   | "saveState"
   | "onChange"
   | "onDataChange"
 >) {
   const french = useLocaleContext().locale === "fr-CA";
+  const canManage = canManageBoardCalendar(boardCalendarRole);
+  const canEditDocs = canEditBoardCalendarDocuments(boardCalendarRole);
   return (
     <>
       <TabsContent value="workflows" className="mt-0 space-y-5">
-        <StaffTaskListPanel data={data} onChange={onChange} />
+        <StaffTaskListPanel data={data} onChange={onChange} canEdit={canManage} canEditStatus={canUpdateBoardCalendarTaskStatus(boardCalendarRole)} />
       </TabsContent>
       <TabsContent value="packages" className="mt-0">
         <BoardPackagesPanel
@@ -297,14 +310,14 @@ function SecondaryTabs({
           onDataChange={onDataChange}
           templateInstanceId={templateInstanceId ?? ""}
           workspaceMembers={workspaceMembers}
-          canSend={membershipRole !== "member"}
-          canManage={membershipRole !== "member"}
+          canSend={canManage}
+          canManage={canEditDocs}
           saveState={saveState}
         />
       </TabsContent>
       <TabsContent value="directory" className="mt-0">
-        <div className="space-y-5"><BoardCalendarContactsPanel data={data} canManage={membershipRole !== "member"} onDataChange={onDataChange} />
-          <DirectoryTablePanel data={data} workspaceMembers={workspaceMembers} onDataChange={onDataChange} />
+        <div className="space-y-5"><BoardCalendarContactsPanel data={data} canManage={canManage} onDataChange={onDataChange} />
+          <DirectoryTablePanel data={data} workspaceMembers={workspaceMembers} onDataChange={onDataChange} canManage={canManage} />
         </div>
       </TabsContent>
       <TabsContent value="audit_log" className="mt-0">
@@ -334,6 +347,7 @@ function SecondaryTabs({
 }
 
 interface BoardCalendarWorkbenchProps {
+  strategicDates?: StrategicCalendarDate[];
   brand: BrandProfile;
   data: TemplateFormData;
   errorsByPath: Map<string, string>;
@@ -341,8 +355,9 @@ interface BoardCalendarWorkbenchProps {
   organizationName: string;
   sections: TemplateSection[];
   workspaceMembers: WorkspaceMemberOption[];
-  membershipRole: "owner" | "admin" | "member";
+  boardCalendarRole: BoardCalendarRole;
   saveState: "saved" | "saving" | "unsaved" | "error";
+  saveError: string;
   generateExport: (input: {
     templateInstanceId: string;
     format: TemplateExportFormat;

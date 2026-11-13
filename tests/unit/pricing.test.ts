@@ -11,8 +11,6 @@ describe("pricing package", () => {
       "Board Evaluation System",
       "Board Recruitment Toolkit and Skills Matrix",
       "KPI and Impact Dashboard",
-      "Board Governance Training",
-      "Board Governance Training, small boards",
       "Strategic Planning Module",
       "Accreditation Prep",
     ]);

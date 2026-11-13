@@ -10,6 +10,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { useLocaleContext } from "@/components/i18n/LocaleProvider";
 import { monthNames } from "@/lib/template-renderer/calendar-view";
+import type { CalendarViewEvent } from "@/lib/template-renderer/calendar-view";
 
 import {
   CalendarEventPill,
@@ -99,7 +100,7 @@ export function DashboardTab({
   );
 }
 
-export function CalendarTab({ workbench, readOnly = false }: { workbench: BoardCalendarWorkbenchState; readOnly?: boolean }) {
+export function CalendarTab({ workbench, readOnly = false, onOpenDocuments }: { workbench: BoardCalendarWorkbenchState; readOnly?: boolean; onOpenDocuments: (event: CalendarViewEvent) => void }) {
   const french = useLocaleContext().locale === "fr-CA";
   return (
     <>
@@ -143,7 +144,6 @@ export function CalendarTab({ workbench, readOnly = false }: { workbench: BoardC
           onEditEvent={workbench.editCalendarEntry}
           onSelectDate={workbench.selectDate}
           selectedDateKey={workbench.selectedDateKey}
-          todayKey={workbench.todayKey}
         />
       ) : (
         <MonthCalendar
@@ -152,12 +152,13 @@ export function CalendarTab({ workbench, readOnly = false }: { workbench: BoardC
           onEditEvent={workbench.editCalendarEntry}
           onSelectDate={workbench.selectDate}
           selectedDateKey={workbench.selectedDateKey}
-          todayKey={workbench.todayKey}
           year={workbench.year}
         />
       )}
       <CalendarEntryComposer
         readOnly={readOnly}
+        french={french}
+        onOpenDocuments={onOpenDocuments}
         editingEvent={workbench.editingEvent}
         editingEventId={workbench.editingEventId}
         entryCategory={workbench.entryCategory}
