@@ -1,0 +1,417 @@
+{
+  "staff": {
+    "organizationPlaceholder": "[Organisation Name]",
+    "reviewPeriodLabel": "Review period",
+    "reviewPeriodPlaceholder": "e.g. 2025–2026",
+    "deadlineLabel": "Please return by",
+    "deadlinePlaceholder": "Deadline",
+    "anonymousLabel": "Anonymous",
+    "ratingScale": [
+      {
+        "value": 1,
+        "label": "Poor",
+        "description": "Significant concerns"
+      },
+      {
+        "value": 2,
+        "label": "Below",
+        "description": "Improvement needed"
+      },
+      {
+        "value": 3,
+        "label": "Meets",
+        "description": "Solid, consistent"
+      },
+      {
+        "value": 4,
+        "label": "Exceeds",
+        "description": "Above expectations"
+      },
+      {
+        "value": 5,
+        "label": "Excep.",
+        "description": "Outstanding"
+      }
+    ],
+    "overallTitle": "Overall feedback",
+    "kind": "staff",
+    "label": "Staff feedback survey",
+    "eyebrow": "Staff feedback",
+    "title": "Executive Director / CEO Annual Review — Staff Feedback",
+    "durationLabel": "About 8 minutes",
+    "summaryLabel": "18 quick ratings + optional comments",
+    "description": "Your feedback is part of the ED/CEO's annual review and gives the Board a fuller picture of leadership from within the team — a perspective only you can offer. This survey is anonymous. Your name is not collected, responses are read together (not individually attributed), and individual answers are not shared with the ED/CEO. There are no right or wrong answers — honest, specific feedback is the most useful.",
+    "sections": [
+      {
+        "id": "vision",
+        "sourceId": "S1",
+        "commentId": "S1",
+        "label": "Vision & Strategic Leadership",
+        "description": "How the ED/CEO communicates direction, makes decisions, and leads strategically.",
+        "commentPrompt": "One thing the ED/CEO could do to strengthen the organisation’s direction",
+        "questions": [
+          {
+            "id": "S1a",
+            "sourceId": "S1a",
+            "label": "Communicates a clear and inspiring vision.",
+            "subtext": "I understand where we are heading and why"
+          },
+          {
+            "id": "S1b",
+            "sourceId": "S1b",
+            "label": "Makes sound decisions in uncertain or complex situations.",
+            "subtext": "Judgement in ambiguity"
+          },
+          {
+            "id": "S1c",
+            "sourceId": "S1c",
+            "label": "Prioritises what matters most and adapts when things change.",
+            "subtext": "Focus, flexibility and resilience"
+          }
+        ]
+      },
+      {
+        "id": "culture",
+        "sourceId": "S2",
+        "commentId": "S2",
+        "label": "People Leadership & Culture",
+        "description": "How the ED/CEO leads the team, builds culture, and develops people.",
+        "commentPrompt": "One thing the ED/CEO does well as a people leader, and one area to develop",
+        "questions": [
+          {
+            "id": "S2a",
+            "sourceId": "S2a",
+            "label": "Creates a positive, inclusive environment.",
+            "subtext": "Psychological safety, belonging and respect"
+          },
+          {
+            "id": "S2b",
+            "sourceId": "S2b",
+            "label": "Recognises and values the contributions of team members.",
+            "subtext": "Appreciation and acknowledgement"
+          },
+          {
+            "id": "S2c",
+            "sourceId": "S2c",
+            "label": "Addresses issues fairly and models the organisation’s values.",
+            "subtext": "Accountability and walking the talk"
+          }
+        ]
+      },
+      {
+        "id": "communications",
+        "sourceId": "S3",
+        "commentId": "S3",
+        "label": "Communication & Transparency",
+        "description": "How the ED/CEO communicates with the team and maintains openness.",
+        "commentPrompt": "Anything about how the ED/CEO communicates you’d like to see change",
+        "questions": [
+          {
+            "id": "S3a",
+            "sourceId": "S3a",
+            "label": "Shares important information in a timely, clear way.",
+            "subtext": "Keeping people informed"
+          },
+          {
+            "id": "S3b",
+            "sourceId": "S3b",
+            "label": "Is approachable and listens genuinely.",
+            "subtext": "Openness and active listening"
+          },
+          {
+            "id": "S3c",
+            "sourceId": "S3c",
+            "label": "Is transparent about decisions and changes, even difficult ones.",
+            "subtext": "Honesty on hard matters"
+          }
+        ]
+      },
+      {
+        "id": "operations",
+        "sourceId": "S4",
+        "commentId": "S4",
+        "label": "Operational Effectiveness",
+        "description": "How the ED/CEO runs the organisation day-to-day.",
+        "commentPrompt": "What aspect of operational leadership works best, and what could improve",
+        "questions": [
+          {
+            "id": "S4a",
+            "sourceId": "S4a",
+            "label": "Is organised and follows through on commitments.",
+            "subtext": "Reliability and execution"
+          },
+          {
+            "id": "S4b",
+            "sourceId": "S4b",
+            "label": "Manages resources and budget responsibly.",
+            "subtext": "Financial and operational stewardship"
+          },
+          {
+            "id": "S4c",
+            "sourceId": "S4c",
+            "label": "Builds systems and processes that help the team work well.",
+            "subtext": "Infrastructure and efficiency"
+          }
+        ]
+      },
+      {
+        "id": "innovation",
+        "sourceId": "S5",
+        "commentId": "S5",
+        "label": "Innovation & Adaptability",
+        "description": "How the ED/CEO encourages new thinking and moves initiatives forward.",
+        "commentPrompt": "A specific example of the ED/CEO showing innovation or adaptability",
+        "questions": [
+          {
+            "id": "S5a",
+            "sourceId": "S5a",
+            "label": "Encourages creative and innovative thinking.",
+            "subtext": "Openness to new ideas and approaches"
+          },
+          {
+            "id": "S5b",
+            "sourceId": "S5b",
+            "label": "Takes appropriate, calculated risks to move things forward.",
+            "subtext": "Courage and judgement"
+          },
+          {
+            "id": "S5c",
+            "sourceId": "S5c",
+            "label": "Drives initiatives from idea through to implementation.",
+            "subtext": "Follow-through and execution"
+          }
+        ]
+      },
+      {
+        "id": "partnership",
+        "sourceId": "S6",
+        "commentId": "S6",
+        "label": "Partnership & External Representation",
+        "description": "How the ED/CEO builds relationships and represents the organisation externally.",
+        "commentPrompt": "What you observe about how the ED/CEO approaches partnerships",
+        "questions": [
+          {
+            "id": "S6a",
+            "sourceId": "S6a",
+            "label": "Builds trust with external partners and stakeholders.",
+            "subtext": "Credibility and relationship quality"
+          },
+          {
+            "id": "S6b",
+            "sourceId": "S6b",
+            "label": "Represents the organisation well externally.",
+            "subtext": "Professionalism, presence and communication"
+          },
+          {
+            "id": "S6c",
+            "sourceId": "S6c",
+            "label": "Advances meaningful inclusion in engagement.",
+            "subtext": "Equity and representation"
+          }
+        ]
+      }
+    ],
+    "overallPrompts": {
+      "greatestStrength": "What does the ED/CEO do best? Their greatest strength as a leader",
+      "importantChange": "The single most important thing they could do differently to be more effective",
+      "additionalComments": "Anything else you'd like the Board Chair to know"
+    },
+    "commentPlaceholder": "A specific example or observation is especially helpful.",
+    "closingTitle": "Thank you for taking the time",
+    "closingDescription": "Your feedback is valued and used constructively to support the ED/CEO's development and the Board's assessment.",
+    "footerNotice": "Confidential feedback instrument · Provided through Olea Connects · Not for distribution without an active membership."
+  },
+  "partner": {
+    "organizationPlaceholder": "[Organisation Name]",
+    "reviewPeriodLabel": "Review period",
+    "reviewPeriodPlaceholder": "e.g. 2025–2026",
+    "deadlineLabel": "Please return by",
+    "deadlinePlaceholder": "Deadline",
+    "anonymousLabel": "Anonymous",
+    "ratingScale": [
+      {
+        "value": 1,
+        "label": "Poor",
+        "description": "Significant concerns"
+      },
+      {
+        "value": 2,
+        "label": "Below",
+        "description": "Improvement needed"
+      },
+      {
+        "value": 3,
+        "label": "Meets",
+        "description": "Solid, consistent"
+      },
+      {
+        "value": 4,
+        "label": "Exceeds",
+        "description": "Above expectations"
+      },
+      {
+        "value": 5,
+        "label": "Excep.",
+        "description": "Outstanding"
+      }
+    ],
+    "overallTitle": "Overall feedback",
+    "kind": "partner",
+    "label": "Partner and stakeholder feedback survey",
+    "eyebrow": "Partner & stakeholder feedback",
+    "title": "Executive Director / CEO Annual Review — External Feedback",
+    "durationLabel": "About 6 minutes",
+    "summaryLabel": "15 quick ratings + optional comments",
+    "description": "Your organisation's work depends on trusted relationships. As someone who has engaged with the organisation and its ED/CEO, your view on that relationship and their leadership helps the Board support strong, accountable leadership. This survey is anonymous — your name and organisation are not collected unless you choose to share them, and responses are reviewed by the Board Chair only. Written comments are optional but especially valuable; a specific example goes a long way.",
+    "sections": [
+      {
+        "id": "relationship",
+        "sourceId": "A",
+        "commentId": "A",
+        "label": "Relationship Quality & Trust",
+        "description": "The quality of the relationship you have experienced with the ED/CEO and the organisation.",
+        "commentPrompt": "What has the ED/CEO done well in building or sustaining the relationship — and what could improve?",
+        "questions": [
+          {
+            "id": "A1",
+            "sourceId": "A0",
+            "label": "Has built a genuine, productive relationship with my organisation.",
+            "subtext": "Quality and authenticity of the partnership"
+          },
+          {
+            "id": "A2",
+            "sourceId": "A1",
+            "label": "Is reliable and follows through on commitments.",
+            "subtext": "Trustworthiness and follow-through"
+          },
+          {
+            "id": "A3",
+            "sourceId": "A2",
+            "label": "Communicates professionally and responsively.",
+            "subtext": "Quality and responsiveness of communication"
+          },
+          {
+            "id": "A4",
+            "sourceId": "A3",
+            "label": "Represents partner and community interests fairly.",
+            "subtext": "Integrity and fairness in dealings"
+          }
+        ]
+      },
+      {
+        "id": "strategy",
+        "sourceId": "B",
+        "commentId": "B",
+        "label": "Strategic Presence & External Leadership",
+        "description": "How the ED/CEO represents the organisation externally and contributes to the wider ecosystem.",
+        "commentPrompt": "How has the ED/CEO’s leadership contributed to collaboration or progress in your sector or community?",
+        "questions": [
+          {
+            "id": "B1",
+            "sourceId": "B0",
+            "label": "Clearly articulates the organisation’s purpose and value.",
+            "subtext": "Clarity of mission and vision externally"
+          },
+          {
+            "id": "B2",
+            "sourceId": "B1",
+            "label": "Demonstrates credible understanding of the sector.",
+            "subtext": "Sector knowledge and credibility"
+          },
+          {
+            "id": "B3",
+            "sourceId": "B2",
+            "label": "Is an effective convener who brings the right people together.",
+            "subtext": "Network building and facilitation"
+          },
+          {
+            "id": "B4",
+            "sourceId": "B3",
+            "label": "Contributes positively to the broader ecosystem.",
+            "subtext": "Sector impact and leadership"
+          }
+        ]
+      },
+      {
+        "id": "inclusion",
+        "sourceId": "C",
+        "commentId": "C",
+        "label": "Inclusion & Community Engagement",
+        "description": "How the ED/CEO approaches inclusion, equity and engagement with the communities served.",
+        "commentPrompt": "How well is the organisation advancing inclusion and engagement — and what could be strengthened?",
+        "questions": [
+          {
+            "id": "C1",
+            "sourceId": "C0",
+            "label": "Actively includes under-represented and underserved communities.",
+            "subtext": "Equity and representation in engagement"
+          },
+          {
+            "id": "C2",
+            "sourceId": "C1",
+            "label": "The organisation’s work reflects the needs of the communities it serves.",
+            "subtext": "Community-centred approach"
+          },
+          {
+            "id": "C3",
+            "sourceId": "C2",
+            "label": "Creates genuine opportunities for community voice and participation.",
+            "subtext": "Authentic inclusion, not tokenism"
+          },
+          {
+            "id": "C4",
+            "sourceId": "C3",
+            "label": "My organisation or community is valued as a genuine partner.",
+            "subtext": "Equity of partnership"
+          }
+        ]
+      },
+      {
+        "id": "impact",
+        "sourceId": "D",
+        "commentId": "D",
+        "label": "Impact & Endorsement",
+        "description": "The organisation’s outcomes and the ED/CEO’s role in driving them.",
+        "commentPrompt": "Can you describe a specific example where the ED/CEO’s leadership contributed to a meaningful outcome?",
+        "questions": [
+          {
+            "id": "D1",
+            "sourceId": "D0",
+            "label": "Demonstrates a genuine commitment to innovation and improvement.",
+            "subtext": "Innovation mindset and drive"
+          },
+          {
+            "id": "D2",
+            "sourceId": "D1",
+            "label": "The organisation’s work generates meaningful, real-world outcomes.",
+            "subtext": "Impact"
+          },
+          {
+            "id": "D3",
+            "sourceId": "D2",
+            "label": "I would recommend engaging with this organisation and its ED/CEO.",
+            "subtext": "Endorsement"
+          }
+        ]
+      }
+    ],
+    "context": {
+      "title": "About your relationship (optional)",
+      "sectorTypeLabel": "Your sector / type",
+      "sectorTypePlaceholder": "e.g. Funder, Government",
+      "lengthLabel": "Length of engagement",
+      "lengthPlaceholder": "e.g. 1–2 years",
+      "natureLabel": "Nature of engagement",
+      "naturePlaceholder": "e.g. Partner, Advisory"
+    },
+    "overallPrompts": {
+      "greatestStrength": "The ED/CEO's greatest strength, from your perspective",
+      "importantChange": "One thing you'd most like them to focus on next year",
+      "additionalComments": "Anything else you'd like the Board to know"
+    },
+    "commentPlaceholder": "A specific example is especially helpful.",
+    "closingTitle": "Thank you for your time and partnership",
+    "closingDescription": "Your feedback supports strong, accountable leadership. Please return by the deadline above.",
+    "footerNotice": "Confidential feedback instrument · Provided through Olea Connects · Not for distribution without an active membership."
+  }
+}

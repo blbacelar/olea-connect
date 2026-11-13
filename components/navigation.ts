@@ -62,7 +62,6 @@ export const navigationGroups: NavigationItem[][] = [
       label: "ED Review",
       href: "/modules/ed-review",
       icon: ClipboardList,
-      requiredOrganizationRoles: ["owner", "admin"],
     },
     { label: "Board Training", href: "/modules/board-training", icon: BookOpen },
     { label: "Community", href: "/community", icon: Users },
