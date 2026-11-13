@@ -131,6 +131,7 @@ describe("final strategic workbook content", () => {
       "m6.actions.0.cost": "$1,250", "m6.actions.0.due": "y1q2",
       "m6.actions.0.funding-status": "Secured", "m6.actions.0.budget-line": "5200 Programs",
       "trk.a.0.y1q2.s": "green", "trk.a.0.y1q2.spent": "$500",
+      "m2.sv.resp.paper": "3", "m2.sv.res.connect.result": "Evening sessions preferred",
       "m2.sv.online.id": "source survey reference",
     });
     expect(result.values["m1.ready:0:note"]).toBe("Board approved");
@@ -140,6 +141,8 @@ describe("final strategic workbook content", () => {
     expect(result.actions[0]).toMatchObject({ goal: "Access", budgetCents: 125000,
       budgetLine: "5200 Programs", updates: [{ quarter: "y1q2", status: "green", spentCents: 50000 }] });
     expect(result.values["legacy:m2.sv.online.id"]).toBe("source survey reference");
+    expect(result.values["m2.sv.resp.paper"]).toBe("3");
+    expect(result.values["m2.sv.res.connect.result"]).toBe("Evening sessions preferred");
     expect(result.skippedKeys).toContain("m2.sv.online.id");
   });
 
