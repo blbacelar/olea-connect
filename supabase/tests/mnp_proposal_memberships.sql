@@ -386,11 +386,10 @@ insert into public.board_evaluation_cycles
   (organization_id, year, status)
 values ('00000000-0000-4000-8000-000000000304', extract(year from current_date)::integer,
   'open');
-select throws_ok(
+select lives_ok(
   $$update public.board_evaluation_cycles set status = 'closed'
     where organization_id = '00000000-0000-4000-8000-000000000304'$$,
-  'At least 3 board members must respond before you can close the evaluation.',
-  'the database rejects closing an evaluation without three responses'
+  'an administrator can close an empty evaluation at the deadline'
 );
 select is(
   (select completed_evaluations
@@ -398,6 +397,10 @@ select is(
   0::bigint,
   'closing an empty evaluation does not count as completed work'
 );
+insert into public.board_evaluation_cycles
+  (organization_id, year, status)
+values ('00000000-0000-4000-8000-000000000304',
+  extract(year from current_date)::integer + 1, 'open');
 insert into public.board_evaluation_responses
   (cycle_id, organization_id, respondent_id, scores)
 select cycle.id, cycle.organization_id, reviewer.id, '{}'::jsonb
@@ -407,9 +410,11 @@ cross join (values
   ('00000000-0000-4000-8000-000000000402'::uuid),
   ('00000000-0000-4000-8000-000000000403'::uuid)
 ) as reviewer(id)
-where cycle.organization_id = '00000000-0000-4000-8000-000000000304';
+where cycle.organization_id = '00000000-0000-4000-8000-000000000304'
+  and cycle.status = 'open';
 update public.board_evaluation_cycles set status = 'closed'
-where organization_id = '00000000-0000-4000-8000-000000000304';
+where organization_id = '00000000-0000-4000-8000-000000000304'
+  and status = 'open';
 select is(
   (select completed_evaluations
    from public.sponsorship_impact_summary('00000000-0000-4000-8000-000000000202')),
@@ -434,7 +439,7 @@ select throws_ok(
 insert into public.board_evaluation_cycles
   (organization_id, year, status, closes_on)
 values ('00000000-0000-4000-8000-000000000304',
-  extract(year from current_date)::integer + 1, 'open', current_date - 1);
+  extract(year from current_date)::integer + 2, 'open', current_date - 1);
 select throws_ok(
   $$insert into public.board_evaluation_responses
       (cycle_id, organization_id, respondent_id, scores)
